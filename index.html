@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#070b14" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="description" content="Karaoke für Smartphone, Tablet und Tesla-Browser. Liedliste, Player und LRC-Text." />
+  <title>Tesla Karaoke</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icon.svg" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <header class="brand">
+        <div>
+          <p class="eyebrow">Sing Out Joyfully</p>
+          <h1>Karaoke</h1>
+        </div>
+        <button id="installBtn" class="ghost" type="button" hidden>Installieren</button>
+      </header>
+
+      <label class="search-wrap">
+        <span class="sr-only">Lied suchen</span>
+        <input id="songSearch" type="search" inputmode="search" placeholder="Nummer oder Titel" autocomplete="off" />
+      </label>
+
+      <div class="filters">
+        <button id="favoritesToggle" class="chip" type="button" aria-pressed="false">Favoriten</button>
+        <span id="songCount" class="count">0</span>
+      </div>
+
+      <ul id="songList" class="song-list" aria-label="Lieder"></ul>
+    </aside>
+
+    <main class="stage">
+      <section class="now">
+        <div>
+          <p id="currentNumber" class="eyebrow">—</p>
+          <h2 id="currentTitle">Lied wählen</h2>
+          <p id="currentStatus">Bereit</p>
+        </div>
+        <div class="now-actions">
+          <button id="favoriteBtn" class="ghost" type="button" aria-pressed="false">☆</button>
+          <button id="smallerBtn" class="ghost" type="button" aria-label="Schrift kleiner">A−</button>
+          <button id="largerBtn" class="ghost" type="button" aria-label="Schrift größer">A+</button>
+          <button id="fullscreenBtn" class="ghost" type="button">Vollbild</button>
+        </div>
+      </section>
+
+      <section id="lyrics" class="lyrics" aria-live="polite">
+        <p class="empty">Wähle links ein Lied. Der Text erscheint, sobald eine LRC-Datei vorhanden ist.</p>
+      </section>
+
+      <section class="player">
+        <div class="transport">
+          <button id="prevBtn" class="round" type="button" aria-label="Vorheriges Lied">⏮</button>
+          <button id="playBtn" class="round play" type="button" aria-label="Play">▶</button>
+          <button id="nextBtn" class="round" type="button" aria-label="Nächstes Lied">⏭</button>
+        </div>
+        <div class="timeline">
+          <span id="currentTime">0:00</span>
+          <input id="progressBar" type="range" min="0" max="1000" value="0" aria-label="Position" />
+          <span id="duration">0:00</span>
+        </div>
+        <label class="lrc-import">
+          LRC laden
+          <input id="lrcInput" type="file" accept=".lrc,text/plain" />
+        </label>
+      </section>
+    </main>
+  </div>
+
+  <!-- Kein crossorigin: GitHub-Release-MP3s senden keine CORS-Header. -->
+  <audio id="audio" preload="none"></audio>
+  <script src="app.js"></script>
+</body>
+</html>

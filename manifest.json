@@ -1,0 +1,20 @@
+{
+  "name": "Tesla Karaoke",
+  "short_name": "Karaoke",
+  "description": "Karaoke-Player mit Liedliste und LRC-Text, optimiert für den Tesla-Browser.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#070b14",
+  "theme_color": "#070b14",
+  "orientation": "landscape",
+  "lang": "de",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
