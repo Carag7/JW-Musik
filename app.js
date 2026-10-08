@@ -8,6 +8,8 @@ const state = {
   index: -1,
   query: "",
   favoritesOnly: false,
+  playFavorites: false,
+  shuffle: false,
   favorites: new Set(),
   lyrics: [],
   scale: 42,
@@ -35,8 +37,12 @@ const el = {
   fullscreen: document.getElementById("fullscreenBtn"),
   smaller: document.getElementById("smallerBtn"),
   larger: document.getElementById("largerBtn"),
-  lrcInput: document.getElementById("lrcInput"),
-  install: document.getElementById("installBtn")
+  install: document.getElementById("installBtn"),
+  lyricsLink: document.getElementById("lyricsLink"),
+  shuffleBtn: document.getElementById("shuffleBtn"),
+  favoritesPlay: document.getElementById("favoritesPlay"),
+  back15: document.getElementById("back15"),
+  fwd15: document.getElementById("fwd15")
 };
 
 function formatTime(seconds) {
@@ -103,20 +109,32 @@ function parseLrc(text) {
   }).sort((a, b) => a.time - b.time);
 }
 
-function renderLyrics(lines) {
+function lyricUrl(song) {
+  const slug = song.title
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+  return `https://www.jw.org/en/library/music-songs/sing-out-joyfully/${song.number}-${slug}/`;
+}
+
+function showLyricLink(song) {
+  const url = lyricUrl(song);
+  el.lyricsLink.href = url;
   el.lyrics.innerHTML = "";
-  if (!lines.length) {
-    el.lyrics.innerHTML = '<p class="empty">Keine LRC-Datei für dieses Lied. Lege songs/sjjc_E_00X.lrc ins Repository oder lade eine Datei über „LRC laden“.</p>';
-    return;
-  }
-  lines.forEach((line, index) => {
-    const p = document.createElement("p");
-    p.className = "lyric-line";
-    p.dataset.time = String(line.time);
-    p.dataset.index = String(index);
-    p.textContent = line.text;
-    el.lyrics.append(p);
-  });
+  const p = document.createElement("p");
+  p.className = "empty";
+  const a = document.createElement("a");
+  a.href = url;
+  a.target = "_blank";
+  a.rel = "noopener";
+  a.textContent = `Text zu Lied ${song.id} öffnen`;
+  p.append(a);
+  const note = document.createElement("p");
+  note.className = "empty";
+  note.textContent = "Die Zeilen stehen auf der offiziellen Seite. Die Themenliste ist unter Subject verlinkt.";
+  el.lyrics.append(p, note);
 }
 
 async function loadLyrics(song) {
@@ -178,14 +196,11 @@ async function selectSong(index, autoplay) {
   el.duration.textContent = "0:00";
   el.play.textContent = "▶";
   renderList();
+  showLyricLink(song);
   const url = await resolveAudio(song);
   state.currentAudio = url;
   setAudioSource(url);
-  await loadLyrics(song);
-  if (autoplay) {
-    const start = () => togglePlay();
-    el.audio.addEventListener("canplay", start, { once: true });
-  }
+  if (autoplay) el.audio.addEventListener("canplay", () => togglePlay(), { once: true });
 }
 
 function togglePlay() {
@@ -243,8 +258,37 @@ function seek() {
   el.audio.currentTime = el.audio.duration * (Number(el.progress.value) / 1000);
 }
 
+function playPool() {
+  const pool = state.playFavorites
+    ? state.songs.filter((song) => state.favorites.has(song.id))
+    : state.songs;
+  return pool;
+}
+
 function step(delta) {
-  selectSong(state.index + delta, !el.audio.paused);
+  const pool = playPool();
+  if (!pool.length) {
+    el.status.textContent = state.playFavorites ? "Keine Favoriten markiert" : "Keine Lieder";
+    return;
+  }
+  const playing = !el.audio.paused;
+  if (state.shuffle) {
+    const choices = pool.filter((song) => song !== state.songs[state.index]);
+    const pick = (choices.length ? choices : pool)[Math.floor(Math.random() * (choices.length || pool.length))];
+    selectSong(state.songs.indexOf(pick), true);
+    return;
+  }
+  const current = state.songs[state.index];
+  let at = pool.indexOf(current);
+  if (at < 0) at = delta > 0 ? -1 : 0;
+  const next = pool[(at + delta + pool.length) % pool.length];
+  selectSong(state.songs.indexOf(next), playing || delta !== 0);
+}
+
+function skip(seconds) {
+  if (!el.audio.src && !el.audio.currentSrc) return;
+  const duration = el.audio.duration || Number.MAX_SAFE_INTEGER;
+  el.audio.currentTime = Math.min(duration, Math.max(0, (el.audio.currentTime || 0) + seconds));
 }
 
 function toggleFavorite() {
@@ -300,6 +344,18 @@ function bind() {
   el.play.addEventListener("click", togglePlay);
   el.prev.addEventListener("click", () => step(-1));
   el.next.addEventListener("click", () => step(1));
+  el.back15.addEventListener("click", () => skip(-15));
+  el.fwd15.addEventListener("click", () => skip(15));
+  el.shuffleBtn.addEventListener("click", () => {
+    state.shuffle = !state.shuffle;
+    el.shuffleBtn.setAttribute("aria-pressed", String(state.shuffle));
+    el.status.textContent = state.shuffle ? "Zufällige Reihenfolge" : "Feste Reihenfolge";
+  });
+  el.favoritesPlay.addEventListener("click", () => {
+    state.playFavorites = !state.playFavorites;
+    el.favoritesPlay.setAttribute("aria-pressed", String(state.playFavorites));
+    el.status.textContent = state.playFavorites ? "Nur Favoriten werden abgespielt" : "Alle Lieder werden abgespielt";
+  });
   el.progress.addEventListener("input", seek);
   el.favorite.addEventListener("click", toggleFavorite);
   el.favoritesToggle.addEventListener("click", () => {
@@ -318,13 +374,6 @@ function bind() {
     state.scale = Math.min(84, state.scale + 4);
     localStorage.setItem(STORAGE.scale, String(state.scale));
     applyScale();
-  });
-  el.lrcInput.addEventListener("change", async () => {
-    const file = el.lrcInput.files?.[0];
-    if (!file) return;
-    state.lyrics = parseLrc(await file.text());
-    renderLyrics(state.lyrics);
-    el.status.textContent = `LRC geladen: ${file.name}`;
   });
   el.audio.addEventListener("timeupdate", updateProgress);
   el.audio.addEventListener("loadedmetadata", updateProgress);

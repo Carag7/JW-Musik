@@ -153,8 +153,28 @@ button { cursor: pointer; }
   color: var(--accent);
   transform: translateX(6px);
 }
-.meta { margin: 6px 0 0; color: var(--accent-2); font-size: 16px; }
-.native-audio { width: min(100%, 720px); margin: 8px 28px 18px; }
+.stage { padding-bottom: 150px; }
+.flyer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 18px calc(12px + var(--safe-bottom));
+  background: rgba(10, 16, 28, 0.96);
+  border-top: 1px solid var(--line);
+  box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.35);
+}
+.flyer-modes, .transport, .timeline { display: flex; align-items: center; gap: 8px; }
+.timeline { flex: 1; min-width: 160px; }
+.flyer .ghost { display: inline-flex; align-items: center; text-decoration: none; }
+@media (max-width: 860px) {
+  .flyer { flex-wrap: wrap; }
+  .timeline { width: 100%; }
+}
 
 .player {
   gap: 16px;
