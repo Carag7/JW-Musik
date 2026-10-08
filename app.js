@@ -110,13 +110,7 @@ function parseLrc(text) {
 }
 
 function lyricUrl(song) {
-  const slug = song.title
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
-  return `https://www.jw.org/en/library/music-songs/sing-out-joyfully/${song.number}-${slug}/`;
+  return song.lyrics || `https://github.com/Carag7/JW-Musik/releases/download/JW-Lyrics/sjj_E_${String(song.number).padStart(2, "0")}.rtf`;
 }
 
 function showLyricLink(song) {
@@ -133,7 +127,7 @@ function showLyricLink(song) {
   p.append(a);
   const note = document.createElement("p");
   note.className = "empty";
-  note.textContent = "Die Zeilen stehen auf der offiziellen Seite. Die Themenliste ist unter Subject verlinkt.";
+  note.textContent = "Die RTF-Datei liegt im Release JW-Lyrics. Zeitstempel kann die App daraus nicht erzeugen.";
   el.lyrics.append(p, note);
 }
 
@@ -154,17 +148,7 @@ async function loadLyrics(song) {
 }
 
 async function resolveAudio(song) {
-  const local = song.audio || "";
-  const remote = song.remote || "";
-  if (local && !/^https?:/i.test(local)) {
-    try {
-      const response = await fetch(local, { method: "HEAD", cache: "no-store" });
-      if (response.ok) return local;
-    } catch {
-      /* lokale Datei fehlt, Release-URL nehmen */
-    }
-  }
-  return remote || local;
+  return song.remote || song.audio || "";
 }
 
 function setAudioSource(url) {
