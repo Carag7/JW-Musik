@@ -135,9 +135,36 @@ async function loadLyrics(song) {
   }
 }
 
+async function resolveAudio(song) {
+  const local = song.audio || "";
+  const remote = song.remote || "";
+  if (local && !/^https?:/i.test(local)) {
+    try {
+      const response = await fetch(local, { method: "HEAD", cache: "no-store" });
+      if (response.ok) return local;
+    } catch {
+      /* lokale Datei fehlt, Release-URL nehmen */
+    }
+  }
+  return remote || local;
+}
+
+function setAudioSource(url) {
+  el.audio.pause();
+  el.audio.removeAttribute("crossorigin");
+  el.audio.removeAttribute("src");
+  el.audio.innerHTML = "";
+  const source = document.createElement("source");
+  source.src = url;
+  source.type = "audio/mpeg";
+  el.audio.append(source);
+  el.audio.load();
+}
+
 async function selectSong(index, autoplay) {
   if (index < 0 || index >= state.songs.length) return;
   state.index = index;
+  state.triedFallback = false;
   const song = state.songs[index];
   el.number.textContent = `Lied ${song.id}`;
   el.title.textContent = song.title;
@@ -146,21 +173,17 @@ async function selectSong(index, autoplay) {
   const fav = state.favorites.has(song.id);
   el.favorite.setAttribute("aria-pressed", String(fav));
   el.favorite.textContent = fav ? "★ Favorit" : "☆ Favorit";
-  el.audio.pause();
-  el.audio.removeAttribute("crossorigin");
-  el.audio.src = song.audio;
-  el.audio.load();
   el.progress.value = "0";
   el.currentTime.textContent = "0:00";
   el.duration.textContent = "0:00";
   el.play.textContent = "▶";
   renderList();
+  const url = await resolveAudio(song);
+  state.currentAudio = url;
+  setAudioSource(url);
   await loadLyrics(song);
   if (autoplay) {
-    const start = () => {
-      el.audio.removeEventListener("canplay", start);
-      togglePlay();
-    };
+    const start = () => togglePlay();
     el.audio.addEventListener("canplay", start, { once: true });
   }
 }
@@ -311,8 +334,18 @@ function bind() {
     step(1);
   });
   el.audio.addEventListener("error", () => {
+    const song = state.songs[state.index];
     const code = el.audio.error ? el.audio.error.code : 0;
-    el.status.textContent = `Audio-Fehler ${code}. Im Tesla den nativen Player unten nutzen oder die Seite neu laden.`;
+    if (song && song.remote && state.currentAudio !== song.remote && !state.triedFallback) {
+      state.triedFallback = true;
+      state.currentAudio = song.remote;
+      el.status.textContent = "Lokale Datei fehlt, Release wird geladen …";
+      setAudioSource(song.remote);
+      return;
+    }
+    el.status.textContent = code === 4
+      ? "Fehler 4: GitHub liefert die MP3 als Download, nicht als Audio. Lege die Datei nach songs/ im Repository."
+      : `Audio-Fehler ${code}.`;
   });
   document.addEventListener("fullscreenchange", () => {
     el.fullscreen.textContent = document.fullscreenElement ? "Beenden" : "Vollbild";

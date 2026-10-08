@@ -2,9 +2,9 @@
 
 Karaoke-Web-App für GitHub Pages, Smartphone, Tablet und den Tesla-Browser.
 
-Die MP3s werden nicht ins Repository kopiert. `songs.json` zeigt auf das vorhandene Release **JW-Vocals / Version1**:
+Die MP3s liegen im Release https://github.com/Carag7/JW-Musik/releases/tag/JW-Vocals. GitHub hängt dort `Content-Type: application/octet-stream` und `Content-Disposition: attachment` an. Chrome spielt das oft trotzdem. Safari, Firefox und der Tesla-Browser melden dann Audio-Fehler 4.
 
-`https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_001.mp3`
+Damit es in jedem Browser läuft, müssen die MP3s im Ordner `songs/` des Repositories liegen. GitHub Pages sendet dann `audio/mpeg`. Die App nimmt zuerst `songs/sjjc_E_001.mp3` und nur sonst die Release-URL.
 
 137 Dateien aus dem Release JW-Vocals / Version1 sind eingetragen. Jeder Eintrag hat Nummer und Titel. Die Titel stammen aus der Liederliste, nicht aus nachgedichteten Namen.
 

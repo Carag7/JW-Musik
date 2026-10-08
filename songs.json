@@ -4,1232 +4,1369 @@
     "number": 1,
     "title": "Jehovah’s Attributes",
     "category": "Jehovah",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_001.mp3",
+    "audio": "songs/sjjc_E_001.mp3",
     "lyrics": "songs/sjjc_E_001.lrc",
-    "file": "sjjc_E_001.mp3"
+    "file": "sjjc_E_001.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_001.mp3"
   },
   {
     "id": "002",
     "number": 2,
     "title": "Jehovah Is Your Name",
     "category": "Jehovah",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_002.mp3",
+    "audio": "songs/sjjc_E_002.mp3",
     "lyrics": "songs/sjjc_E_002.lrc",
-    "file": "sjjc_E_002.mp3"
+    "file": "sjjc_E_002.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_002.mp3"
   },
   {
     "id": "003",
     "number": 3,
     "title": "Our Strength, Our Hope, Our Confidence",
     "category": "Jehovah",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_003.mp3",
+    "audio": "songs/sjjc_E_003.mp3",
     "lyrics": "songs/sjjc_E_003.lrc",
-    "file": "sjjc_E_003.mp3"
+    "file": "sjjc_E_003.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_003.mp3"
   },
   {
     "id": "004",
     "number": 4,
     "title": "“Jehovah Is My Shepherd”",
     "category": "Jehovah",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_004.mp3",
+    "audio": "songs/sjjc_E_004.mp3",
     "lyrics": "songs/sjjc_E_004.lrc",
-    "file": "sjjc_E_004.mp3"
+    "file": "sjjc_E_004.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_004.mp3"
   },
   {
     "id": "005",
     "number": 5,
     "title": "God’s Wondrous Works",
     "category": "Jehovah",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_005.mp3",
+    "audio": "songs/sjjc_E_005.mp3",
     "lyrics": "songs/sjjc_E_005.lrc",
-    "file": "sjjc_E_005.mp3"
+    "file": "sjjc_E_005.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_005.mp3"
   },
   {
     "id": "006",
     "number": 6,
     "title": "The Heavens Declare God’s Glory",
     "category": "Jehovah",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_006.mp3",
+    "audio": "songs/sjjc_E_006.mp3",
     "lyrics": "songs/sjjc_E_006.lrc",
-    "file": "sjjc_E_006.mp3"
+    "file": "sjjc_E_006.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_006.mp3"
   },
   {
     "id": "007",
     "number": 7,
     "title": "Jehovah, Our Strength",
     "category": "Jehovah",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_007.mp3",
+    "audio": "songs/sjjc_E_007.mp3",
     "lyrics": "songs/sjjc_E_007.lrc",
-    "file": "sjjc_E_007.mp3"
+    "file": "sjjc_E_007.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_007.mp3"
   },
   {
     "id": "008",
     "number": 8,
     "title": "Jehovah Is Our Refuge",
     "category": "Jehovah",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_008.mp3",
+    "audio": "songs/sjjc_E_008.mp3",
     "lyrics": "songs/sjjc_E_008.lrc",
-    "file": "sjjc_E_008.mp3"
+    "file": "sjjc_E_008.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_008.mp3"
   },
   {
     "id": "009",
     "number": 9,
     "title": "Jehovah Is Our King!",
     "category": "Jehovah",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_009.mp3",
+    "audio": "songs/sjjc_E_009.mp3",
     "lyrics": "songs/sjjc_E_009.lrc",
-    "file": "sjjc_E_009.mp3"
+    "file": "sjjc_E_009.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_009.mp3"
   },
   {
     "id": "011",
     "number": 11,
     "title": "Creation Praises God",
     "category": "Jehovah",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_011.mp3",
+    "audio": "songs/sjjc_E_011.mp3",
     "lyrics": "songs/sjjc_E_011.lrc",
-    "file": "sjjc_E_011.mp3"
+    "file": "sjjc_E_011.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_011.mp3"
   },
   {
     "id": "012",
     "number": 12,
     "title": "Great God, Jehovah",
     "category": "Jehovah",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_012.mp3",
+    "audio": "songs/sjjc_E_012.mp3",
     "lyrics": "songs/sjjc_E_012.lrc",
-    "file": "sjjc_E_012.mp3"
+    "file": "sjjc_E_012.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_012.mp3"
   },
   {
     "id": "013",
     "number": 13,
     "title": "Christ, Our Model",
     "category": "Jesus / Ransom",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_013.mp3",
+    "audio": "songs/sjjc_E_013.mp3",
     "lyrics": "songs/sjjc_E_013.lrc",
-    "file": "sjjc_E_013.mp3"
+    "file": "sjjc_E_013.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_013.mp3"
   },
   {
     "id": "014",
     "number": 14,
     "title": "Praising Earth’s New King",
     "category": "Jesus / Ransom",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_014.mp3",
+    "audio": "songs/sjjc_E_014.mp3",
     "lyrics": "songs/sjjc_E_014.lrc",
-    "file": "sjjc_E_014.mp3"
+    "file": "sjjc_E_014.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_014.mp3"
   },
   {
     "id": "015",
     "number": 15,
     "title": "Praise Jehovah’s Firstborn!",
     "category": "Jesus / Ransom",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_015.mp3",
+    "audio": "songs/sjjc_E_015.mp3",
     "lyrics": "songs/sjjc_E_015.lrc",
-    "file": "sjjc_E_015.mp3"
+    "file": "sjjc_E_015.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_015.mp3"
   },
   {
     "id": "016",
     "number": 16,
     "title": "Praise Jah for His Son, the Anointed",
     "category": "Jesus / Ransom",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_016.mp3",
+    "audio": "songs/sjjc_E_016.mp3",
     "lyrics": "songs/sjjc_E_016.lrc",
-    "file": "sjjc_E_016.mp3"
+    "file": "sjjc_E_016.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_016.mp3"
   },
   {
     "id": "017",
     "number": 17,
     "title": "“I Want To”",
     "category": "Jesus / Ransom",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_017.mp3",
+    "audio": "songs/sjjc_E_017.mp3",
     "lyrics": "songs/sjjc_E_017.lrc",
-    "file": "sjjc_E_017.mp3"
+    "file": "sjjc_E_017.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_017.mp3"
   },
   {
     "id": "018",
     "number": 18,
     "title": "Grateful for the Ransom",
     "category": "Jesus / Ransom",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_018.mp3",
+    "audio": "songs/sjjc_E_018.mp3",
     "lyrics": "songs/sjjc_E_018.lrc",
-    "file": "sjjc_E_018.mp3"
+    "file": "sjjc_E_018.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_018.mp3"
   },
   {
     "id": "019",
     "number": 19,
     "title": "The Lord’s Evening Meal",
     "category": "Jesus / Ransom",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_019.mp3",
+    "audio": "songs/sjjc_E_019.mp3",
     "lyrics": "songs/sjjc_E_019.lrc",
-    "file": "sjjc_E_019.mp3"
+    "file": "sjjc_E_019.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_019.mp3"
   },
   {
     "id": "020",
     "number": 20,
     "title": "You Gave Your Precious Son",
     "category": "Jesus / Ransom",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_020.mp3",
+    "audio": "songs/sjjc_E_020.mp3",
     "lyrics": "songs/sjjc_E_020.lrc",
-    "file": "sjjc_E_020.mp3"
+    "file": "sjjc_E_020.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_020.mp3"
   },
   {
     "id": "021",
     "number": 21,
     "title": "Keep On Seeking First the Kingdom",
     "category": "Kingdom",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_021.mp3",
+    "audio": "songs/sjjc_E_021.mp3",
     "lyrics": "songs/sjjc_E_021.lrc",
-    "file": "sjjc_E_021.mp3"
+    "file": "sjjc_E_021.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_021.mp3"
   },
   {
     "id": "022",
     "number": 22,
     "title": "The Kingdom Is in Place —Let It Come!",
     "category": "Kingdom",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_022.mp3",
+    "audio": "songs/sjjc_E_022.mp3",
     "lyrics": "songs/sjjc_E_022.lrc",
-    "file": "sjjc_E_022.mp3"
+    "file": "sjjc_E_022.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_022.mp3"
   },
   {
     "id": "023",
     "number": 23,
     "title": "Jehovah Begins His Rule",
     "category": "Kingdom",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_023.mp3",
+    "audio": "songs/sjjc_E_023.mp3",
     "lyrics": "songs/sjjc_E_023.lrc",
-    "file": "sjjc_E_023.mp3"
+    "file": "sjjc_E_023.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_023.mp3"
   },
   {
     "id": "024",
     "number": 24,
     "title": "Come to Jehovah’s Mountain",
     "category": "Kingdom",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_024.mp3",
+    "audio": "songs/sjjc_E_024.mp3",
     "lyrics": "songs/sjjc_E_024.lrc",
-    "file": "sjjc_E_024.mp3"
+    "file": "sjjc_E_024.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_024.mp3"
   },
   {
     "id": "025",
     "number": 25,
     "title": "A Special Possession",
     "category": "Anointed",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_025.mp3",
+    "audio": "songs/sjjc_E_025.mp3",
     "lyrics": "songs/sjjc_E_025.lrc",
-    "file": "sjjc_E_025.mp3"
+    "file": "sjjc_E_025.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_025.mp3"
   },
   {
     "id": "026",
     "number": 26,
     "title": "You Did It for Me",
     "category": "Anointed",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_026.mp3",
+    "audio": "songs/sjjc_E_026.mp3",
     "lyrics": "songs/sjjc_E_026.lrc",
-    "file": "sjjc_E_026.mp3"
+    "file": "sjjc_E_026.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_026.mp3"
   },
   {
     "id": "027",
     "number": 27,
     "title": "The Revealing of God’s Sons",
     "category": "Anointed",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_027.mp3",
+    "audio": "songs/sjjc_E_027.mp3",
     "lyrics": "songs/sjjc_E_027.lrc",
-    "file": "sjjc_E_027.mp3"
+    "file": "sjjc_E_027.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_027.mp3"
   },
   {
     "id": "028",
     "number": 28,
     "title": "Gaining Jehovah’s Friendship",
     "category": "Relationship",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_028.mp3",
+    "audio": "songs/sjjc_E_028.mp3",
     "lyrics": "songs/sjjc_E_028.lrc",
-    "file": "sjjc_E_028.mp3"
+    "file": "sjjc_E_028.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_028.mp3"
   },
   {
     "id": "029",
     "number": 29,
     "title": "Living Up to Our Name",
     "category": "Relationship",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_029.mp3",
+    "audio": "songs/sjjc_E_029.mp3",
     "lyrics": "songs/sjjc_E_029.lrc",
-    "file": "sjjc_E_029.mp3"
+    "file": "sjjc_E_029.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_029.mp3"
   },
   {
     "id": "030",
     "number": 30,
     "title": "My Father, My God and Friend",
     "category": "Relationship",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_030.mp3",
+    "audio": "songs/sjjc_E_030.mp3",
     "lyrics": "songs/sjjc_E_030.lrc",
-    "file": "sjjc_E_030.mp3"
+    "file": "sjjc_E_030.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_030.mp3"
   },
   {
     "id": "033",
     "number": 33,
     "title": "Throw Your Burden on Jehovah",
     "category": "Relationship",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_033.mp3",
+    "audio": "songs/sjjc_E_033.mp3",
     "lyrics": "songs/sjjc_E_033.lrc",
-    "file": "sjjc_E_033.mp3"
+    "file": "sjjc_E_033.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_033.mp3"
   },
   {
     "id": "034",
     "number": 34,
     "title": "Walking in Integrity",
     "category": "Relationship",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_034.mp3",
+    "audio": "songs/sjjc_E_034.mp3",
     "lyrics": "songs/sjjc_E_034.lrc",
-    "file": "sjjc_E_034.mp3"
+    "file": "sjjc_E_034.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_034.mp3"
   },
   {
     "id": "035",
     "number": 35,
     "title": "“Make Sure of the More Important Things”",
     "category": "Relationship",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_035.mp3",
+    "audio": "songs/sjjc_E_035.mp3",
     "lyrics": "songs/sjjc_E_035.lrc",
-    "file": "sjjc_E_035.mp3"
+    "file": "sjjc_E_035.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_035.mp3"
   },
   {
     "id": "037",
     "number": 37,
     "title": "Serving Jehovah Whole-Souled",
     "category": "Relationship",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_037.mp3",
+    "audio": "songs/sjjc_E_037.mp3",
     "lyrics": "songs/sjjc_E_037.lrc",
-    "file": "sjjc_E_037.mp3"
+    "file": "sjjc_E_037.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_037.mp3"
   },
   {
     "id": "038",
     "number": 38,
     "title": "He Will Make You Strong",
     "category": "Relationship",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_038.mp3",
+    "audio": "songs/sjjc_E_038.mp3",
     "lyrics": "songs/sjjc_E_038.lrc",
-    "file": "sjjc_E_038.mp3"
+    "file": "sjjc_E_038.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_038.mp3"
   },
   {
     "id": "039",
     "number": 39,
     "title": "Make a Good Name With God",
     "category": "Relationship",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_039.mp3",
+    "audio": "songs/sjjc_E_039.mp3",
     "lyrics": "songs/sjjc_E_039.lrc",
-    "file": "sjjc_E_039.mp3"
+    "file": "sjjc_E_039.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_039.mp3"
   },
   {
     "id": "040",
     "number": 40,
     "title": "To Whom Do We Belong?",
     "category": "Relationship",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_040.mp3",
+    "audio": "songs/sjjc_E_040.mp3",
     "lyrics": "songs/sjjc_E_040.lrc",
-    "file": "sjjc_E_040.mp3"
+    "file": "sjjc_E_040.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_040.mp3"
   },
   {
     "id": "041",
     "number": 41,
     "title": "Please Hear My Prayer",
     "category": "Prayer",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_041.mp3",
+    "audio": "songs/sjjc_E_041.mp3",
     "lyrics": "songs/sjjc_E_041.lrc",
-    "file": "sjjc_E_041.mp3"
+    "file": "sjjc_E_041.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_041.mp3"
   },
   {
     "id": "043",
     "number": 43,
     "title": "A Prayer of Thanks",
     "category": "Prayer",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_043.mp3",
+    "audio": "songs/sjjc_E_043.mp3",
     "lyrics": "songs/sjjc_E_043.lrc",
-    "file": "sjjc_E_043.mp3"
+    "file": "sjjc_E_043.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_043.mp3"
   },
   {
     "id": "044",
     "number": 44,
     "title": "A Prayer of the Lowly One",
     "category": "Prayer",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_044.mp3",
+    "audio": "songs/sjjc_E_044.mp3",
     "lyrics": "songs/sjjc_E_044.lrc",
-    "file": "sjjc_E_044.mp3"
+    "file": "sjjc_E_044.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_044.mp3"
   },
   {
     "id": "045",
     "number": 45,
     "title": "The Meditation of My Heart",
     "category": "Prayer",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_045.mp3",
+    "audio": "songs/sjjc_E_045.mp3",
     "lyrics": "songs/sjjc_E_045.lrc",
-    "file": "sjjc_E_045.mp3"
+    "file": "sjjc_E_045.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_045.mp3"
   },
   {
     "id": "046",
     "number": 46,
     "title": "We Thank You, Jehovah",
     "category": "Prayer",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_046.mp3",
+    "audio": "songs/sjjc_E_046.mp3",
     "lyrics": "songs/sjjc_E_046.lrc",
-    "file": "sjjc_E_046.mp3"
+    "file": "sjjc_E_046.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_046.mp3"
   },
   {
     "id": "047",
     "number": 47,
     "title": "Pray to Jehovah Each Day",
     "category": "Prayer",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_047.mp3",
+    "audio": "songs/sjjc_E_047.mp3",
     "lyrics": "songs/sjjc_E_047.lrc",
-    "file": "sjjc_E_047.mp3"
+    "file": "sjjc_E_047.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_047.mp3"
   },
   {
     "id": "048",
     "number": 48,
     "title": "Daily Walking With Jehovah",
     "category": "Dedication",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_048.mp3",
+    "audio": "songs/sjjc_E_048.mp3",
     "lyrics": "songs/sjjc_E_048.lrc",
-    "file": "sjjc_E_048.mp3"
+    "file": "sjjc_E_048.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_048.mp3"
   },
   {
     "id": "050",
     "number": 50,
     "title": "My Prayer of Dedication",
     "category": "Dedication",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_050.mp3",
+    "audio": "songs/sjjc_E_050.mp3",
     "lyrics": "songs/sjjc_E_050.lrc",
-    "file": "sjjc_E_050.mp3"
+    "file": "sjjc_E_050.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_050.mp3"
   },
   {
     "id": "051",
     "number": 51,
     "title": "To God We Are Dedicated!",
     "category": "Dedication",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_051.mp3",
+    "audio": "songs/sjjc_E_051.mp3",
     "lyrics": "songs/sjjc_E_051.lrc",
-    "file": "sjjc_E_051.mp3"
+    "file": "sjjc_E_051.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_051.mp3"
   },
   {
     "id": "052",
     "number": 52,
     "title": "Christian Dedication",
     "category": "Dedication",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_052.mp3",
+    "audio": "songs/sjjc_E_052.mp3",
     "lyrics": "songs/sjjc_E_052.lrc",
-    "file": "sjjc_E_052.mp3"
+    "file": "sjjc_E_052.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_052.mp3"
   },
   {
     "id": "054",
     "number": 54,
     "title": "“This Is the Way”",
     "category": "Ministry",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_054.mp3",
+    "audio": "songs/sjjc_E_054.mp3",
     "lyrics": "songs/sjjc_E_054.lrc",
-    "file": "sjjc_E_054.mp3"
+    "file": "sjjc_E_054.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_054.mp3"
   },
   {
     "id": "055",
     "number": 55,
     "title": "Fear Them Not!",
     "category": "Ministry",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_055.mp3",
+    "audio": "songs/sjjc_E_055.mp3",
     "lyrics": "songs/sjjc_E_055.lrc",
-    "file": "sjjc_E_055.mp3"
+    "file": "sjjc_E_055.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_055.mp3"
   },
   {
     "id": "056",
     "number": 56,
     "title": "Make the Truth Your Own",
     "category": "Ministry",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_056.mp3",
+    "audio": "songs/sjjc_E_056.mp3",
     "lyrics": "songs/sjjc_E_056.lrc",
-    "file": "sjjc_E_056.mp3"
+    "file": "sjjc_E_056.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_056.mp3"
   },
   {
     "id": "057",
     "number": 57,
     "title": "Preaching to All Sorts of People",
     "category": "Ministry",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_057.mp3",
+    "audio": "songs/sjjc_E_057.mp3",
     "lyrics": "songs/sjjc_E_057.lrc",
-    "file": "sjjc_E_057.mp3"
+    "file": "sjjc_E_057.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_057.mp3"
   },
   {
     "id": "060",
     "number": 60,
     "title": "It Means Their Life",
     "category": "Ministry",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_060.mp3",
+    "audio": "songs/sjjc_E_060.mp3",
     "lyrics": "songs/sjjc_E_060.lrc",
-    "file": "sjjc_E_060.mp3"
+    "file": "sjjc_E_060.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_060.mp3"
   },
   {
     "id": "061",
     "number": 61,
     "title": "Forward, You Witnesses!",
     "category": "Ministry",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_061.mp3",
+    "audio": "songs/sjjc_E_061.mp3",
     "lyrics": "songs/sjjc_E_061.lrc",
-    "file": "sjjc_E_061.mp3"
+    "file": "sjjc_E_061.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_061.mp3"
   },
   {
     "id": "062",
     "number": 62,
     "title": "The New Song",
     "category": "Ministry",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_062.mp3",
+    "audio": "songs/sjjc_E_062.mp3",
     "lyrics": "songs/sjjc_E_062.lrc",
-    "file": "sjjc_E_062.mp3"
+    "file": "sjjc_E_062.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_062.mp3"
   },
   {
     "id": "063",
     "number": 63,
     "title": "We’re Jehovah’s Witnesses!",
     "category": "Ministry",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_063.mp3",
+    "audio": "songs/sjjc_E_063.mp3",
     "lyrics": "songs/sjjc_E_063.lrc",
-    "file": "sjjc_E_063.mp3"
+    "file": "sjjc_E_063.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_063.mp3"
   },
   {
     "id": "064",
     "number": 64,
     "title": "Sharing Joyfully in the Harvest",
     "category": "Ministry",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_064.mp3",
+    "audio": "songs/sjjc_E_064.mp3",
     "lyrics": "songs/sjjc_E_064.lrc",
-    "file": "sjjc_E_064.mp3"
+    "file": "sjjc_E_064.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_064.mp3"
   },
   {
     "id": "067",
     "number": 67,
     "title": "“Preach the Word”",
     "category": "Ministry",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_067.mp3",
+    "audio": "songs/sjjc_E_067.mp3",
     "lyrics": "songs/sjjc_E_067.lrc",
-    "file": "sjjc_E_067.mp3"
+    "file": "sjjc_E_067.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_067.mp3"
   },
   {
     "id": "068",
     "number": 68,
     "title": "Sowing Kingdom Seed",
     "category": "Ministry",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_068.mp3",
+    "audio": "songs/sjjc_E_068.mp3",
     "lyrics": "songs/sjjc_E_068.lrc",
-    "file": "sjjc_E_068.mp3"
+    "file": "sjjc_E_068.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_068.mp3"
   },
   {
     "id": "070",
     "number": 70,
     "title": "Search Out Deserving Ones",
     "category": "Ministry",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_070.mp3",
+    "audio": "songs/sjjc_E_070.mp3",
     "lyrics": "songs/sjjc_E_070.lrc",
-    "file": "sjjc_E_070.mp3"
+    "file": "sjjc_E_070.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_070.mp3"
   },
   {
     "id": "071",
     "number": 71,
     "title": "We Are Jehovah’s Army!",
     "category": "Ministry",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_071.mp3",
+    "audio": "songs/sjjc_E_071.mp3",
     "lyrics": "songs/sjjc_E_071.lrc",
-    "file": "sjjc_E_071.mp3"
+    "file": "sjjc_E_071.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_071.mp3"
   },
   {
     "id": "072",
     "number": 72,
     "title": "Making Known the Kingdom Truth",
     "category": "Ministry",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_072.mp3",
+    "audio": "songs/sjjc_E_072.mp3",
     "lyrics": "songs/sjjc_E_072.lrc",
-    "file": "sjjc_E_072.mp3"
+    "file": "sjjc_E_072.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_072.mp3"
   },
   {
     "id": "074",
     "number": 74,
     "title": "Join in the Kingdom Song!",
     "category": "Ministry",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_074.mp3",
+    "audio": "songs/sjjc_E_074.mp3",
     "lyrics": "songs/sjjc_E_074.lrc",
-    "file": "sjjc_E_074.mp3"
+    "file": "sjjc_E_074.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_074.mp3"
   },
   {
     "id": "076",
     "number": 76,
     "title": "How Does It Make You Feel?",
     "category": "Ministry",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_076.mp3",
+    "audio": "songs/sjjc_E_076.mp3",
     "lyrics": "songs/sjjc_E_076.lrc",
-    "file": "sjjc_E_076.mp3"
+    "file": "sjjc_E_076.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_076.mp3"
   },
   {
     "id": "078",
     "number": 78,
     "title": "“Teaching the Word of God”",
     "category": "Ministry",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_078.mp3",
+    "audio": "songs/sjjc_E_078.mp3",
     "lyrics": "songs/sjjc_E_078.lrc",
-    "file": "sjjc_E_078.mp3"
+    "file": "sjjc_E_078.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_078.mp3"
   },
   {
     "id": "081",
     "number": 81,
     "title": "The Life of a Pioneer",
     "category": "Ministry",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_081.mp3",
+    "audio": "songs/sjjc_E_081.mp3",
     "lyrics": "songs/sjjc_E_081.lrc",
-    "file": "sjjc_E_081.mp3"
+    "file": "sjjc_E_081.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_081.mp3"
   },
   {
     "id": "082",
     "number": 82,
     "title": "“Let Your Light Shine”",
     "category": "Ministry",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_082.mp3",
+    "audio": "songs/sjjc_E_082.mp3",
     "lyrics": "songs/sjjc_E_082.lrc",
-    "file": "sjjc_E_082.mp3"
+    "file": "sjjc_E_082.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_082.mp3"
   },
   {
     "id": "083",
     "number": 83,
     "title": "“From House to House”",
     "category": "Ministry",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_083.mp3",
+    "audio": "songs/sjjc_E_083.mp3",
     "lyrics": "songs/sjjc_E_083.lrc",
-    "file": "sjjc_E_083.mp3"
+    "file": "sjjc_E_083.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_083.mp3"
   },
   {
     "id": "084",
     "number": 84,
     "title": "Reaching Out",
     "category": "Ministry",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_084.mp3",
+    "audio": "songs/sjjc_E_084.mp3",
     "lyrics": "songs/sjjc_E_084.lrc",
-    "file": "sjjc_E_084.mp3"
+    "file": "sjjc_E_084.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_084.mp3"
   },
   {
     "id": "085",
     "number": 85,
     "title": "Welcome One Another",
     "category": "Meeting",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_085.mp3",
+    "audio": "songs/sjjc_E_085.mp3",
     "lyrics": "songs/sjjc_E_085.lrc",
-    "file": "sjjc_E_085.mp3"
+    "file": "sjjc_E_085.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_085.mp3"
   },
   {
     "id": "086",
     "number": 86,
     "title": "We Must Be Taught",
     "category": "Meeting",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_086.mp3",
+    "audio": "songs/sjjc_E_086.mp3",
     "lyrics": "songs/sjjc_E_086.lrc",
-    "file": "sjjc_E_086.mp3"
+    "file": "sjjc_E_086.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_086.mp3"
   },
   {
     "id": "087",
     "number": 87,
     "title": "Come! Be Refreshed",
     "category": "Meeting",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_087.mp3",
+    "audio": "songs/sjjc_E_087.mp3",
     "lyrics": "songs/sjjc_E_087.lrc",
-    "file": "sjjc_E_087.mp3"
+    "file": "sjjc_E_087.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_087.mp3"
   },
   {
     "id": "088",
     "number": 88,
     "title": "Make Me Know Your Ways",
     "category": "Meeting",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_088.mp3",
+    "audio": "songs/sjjc_E_088.mp3",
     "lyrics": "songs/sjjc_E_088.lrc",
-    "file": "sjjc_E_088.mp3"
+    "file": "sjjc_E_088.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_088.mp3"
   },
   {
     "id": "089",
     "number": 89,
     "title": "Listen, Obey, and Be Blessed",
     "category": "Meeting",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_089.mp3",
+    "audio": "songs/sjjc_E_089.mp3",
     "lyrics": "songs/sjjc_E_089.lrc",
-    "file": "sjjc_E_089.mp3"
+    "file": "sjjc_E_089.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_089.mp3"
   },
   {
     "id": "090",
     "number": 90,
     "title": "Encourage One Another",
     "category": "Meeting",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_090.mp3",
+    "audio": "songs/sjjc_E_090.mp3",
     "lyrics": "songs/sjjc_E_090.lrc",
-    "file": "sjjc_E_090.mp3"
+    "file": "sjjc_E_090.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_090.mp3"
   },
   {
     "id": "091",
     "number": 91,
     "title": "Our Labor of Love",
     "category": "Meeting",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_091.mp3",
+    "audio": "songs/sjjc_E_091.mp3",
     "lyrics": "songs/sjjc_E_091.lrc",
-    "file": "sjjc_E_091.mp3"
+    "file": "sjjc_E_091.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_091.mp3"
   },
   {
     "id": "092",
     "number": 92,
     "title": "A Place Bearing Your Name",
     "category": "Meeting",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_092.mp3",
+    "audio": "songs/sjjc_E_092.mp3",
     "lyrics": "songs/sjjc_E_092.lrc",
-    "file": "sjjc_E_092.mp3"
+    "file": "sjjc_E_092.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_092.mp3"
   },
   {
     "id": "093",
     "number": 93,
     "title": "Bless Our Meeting Together",
     "category": "Meeting",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_093.mp3",
+    "audio": "songs/sjjc_E_093.mp3",
     "lyrics": "songs/sjjc_E_093.lrc",
-    "file": "sjjc_E_093.mp3"
+    "file": "sjjc_E_093.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_093.mp3"
   },
   {
     "id": "095",
     "number": 95,
     "title": "The Light Gets Brighter",
     "category": "Scriptures",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_095.mp3",
+    "audio": "songs/sjjc_E_095.mp3",
     "lyrics": "songs/sjjc_E_095.lrc",
-    "file": "sjjc_E_095.mp3"
+    "file": "sjjc_E_095.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_095.mp3"
   },
   {
     "id": "096",
     "number": 96,
     "title": "God’s Own Book—A Treasure",
     "category": "Scriptures",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_096.mp3",
+    "audio": "songs/sjjc_E_096.mp3",
     "lyrics": "songs/sjjc_E_096.lrc",
-    "file": "sjjc_E_096.mp3"
+    "file": "sjjc_E_096.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_096.mp3"
   },
   {
     "id": "097",
     "number": 97,
     "title": "Life Depends on God’s Word",
     "category": "Scriptures",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_097.mp3",
+    "audio": "songs/sjjc_E_097.mp3",
     "lyrics": "songs/sjjc_E_097.lrc",
-    "file": "sjjc_E_097.mp3"
+    "file": "sjjc_E_097.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_097.mp3"
   },
   {
     "id": "098",
     "number": 98,
     "title": "The Scriptures—Inspired of God",
     "category": "Scriptures",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_098.mp3",
+    "audio": "songs/sjjc_E_098.mp3",
     "lyrics": "songs/sjjc_E_098.lrc",
-    "file": "sjjc_E_098.mp3"
+    "file": "sjjc_E_098.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_098.mp3"
   },
   {
     "id": "102",
     "number": 102,
     "title": "“Assist Those Who Are Weak”",
     "category": "Brotherhood",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_102.mp3",
+    "audio": "songs/sjjc_E_102.mp3",
     "lyrics": "songs/sjjc_E_102.lrc",
-    "file": "sjjc_E_102.mp3"
+    "file": "sjjc_E_102.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_102.mp3"
   },
   {
     "id": "103",
     "number": 103,
     "title": "Shepherds—Gifts in Men",
     "category": "Brotherhood",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_103.mp3",
+    "audio": "songs/sjjc_E_103.mp3",
     "lyrics": "songs/sjjc_E_103.lrc",
-    "file": "sjjc_E_103.mp3"
+    "file": "sjjc_E_103.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_103.mp3"
   },
   {
     "id": "105",
     "number": 105,
     "title": "“God Is Love”",
     "category": "Qualities",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_105.mp3",
+    "audio": "songs/sjjc_E_105.mp3",
     "lyrics": "songs/sjjc_E_105.lrc",
-    "file": "sjjc_E_105.mp3"
+    "file": "sjjc_E_105.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_105.mp3"
   },
   {
     "id": "107",
     "number": 107,
     "title": "The Divine Pattern of Love",
     "category": "Qualities",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_107.mp3",
+    "audio": "songs/sjjc_E_107.mp3",
     "lyrics": "songs/sjjc_E_107.lrc",
-    "file": "sjjc_E_107.mp3"
+    "file": "sjjc_E_107.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_107.mp3"
   },
   {
     "id": "108",
     "number": 108,
     "title": "God’s Loyal Love",
     "category": "Qualities",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_108.mp3",
+    "audio": "songs/sjjc_E_108.mp3",
     "lyrics": "songs/sjjc_E_108.lrc",
-    "file": "sjjc_E_108.mp3"
+    "file": "sjjc_E_108.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_108.mp3"
   },
   {
     "id": "109",
     "number": 109,
     "title": "Love Intensely From the Heart",
     "category": "Qualities",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_109.mp3",
+    "audio": "songs/sjjc_E_109.mp3",
     "lyrics": "songs/sjjc_E_109.lrc",
-    "file": "sjjc_E_109.mp3"
+    "file": "sjjc_E_109.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_109.mp3"
   },
   {
     "id": "110",
     "number": 110,
     "title": "“The Joy of Jehovah”",
     "category": "Qualities",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_110.mp3",
+    "audio": "songs/sjjc_E_110.mp3",
     "lyrics": "songs/sjjc_E_110.lrc",
-    "file": "sjjc_E_110.mp3"
+    "file": "sjjc_E_110.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_110.mp3"
   },
   {
     "id": "111",
     "number": 111,
     "title": "Our Reasons for Joy",
     "category": "Qualities",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_111.mp3",
+    "audio": "songs/sjjc_E_111.mp3",
     "lyrics": "songs/sjjc_E_111.lrc",
-    "file": "sjjc_E_111.mp3"
+    "file": "sjjc_E_111.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_111.mp3"
   },
   {
     "id": "112",
     "number": 112,
     "title": "Jehovah, God of Peace",
     "category": "Qualities",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_112.mp3",
+    "audio": "songs/sjjc_E_112.mp3",
     "lyrics": "songs/sjjc_E_112.lrc",
-    "file": "sjjc_E_112.mp3"
+    "file": "sjjc_E_112.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_112.mp3"
   },
   {
     "id": "113",
     "number": 113,
     "title": "Our Possession of Peace",
     "category": "Qualities",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_113.mp3",
+    "audio": "songs/sjjc_E_113.mp3",
     "lyrics": "songs/sjjc_E_113.lrc",
-    "file": "sjjc_E_113.mp3"
+    "file": "sjjc_E_113.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_113.mp3"
   },
   {
     "id": "114",
     "number": 114,
     "title": "“Exercise Patience”",
     "category": "Qualities",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_114.mp3",
+    "audio": "songs/sjjc_E_114.mp3",
     "lyrics": "songs/sjjc_E_114.lrc",
-    "file": "sjjc_E_114.mp3"
+    "file": "sjjc_E_114.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_114.mp3"
   },
   {
     "id": "115",
     "number": 115,
     "title": "Gratitude for Divine Patience",
     "category": "Qualities",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_115.mp3",
+    "audio": "songs/sjjc_E_115.mp3",
     "lyrics": "songs/sjjc_E_115.lrc",
-    "file": "sjjc_E_115.mp3"
+    "file": "sjjc_E_115.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_115.mp3"
   },
   {
     "id": "116",
     "number": 116,
     "title": "The Power of Kindness",
     "category": "Qualities",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_116.mp3",
+    "audio": "songs/sjjc_E_116.mp3",
     "lyrics": "songs/sjjc_E_116.lrc",
-    "file": "sjjc_E_116.mp3"
+    "file": "sjjc_E_116.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_116.mp3"
   },
   {
     "id": "117",
     "number": 117,
     "title": "The Quality of Goodness",
     "category": "Qualities",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_117.mp3",
+    "audio": "songs/sjjc_E_117.mp3",
     "lyrics": "songs/sjjc_E_117.lrc",
-    "file": "sjjc_E_117.mp3"
+    "file": "sjjc_E_117.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_117.mp3"
   },
   {
     "id": "118",
     "number": 118,
     "title": "“Give Us More Faith”",
     "category": "Qualities",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_118.mp3",
+    "audio": "songs/sjjc_E_118.mp3",
     "lyrics": "songs/sjjc_E_118.lrc",
-    "file": "sjjc_E_118.mp3"
+    "file": "sjjc_E_118.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_118.mp3"
   },
   {
     "id": "119",
     "number": 119,
     "title": "We Must Have Faith",
     "category": "Qualities",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_119.mp3",
+    "audio": "songs/sjjc_E_119.mp3",
     "lyrics": "songs/sjjc_E_119.lrc",
-    "file": "sjjc_E_119.mp3"
+    "file": "sjjc_E_119.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_119.mp3"
   },
   {
     "id": "120",
     "number": 120,
     "title": "Imitate Christ’s Mildness",
     "category": "Qualities",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_120.mp3",
+    "audio": "songs/sjjc_E_120.mp3",
     "lyrics": "songs/sjjc_E_120.lrc",
-    "file": "sjjc_E_120.mp3"
+    "file": "sjjc_E_120.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_120.mp3"
   },
   {
     "id": "121",
     "number": 121,
     "title": "We Need Self-Control",
     "category": "Qualities",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_121.mp3",
+    "audio": "songs/sjjc_E_121.mp3",
     "lyrics": "songs/sjjc_E_121.lrc",
-    "file": "sjjc_E_121.mp3"
+    "file": "sjjc_E_121.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_121.mp3"
   },
   {
     "id": "122",
     "number": 122,
     "title": "Be Steadfast, Immovable!",
     "category": "Qualities",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_122.mp3",
+    "audio": "songs/sjjc_E_122.mp3",
     "lyrics": "songs/sjjc_E_122.lrc",
-    "file": "sjjc_E_122.mp3"
+    "file": "sjjc_E_122.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_122.mp3"
   },
   {
     "id": "123",
     "number": 123,
     "title": "Loyally Submitting to Theocratic Order",
     "category": "Qualities",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_123.mp3",
+    "audio": "songs/sjjc_E_123.mp3",
     "lyrics": "songs/sjjc_E_123.lrc",
-    "file": "sjjc_E_123.mp3"
+    "file": "sjjc_E_123.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_123.mp3"
   },
   {
     "id": "124",
     "number": 124,
     "title": "Ever Loyal",
     "category": "Qualities",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_124.mp3",
+    "audio": "songs/sjjc_E_124.mp3",
     "lyrics": "songs/sjjc_E_124.lrc",
-    "file": "sjjc_E_124.mp3"
+    "file": "sjjc_E_124.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_124.mp3"
   },
   {
     "id": "125",
     "number": 125,
     "title": "“Happy Are the Merciful!”",
     "category": "Qualities",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_125.mp3",
+    "audio": "songs/sjjc_E_125.mp3",
     "lyrics": "songs/sjjc_E_125.lrc",
-    "file": "sjjc_E_125.mp3"
+    "file": "sjjc_E_125.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_125.mp3"
   },
   {
     "id": "126",
     "number": 126,
     "title": "Stay Awake, Stand Firm, Grow Mighty",
     "category": "Qualities",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_126.mp3",
+    "audio": "songs/sjjc_E_126.mp3",
     "lyrics": "songs/sjjc_E_126.lrc",
-    "file": "sjjc_E_126.mp3"
+    "file": "sjjc_E_126.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_126.mp3"
   },
   {
     "id": "128",
     "number": 128,
     "title": "Enduring to the End",
     "category": "Qualities",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_128.mp3",
+    "audio": "songs/sjjc_E_128.mp3",
     "lyrics": "songs/sjjc_E_128.lrc",
-    "file": "sjjc_E_128.mp3"
+    "file": "sjjc_E_128.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_128.mp3"
   },
   {
     "id": "129",
     "number": 129,
     "title": "We Will Keep Enduring",
     "category": "Qualities",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_129.mp3",
+    "audio": "songs/sjjc_E_129.mp3",
     "lyrics": "songs/sjjc_E_129.lrc",
-    "file": "sjjc_E_129.mp3"
+    "file": "sjjc_E_129.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_129.mp3"
   },
   {
     "id": "130",
     "number": 130,
     "title": "Be Forgiving",
     "category": "Qualities",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_130.mp3",
+    "audio": "songs/sjjc_E_130.mp3",
     "lyrics": "songs/sjjc_E_130.lrc",
-    "file": "sjjc_E_130.mp3"
+    "file": "sjjc_E_130.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_130.mp3"
   },
   {
     "id": "131",
     "number": 131,
     "title": "“What God Has Yoked Together”",
     "category": "Family",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_131.mp3",
+    "audio": "songs/sjjc_E_131.mp3",
     "lyrics": "songs/sjjc_E_131.lrc",
-    "file": "sjjc_E_131.mp3"
+    "file": "sjjc_E_131.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_131.mp3"
   },
   {
     "id": "133",
     "number": 133,
     "title": "Worship Jehovah During Youth",
     "category": "Family",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_133.mp3",
+    "audio": "songs/sjjc_E_133.mp3",
     "lyrics": "songs/sjjc_E_133.lrc",
-    "file": "sjjc_E_133.mp3"
+    "file": "sjjc_E_133.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_133.mp3"
   },
   {
     "id": "134",
     "number": 134,
     "title": "Children Are a Trust From God",
     "category": "Family",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_134.mp3",
+    "audio": "songs/sjjc_E_134.mp3",
     "lyrics": "songs/sjjc_E_134.lrc",
-    "file": "sjjc_E_134.mp3"
+    "file": "sjjc_E_134.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_134.mp3"
   },
   {
     "id": "135",
     "number": 135,
     "title": "Jehovah’s Warm Appeal: “Be Wise, My Son”",
     "category": "Family",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_135.mp3",
+    "audio": "songs/sjjc_E_135.mp3",
     "lyrics": "songs/sjjc_E_135.lrc",
-    "file": "sjjc_E_135.mp3"
+    "file": "sjjc_E_135.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_135.mp3"
   },
   {
     "id": "136",
     "number": 136,
     "title": "“A Perfect Wage” From Jehovah",
     "category": "Family",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_136.mp3",
+    "audio": "songs/sjjc_E_136.mp3",
     "lyrics": "songs/sjjc_E_136.lrc",
-    "file": "sjjc_E_136.mp3"
+    "file": "sjjc_E_136.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_136.mp3"
   },
   {
     "id": "137",
     "number": 137,
     "title": "Faithful Women, Christian Sisters",
     "category": "Family",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_137.mp3",
+    "audio": "songs/sjjc_E_137.mp3",
     "lyrics": "songs/sjjc_E_137.lrc",
-    "file": "sjjc_E_137.mp3"
+    "file": "sjjc_E_137.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_137.mp3"
   },
   {
     "id": "138",
     "number": 138,
     "title": "Beauty in Gray-Headedness",
     "category": "Family",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_138.mp3",
+    "audio": "songs/sjjc_E_138.mp3",
     "lyrics": "songs/sjjc_E_138.lrc",
-    "file": "sjjc_E_138.mp3"
+    "file": "sjjc_E_138.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_138.mp3"
   },
   {
     "id": "140",
     "number": 140,
     "title": "Life Without End—At Last!",
     "category": "Hope",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_140.mp3",
+    "audio": "songs/sjjc_E_140.mp3",
     "lyrics": "songs/sjjc_E_140.lrc",
-    "file": "sjjc_E_140.mp3"
+    "file": "sjjc_E_140.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_140.mp3"
   },
   {
     "id": "141",
     "number": 141,
     "title": "The Miracle of Life",
     "category": "Hope",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_141.mp3",
+    "audio": "songs/sjjc_E_141.mp3",
     "lyrics": "songs/sjjc_E_141.lrc",
-    "file": "sjjc_E_141.mp3"
+    "file": "sjjc_E_141.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_141.mp3"
   },
   {
     "id": "142",
     "number": 142,
     "title": "Holding Fast to Our Hope",
     "category": "Hope",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_142.mp3",
+    "audio": "songs/sjjc_E_142.mp3",
     "lyrics": "songs/sjjc_E_142.lrc",
-    "file": "sjjc_E_142.mp3"
+    "file": "sjjc_E_142.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_142.mp3"
   },
   {
     "id": "144",
     "number": 144,
     "title": "KeepYour Eyes on the Prize!",
     "category": "Hope",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_144.mp3",
+    "audio": "songs/sjjc_E_144.mp3",
     "lyrics": "songs/sjjc_E_144.lrc",
-    "file": "sjjc_E_144.mp3"
+    "file": "sjjc_E_144.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_144.mp3"
   },
   {
     "id": "145",
     "number": 145,
     "title": "God’s Promise of Paradise",
     "category": "Hope",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_145.mp3",
+    "audio": "songs/sjjc_E_145.mp3",
     "lyrics": "songs/sjjc_E_145.lrc",
-    "file": "sjjc_E_145.mp3"
+    "file": "sjjc_E_145.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_145.mp3"
   },
   {
     "id": "146",
     "number": 146,
     "title": "“Making All Things New”",
     "category": "Hope",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_146.mp3",
+    "audio": "songs/sjjc_E_146.mp3",
     "lyrics": "songs/sjjc_E_146.lrc",
-    "file": "sjjc_E_146.mp3"
+    "file": "sjjc_E_146.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_146.mp3"
   },
   {
     "id": "147",
     "number": 147,
     "title": "Life Everlasting Is Promised",
     "category": "Hope",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_147.mp3",
+    "audio": "songs/sjjc_E_147.mp3",
     "lyrics": "songs/sjjc_E_147.lrc",
-    "file": "sjjc_E_147.mp3"
+    "file": "sjjc_E_147.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_147.mp3"
   },
   {
     "id": "148",
     "number": 148,
     "title": "Jehovah Provides Escape",
     "category": "Deliverance",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_148.mp3",
+    "audio": "songs/sjjc_E_148.mp3",
     "lyrics": "songs/sjjc_E_148.lrc",
-    "file": "sjjc_E_148.mp3"
+    "file": "sjjc_E_148.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_148.mp3"
   },
   {
     "id": "149",
     "number": 149,
     "title": "A Victory Song",
     "category": "Deliverance",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_149.mp3",
+    "audio": "songs/sjjc_E_149.mp3",
     "lyrics": "songs/sjjc_E_149.lrc",
-    "file": "sjjc_E_149.mp3"
+    "file": "sjjc_E_149.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_149.mp3"
   },
   {
     "id": "150",
     "number": 150,
     "title": "Seek God for Your Deliverance",
     "category": "Deliverance",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_150.mp3",
+    "audio": "songs/sjjc_E_150.mp3",
     "lyrics": "songs/sjjc_E_150.lrc",
-    "file": "sjjc_E_150.mp3"
+    "file": "sjjc_E_150.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_150.mp3"
   },
   {
     "id": "151",
     "number": 151,
     "title": "He Will Call",
     "category": "Deliverance",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_151.mp3",
+    "audio": "songs/sjjc_E_151.mp3",
     "lyrics": "songs/sjjc_E_151.lrc",
-    "file": "sjjc_E_151.mp3"
+    "file": "sjjc_E_151.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_151.mp3"
   },
   {
     "id": "152",
     "number": 152,
     "title": "A Place That Will Bring You Praise",
     "category": "Additional",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_152.mp3",
+    "audio": "songs/sjjc_E_152.mp3",
     "lyrics": "songs/sjjc_E_152.lrc",
-    "file": "sjjc_E_152.mp3"
+    "file": "sjjc_E_152.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_152.mp3"
   },
   {
     "id": "153",
     "number": 153,
     "title": "Give Me Courage",
     "category": "Additional",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_153.mp3",
+    "audio": "songs/sjjc_E_153.mp3",
     "lyrics": "songs/sjjc_E_153.lrc",
-    "file": "sjjc_E_153.mp3"
+    "file": "sjjc_E_153.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_153.mp3"
   },
   {
     "id": "154",
     "number": 154,
     "title": "Unfailing Love",
     "category": "Additional",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_154.mp3",
+    "audio": "songs/sjjc_E_154.mp3",
     "lyrics": "songs/sjjc_E_154.lrc",
-    "file": "sjjc_E_154.mp3"
+    "file": "sjjc_E_154.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_154.mp3"
   },
   {
     "id": "155",
     "number": 155,
     "title": "Our Joy Eternally",
     "category": "Additional",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_155.mp3",
+    "audio": "songs/sjjc_E_155.mp3",
     "lyrics": "songs/sjjc_E_155.lrc",
-    "file": "sjjc_E_155.mp3"
+    "file": "sjjc_E_155.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_155.mp3"
   },
   {
     "id": "156",
     "number": 156,
     "title": "With Eyes of Faith",
     "category": "Additional",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_156.mp3",
+    "audio": "songs/sjjc_E_156.mp3",
     "lyrics": "songs/sjjc_E_156.lrc",
-    "file": "sjjc_E_156.mp3"
+    "file": "sjjc_E_156.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_156.mp3"
   },
   {
     "id": "157",
     "number": 157,
     "title": "Peace at Last!",
     "category": "Additional",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_157.mp3",
+    "audio": "songs/sjjc_E_157.mp3",
     "lyrics": "songs/sjjc_E_157.lrc",
-    "file": "sjjc_E_157.mp3"
+    "file": "sjjc_E_157.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_157.mp3"
   },
   {
     "id": "158",
     "number": 158,
     "title": "It Will Not Be Late!",
     "category": "Additional",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_158.mp3",
+    "audio": "songs/sjjc_E_158.mp3",
     "lyrics": "songs/sjjc_E_158.lrc",
-    "file": "sjjc_E_158.mp3"
+    "file": "sjjc_E_158.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_158.mp3"
   },
   {
     "id": "159",
     "number": 159,
     "title": "Give Jehovah Glory",
     "category": "Additional",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_159.mp3",
+    "audio": "songs/sjjc_E_159.mp3",
     "lyrics": "songs/sjjc_E_159.lrc",
-    "file": "sjjc_E_159.mp3"
+    "file": "sjjc_E_159.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_159.mp3"
   },
   {
     "id": "160",
     "number": 160,
     "title": "Good News!",
     "category": "Additional",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_160.mp3",
+    "audio": "songs/sjjc_E_160.mp3",
     "lyrics": "songs/sjjc_E_160.lrc",
-    "file": "sjjc_E_160.mp3"
+    "file": "sjjc_E_160.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_160.mp3"
   },
   {
     "id": "161",
     "number": 161,
     "title": "To Do Your Will Is My Delight",
     "category": "Additional",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_161.mp3",
+    "audio": "songs/sjjc_E_161.mp3",
     "lyrics": "songs/sjjc_E_161.lrc",
-    "file": "sjjc_E_161.mp3"
+    "file": "sjjc_E_161.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_161.mp3"
   },
   {
     "id": "162",
     "number": 162,
     "title": "My Spiritual Need",
     "category": "Additional",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_162.mp3",
+    "audio": "songs/sjjc_E_162.mp3",
     "lyrics": "songs/sjjc_E_162.lrc",
-    "file": "sjjc_E_162.mp3"
+    "file": "sjjc_E_162.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_162.mp3"
   },
   {
     "id": "163",
     "number": 163,
     "title": "Happy Are These Eyes",
     "category": "Additional",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_163.mp3",
+    "audio": "songs/sjjc_E_163.mp3",
     "lyrics": "songs/sjjc_E_163.lrc",
-    "file": "sjjc_E_163.mp3"
+    "file": "sjjc_E_163.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_163.mp3"
   },
   {
     "id": "164",
     "number": 164,
     "title": "I Trust In You",
     "category": "Additional",
-    "audio": "https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_164.mp3",
+    "audio": "songs/sjjc_E_164.mp3",
     "lyrics": "songs/sjjc_E_164.lrc",
-    "file": "sjjc_E_164.mp3"
+    "file": "sjjc_E_164.mp3",
+    "remote": "https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/sjjc_E_164.mp3"
   }
 ]
