@@ -31,7 +31,8 @@
       </label>
 
       <div class="filters">
-        <button id="favoritesToggle" class="chip" type="button" aria-pressed="false">☆ Favoriten</button>
+        <button id="favoriteBtn" class="favorite-big" type="button" aria-pressed="false">☆ Favorit</button>
+        <button id="favoritesToggle" class="chip" type="button" aria-pressed="false">Nur Liste</button>
         <span id="songCount" class="count">0</span>
       </div>
 
@@ -47,7 +48,6 @@
           <p id="currentStatus">Bereit</p>
         </div>
         <div class="now-actions">
-          <button id="favoriteBtn" class="ghost" type="button" aria-pressed="false">☆ Favorit</button>
           <button id="smallerBtn" class="ghost" type="button" aria-label="Schrift kleiner">A−</button>
           <button id="largerBtn" class="ghost" type="button" aria-label="Schrift größer">A+</button>
           <button id="fullscreenBtn" class="ghost" type="button">Vollbild</button>
@@ -55,31 +55,29 @@
       </section>
 
       <section id="lyrics" class="lyrics" aria-live="polite">
-        <p class="empty">Wähle ein Lied. Der Text erscheint unten im Feld auf dieser Seite.</p>
-        <iframe id="lyricsFrame" class="lyrics-frame" title="Liedtext" src="https://wol.jw.org/en/wol/publication/r1/lp-e/sjj/333"></iframe>
+        <p id="lyricsNote" class="empty">Die Liedseite lässt sich nicht einbetten und verschwindet deshalb. Der Titel bleibt hier sichtbar.</p>
       </section>
+
+      <footer class="flyer" aria-label="Wiedergabe">
+        <div class="flyer-modes">
+          <button id="favoritesPlay" class="chip" type="button" aria-pressed="false">Nur Favoriten</button>
+          <button id="shuffleBtn" class="chip" type="button" aria-pressed="false">Zufall</button>
+        </div>
+        <div class="transport">
+          <button id="back15" class="round" type="button" aria-label="15 Sekunden zurück">−15</button>
+          <button id="prevBtn" class="round" type="button" aria-label="Vorheriges Lied">⏮</button>
+          <button id="playBtn" class="round play" type="button" aria-label="Play">▶</button>
+          <button id="nextBtn" class="round" type="button" aria-label="Nächstes Lied">⏭</button>
+          <button id="fwd15" class="round" type="button" aria-label="15 Sekunden vor">+15</button>
+        </div>
+        <div class="timeline">
+          <span id="currentTime">0:00</span>
+          <input id="progressBar" type="range" min="0" max="1000" value="0" aria-label="Position" />
+          <span id="duration">0:00</span>
+        </div>
+      </footer>
     </main>
   </div>
-
-  <footer class="flyer" aria-label="Wiedergabe">
-    <div class="flyer-modes">
-      <button id="favoritesPlay" class="chip" type="button" aria-pressed="false">Nur Favoriten</button>
-      <button id="shuffleBtn" class="chip" type="button" aria-pressed="false">Zufall</button>
-      <a id="lyricsLink" class="ghost" href="https://wol.jw.org/en/wol/publication/r1/lp-e/sjj/333">Text</a>
-    </div>
-    <div class="transport">
-      <button id="back15" class="round" type="button" aria-label="15 Sekunden zurück">−15</button>
-      <button id="prevBtn" class="round" type="button" aria-label="Vorheriges Lied">⏮</button>
-      <button id="playBtn" class="round play" type="button" aria-label="Play">▶</button>
-      <button id="nextBtn" class="round" type="button" aria-label="Nächstes Lied">⏭</button>
-      <button id="fwd15" class="round" type="button" aria-label="15 Sekunden vor">+15</button>
-    </div>
-    <div class="timeline">
-      <span id="currentTime">0:00</span>
-      <input id="progressBar" type="range" min="0" max="1000" value="0" aria-label="Position" />
-      <span id="duration">0:00</span>
-    </div>
-  </footer>
 
   <audio id="audio" preload="none"></audio>
   <script src="app.js"></script>

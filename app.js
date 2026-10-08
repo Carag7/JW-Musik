@@ -120,15 +120,8 @@ function lyricUrl(song) {
 }
 
 function showLyricLink(song) {
-  const url = lyricUrl(song);
-  el.lyricsLink.href = url;
-  const frame = document.getElementById("lyricsFrame");
-  if (frame) frame.src = url;
-  el.lyrics.innerHTML = "";
-  const p = document.createElement("p");
-  p.className = "empty";
-  p.textContent = `Text zu Lied ${song.id} ist unten im Feld eingeblendet.`;
-  el.lyrics.append(p);
+  const note = document.getElementById("lyricsNote");
+  if (note) note.textContent = `${song.id} · ${song.title}. Die Originalseite blockiert das Einbetten, deshalb bleibt hier nur der Titel.`;
 }
 
 async function loadLyrics(song) {
@@ -322,10 +315,6 @@ function bind() {
     renderList();
   });
   el.play.addEventListener("click", togglePlay);
-  el.lyricsLink.addEventListener("click", (event) => {
-    event.preventDefault();
-    document.getElementById("lyricsFrame")?.scrollIntoView({ behavior: "smooth", block: "center" });
-  });
   el.prev.addEventListener("click", () => step(-1));
   el.next.addEventListener("click", () => step(1));
   el.back15.addEventListener("click", () => skip(-15));
