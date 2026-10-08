@@ -111,14 +111,14 @@ function parseLrc(text) {
 
 function lyricUrl(song) {
   const n = String(song.number).padStart(2, "0");
-  return song.lyrics || `https://github.com/Carag7/JW-Musik/releases/download/JW-Lyrics/sjj_E_${n}.rtf`;
+  return `https://github.com/Carag7/JW-Musik/releases/download/JW-Lyrics/sjj_E_${n}.lrc`;
 }
 
 function showLyricLink(song) {
   const url = lyricUrl(song);
   if (el.lyricsLink) el.lyricsLink.href = url;
   const note = document.getElementById("lyricsNote");
-  if (note) note.textContent = `${song.id} · ${song.title}. Die RTF-Datei öffnet sich über Text. Ein Browser kann RTF nicht als Liedtext anzeigen.`;
+  if (note) note.textContent = `${song.id} · ${song.title}. Text verlinkt sjj_E_${String(song.number).padStart(2, "0")}.lrc`;
 }
 
 async function loadLyrics(song) {
