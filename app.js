@@ -119,9 +119,21 @@ function lyricUrl(song) {
   return `https://www.jw.org/en/library/music-songs/sing-out-joyfully/${song.number}-${slug}/`;
 }
 
+function lyricUrl(song) {
+  const slug = song.title
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+  return `https://www.jw.org/en/library/music-songs/sing-out-joyfully/${song.number}-${slug}/`;
+}
+
 function showLyricLink(song) {
+  const url = lyricUrl(song);
+  if (el.lyricsLink) el.lyricsLink.href = url;
   const note = document.getElementById("lyricsNote");
-  if (note) note.textContent = `${song.id} · ${song.title}. Die Originalseite blockiert das Einbetten, deshalb bleibt hier nur der Titel.`;
+  if (note) note.textContent = `${song.id} · ${song.title}. Text ist verlinkt. Einbetten blockiert die Liedseite.`;
 }
 
 async function loadLyrics(song) {
@@ -141,7 +153,15 @@ async function loadLyrics(song) {
 }
 
 async function resolveAudio(song) {
-  return song.remote || song.audio || "";
+  const local = `songs/${song.file || `sjjc_E_${String(song.number).padStart(3, "0")}.mp3`}`;
+  try {
+    const response = await fetch(local, { method: "HEAD", cache: "no-store" });
+    const type = response.headers.get("content-type") || "";
+    if (response.ok && !type.includes("text/html")) return local;
+  } catch {
+    /* lokale Datei fehlt */
+  }
+  return song.remote || song.audio;
 }
 
 function setAudioSource(url) {
@@ -366,7 +386,7 @@ function bind() {
       return;
     }
     el.status.textContent = code === 4
-      ? "Fehler 4: GitHub liefert die MP3 als Download, nicht als Audio. Lege die Datei nach songs/ im Repository."
+      ? "Fehler 4 auf diesem Browser: GitHub liefert die MP3 als Download. Lege die Datei nach songs/ im Repository."
       : `Audio-Fehler ${code}.`;
   });
   document.addEventListener("fullscreenchange", () => {

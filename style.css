@@ -175,8 +175,24 @@ button { cursor: pointer; }
 .favorite-big[aria-pressed="true"] { background: #7dd3c7; }
 .song-btn { font-size: var(--lyrics); }
 .now h2, #currentStatus, .empty, .meta { font-size: calc(var(--lyrics) * 0.72); }
-.flyer { position: static; margin-top: 12px; border: 1px solid var(--line); border-radius: 22px; }
-.stage { padding-bottom: 22px; }
+.stage { padding-bottom: 150px; }
+.flyer {
+  position: fixed;
+  left: var(--sidebar);
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 18px calc(12px + var(--safe-bottom));
+  background: rgba(10, 16, 28, 0.96);
+  border-top: 1px solid var(--line);
+  box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.35);
+}
+@media (max-width: 860px) {
+  .flyer { left: 0; flex-wrap: wrap; }
+}
 .flyer-modes, .transport, .timeline { display: flex; align-items: center; gap: 8px; }
 .timeline { flex: 1; min-width: 160px; }
 .flyer .ghost { display: inline-flex; align-items: center; text-decoration: none; }
