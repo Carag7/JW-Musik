@@ -110,25 +110,25 @@ function parseLrc(text) {
 }
 
 function lyricUrl(song) {
-  return song.lyrics || `https://github.com/Carag7/JW-Musik/releases/download/JW-Lyrics/sjj_E_${String(song.number).padStart(2, "0")}.rtf`;
+  const slug = song.title
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+  return `https://www.jw.org/en/library/music-songs/sing-out-joyfully/${song.number}-${slug}/`;
 }
 
 function showLyricLink(song) {
   const url = lyricUrl(song);
   el.lyricsLink.href = url;
+  const frame = document.getElementById("lyricsFrame");
+  if (frame) frame.src = url;
   el.lyrics.innerHTML = "";
   const p = document.createElement("p");
   p.className = "empty";
-  const a = document.createElement("a");
-  a.href = url;
-  a.target = "_blank";
-  a.rel = "noopener";
-  a.textContent = `Text zu Lied ${song.id} öffnen`;
-  p.append(a);
-  const note = document.createElement("p");
-  note.className = "empty";
-  note.textContent = "Die RTF-Datei liegt im Release JW-Lyrics. Zeitstempel kann die App daraus nicht erzeugen.";
-  el.lyrics.append(p, note);
+  p.textContent = `Text zu Lied ${song.id} ist unten im Feld eingeblendet.`;
+  el.lyrics.append(p);
 }
 
 async function loadLyrics(song) {
@@ -154,12 +154,7 @@ async function resolveAudio(song) {
 function setAudioSource(url) {
   el.audio.pause();
   el.audio.removeAttribute("crossorigin");
-  el.audio.removeAttribute("src");
-  el.audio.innerHTML = "";
-  const source = document.createElement("source");
-  source.src = url;
-  source.type = "audio/mpeg";
-  el.audio.append(source);
+  el.audio.src = url;
   el.audio.load();
 }
 
@@ -188,10 +183,11 @@ async function selectSong(index, autoplay) {
 }
 
 function togglePlay() {
-  if (!el.audio.src) {
+  if (!state.currentAudio) {
     el.status.textContent = "Bitte zuerst ein Lied wählen";
     return;
   }
+  if (!el.audio.src) el.audio.src = state.currentAudio;
   if (el.audio.paused) {
     el.audio.play().then(() => {
       el.play.textContent = "❚❚";
@@ -326,6 +322,10 @@ function bind() {
     renderList();
   });
   el.play.addEventListener("click", togglePlay);
+  el.lyricsLink.addEventListener("click", (event) => {
+    event.preventDefault();
+    document.getElementById("lyricsFrame")?.scrollIntoView({ behavior: "smooth", block: "center" });
+  });
   el.prev.addEventListener("click", () => step(-1));
   el.next.addEventListener("click", () => step(1));
   el.back15.addEventListener("click", () => skip(-15));
