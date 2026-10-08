@@ -31,7 +31,7 @@
       </label>
 
       <div class="filters">
-        <button id="favoritesToggle" class="chip" type="button" aria-pressed="false">Favoriten</button>
+        <button id="favoritesToggle" class="chip" type="button" aria-pressed="false">☆ Favoriten</button>
         <span id="songCount" class="count">0</span>
       </div>
 
@@ -43,10 +43,11 @@
         <div>
           <p id="currentNumber" class="eyebrow">—</p>
           <h2 id="currentTitle">Lied wählen</h2>
+          <p id="currentCategory" class="meta"></p>
           <p id="currentStatus">Bereit</p>
         </div>
         <div class="now-actions">
-          <button id="favoriteBtn" class="ghost" type="button" aria-pressed="false">☆</button>
+          <button id="favoriteBtn" class="ghost" type="button" aria-pressed="false">☆ Favorit</button>
           <button id="smallerBtn" class="ghost" type="button" aria-label="Schrift kleiner">A−</button>
           <button id="largerBtn" class="ghost" type="button" aria-label="Schrift größer">A+</button>
           <button id="fullscreenBtn" class="ghost" type="button">Vollbild</button>
@@ -77,7 +78,7 @@
   </div>
 
   <!-- Kein crossorigin: GitHub-Release-MP3s senden keine CORS-Header. -->
-  <audio id="audio" preload="none"></audio>
+  <audio id="audio" class="native-audio" controls preload="none"></audio>
   <script src="app.js"></script>
 </body>
 </html>

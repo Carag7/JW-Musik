@@ -6,9 +6,9 @@ Die MP3s werden nicht ins Repository kopiert. `songs.json` zeigt auf das vorhand
 
 `https://github.com/Carag7/karaoke-app/releases/download/Version1/sjjc_E_001.mp3`
 
-137 Dateien aus diesem Release sind eingetragen. Titel 1–30 stammen aus der öffentlichen Liederliste „Sing Out Joyfully“ to Jehovah. Ab Lied 31 steht vorerst „Lied N“, damit kein falscher Titel erfunden wird.
+137 Dateien aus dem Release JW-Vocals / Version1 sind eingetragen. Jeder Eintrag hat Nummer und Titel. Die Titel stammen aus der Liederliste, nicht aus nachgedichteten Namen.
 
-Liedtexte sind urheberrechtlich geschützt und deshalb nicht enthalten. Lege eigene `.lrc`-Dateien ab oder lade sie in der App über **LRC laden**.
+Die Strophen aus „Sing Out Joyfully“ to Jehovah—Lyrics Only sind urheberrechtlich geschützt (© 2016 Watch Tower Bible and Tract Society of Pennsylvania) und sind deshalb nicht in diesem Paket. Eigene LRC-Dateien als `songs/sjjc_E_001.lrc` ablegen oder über **LRC laden** öffnen. Favoriten bleiben im Browser unter `localStorage`.
 
 ## Dateien
 

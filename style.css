@@ -153,7 +153,8 @@ button { cursor: pointer; }
   color: var(--accent);
   transform: translateX(6px);
 }
-.empty { color: var(--muted); font-size: 24px; max-width: 18em; }
+.meta { margin: 6px 0 0; color: var(--accent-2); font-size: 16px; }
+.native-audio { width: min(100%, 720px); margin: 8px 28px 18px; }
 
 .player {
   gap: 16px;

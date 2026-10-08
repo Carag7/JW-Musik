@@ -19,6 +19,7 @@ const el = {
   count: document.getElementById("songCount"),
   search: document.getElementById("songSearch"),
   title: document.getElementById("currentTitle"),
+  category: document.getElementById("currentCategory"),
   number: document.getElementById("currentNumber"),
   status: document.getElementById("currentStatus"),
   lyrics: document.getElementById("lyrics"),
@@ -84,8 +85,7 @@ function renderList() {
     const number = document.createElement("strong");
     number.textContent = song.id;
     const title = document.createElement("span");
-    const star = state.favorites.has(song.id) ? " ★" : "";
-    title.textContent = song.title + star;
+    title.textContent = `${state.favorites.has(song.id) ? "★ " : ""}${song.title}`;
     button.append(number, title);
     button.addEventListener("click", () => selectSong(state.songs.indexOf(song), true));
     item.append(button);
@@ -141,9 +141,11 @@ async function selectSong(index, autoplay) {
   const song = state.songs[index];
   el.number.textContent = `Lied ${song.id}`;
   el.title.textContent = song.title;
+  el.category.textContent = song.category || "";
   el.status.textContent = "Audio wird geladen …";
-  el.favorite.setAttribute("aria-pressed", String(state.favorites.has(song.id)));
-  el.favorite.textContent = state.favorites.has(song.id) ? "★" : "☆";
+  const fav = state.favorites.has(song.id);
+  el.favorite.setAttribute("aria-pressed", String(fav));
+  el.favorite.textContent = fav ? "★ Favorit" : "☆ Favorit";
   el.audio.pause();
   el.audio.removeAttribute("crossorigin");
   el.audio.src = song.audio;
@@ -154,7 +156,13 @@ async function selectSong(index, autoplay) {
   el.play.textContent = "▶";
   renderList();
   await loadLyrics(song);
-  if (autoplay) togglePlay();
+  if (autoplay) {
+    const start = () => {
+      el.audio.removeEventListener("canplay", start);
+      togglePlay();
+    };
+    el.audio.addEventListener("canplay", start, { once: true });
+  }
 }
 
 function togglePlay() {
@@ -224,7 +232,8 @@ function toggleFavorite() {
   saveFavorites();
   renderList();
   el.favorite.setAttribute("aria-pressed", String(state.favorites.has(song.id)));
-  el.favorite.textContent = state.favorites.has(song.id) ? "★" : "☆";
+  el.favorite.textContent = state.favorites.has(song.id) ? "★ Favorit" : "☆ Favorit";
+  el.favoritesToggle.textContent = state.favoritesOnly ? "★ Favoriten" : "☆ Favoriten";
 }
 
 async function toggleFullscreen() {
@@ -273,6 +282,7 @@ function bind() {
   el.favoritesToggle.addEventListener("click", () => {
     state.favoritesOnly = !state.favoritesOnly;
     el.favoritesToggle.setAttribute("aria-pressed", String(state.favoritesOnly));
+    el.favoritesToggle.textContent = state.favoritesOnly ? "★ Favoriten" : "☆ Favoriten";
     renderList();
   });
   el.fullscreen.addEventListener("click", toggleFullscreen);
@@ -301,7 +311,8 @@ function bind() {
     step(1);
   });
   el.audio.addEventListener("error", () => {
-    el.status.textContent = "Audio konnte nicht geladen werden. Prüfe die Release-URL.";
+    const code = el.audio.error ? el.audio.error.code : 0;
+    el.status.textContent = `Audio-Fehler ${code}. Im Tesla den nativen Player unten nutzen oder die Seite neu laden.`;
   });
   document.addEventListener("fullscreenchange", () => {
     el.fullscreen.textContent = document.fullscreenElement ? "Beenden" : "Vollbild";
