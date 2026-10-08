@@ -110,30 +110,15 @@ function parseLrc(text) {
 }
 
 function lyricUrl(song) {
-  const slug = song.title
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
-  return `https://www.jw.org/en/library/music-songs/sing-out-joyfully/${song.number}-${slug}/`;
-}
-
-function lyricUrl(song) {
-  const slug = song.title
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
-  return `https://www.jw.org/en/library/music-songs/sing-out-joyfully/${song.number}-${slug}/`;
+  const n = String(song.number).padStart(2, "0");
+  return song.lyrics || `https://github.com/Carag7/JW-Musik/releases/download/JW-Lyrics/sjj_E_${n}.rtf`;
 }
 
 function showLyricLink(song) {
   const url = lyricUrl(song);
   if (el.lyricsLink) el.lyricsLink.href = url;
   const note = document.getElementById("lyricsNote");
-  if (note) note.textContent = `${song.id} · ${song.title}. Text ist verlinkt. Einbetten blockiert die Liedseite.`;
+  if (note) note.textContent = `${song.id} · ${song.title}. Text-Datei ist verlinkt, nicht eingebettet.`;
 }
 
 async function loadLyrics(song) {
@@ -152,16 +137,16 @@ async function loadLyrics(song) {
   }
 }
 
+function audioCandidates(song) {
+  const file = song.file || `sjjc_E_${String(song.number).padStart(3, "0")}.mp3`;
+  const primary = Number(song.number) >= 100 ? `songs1/${file}` : `songs/${file}`;
+  const secondary = Number(song.number) >= 100 ? `songs/${file}` : `songs1/${file}`;
+  const remote = song.remote || `https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/${file}`;
+  return [primary, secondary, remote];
+}
+
 async function resolveAudio(song) {
-  const local = `songs/${song.file || `sjjc_E_${String(song.number).padStart(3, "0")}.mp3`}`;
-  try {
-    const response = await fetch(local, { method: "HEAD", cache: "no-store" });
-    const type = response.headers.get("content-type") || "";
-    if (response.ok && !type.includes("text/html")) return local;
-  } catch {
-    /* lokale Datei fehlt */
-  }
-  return song.remote || song.audio;
+  return audioCandidates(song)[0];
 }
 
 function setAudioSource(url) {
@@ -174,7 +159,7 @@ function setAudioSource(url) {
 async function selectSong(index, autoplay) {
   if (index < 0 || index >= state.songs.length) return;
   state.index = index;
-  state.triedFallback = false;
+  state.audioTry = 0;
   const song = state.songs[index];
   el.number.textContent = `Lied ${song.id}`;
   el.title.textContent = song.title;
@@ -377,17 +362,16 @@ function bind() {
   });
   el.audio.addEventListener("error", () => {
     const song = state.songs[state.index];
-    const code = el.audio.error ? el.audio.error.code : 0;
-    if (song && song.remote && state.currentAudio !== song.remote && !state.triedFallback) {
-      state.triedFallback = true;
-      state.currentAudio = song.remote;
-      el.status.textContent = "Lokale Datei fehlt, Release wird geladen …";
-      setAudioSource(song.remote);
+    const list = song ? audioCandidates(song) : [];
+    state.audioTry = (state.audioTry || 0) + 1;
+    if (song && state.audioTry < list.length) {
+      state.currentAudio = list[state.audioTry];
+      el.status.textContent = `Quelle ${state.audioTry + 1} von ${list.length} …`;
+      setAudioSource(state.currentAudio);
       return;
     }
-    el.status.textContent = code === 4
-      ? "Fehler 4 auf diesem Browser: GitHub liefert die MP3 als Download. Lege die Datei nach songs/ im Repository."
-      : `Audio-Fehler ${code}.`;
+    const code = el.audio.error ? el.audio.error.code : 0;
+    el.status.textContent = `Audio-Fehler ${code}. Keine Quelle spielbar.`;
   });
   document.addEventListener("fullscreenchange", () => {
     el.fullscreen.textContent = document.fullscreenElement ? "Beenden" : "Vollbild";
