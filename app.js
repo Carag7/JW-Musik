@@ -118,7 +118,7 @@ function showLyricLink(song) {
   const url = lyricUrl(song);
   if (el.lyricsLink) el.lyricsLink.href = url;
   const note = document.getElementById("lyricsNote");
-  if (note) note.textContent = `${song.id} · ${song.title}. Text-Datei ist verlinkt, nicht eingebettet.`;
+  if (note) note.textContent = `${song.id} · ${song.title}. Die RTF-Datei öffnet sich über Text. Ein Browser kann RTF nicht als Liedtext anzeigen.`;
 }
 
 async function loadLyrics(song) {
@@ -139,14 +139,26 @@ async function loadLyrics(song) {
 
 function audioCandidates(song) {
   const file = song.file || `sjjc_E_${String(song.number).padStart(3, "0")}.mp3`;
-  const primary = Number(song.number) >= 100 ? `songs1/${file}` : `songs/${file}`;
-  const secondary = Number(song.number) >= 100 ? `songs/${file}` : `songs1/${file}`;
   const remote = song.remote || `https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/${file}`;
-  return [primary, secondary, remote];
+  const first = Number(song.number) >= 100
+    ? [`songs1/${file}`, `songs2/${file}`, `songs/${file}`]
+    : [`songs/${file}`, `songs1/${file}`, `songs2/${file}`];
+  return [...first, remote];
 }
 
 async function resolveAudio(song) {
-  return audioCandidates(song)[0];
+  const list = audioCandidates(song);
+  for (const url of list) {
+    if (/^https?:/i.test(url)) return url;
+    try {
+      const response = await fetch(url, { method: "HEAD", cache: "no-store" });
+      const type = response.headers.get("content-type") || "";
+      if (response.ok && type.includes("audio")) return url;
+    } catch {
+      /* nächste Quelle */
+    }
+  }
+  return list[list.length - 1];
 }
 
 function setAudioSource(url) {

@@ -132,7 +132,19 @@ button { cursor: pointer; }
   padding: 22px 28px calc(18px + var(--safe-bottom));
 }
 .now h2 { font-size: clamp(28px, 3vw, 44px); line-height: 1.1; }
-#currentStatus { margin: 8px 0 0; color: var(--muted); font-size: 18px; }
+.text-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 64px;
+  padding: 0 18px;
+  border-radius: 16px;
+  background: var(--accent-2);
+  color: #06221e;
+  font-size: 28px;
+  font-weight: 800;
+  text-decoration: none;
+}
+#currentStatus { margin: 0; text-align: right; }
 .now-actions { flex-wrap: wrap; justify-content: flex-end; }
 
 .lyrics {
