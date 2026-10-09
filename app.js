@@ -109,6 +109,26 @@ function parseLrc(text) {
   }).sort((a, b) => a.time - b.time);
 }
 
+function renderLyrics(lines) {
+el.lyrics.innerHTML = "";
+ 
+if (!lines || !lines.length) {
+el.lyrics.innerHTML =
+'<p class="empty">Keine Liedtexte gefunden</p>';
+return;
+}
+ 
+lines.forEach(line => {
+const row = document.createElement("p");
+ 
+row.className = "lyric-line";
+row.dataset.time = line.time;
+row.textContent = line.text;
+ 
+el.lyrics.appendChild(row);
+});
+}
+
 function lyricUrl(song) {
   const n = String(song.number).padStart(2, "0");
   return `https://github.com/Carag7/JW-Musik/releases/download/JW-Lyrics/sjj_E_${n}.lrc`;
@@ -185,8 +205,11 @@ async function selectSong(index, autoplay) {
   el.duration.textContent = "0:00";
   el.play.textContent = "▶";
   renderList();
-  showLyricLink(song);
-  const url = await resolveAudio(song);
+showLyricLink(song);
+
+await loadLyrics(song);
+
+const url = await resolveAudio(song);
   state.currentAudio = url;
   setAudioSource(url);
   if (autoplay) el.audio.addEventListener("canplay", () => togglePlay(), { once: true });

@@ -160,8 +160,9 @@ button { cursor: pointer; }
   transition: color 0.2s ease, transform 0.2s ease;
 }
 .lyric-line.active {
-  color: var(--accent);
-  transform: translateX(6px);
+  color: #ffd54a;
+  font-weight: 800;
+  transform: scale(1.05);
 }
 .lyrics-frame {
   width: 100%;
