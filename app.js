@@ -142,58 +142,55 @@ function showLyricLink(song) {
 }
 
 async function loadLyrics(song) {
-async function loadLyrics(song) {
- 
-console.log("Lade Lyrics:", song.lyrics);
- 
-state.lyrics = [];
- 
-if (!song.lyrics) {
-console.log("Keine Lyrics URL");
-renderLyrics([]);
-return;
-}
- 
-try {
- 
-const response = await fetch(song.lyrics, {
-cache: "no-store"
-});
- 
-console.log("HTTP Status:", response.status);
- 
-if (!response.ok) {
-throw new Error(
-`HTTP ${response.status}`
-);
-}
- 
-const text = await response.text();
- 
-console.log("Lyrics Inhalt:", text);
- 
-state.lyrics = parseLrc(text);
- 
-console.log(
-"Geparste Zeilen:",
-state.lyrics.length
-);
- 
-renderLyrics(state.lyrics);
- 
-} catch (error) {
- 
-console.error(
-"Lyrics Fehler:",
-error
-);
- 
-el.lyrics.innerHTML =
-`<p class="empty">
-Fehler beim Laden:
-${error.message}
-</p>`;
-}
+
+  console.log("Lade Lyrics:", song.lyrics);
+
+  state.lyrics = [];
+
+  if (!song.lyrics) {
+    console.log("Keine Lyrics URL");
+    renderLyrics([]);
+    return;
+  }
+
+  try {
+
+    const response = await fetch(song.lyrics, {
+      cache: "no-store"
+    });
+
+    console.log("HTTP Status:", response.status);
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const text = await response.text();
+
+    console.log("Lyrics Inhalt:", text);
+
+    state.lyrics = parseLrc(text);
+
+    console.log(
+      "Geparste Zeilen:",
+      state.lyrics.length
+    );
+
+    renderLyrics(state.lyrics);
+
+  } catch (error) {
+
+    console.error(
+      "Lyrics Fehler:",
+      error
+    );
+
+    el.lyrics.innerHTML =
+      `<p class="empty">
+        Fehler beim Laden:
+        ${error.message}
+      </p>`;
+  }
 }
 function audioCandidates(song) {
   const file = song.file || `sjjc_E_${String(song.number).padStart(3, "0")}.mp3`;
