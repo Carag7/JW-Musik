@@ -64,7 +64,8 @@ const PAGE = {
 const state = {
   songs: [],
   index: -1,
-  query: "",
+  lyricQuery: "",
+  lyricCache: new Map(),
   category: "",
   favoritesOnly: false,
   playFavorites: false,
@@ -102,7 +103,14 @@ const el = {
   fullscreen: document.getElementById("fullscreenBtn"),
   smaller: document.getElementById("smallerBtn"),
   larger: document.getElementById("largerBtn"),
-  install: document.getElementById("installBtn"),
+  install: null,
+  lyricSearch: document.getElementById("lyricSearch"),
+  lyricSearchToggle: document.getElementById("lyricSearchToggle"),
+  lyricSearchWrap: document.getElementById("lyricSearchWrap"),
+  toTop: document.getElementById("toTopBtn"),
+  playAll: document.getElementById("playAllBtn"),
+  playFav: document.getElementById("playFavBtn"),
+  startStatus: document.getElementById("startStatus"),
   lyricsLink: document.getElementById("lyricsLink"),
   shuffleBtn: document.getElementById("shuffleBtn"),
   favoritesPlay: document.getElementById("favoritesPlay"),
@@ -147,11 +155,36 @@ function visibleSongs() {
   return state.songs.filter((song) => {
     if (state.favoritesOnly && !state.favorites.has(song.id)) return false;
     if (state.category && song.category !== state.category) return false;
-    if (!q) return true;
+    if (state.lyricQuery) {
+      const text = (state.lyricCache.get(song.id) || "").toLowerCase();
+      if (!text.includes(state.lyricQuery)) return false;
+    }
     return song.title.toLowerCase().includes(q) || String(song.number).includes(q) || song.id.includes(q);
   });
 }
 
+async function cacheLyric(song) {
+  if (state.lyricCache.has(song.id)) return;
+  const local = song.lyrics || `lyrics/sjj_E_${String(song.number).padStart(2, "0")}.lrc`;
+  try {
+    const response = await fetch(local, { cache: "force-cache" });
+    state.lyricCache.set(song.id, response.ok ? await response.text() : "");
+  } catch {
+    state.lyricCache.set(song.id, "");
+  }
+}
+
+async function searchLyrics(query) {
+  state.lyricQuery = query.trim().toLowerCase();
+  if (!state.lyricQuery) {
+    renderList();
+    return;
+  }
+  const pending = state.songs.filter((song) => !state.lyricCache.has(song.id));
+  await Promise.all(pending.slice(0, 24).map(cacheLyric));
+  renderList();
+  if (pending.length > 24) searchLyrics(query);
+}
 function fillCategories() {
   const names = [...new Set(state.songs.map((song) => song.category).filter(Boolean))].sort();
   const current = state.category;
@@ -470,6 +503,7 @@ async function loadSongs() {
     state.songs = data;
     fillCategories();
     el.status.textContent = `${data.length} Lieder bereit`;
+    if (el.startStatus) el.startStatus.textContent = `${data.length} Lieder bereit`;
     renderList();
   } catch (error) {
     el.title.textContent = "Lieder nicht geladen";
@@ -477,7 +511,28 @@ async function loadSongs() {
   }
 }
 
+function playRandom(favorites) {
+  const pool = favorites ? state.songs.filter((song) => state.favorites.has(song.id)) : state.songs;
+  if (!pool.length) {
+    el.status.textContent = favorites ? "Keine Favoriten markiert" : "Keine Lieder";
+    return;
+  }
+  state.shuffle = true;
+  state.playFavorites = favorites;
+  el.shuffleBtn.setAttribute("aria-pressed", "true");
+  el.favoritesPlay.setAttribute("aria-pressed", String(favorites));
+  const pick = pool[Math.floor(Math.random() * pool.length)];
+  selectSong(state.songs.indexOf(pick), true);
+}
 function bind() {
+  el.lyricSearchToggle.addEventListener("click", () => {
+    el.lyricSearchWrap.hidden = !el.lyricSearchWrap.hidden;
+    if (!el.lyricSearchWrap.hidden) el.lyricSearch.focus();
+  });
+  el.lyricSearch.addEventListener("input", () => searchLyrics(el.lyricSearch.value));
+  el.toTop.addEventListener("click", () => el.list.scrollIntoView({ block: "start" }));
+  el.playAll.addEventListener("click", () => playRandom(false));
+  el.playFav.addEventListener("click", () => playRandom(true));
   el.search.addEventListener("input", () => {
     state.query = el.search.value;
     renderList();
@@ -507,7 +562,7 @@ function bind() {
   el.favoritesToggle.addEventListener("click", () => {
     state.favoritesOnly = !state.favoritesOnly;
     el.favoritesToggle.setAttribute("aria-pressed", String(state.favoritesOnly));
-    el.favoritesToggle.textContent = state.favoritesOnly ? "★ Favoriten" : "☆ Favoriten";
+    el.favoritesToggle.textContent = state.favoritesOnly ? "Favoriten" : "alle Lieder";
     renderList();
   });
   el.fullscreen.addEventListener("click", toggleFullscreen);
@@ -558,14 +613,7 @@ function bind() {
       step(-1);
     }
   });
-  window.addEventListener("beforeinstallprompt", (event) => {
-    event.preventDefault();
-    el.install.hidden = false;
-    el.install.addEventListener("click", async () => {
-      event.prompt();
-      el.install.hidden = true;
-    }, { once: true });
-  });
+  window.addEventListener("beforeinstallprompt", () => {});
 }
 
 function init() {

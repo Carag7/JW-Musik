@@ -17,11 +17,12 @@
 <body>
   <header class="topbar">
     <button id="menuToggle" class="lieder-toggle" type="button" aria-expanded="true">Lieder</button>
-    <button id="favoriteBtn" class="ghost star-btn" type="button" aria-pressed="false" aria-label="Favorit">☆</button>
-    <button id="smallerBtn" class="ghost" type="button" aria-label="Schrift kleiner">A−</button>
-    <button id="largerBtn" class="ghost" type="button" aria-label="Schrift größer">A+</button>
-    <button id="fullscreenBtn" class="ghost" type="button">Vollbild</button>
-    <a id="lyricsLink" class="ghost text-link" href="https://www.jw.org/en/library/music-songs/sing-out-joyfully/" target="_blank" rel="noopener">Text</a>
+    <div class="top-actions">
+      <button id="smallerBtn" class="ghost" type="button" aria-label="Schrift kleiner">A−</button>
+      <button id="largerBtn" class="ghost" type="button" aria-label="Schrift größer">A+</button>
+      <button id="fullscreenBtn" class="ghost" type="button">Vollbild</button>
+      <a id="lyricsLink" class="ghost text-link" href="https://www.jw.org/en/library/music-songs/sing-out-joyfully/" target="_blank" rel="noopener">Text</a>
+    </div>
   </header>
   <div class="app">
     <aside id="sidebar" class="sidebar">
@@ -30,8 +31,13 @@
           <p class="eyebrow">Sing Out Joyfully</p>
           <h1>Karaoke</h1>
         </div>
-        <button id="installBtn" class="ghost" type="button" hidden>Installieren</button>
+        <button id="lyricSearchToggle" class="ghost" type="button" aria-label="Text suchen">⌕</button>
       </header>
+
+      <label id="lyricSearchWrap" class="search-wrap" hidden>
+        <span class="sr-only">Text suchen</span>
+        <input id="lyricSearch" type="search" inputmode="search" placeholder="Wort im Liedtext" autocomplete="off" />
+      </label>
 
       <label class="search-wrap">
         <span class="sr-only">Lied suchen</span>
@@ -46,36 +52,44 @@
       </label>
 
       <div class="filters">
-        <button id="favoritesToggle" class="chip" type="button" aria-pressed="false">Nur Liste</button>
+        <button id="favoritesToggle" class="chip" type="button" aria-pressed="false">alle Lieder</button>
+        <button id="favoritesPlay" class="chip" type="button" aria-pressed="false">Nur Favoriten</button>
+        <button id="shuffleBtn" class="chip" type="button" aria-pressed="false">Zufall</button>
         <span id="songCount" class="count">0</span>
       </div>
 
       <ul id="songList" class="song-list" aria-label="Lieder"></ul>
+      <button id="toTopBtn" class="to-top" type="button" aria-label="Nach oben">↑</button>
     </aside>
 
     <main class="stage">
       <section class="now">
-        <div class="now-left">
-          <div>
-            <p id="currentNumber" class="eyebrow song-number">—</p>
-            <h2 id="currentTitle">Lied wählen</h2>
-            <p id="currentCategory" class="meta"></p>
-            <p id="currentStatus">Bereit</p>
-          </div>
+        <div class="title-row">
+          <p id="currentNumber" class="eyebrow song-number">—</p>
+          <button id="favoriteBtn" class="star-btn" type="button" aria-pressed="false" aria-label="Favorit">☆</button>
+        </div>
+        <h2 id="currentTitle">Lied wählen</h2>
+        <div class="meta-row">
+          <p id="currentCategory" class="meta"></p>
+          <p id="currentStatus">Bereit</p>
         </div>
       </section>
 
       <section id="lyrics" class="lyrics" aria-live="polite">
-        <p id="lyricsNote" class="empty">Wähle ein Lied. Der Text kommt aus der lokalen LRC-Datei.</p>
+        <div id="startPanel" class="start-panel">
+          <p class="eyebrow">Sing Out Joyfully</p>
+          <h2>Lied wählen</h2>
+          <p id="startStatus" class="meta">137 Lieder bereit</p>
+          <div class="start-actions">
+            <button id="playAllBtn" class="chip" type="button">alle Lieder</button>
+            <button id="playFavBtn" class="chip" type="button">Favoriten</button>
+          </div>
+        </div>
       </section>
     </main>
   </div>
 
   <footer class="flyer" aria-label="Wiedergabe">
-    <div class="flyer-modes">
-      <button id="favoritesPlay" class="chip" type="button" aria-pressed="false">Nur Favoriten</button>
-      <button id="shuffleBtn" class="chip" type="button" aria-pressed="false">Zufall</button>
-    </div>
     <div class="transport">
       <button id="back15" class="round" type="button" aria-label="15 Sekunden zurück">−15</button>
       <button id="prevBtn" class="round nav" type="button" aria-label="Vorheriges Lied">◀</button>

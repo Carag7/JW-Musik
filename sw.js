@@ -1,4 +1,4 @@
-const CACHE = "tesla-karaoke-v13";
+const CACHE = "tesla-karaoke-v14";
 const SHELL = ["./", "./index.html", "./style.css", "./app.js", "./manifest.json", "./icon.svg", "./songs.json"];
 
 self.addEventListener("install", (event) => {
