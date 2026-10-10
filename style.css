@@ -388,26 +388,21 @@ body.pseudo-fullscreen .sidebar { display: none; }
 body.pseudo-fullscreen .flyer { left: 0; }
 
 @media (max-width: 860px) {
-  .app { grid-template-columns: 1fr; }
+  .app { grid-template-columns: var(--sidebar) 1fr !important; }
   .sidebar {
-    position: fixed;
-    z-index: 40;
-    top: var(--topbar);
-    left: 0;
-    bottom: 0;
-    width: min(92vw, 360px);
-    min-height: 0;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    box-shadow: var(--shadow);
+    position: relative !important;
+    width: auto !important;
+    top: auto !important;
+    bottom: auto !important;
+    height: calc(100vh - var(--topbar) - var(--flyer-h)) !important;
   }
-  .song-list { flex: none; max-height: none; overflow: visible; }
-  .app.sidebar-hidden .sidebar { display: none; }
-  .flyer { left: 0; flex-wrap: wrap; }
-  .stage { padding: 4px 12px 0; }
-  .now h2 { font-size: 28px; }
-  .lyrics {
-    height: 100%;
-    padding: 12px 16px 12px 20px;
-  }
+  .split-handle { left: var(--sidebar) !important; }
 }
+.stage { overflow: hidden !important; }
+.lyrics {
+  min-height: 0 !important;
+  height: 100% !important;
+  overflow-y: auto !important;
+  padding-bottom: calc(var(--flyer-h) + 140px) !important;
+}
+.start-panel { margin-bottom: 80px; }

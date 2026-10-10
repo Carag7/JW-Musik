@@ -595,7 +595,10 @@ function bind() {
     document.querySelectorAll(".song-btn span, .song-btn strong").forEach((node) => node.style.fontSize = `${listSize}px`);
   });
   const setSidebarWidth = (px) => {
-    const width = Math.max(220, Math.min(window.innerWidth - 240, px));
+    const raw = getComputedStyle(document.documentElement).getPropertyValue("--sidebar");
+    const current = Number.parseInt(raw, 10) || 300;
+    const next = Number.isFinite(px) ? px : current;
+    const width = Math.max(180, Math.min(window.innerWidth - 160, next));
     document.documentElement.style.setProperty("--sidebar", `${width}px`);
   };
   document.getElementById("splitLeft").addEventListener("click", () => setSidebarWidth(parseInt(getComputedStyle(document.documentElement).getPropertyValue("--sidebar"), 10) - 40));
