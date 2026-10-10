@@ -64,6 +64,7 @@ const PAGE = {
 const state = {
   songs: [],
   index: -1,
+  query: "",
   lyricQuery: "",
   lyricCache: new Map(),
   category: "",
@@ -230,6 +231,8 @@ function parseLrc(text) {
 }
 
 function renderLyrics(lines) {
+  const panel = document.getElementById("startPanel");
+  if (panel) panel.hidden = true;
   el.lyrics.innerHTML = "";
   if (!lines || !lines.length) {
     el.lyrics.innerHTML = '<p class="empty">Keine Liedtexte gefunden</p>';
@@ -327,6 +330,7 @@ async function selectSong(index, autoplay) {
   el.songCategory.textContent = song.category || "";
   el.status.textContent = "Audio wird geladen …";
   const fav = state.favorites.has(song.id);
+  el.favorite.hidden = false;
   el.favorite.setAttribute("aria-pressed", String(fav));
   el.favorite.textContent = fav ? "★" : "☆";
   el.progress.value = "0";
@@ -457,8 +461,11 @@ function toggleFavorite() {
   else state.favorites.add(song.id);
   saveFavorites();
   renderList();
-  el.favorite.setAttribute("aria-pressed", String(state.favorites.has(song.id)));
-  el.favorite.textContent = state.favorites.has(song.id) ? "★" : "☆";
+  if (el.favorite) {
+    el.favorite.hidden = !song;
+    el.favorite.setAttribute("aria-pressed", String(song && state.favorites.has(song.id)));
+    el.favorite.textContent = song && state.favorites.has(song.id) ? "★" : "☆";
+  }
 }
 
 async function toggleFullscreen() {

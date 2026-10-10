@@ -42,8 +42,38 @@ button { cursor: pointer; }
   display: inline-flex;
   align-items: center;
 }
-.topbar { justify-content: space-between; }
-.top-actions { display: flex; gap: 8px; margin-left: auto; }
+.topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  height: var(--topbar);
+  padding: 6px 10px;
+  background: rgba(7, 11, 20, 0.96);
+  border-bottom: 1px solid var(--line);
+  flex-wrap: nowrap;
+}
+.top-actions { display: flex; gap: 6px; margin-left: auto; flex-wrap: nowrap; }
+.lieder-toggle, .topbar .ghost {
+  min-height: 36px;
+  height: 36px;
+  padding: 0 10px;
+  font-size: 14px;
+}
+#lyricSearchToggle { min-width: 48px; min-height: 48px; font-size: 28px; border-radius: 14px; }
+.start-actions .chip {
+  min-height: 72px;
+  min-width: 150px;
+  font-size: 20px;
+  background: var(--accent-2);
+  color: #08211d;
+  border: 0;
+}
 .title-row, .meta-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .title-row { margin-bottom: 2px; }
 .now { display: block; padding-bottom: 4px; }
