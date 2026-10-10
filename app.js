@@ -114,11 +114,18 @@ const el = {
   startStatus: document.getElementById("startStatus"),
   lyricsLink: document.getElementById("lyricsLink"),
   shuffleBtn: document.getElementById("shuffleBtn"),
-  favoritesPlay: document.getElementById("favoritesPlay"),
+  prevSong: document.getElementById("prevSong"),
+  nextSong: document.getElementById("nextSong"),
   back15: document.getElementById("back15"),
   fwd15: document.getElementById("fwd15"),
   menu: document.getElementById("menuToggle")
 };
+
+function setStatus(text, kind) {
+  el.status.textContent = text;
+  el.status.classList.remove("is-play", "is-pause", "is-info");
+  if (kind) el.status.classList.add(kind);
+}
 
 function formatTime(seconds) {
   if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
@@ -253,6 +260,19 @@ function officialUrl(song) {
   return `https://www.jw.org/en/library/music-songs/sing-out-joyfully/${path}/`;
 }
 
+function songLabel(index) {
+  const song = state.songs[index];
+  return song ? `${song.id} ${song.title}` : "—";
+}
+
+function updateNeighbors() {
+  if (!el.prevSong || !el.nextSong || state.index < 0) return;
+  const pool = state.playFavorites ? state.songs.filter((song) => state.favorites.has(song.id)) : state.songs;
+  const current = state.songs[state.index];
+  const pos = pool.indexOf(current);
+  el.prevSong.textContent = pos > 0 ? songLabel(state.songs.indexOf(pool[pos - 1])) : "—";
+  el.nextSong.textContent = pos >= 0 && pos < pool.length - 1 ? songLabel(state.songs.indexOf(pool[pos + 1])) : "—";
+}
 function showLyricLink(song) {
   if (el.lyricsLink) el.lyricsLink.href = officialUrl(song);
 }
@@ -330,6 +350,7 @@ async function selectSong(index, autoplay) {
   el.songCategory.textContent = song.category || "";
   el.status.textContent = "Audio wird geladen …";
   const fav = state.favorites.has(song.id);
+  el.number.hidden = false;
   el.favorite.hidden = false;
   el.favorite.setAttribute("aria-pressed", String(fav));
   el.favorite.textContent = fav ? "★" : "☆";
@@ -339,6 +360,7 @@ async function selectSong(index, autoplay) {
   el.play.textContent = "▶";
   renderList();
   showLyricLink(song);
+  updateNeighbors();
   await loadLyrics(song);
   const url = await resolveAudio(song);
   state.currentAudio = url;
@@ -359,7 +381,7 @@ function togglePlay() {
   if (el.audio.paused) {
     el.audio.play().then(() => {
       el.play.textContent = "❚❚";
-      el.status.textContent = "Spielt";
+      setStatus("Spielt", "is-play");
       if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "playing";
       requestWakeLock();
     }).catch(() => {
@@ -368,7 +390,7 @@ function togglePlay() {
   } else {
     el.audio.pause();
     el.play.textContent = "▶";
-    el.status.textContent = "Pause";
+    setStatus("Pause", "is-pause");
     if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "paused";
   }
 }
@@ -527,7 +549,6 @@ function playRandom(favorites) {
   state.shuffle = true;
   state.playFavorites = favorites;
   el.shuffleBtn.setAttribute("aria-pressed", "true");
-  el.favoritesPlay.setAttribute("aria-pressed", String(favorites));
   const pick = pool[Math.floor(Math.random() * pool.length)];
   selectSong(state.songs.indexOf(pick), true);
 }
@@ -537,7 +558,11 @@ function bind() {
     if (!el.lyricSearchWrap.hidden) el.lyricSearch.focus();
   });
   el.lyricSearch.addEventListener("input", () => searchLyrics(el.lyricSearch.value));
-  el.toTop.addEventListener("click", () => el.list.scrollIntoView({ block: "start" }));
+  el.toTop.addEventListener("click", () => {
+    const sidebar = document.getElementById("sidebar");
+    if (sidebar) sidebar.scrollTop = 0;
+    if (el.list) el.list.scrollTop = 0;
+  });
   el.playAll.addEventListener("click", () => playRandom(false));
   el.playFav.addEventListener("click", () => playRandom(true));
   el.search.addEventListener("input", () => {
@@ -557,12 +582,6 @@ function bind() {
   el.shuffleBtn.addEventListener("click", () => {
     state.shuffle = !state.shuffle;
     el.shuffleBtn.setAttribute("aria-pressed", String(state.shuffle));
-    el.status.textContent = state.shuffle ? "Zufällige Reihenfolge" : "Feste Reihenfolge";
-  });
-  el.favoritesPlay.addEventListener("click", () => {
-    state.playFavorites = !state.playFavorites;
-    el.favoritesPlay.setAttribute("aria-pressed", String(state.playFavorites));
-    el.status.textContent = state.playFavorites ? "Nur Favoriten werden abgespielt" : "Alle Lieder werden abgespielt";
   });
   el.progress.addEventListener("input", seek);
   el.favorite.addEventListener("click", toggleFavorite);

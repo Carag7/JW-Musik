@@ -53,7 +53,6 @@
 
       <div class="filters">
         <button id="favoritesToggle" class="chip" type="button" aria-pressed="false">alle Lieder</button>
-        <button id="favoritesPlay" class="chip" type="button" aria-pressed="false">Nur Favoriten</button>
         <button id="shuffleBtn" class="chip" type="button" aria-pressed="false">Zufall</button>
         <span id="songCount" class="count">0</span>
       </div>
@@ -68,7 +67,7 @@
           <p id="currentNumber" class="eyebrow song-number">—</p>
           <button id="favoriteBtn" class="star-btn" type="button" aria-pressed="false" aria-label="Favorit" hidden>☆</button>
         </div>
-        <h2 id="currentTitle">Lied wählen</h2>
+        <h2 id="currentTitle">Königreichslieder</h2>
         <div class="meta-row">
           <p id="currentCategory" class="meta"></p>
           <p id="currentStatus">Bereit</p>
@@ -78,7 +77,6 @@
       <section id="lyrics" class="lyrics" aria-live="polite">
         <div id="startPanel" class="start-panel">
           <p class="eyebrow">Sing Out Joyfully</p>
-          <h2>Lied wählen</h2>
           <p id="startStatus" class="meta">137 Lieder bereit</p>
           <div class="start-actions">
             <button id="playAllBtn" class="chip" type="button">alle Lieder</button>
@@ -98,9 +96,13 @@
       <button id="fwd15" class="round" type="button" aria-label="15 Sekunden vor">+15</button>
     </div>
     <div class="timeline">
-      <span id="currentTime">0:00</span>
-      <input id="progressBar" type="range" min="0" max="1000" value="0" aria-label="Position" />
-      <span id="duration">0:00</span>
+      <p id="prevSong" class="nav-song">—</p>
+      <div class="bar-row">
+        <span id="currentTime">0:00</span>
+        <input id="progressBar" type="range" min="0" max="1000" value="0" aria-label="Position" />
+        <span id="duration">0:00</span>
+      </div>
+      <p id="nextSong" class="nav-song">—</p>
     </div>
   </footer>
 
