@@ -17,6 +17,12 @@
 <body>
   <header class="topbar">
     <button id="menuToggle" class="lieder-toggle" type="button" aria-expanded="true">Lieder</button>
+    <div id="listTools" class="list-tools" hidden>
+      <button id="listSmaller" class="ghost" type="button" aria-label="Liste kleiner">A−</button>
+      <button id="listLarger" class="ghost" type="button" aria-label="Liste größer">A+</button>
+      <button id="splitLeft" class="ghost" type="button" aria-label="Liste schmaler">←</button>
+      <button id="splitRight" class="ghost" type="button" aria-label="Liste breiter">→</button>
+    </div>
     <div class="top-actions">
       <button id="smallerBtn" class="ghost" type="button" aria-label="Schrift kleiner">A−</button>
       <button id="largerBtn" class="ghost" type="button" aria-label="Schrift größer">A+</button>
@@ -36,7 +42,7 @@
 
       <label id="lyricSearchWrap" class="search-wrap" hidden>
         <span class="sr-only">Text suchen</span>
-        <input id="lyricSearch" type="search" inputmode="search" placeholder="Wort im Liedtext" autocomplete="off" />
+        <input id="lyricSearch" type="search" inputmode="search" placeholder="im Liedtext suchen" autocomplete="off" />
       </label>
 
       <label class="search-wrap">
@@ -60,6 +66,7 @@
       <ul id="songList" class="song-list" aria-label="Lieder"></ul>
     </aside>
     <button id="toTopBtn" class="to-top" type="button" aria-label="Nach oben">↑</button>
+    <div id="splitHandle" class="split-handle" hidden></div>
 
     <main class="stage">
       <section class="now">

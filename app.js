@@ -152,19 +152,7 @@ function applyScale() {
 }
 
 function goHome() {
-  state.index = -1;
-  el.audio.pause();
-  el.title.textContent = "Königreichslieder";
-  el.songCategory.textContent = "";
-  setStatus("Bereit", "is-info");
-  document.getElementById("titleRow").hidden = true;
-  el.lyrics.innerHTML = "";
-  const panel = document.getElementById("startPanel");
-  if (panel) {
-    panel.hidden = false;
-    el.lyrics.append(panel);
-  }
-  setSidebar(true);
+  location.reload();
 }
 
 function setSidebar(open) {
@@ -417,7 +405,7 @@ function centerActive(force) {
   const active = el.lyrics.querySelector(".lyric-line.active");
   if (!active) return;
   state.centering = true;
-  const target = active.offsetTop - (el.lyrics.clientHeight / 2) + (active.offsetHeight / 2);
+  const target = active.offsetTop - (el.lyrics.clientHeight * 0.33) + (active.offsetHeight / 2);
   el.lyrics.scrollTo({ top: Math.max(0, target), behavior: "smooth" });
   setTimeout(() => { state.centering = false; }, 450);
 }
@@ -571,8 +559,11 @@ function playRandom(favorites) {
 }
 function bind() {
   el.lyricSearchToggle.addEventListener("click", () => {
-    el.lyricSearchWrap.hidden = !el.lyricSearchWrap.hidden;
-    if (!el.lyricSearchWrap.hidden) el.lyricSearch.focus();
+    const open = el.lyricSearchWrap.hidden;
+    el.lyricSearchWrap.hidden = !open;
+    document.getElementById("listTools").hidden = !open;
+    document.getElementById("splitHandle").hidden = !open;
+    if (open) el.lyricSearch.focus();
   });
   el.lyricSearch.addEventListener("input", () => searchLyrics(el.lyricSearch.value));
   el.toTop.addEventListener("click", () => {
@@ -592,6 +583,32 @@ function bind() {
   });
   el.menu.addEventListener("click", () => setSidebar(!state.sidebarOpen));
   document.getElementById("homeBtn").addEventListener("click", goHome);
+  let listSize = 15;
+  document.getElementById("listSmaller").addEventListener("click", () => {
+    listSize = Math.max(12, listSize - 2);
+    document.documentElement.style.setProperty("--list-size", `${listSize}px`);
+  });
+  document.getElementById("listLarger").addEventListener("click", () => {
+    listSize = Math.min(28, listSize + 2);
+    document.documentElement.style.setProperty("--list-size", `${listSize}px`);
+  });
+  const setSidebarWidth = (px) => {
+    const width = Math.max(220, Math.min(window.innerWidth - 240, px));
+    document.documentElement.style.setProperty("--sidebar", `${width}px`);
+  };
+  document.getElementById("splitLeft").addEventListener("click", () => setSidebarWidth(parseInt(getComputedStyle(document.documentElement).getPropertyValue("--sidebar"), 10) - 40));
+  document.getElementById("splitRight").addEventListener("click", () => setSidebarWidth(parseInt(getComputedStyle(document.documentElement).getPropertyValue("--sidebar"), 10) + 40));
+  const handle = document.getElementById("splitHandle");
+  handle.addEventListener("pointerdown", (event) => {
+    handle.setPointerCapture(event.pointerId);
+    const move = (ev) => setSidebarWidth(ev.clientX);
+    const up = () => {
+      handle.removeEventListener("pointermove", move);
+      handle.removeEventListener("pointerup", up);
+    };
+    handle.addEventListener("pointermove", move);
+    handle.addEventListener("pointerup", up);
+  });
   el.play.addEventListener("click", togglePlay);
   el.prev.addEventListener("click", () => step(-1));
   el.next.addEventListener("click", () => step(1));

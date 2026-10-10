@@ -15,7 +15,21 @@
   --topbar: 58px;
 }
 
-* { box-sizing: border-box; }
+html, body { height: 100%; overflow: hidden; }
+.sidebar { height: calc(100vh - var(--topbar) - var(--flyer-h)); overflow: auto; overscroll-behavior: contain; }
+.stage { height: calc(100vh - var(--topbar) - var(--flyer-h)); overflow: auto; overscroll-behavior: contain; }
+.song-list { padding-bottom: calc(var(--flyer-h) + 28px); }
+.song-btn span { font-size: var(--list-size, 15px); }
+.to-top { left: calc(var(--sidebar) - 66px) !important; right: auto !important; }
+@media (max-width: 860px) {
+  .to-top { left: calc(min(92vw, 360px) - 68px) !important; right: auto !important; }
+}
+.list-tools { display: flex; gap: 6px; margin-left: 8px; }
+.split-handle {
+  position: fixed; top: var(--topbar); bottom: var(--flyer-h); left: var(--sidebar);
+  width: 12px; margin-left: -6px; z-index: 65; cursor: col-resize;
+}
+.split-handle::after { content: ""; position: absolute; inset: 20% 4px; border-radius: 6px; background: rgba(240, 180, 41, 0.75); }
 html, body { height: 100%; }
 body {
   margin: 0;
