@@ -154,31 +154,15 @@ function visibleSongs() {
 
 function fillCategories() {
   const names = [...new Set(state.songs.map((song) => song.category).filter(Boolean))].sort();
-  el.category.innerHTML = "";
-  const all = document.createElement("button");
-  all.type = "button";
-  all.className = "cat-chip";
-  all.textContent = "Alle";
-  all.setAttribute("aria-pressed", String(!state.category));
-  all.addEventListener("click", () => {
-    state.category = "";
-    fillCategories();
-    renderList();
-  });
-  el.category.append(all);
+  const current = state.category;
+  el.category.innerHTML = `<option value="">Alle Kategorien</option>`;
   names.forEach((name) => {
-    const chip = document.createElement("button");
-    chip.type = "button";
-    chip.className = "cat-chip";
-    chip.textContent = name;
-    chip.setAttribute("aria-pressed", String(state.category === name));
-    chip.addEventListener("click", () => {
-      state.category = name;
-      fillCategories();
-      renderList();
-    });
-    el.category.append(chip);
+    const option = document.createElement("option");
+    option.value = name;
+    option.textContent = name;
+    el.category.append(option);
   });
+  el.category.value = current;
 }
 
 function renderList() {
@@ -260,9 +244,7 @@ async function loadLyrics(song) {
 function audioCandidates(song) {
   const file = song.file || `sjjc_E_${String(song.number).padStart(3, "0")}.mp3`;
   const remote = song.remote || `https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/${file}`;
-  const paths = Number(song.number) >= 100
-    ? [`songs1/${file}`, `songs2/${file}`, `songs/${file}`, file]
-    : [`songs/${file}`, `songs1/${file}`, `songs2/${file}`, file];
+  const paths = [file, `songs/${file}`, `songs1/${file}`, `songs2/${file}`];
   const cdn = paths.map((path) => `https://cdn.jsdelivr.net/gh/Carag7/JW-Musik@main/${path}`);
   return [...paths, ...cdn, remote];
 }
@@ -313,7 +295,7 @@ async function selectSong(index, autoplay) {
   el.status.textContent = "Audio wird geladen …";
   const fav = state.favorites.has(song.id);
   el.favorite.setAttribute("aria-pressed", String(fav));
-  el.favorite.textContent = fav ? "★ Favorit" : "☆ Favorit";
+  el.favorite.textContent = fav ? "★" : "☆";
   el.progress.value = "0";
   el.currentTime.textContent = "0:00";
   el.duration.textContent = "0:00";
@@ -443,7 +425,7 @@ function toggleFavorite() {
   saveFavorites();
   renderList();
   el.favorite.setAttribute("aria-pressed", String(state.favorites.has(song.id)));
-  el.favorite.textContent = state.favorites.has(song.id) ? "★ Favorit" : "☆ Favorit";
+  el.favorite.textContent = state.favorites.has(song.id) ? "★" : "☆";
 }
 
 async function toggleFullscreen() {
@@ -500,6 +482,10 @@ function bind() {
     state.query = el.search.value;
     renderList();
   });
+  el.category.addEventListener("change", () => {
+    state.category = el.category.value;
+    renderList();
+  });
   el.menu.addEventListener("click", () => setSidebar(!state.sidebarOpen));
   el.play.addEventListener("click", togglePlay);
   el.prev.addEventListener("click", () => step(-1));
@@ -553,7 +539,7 @@ function bind() {
       return;
     }
     const code = el.audio.error ? el.audio.error.code : 0;
-    el.status.textContent = `Audio-Fehler ${code}. Keine Quelle spielbar.`;
+    el.status.textContent = `Audio-Fehler ${code}. Datei fehlt im Repository, das iPhone spielt den Release nicht.`;
   });
   el.lyrics.addEventListener("wheel", markUserScroll, { passive: true });
   el.lyrics.addEventListener("touchmove", markUserScroll, { passive: true });

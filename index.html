@@ -15,7 +15,14 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <button id="menuToggle" class="lieder-toggle" type="button" aria-expanded="true">Lieder</button>
+  <header class="topbar">
+    <button id="menuToggle" class="lieder-toggle" type="button" aria-expanded="true">Lieder</button>
+    <button id="favoriteBtn" class="ghost star-btn" type="button" aria-pressed="false" aria-label="Favorit">☆</button>
+    <button id="smallerBtn" class="ghost" type="button" aria-label="Schrift kleiner">A−</button>
+    <button id="largerBtn" class="ghost" type="button" aria-label="Schrift größer">A+</button>
+    <button id="fullscreenBtn" class="ghost" type="button">Vollbild</button>
+    <a id="lyricsLink" class="ghost text-link" href="https://www.jw.org/en/library/music-songs/sing-out-joyfully/" target="_blank" rel="noopener">Text</a>
+  </header>
   <div class="app">
     <aside id="sidebar" class="sidebar">
       <header class="brand">
@@ -31,10 +38,14 @@
         <input id="songSearch" type="search" inputmode="search" placeholder="Nummer oder Titel" autocomplete="off" />
       </label>
 
-      <div id="categoryFilter" class="category-row" aria-label="Kategorie"></div>
+      <label class="search-wrap">
+        <span class="sr-only">Kategorie</span>
+        <select id="categoryFilter">
+          <option value="">Alle Kategorien</option>
+        </select>
+      </label>
 
       <div class="filters">
-        <button id="favoriteBtn" class="favorite-big" type="button" aria-pressed="false">☆ Favorit</button>
         <button id="favoritesToggle" class="chip" type="button" aria-pressed="false">Nur Liste</button>
         <span id="songCount" class="count">0</span>
       </div>
@@ -49,16 +60,8 @@
             <p id="currentNumber" class="eyebrow song-number">—</p>
             <h2 id="currentTitle">Lied wählen</h2>
             <p id="currentCategory" class="meta"></p>
+            <p id="currentStatus">Bereit</p>
           </div>
-        </div>
-        <div class="now-actions">
-          <div class="tool-row">
-            <button id="smallerBtn" class="ghost" type="button" aria-label="Schrift kleiner">A−</button>
-            <button id="largerBtn" class="ghost" type="button" aria-label="Schrift größer">A+</button>
-            <button id="fullscreenBtn" class="ghost" type="button">Vollbild</button>
-            <a id="lyricsLink" class="ghost text-link" href="https://www.jw.org/en/library/music-songs/sing-out-joyfully/" target="_blank" rel="noopener">Text</a>
-          </div>
-          <p id="currentStatus">Bereit</p>
         </div>
       </section>
 
@@ -75,9 +78,9 @@
     </div>
     <div class="transport">
       <button id="back15" class="round" type="button" aria-label="15 Sekunden zurück">−15</button>
-      <button id="prevBtn" class="round" type="button" aria-label="Vorheriges Lied">⏮</button>
+      <button id="prevBtn" class="round nav" type="button" aria-label="Vorheriges Lied">◀</button>
       <button id="playBtn" class="round play" type="button" aria-label="Play">▶</button>
-      <button id="nextBtn" class="round" type="button" aria-label="Nächstes Lied">⏭</button>
+      <button id="nextBtn" class="round nav" type="button" aria-label="Nächstes Lied">▶</button>
       <button id="fwd15" class="round" type="button" aria-label="15 Sekunden vor">+15</button>
     </div>
     <div class="timeline">
