@@ -3,25 +3,40 @@ const STORAGE = {
   scale: "teslaKaraokeLyricsScale"
 };
 
+const SLUG_FIX = {
+  81: "life-of-a-pioneer",
+  89: "listen-obey-be-blessed",
+  110: "joy-of-jehovah",
+  144: "keep-eye-on-the-prize",
+  160: "good-news"
+};
+
 const state = {
   songs: [],
   index: -1,
   query: "",
+  category: "",
   favoritesOnly: false,
   playFavorites: false,
   shuffle: false,
   favorites: new Set(),
   lyrics: [],
   scale: 42,
-  wakeLock: null
+  wakeLock: null,
+  sidebarOpen: true,
+  userScrolling: false,
+  scrollTimer: 0,
+  centering: false
 };
 
 const el = {
+  app: document.querySelector(".app"),
   list: document.getElementById("songList"),
   count: document.getElementById("songCount"),
   search: document.getElementById("songSearch"),
+  category: document.getElementById("categoryFilter"),
   title: document.getElementById("currentTitle"),
-  category: document.getElementById("currentCategory"),
+  songCategory: document.getElementById("currentCategory"),
   number: document.getElementById("currentNumber"),
   status: document.getElementById("currentStatus"),
   lyrics: document.getElementById("lyrics"),
@@ -42,7 +57,8 @@ const el = {
   shuffleBtn: document.getElementById("shuffleBtn"),
   favoritesPlay: document.getElementById("favoritesPlay"),
   back15: document.getElementById("back15"),
-  fwd15: document.getElementById("fwd15")
+  fwd15: document.getElementById("fwd15"),
+  menu: document.getElementById("menuToggle")
 };
 
 function formatTime(seconds) {
@@ -69,12 +85,31 @@ function applyScale() {
   document.documentElement.style.setProperty("--lyrics", `${state.scale}px`);
 }
 
+function setSidebar(open) {
+  state.sidebarOpen = open;
+  el.app.classList.toggle("sidebar-hidden", !open);
+  el.menu.setAttribute("aria-expanded", String(open));
+  el.menu.textContent = open ? "✕ Menü" : "☰ Menü";
+}
+
 function visibleSongs() {
   const q = state.query.trim().toLowerCase();
   return state.songs.filter((song) => {
     if (state.favoritesOnly && !state.favorites.has(song.id)) return false;
+    if (state.category && song.category !== state.category) return false;
     if (!q) return true;
     return song.title.toLowerCase().includes(q) || String(song.number).includes(q) || song.id.includes(q);
+  });
+}
+
+function fillCategories() {
+  const names = [...new Set(state.songs.map((song) => song.category).filter(Boolean))].sort();
+  el.category.innerHTML = `<option value="">Alle Kategorien</option>`;
+  names.forEach((name) => {
+    const option = document.createElement("option");
+    option.value = name;
+    option.textContent = name;
+    el.category.append(option);
   });
 }
 
@@ -110,94 +145,66 @@ function parseLrc(text) {
 }
 
 function renderLyrics(lines) {
-el.lyrics.innerHTML = "";
- 
-if (!lines || !lines.length) {
-el.lyrics.innerHTML =
-'<p class="empty">Keine Liedtexte gefunden</p>';
-return;
-}
- 
-lines.forEach(line => {
-const row = document.createElement("p");
- 
-row.className = "lyric-line";
-row.dataset.time = line.time;
-row.textContent = line.text;
- 
-el.lyrics.appendChild(row);
-});
+  el.lyrics.innerHTML = "";
+  if (!lines || !lines.length) {
+    el.lyrics.innerHTML = '<p class="empty">Keine Liedtexte gefunden</p>';
+    return;
+  }
+  lines.forEach((line) => {
+    const row = document.createElement("p");
+    row.className = "lyric-line";
+    row.dataset.time = line.time;
+    row.textContent = line.text;
+    el.lyrics.append(row);
+  });
 }
 
-function lyricUrl(song) {
-  const n = String(song.number).padStart(2, "0");
-  return `https://github.com/Carag7/JW-Musik/releases/download/JW-Lyrics/sjj_E_${n}.lrc`;
+function slugify(title) {
+  return title
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[“”„«»"'’‘]/g, "")
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+function officialUrl(song) {
+  const slug = SLUG_FIX[song.number] || slugify(song.title);
+  return `https://www.jw.org/en/library/music-songs/sing-out-joyfully/${song.number}-${slug}/`;
 }
 
 function showLyricLink(song) {
-  const url = lyricUrl(song);
-  if (el.lyricsLink) el.lyricsLink.href = url;
-  const note = document.getElementById("lyricsNote");
-  if (note) note.textContent = `${song.id} · ${song.title}. Text verlinkt sjj_E_${String(song.number).padStart(2, "0")}.lrc`;
+  if (el.lyricsLink) el.lyricsLink.href = officialUrl(song);
 }
 
 async function loadLyrics(song) {
-
-  console.log("Lade Lyrics:", song.lyrics);
-
   state.lyrics = [];
-
-  if (!song.lyrics) {
-    console.log("Keine Lyrics URL");
-    renderLyrics([]);
-    return;
-  }
-
-  try {
-
-    const response = await fetch(song.lyrics, {
-      cache: "no-store"
-    });
-
-    console.log("HTTP Status:", response.status);
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
+  const local = song.lyrics || `lyrics/sjj_E_${String(song.number).padStart(2, "0")}.lrc`;
+  const remote = `https://github.com/Carag7/JW-Musik/releases/download/JW-Lyrics/sjj_E_${String(song.number).padStart(2, "0")}.lrc`;
+  for (const url of [local, remote]) {
+    try {
+      const response = await fetch(url, { cache: "no-store" });
+      if (!response.ok) continue;
+      const text = await response.text();
+      if (!text.includes("[")) continue;
+      state.lyrics = parseLrc(text);
+      renderLyrics(state.lyrics);
+      return;
+    } catch {
+      /* nächste Quelle */
     }
-
-    const text = await response.text();
-
-    console.log("Lyrics Inhalt:", text);
-
-    state.lyrics = parseLrc(text);
-
-    console.log(
-      "Geparste Zeilen:",
-      state.lyrics.length
-    );
-
-    renderLyrics(state.lyrics);
-
-  } catch (error) {
-
-    console.error(
-      "Lyrics Fehler:",
-      error
-    );
-
-    el.lyrics.innerHTML =
-      `<p class="empty">
-        Fehler beim Laden:
-        ${error.message}
-      </p>`;
   }
+  renderLyrics([]);
 }
+
 function audioCandidates(song) {
   const file = song.file || `sjjc_E_${String(song.number).padStart(3, "0")}.mp3`;
   const remote = song.remote || `https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/${file}`;
   const first = Number(song.number) >= 100
-    ? [`songs1/${file}`, `songs2/${file}`, `songs/${file}`]
-    : [`songs/${file}`, `songs1/${file}`, `songs2/${file}`];
+    ? [`songs1/${file}`, `songs2/${file}`, `songs/${file}`, file]
+    : [`songs/${file}`, `songs1/${file}`, `songs2/${file}`, file];
   return [...first, remote];
 }
 
@@ -223,6 +230,19 @@ function setAudioSource(url) {
   el.audio.load();
 }
 
+function setMediaSession(song) {
+  if (!("mediaSession" in navigator) || !song) return;
+  navigator.mediaSession.metadata = new MediaMetadata({
+    title: song.title,
+    artist: "Sing Out Joyfully",
+    album: song.category || "Karaoke"
+  });
+  navigator.mediaSession.setActionHandler("previoustrack", () => step(-1));
+  navigator.mediaSession.setActionHandler("nexttrack", () => step(1));
+  navigator.mediaSession.setActionHandler("play", togglePlay);
+  navigator.mediaSession.setActionHandler("pause", togglePlay);
+}
+
 async function selectSong(index, autoplay) {
   if (index < 0 || index >= state.songs.length) return;
   state.index = index;
@@ -230,7 +250,7 @@ async function selectSong(index, autoplay) {
   const song = state.songs[index];
   el.number.textContent = `Lied ${song.id}`;
   el.title.textContent = song.title;
-  el.category.textContent = song.category || "";
+  el.songCategory.textContent = song.category || "";
   el.status.textContent = "Audio wird geladen …";
   const fav = state.favorites.has(song.id);
   el.favorite.setAttribute("aria-pressed", String(fav));
@@ -240,13 +260,15 @@ async function selectSong(index, autoplay) {
   el.duration.textContent = "0:00";
   el.play.textContent = "▶";
   renderList();
-showLyricLink(song);
-
-await loadLyrics(song);
-
-const url = await resolveAudio(song);
+  showLyricLink(song);
+  await loadLyrics(song);
+  const url = await resolveAudio(song);
   state.currentAudio = url;
   setAudioSource(url);
+  setMediaSession(song);
+  if (!document.fullscreenElement && !document.body.classList.contains("pseudo-fullscreen")) {
+    setSidebar(false);
+  }
   if (autoplay) el.audio.addEventListener("canplay", () => togglePlay(), { once: true });
 }
 
@@ -260,6 +282,7 @@ function togglePlay() {
     el.audio.play().then(() => {
       el.play.textContent = "❚❚";
       el.status.textContent = "Spielt";
+      if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "playing";
       requestWakeLock();
     }).catch(() => {
       el.status.textContent = "Wiedergabe blockiert. Tippe noch einmal auf Play.";
@@ -268,7 +291,20 @@ function togglePlay() {
     el.audio.pause();
     el.play.textContent = "▶";
     el.status.textContent = "Pause";
+    if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "paused";
   }
+}
+
+function centerActive(force) {
+  if (state.userScrolling && !force) return;
+  const active = el.lyrics.querySelector(".lyric-line.active");
+  if (!active) return;
+  state.centering = true;
+  const box = el.lyrics.getBoundingClientRect();
+  const row = active.getBoundingClientRect();
+  const delta = row.top - box.top - (box.height / 2) + (row.height / 2);
+  el.lyrics.scrollBy({ top: delta, behavior: "smooth" });
+  setTimeout(() => { state.centering = false; }, 350);
 }
 
 function updateLyrics() {
@@ -283,13 +319,17 @@ function updateLyrics() {
     line.classList.toggle("active", on);
     if (on) active = line;
   });
-  if (active) {
-    const box = el.lyrics.getBoundingClientRect();
-    const row = active.getBoundingClientRect();
-    if (row.top < box.top + 40 || row.bottom > box.bottom - 40) {
-      active.scrollIntoView({ block: "center", behavior: "smooth" });
-    }
-  }
+  if (active) centerActive(false);
+}
+
+function markUserScroll() {
+  if (state.centering) return;
+  state.userScrolling = true;
+  clearTimeout(state.scrollTimer);
+  state.scrollTimer = setTimeout(() => {
+    state.userScrolling = false;
+    centerActive(true);
+  }, 4000);
 }
 
 function updateProgress() {
@@ -307,10 +347,9 @@ function seek() {
 }
 
 function playPool() {
-  const pool = state.playFavorites
+  return state.playFavorites
     ? state.songs.filter((song) => state.favorites.has(song.id))
     : state.songs;
-  return pool;
 }
 
 function step(delta) {
@@ -348,15 +387,29 @@ function toggleFavorite() {
   renderList();
   el.favorite.setAttribute("aria-pressed", String(state.favorites.has(song.id)));
   el.favorite.textContent = state.favorites.has(song.id) ? "★ Favorit" : "☆ Favorit";
-  el.favoritesToggle.textContent = state.favoritesOnly ? "★ Favoriten" : "☆ Favoriten";
 }
 
 async function toggleFullscreen() {
-  if (!document.fullscreenElement) {
-    await document.documentElement.requestFullscreen().catch(() => {});
-  } else {
-    await document.exitFullscreen().catch(() => {});
+  const apiOpen = Boolean(document.fullscreenElement);
+  if (!apiOpen && document.documentElement.requestFullscreen) {
+    try {
+      await document.documentElement.requestFullscreen();
+      el.fullscreen.textContent = "Beenden";
+      return;
+    } catch {
+      /* Tesla ignoriert die API oft */
+    }
+  } else if (apiOpen && document.exitFullscreen) {
+    try {
+      await document.exitFullscreen();
+      el.fullscreen.textContent = "Vollbild";
+      return;
+    } catch {
+      /* CSS-Vollbild nehmen */
+    }
   }
+  document.body.classList.toggle("pseudo-fullscreen");
+  el.fullscreen.textContent = document.body.classList.contains("pseudo-fullscreen") ? "Beenden" : "Vollbild";
 }
 
 async function requestWakeLock() {
@@ -376,6 +429,7 @@ async function loadSongs() {
     const data = await response.json();
     if (!Array.isArray(data)) throw new Error("songs.json ist keine Liste");
     state.songs = data;
+    fillCategories();
     el.status.textContent = `${data.length} Lieder bereit`;
     renderList();
   } catch (error) {
@@ -389,6 +443,11 @@ function bind() {
     state.query = el.search.value;
     renderList();
   });
+  el.category.addEventListener("change", () => {
+    state.category = el.category.value;
+    renderList();
+  });
+  el.menu.addEventListener("click", () => setSidebar(!state.sidebarOpen));
   el.play.addEventListener("click", togglePlay);
   el.prev.addEventListener("click", () => step(-1));
   el.next.addEventListener("click", () => step(1));
@@ -414,12 +473,12 @@ function bind() {
   });
   el.fullscreen.addEventListener("click", toggleFullscreen);
   el.smaller.addEventListener("click", () => {
-    state.scale = Math.max(24, state.scale - 4);
+    state.scale = Math.max(12, state.scale - 8);
     localStorage.setItem(STORAGE.scale, String(state.scale));
     applyScale();
   });
   el.larger.addEventListener("click", () => {
-    state.scale = Math.min(84, state.scale + 4);
+    state.scale = Math.min(180, state.scale + 8);
     localStorage.setItem(STORAGE.scale, String(state.scale));
     applyScale();
   });
@@ -443,6 +502,9 @@ function bind() {
     const code = el.audio.error ? el.audio.error.code : 0;
     el.status.textContent = `Audio-Fehler ${code}. Keine Quelle spielbar.`;
   });
+  el.lyrics.addEventListener("wheel", markUserScroll, { passive: true });
+  el.lyrics.addEventListener("touchmove", markUserScroll, { passive: true });
+  el.lyrics.addEventListener("pointerdown", markUserScroll);
   document.addEventListener("fullscreenchange", () => {
     el.fullscreen.textContent = document.fullscreenElement ? "Beenden" : "Vollbild";
   });
@@ -451,8 +513,11 @@ function bind() {
     if (event.code === "Space") {
       event.preventDefault();
       togglePlay();
-    } else if (event.code === "ArrowRight") step(1);
-    else if (event.code === "ArrowLeft") step(-1);
+    } else if (["ArrowRight", "MediaTrackNext", "PageDown"].includes(event.code)) {
+      step(1);
+    } else if (["ArrowLeft", "MediaTrackPrevious", "PageUp"].includes(event.code)) {
+      step(-1);
+    }
   });
   window.addEventListener("beforeinstallprompt", (event) => {
     event.preventDefault();

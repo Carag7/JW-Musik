@@ -16,7 +16,7 @@
 </head>
 <body>
   <div class="app">
-    <aside class="sidebar">
+    <aside id="sidebar" class="sidebar">
       <header class="brand">
         <div>
           <p class="eyebrow">Sing Out Joyfully</p>
@@ -30,6 +30,13 @@
         <input id="songSearch" type="search" inputmode="search" placeholder="Nummer oder Titel" autocomplete="off" />
       </label>
 
+      <label class="search-wrap">
+        <span class="sr-only">Kategorie</span>
+        <select id="categoryFilter">
+          <option value="">Alle Kategorien</option>
+        </select>
+      </label>
+
       <div class="filters">
         <button id="favoriteBtn" class="favorite-big" type="button" aria-pressed="false">☆ Favorit</button>
         <button id="favoritesToggle" class="chip" type="button" aria-pressed="false">Nur Liste</button>
@@ -41,46 +48,49 @@
 
     <main class="stage">
       <section class="now">
-        <div>
-          <p id="currentNumber" class="eyebrow">—</p>
-          <h2 id="currentTitle">Lied wählen</h2>
-          <p id="currentCategory" class="meta"></p>
+        <div class="now-left">
+          <button id="menuToggle" class="ghost menu-toggle" type="button" aria-expanded="true">☰ Menü</button>
+          <div>
+            <p id="currentNumber" class="eyebrow song-number">—</p>
+            <h2 id="currentTitle">Lied wählen</h2>
+            <p id="currentCategory" class="meta"></p>
+          </div>
         </div>
         <div class="now-actions">
           <div class="tool-row">
             <button id="smallerBtn" class="ghost" type="button" aria-label="Schrift kleiner">A−</button>
             <button id="largerBtn" class="ghost" type="button" aria-label="Schrift größer">A+</button>
             <button id="fullscreenBtn" class="ghost" type="button">Vollbild</button>
-            <a id="lyricsLink" class="ghost text-link" href="https://github.com/Carag7/JW-Musik/releases/download/JW-Lyrics/sjj_E_01.lrc" target="_blank" rel="noopener">Text</a>
+            <a id="lyricsLink" class="ghost text-link" href="https://www.jw.org/en/library/music-songs/sing-out-joyfully/" target="_blank" rel="noopener">Text</a>
           </div>
           <p id="currentStatus">Bereit</p>
         </div>
       </section>
 
       <section id="lyrics" class="lyrics" aria-live="polite">
-        <p id="lyricsNote" class="empty">Die Liedseite lässt sich nicht einbetten und verschwindet deshalb. Der Titel bleibt hier sichtbar.</p>
+        <p id="lyricsNote" class="empty">Wähle ein Lied. Der Text kommt aus der lokalen LRC-Datei.</p>
       </section>
-
-      <footer class="flyer" aria-label="Wiedergabe">
-        <div class="flyer-modes">
-          <button id="favoritesPlay" class="chip" type="button" aria-pressed="false">Nur Favoriten</button>
-          <button id="shuffleBtn" class="chip" type="button" aria-pressed="false">Zufall</button>
-        </div>
-        <div class="transport">
-          <button id="back15" class="round" type="button" aria-label="15 Sekunden zurück">−15</button>
-          <button id="prevBtn" class="round" type="button" aria-label="Vorheriges Lied">⏮</button>
-          <button id="playBtn" class="round play" type="button" aria-label="Play">▶</button>
-          <button id="nextBtn" class="round" type="button" aria-label="Nächstes Lied">⏭</button>
-          <button id="fwd15" class="round" type="button" aria-label="15 Sekunden vor">+15</button>
-        </div>
-        <div class="timeline">
-          <span id="currentTime">0:00</span>
-          <input id="progressBar" type="range" min="0" max="1000" value="0" aria-label="Position" />
-          <span id="duration">0:00</span>
-        </div>
-      </footer>
     </main>
   </div>
+
+  <footer class="flyer" aria-label="Wiedergabe">
+    <div class="flyer-modes">
+      <button id="favoritesPlay" class="chip" type="button" aria-pressed="false">Nur Favoriten</button>
+      <button id="shuffleBtn" class="chip" type="button" aria-pressed="false">Zufall</button>
+    </div>
+    <div class="transport">
+      <button id="back15" class="round" type="button" aria-label="15 Sekunden zurück">−15</button>
+      <button id="prevBtn" class="round" type="button" aria-label="Vorheriges Lied">⏮</button>
+      <button id="playBtn" class="round play" type="button" aria-label="Play">▶</button>
+      <button id="nextBtn" class="round" type="button" aria-label="Nächstes Lied">⏭</button>
+      <button id="fwd15" class="round" type="button" aria-label="15 Sekunden vor">+15</button>
+    </div>
+    <div class="timeline">
+      <span id="currentTime">0:00</span>
+      <input id="progressBar" type="range" min="0" max="1000" value="0" aria-label="Position" />
+      <span id="duration">0:00</span>
+    </div>
+  </footer>
 
   <audio id="audio" preload="none"></audio>
   <script src="app.js"></script>
