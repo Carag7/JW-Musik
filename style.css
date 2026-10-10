@@ -11,7 +11,7 @@
   --sidebar: 300px;
   --lyrics: 42px;
   --safe-bottom: env(safe-area-inset-bottom, 0px);
-  --flyer-h: 84px;
+  --flyer-h: 112px;
   --topbar: 58px;
 }
 
@@ -84,23 +84,32 @@ button { cursor: pointer; }
 [hidden] { display: none !important; }
 .to-top {
   position: fixed;
-  left: calc(var(--sidebar) - 64px);
-  bottom: calc(var(--flyer-h) + 14px);
-  z-index: 60;
-  width: 48px;
-  height: 48px;
+  right: 14px;
+  bottom: calc(var(--flyer-h) + 16px);
+  z-index: 70;
+  width: 52px;
+  height: 52px;
   border: 0;
   border-radius: 16px;
   background: var(--accent);
   color: #1b1404;
-  font-size: 26px;
+  font-size: 28px;
   font-weight: 800;
   box-shadow: var(--shadow);
 }
 .app.sidebar-hidden .to-top { display: none; }
+@media (min-width: 861px) {
+  .to-top { left: calc(var(--sidebar) - 66px); right: auto; }
+}
+.start-image { width: 100%; height: auto; max-height: none; object-fit: contain; border-radius: 18px; }
+.home-link { border: 0; background: transparent; padding: 0; font: inherit; font-weight: 800; }
+.lyrics { padding-bottom: calc(var(--flyer-h) + 36px); }
+.timeline { flex: 1 1 auto; width: 100%; min-width: 0; }
+.bar-row { width: 100%; }
+.bar-row input { flex: 1 1 auto; width: 100%; min-width: 80px; }
 .start-panel { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }
 .start-panel .eyebrow { font-size: 28px; letter-spacing: 0.08em; }
-.start-image { width: min(100%, 720px); max-height: 42vh; object-fit: cover; border-radius: 18px; }
+.start-image { width: 100%; height: auto; max-height: none; object-fit: contain; border-radius: 18px; }
 .start-actions { display: flex; flex-direction: row; gap: 12px; }
 .flyer {
   left: 0;
@@ -132,7 +141,17 @@ button { cursor: pointer; }
   .timeline { display: none; }
   .flyer { justify-content: center; }
 }
-.sidebar, .stage { height: calc(100vh - var(--topbar)); overflow: auto; }
+.stage { height: calc(100vh - var(--topbar) - var(--flyer-h)) !important; overflow: hidden; }
+.lyrics { height: 100% !important; padding-bottom: calc(var(--flyer-h) + 48px) !important; }
+.to-top { display: block; }
+.app.sidebar-hidden .to-top { display: none; }
+@media (max-width: 860px) {
+  .to-top { left: auto; right: 12px; bottom: calc(var(--flyer-h) + 12px); display: block; }
+  .timeline { display: flex !important; }
+}
+.timeline { flex: 1 1 auto !important; width: auto !important; }
+.bar-row { width: 100%; }
+.bar-row input { width: 100%; flex: 1; }
 .stage { min-height: 0; }
 @media (max-width: 860px) {
   .flyer { justify-content: center; }

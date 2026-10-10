@@ -151,6 +151,22 @@ function applyScale() {
   document.documentElement.style.setProperty("--lyrics", `${state.scale}px`);
 }
 
+function goHome() {
+  state.index = -1;
+  el.audio.pause();
+  el.title.textContent = "Königreichslieder";
+  el.songCategory.textContent = "";
+  setStatus("Bereit", "is-info");
+  document.getElementById("titleRow").hidden = true;
+  el.lyrics.innerHTML = "";
+  const panel = document.getElementById("startPanel");
+  if (panel) {
+    panel.hidden = false;
+    el.lyrics.append(panel);
+  }
+  setSidebar(true);
+}
+
 function setSidebar(open) {
   state.sidebarOpen = open;
   el.app.classList.toggle("sidebar-hidden", !open);
@@ -575,6 +591,7 @@ function bind() {
     renderList();
   });
   el.menu.addEventListener("click", () => setSidebar(!state.sidebarOpen));
+  document.getElementById("homeBtn").addEventListener("click", goHome);
   el.play.addEventListener("click", togglePlay);
   el.prev.addEventListener("click", () => step(-1));
   el.next.addEventListener("click", () => step(1));
