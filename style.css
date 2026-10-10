@@ -387,22 +387,20 @@ body.pseudo-fullscreen .app { grid-template-columns: 1fr; }
 body.pseudo-fullscreen .sidebar { display: none; }
 body.pseudo-fullscreen .flyer { left: 0; }
 
+.sidebar { padding-top: 22px; }
+.start-actions { flex-wrap: wrap; }
+.start-actions .chip { flex: 0 0 auto; min-width: 140px; }
+.app, .app.sidebar-hidden { }
 @media (max-width: 860px) {
   .app { grid-template-columns: var(--sidebar) 1fr !important; }
-  .sidebar {
-    position: relative !important;
-    width: auto !important;
-    top: auto !important;
-    bottom: auto !important;
-    height: calc(100vh - var(--topbar) - var(--flyer-h)) !important;
-  }
-  .split-handle { left: var(--sidebar) !important; }
+  .app.sidebar-hidden { grid-template-columns: 1fr !important; }
+  .sidebar { position: relative !important; width: auto !important; top: auto !important; left: auto !important; bottom: auto !important; height: calc(100vh - var(--topbar) - var(--flyer-h)) !important; }
+  .stage { width: auto !important; }
 }
-.stage { overflow: hidden !important; }
 .lyrics {
-  min-height: 0 !important;
-  height: 100% !important;
+  height: calc(100vh - var(--topbar) - 150px - var(--flyer-h)) !important;
+  max-height: none !important;
   overflow-y: auto !important;
-  padding-bottom: calc(var(--flyer-h) + 140px) !important;
+  padding-bottom: 180px !important;
 }
-.start-panel { margin-bottom: 80px; }
+.start-panel { padding-bottom: 40px; }
