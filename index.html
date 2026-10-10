@@ -15,6 +15,7 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <button id="menuToggle" class="lieder-toggle" type="button" aria-expanded="true">Lieder</button>
   <div class="app">
     <aside id="sidebar" class="sidebar">
       <header class="brand">
@@ -30,12 +31,7 @@
         <input id="songSearch" type="search" inputmode="search" placeholder="Nummer oder Titel" autocomplete="off" />
       </label>
 
-      <label class="search-wrap">
-        <span class="sr-only">Kategorie</span>
-        <select id="categoryFilter">
-          <option value="">Alle Kategorien</option>
-        </select>
-      </label>
+      <div id="categoryFilter" class="category-row" aria-label="Kategorie"></div>
 
       <div class="filters">
         <button id="favoriteBtn" class="favorite-big" type="button" aria-pressed="false">☆ Favorit</button>
@@ -49,7 +45,6 @@
     <main class="stage">
       <section class="now">
         <div class="now-left">
-          <button id="menuToggle" class="ghost menu-toggle" type="button" aria-expanded="true">☰ Menü</button>
           <div>
             <p id="currentNumber" class="eyebrow song-number">—</p>
             <h2 id="currentTitle">Lied wählen</h2>
