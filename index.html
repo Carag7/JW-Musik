@@ -63,7 +63,7 @@
 
     <main class="stage">
       <section class="now">
-        <div class="title-row">
+        <div class="title-row" id="titleRow" hidden>
           <p id="currentNumber" class="eyebrow song-number">—</p>
           <button id="favoriteBtn" class="star-btn" type="button" aria-pressed="false" aria-label="Favorit" hidden>☆</button>
         </div>
@@ -77,7 +77,7 @@
       <section id="lyrics" class="lyrics" aria-live="polite">
         <div id="startPanel" class="start-panel">
           <p class="eyebrow">Sing Out Joyfully</p>
-          <p id="startStatus" class="meta">137 Lieder bereit</p>
+          <img class="start-image" src="start-bg.png" alt="" />
           <div class="start-actions">
             <button id="playAllBtn" class="chip" type="button">alle Lieder</button>
             <button id="playFavBtn" class="chip" type="button">Favoriten</button>

@@ -81,11 +81,12 @@ button { cursor: pointer; }
 .meta-row .meta, #currentStatus { margin: 0; }
 #currentStatus { text-align: right; }
 .search-wrap select { min-height: 48px; width: 100%; }
+[hidden] { display: none !important; }
 .to-top {
-  position: absolute;
-  right: 12px;
-  bottom: 12px;
-  z-index: 5;
+  position: fixed;
+  left: calc(var(--sidebar) - 64px);
+  bottom: calc(var(--flyer-h) + 14px);
+  z-index: 60;
   width: 48px;
   height: 48px;
   border: 0;
@@ -96,17 +97,25 @@ button { cursor: pointer; }
   font-weight: 800;
   box-shadow: var(--shadow);
 }
-.sidebar { position: relative; }
-.start-panel {
-  min-height: 320px;
-  padding: 36px 24px;
-  border-radius: 18px;
-  background:
-    linear-gradient(180deg, rgba(7, 11, 20, 0.25), rgba(7, 11, 20, 0.62)),
-    url("start-bg.png") center 20% / cover no-repeat;
+.app.sidebar-hidden .to-top { display: none; }
+.start-panel { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }
+.start-panel .eyebrow { font-size: 28px; letter-spacing: 0.08em; }
+.start-image { width: min(100%, 720px); max-height: 42vh; object-fit: cover; border-radius: 18px; }
+.start-actions { display: flex; flex-direction: row; gap: 12px; }
+.flyer {
+  left: 0;
+  z-index: 55;
+  justify-content: flex-start;
+  padding-left: 8px;
 }
-.start-panel .eyebrow { font-size: 16px; }
-.start-panel .meta { font-size: 22px; }
+.timeline { flex: 1; width: 100%; min-width: 0; }
+.stage { height: calc(100vh - var(--topbar) - var(--flyer-h)); overflow: hidden; }
+.lyrics { height: 100%; max-height: 100%; padding-bottom: 8px; }
+@media (max-width: 860px) {
+  .to-top { left: calc(min(92vw, 360px) - 68px); width: 56px; height: 56px; font-size: 30px; }
+  .start-actions { width: 100%; }
+  .start-actions .chip { flex: 1; min-width: 0; }
+}
 #lyricSearchToggle { width: 48px; height: 48px; font-size: 34px; line-height: 1; }
 .filters .chip, .count { font-size: 17px; }
 #currentStatus.is-play { color: #5dce7a; }
@@ -269,10 +278,11 @@ button { cursor: pointer; }
 
 .lyrics {
   position: relative;
-  height: calc(100vh - var(--topbar) - 150px - var(--flyer-h));
+  min-height: 0;
+  height: 100%;
   overflow-x: hidden;
   overflow-y: auto;
-  padding: 28px 28px 40px 56px;
+  padding: 16px 28px 12px 56px;
   scroll-behavior: smooth;
 }
 .lyric-line {
@@ -301,10 +311,10 @@ button { cursor: pointer; }
 
 .flyer {
   position: fixed;
-  left: var(--sidebar);
+  left: 0;
   right: 0;
   bottom: 0;
-  z-index: 20;
+  z-index: 55;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -356,7 +366,7 @@ body.pseudo-fullscreen .flyer { left: 0; }
   .stage { padding: 4px 12px 0; }
   .now h2 { font-size: 28px; }
   .lyrics {
-    height: calc(100vh - var(--topbar) - 150px - var(--flyer-h));
-    padding: 12px 16px 24px 20px;
+    height: 100%;
+    padding: 12px 16px 12px 20px;
   }
 }

@@ -352,6 +352,7 @@ async function selectSong(index, autoplay) {
   const fav = state.favorites.has(song.id);
   el.number.hidden = false;
   el.favorite.hidden = false;
+  document.getElementById("titleRow").hidden = false;
   el.favorite.setAttribute("aria-pressed", String(fav));
   el.favorite.textContent = fav ? "★" : "☆";
   el.progress.value = "0";
