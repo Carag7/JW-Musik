@@ -19,7 +19,15 @@ html, body { height: 100%; overflow: hidden; }
 .sidebar { height: calc(100vh - var(--topbar) - var(--flyer-h)); overflow: auto; overscroll-behavior: contain; }
 .stage { height: calc(100vh - var(--topbar) - var(--flyer-h)); overflow: auto; overscroll-behavior: contain; }
 .song-list { padding-bottom: calc(var(--flyer-h) + 28px); }
-.song-btn span { font-size: var(--list-size, 15px); }
+.song-btn strong, .song-btn span { font-size: var(--list-size, 16px) !important; }
+.now { padding-top: 18px; }
+.lyrics { overflow-y: auto !important; padding-bottom: calc(var(--flyer-h) + 64px) !important; }
+.sidebar { padding-bottom: calc(var(--flyer-h) + 36px); bottom: var(--flyer-h); }
+@media (max-width: 860px) {
+  .app { grid-template-columns: var(--sidebar) 1fr; }
+  .sidebar { position: relative; width: auto; top: auto; bottom: auto; box-shadow: none; }
+  .to-top { left: calc(var(--sidebar) - 66px) !important; right: auto !important; }
+}
 .to-top { left: calc(var(--sidebar) - 66px) !important; right: auto !important; }
 @media (max-width: 860px) {
   .to-top { left: calc(min(92vw, 360px) - 68px) !important; right: auto !important; }
@@ -280,8 +288,8 @@ button { cursor: pointer; }
   border-radius: 12px;
   background: transparent;
 }
-.song-btn strong { font-size: 20px; color: var(--accent-2); }
-.song-btn span { font-size: 15px; line-height: 1.25; }
+.song-btn strong { color: var(--accent-2); }
+.song-btn span { line-height: 1.25; }
 .song-btn.active, .song-btn:hover {
   background: rgba(240, 180, 41, 0.12);
   border-color: rgba(240, 180, 41, 0.35);

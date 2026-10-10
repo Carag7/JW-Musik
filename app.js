@@ -587,10 +587,12 @@ function bind() {
   document.getElementById("listSmaller").addEventListener("click", () => {
     listSize = Math.max(12, listSize - 2);
     document.documentElement.style.setProperty("--list-size", `${listSize}px`);
+    document.querySelectorAll(".song-btn span, .song-btn strong").forEach((node) => node.style.fontSize = `${listSize}px`);
   });
   document.getElementById("listLarger").addEventListener("click", () => {
-    listSize = Math.min(28, listSize + 2);
+    listSize = Math.min(32, listSize + 2);
     document.documentElement.style.setProperty("--list-size", `${listSize}px`);
+    document.querySelectorAll(".song-btn span, .song-btn strong").forEach((node) => node.style.fontSize = `${listSize}px`);
   });
   const setSidebarWidth = (px) => {
     const width = Math.max(220, Math.min(window.innerWidth - 240, px));
