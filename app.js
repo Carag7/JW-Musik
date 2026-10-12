@@ -720,6 +720,8 @@ async function toggleFullscreen() {
     try {
       await document.documentElement.requestFullscreen();
       el.fullscreen.textContent = "Vollbild beenden";
+      document.body.classList.add("is-fullscreen");
+      document.getElementById("splitHandle").hidden = true;
       return;
     } catch {
       /* Tesla ignoriert die API oft */
@@ -728,12 +730,15 @@ async function toggleFullscreen() {
     try {
       await document.exitFullscreen();
       el.fullscreen.textContent = "Vollbild";
+      document.body.classList.remove("is-fullscreen");
       return;
     } catch {
       /* CSS-Vollbild nehmen */
     }
   }
   document.body.classList.toggle("pseudo-fullscreen");
+  document.body.classList.toggle("is-fullscreen", document.body.classList.contains("pseudo-fullscreen"));
+  document.getElementById("splitHandle").hidden = document.body.classList.contains("pseudo-fullscreen");
   el.fullscreen.textContent = document.body.classList.contains("pseudo-fullscreen") ? "Vollbild beenden" : "Vollbild";
 }
 
@@ -825,11 +830,13 @@ function bind() {
     }
     state.mode = "playlists";
     document.getElementById("playlistBar").hidden = false;
+    document.getElementById("playlistSelectWrap").hidden = false;
     document.getElementById("eigeneToggle").setAttribute("aria-pressed", "true");
     el.menu.setAttribute("aria-expanded", "false");
     el.favoritesToggle.textContent = document.getElementById("lyricSearchWrap").hidden ? "Wiedergabe" : (state.selectMode ? "alle Lieder" : "Auswahl");
     setSidebar(true);
     fillPlaylists();
+    requestAnimationFrame(() => fillPlaylists());
     updateEditTools();
     renderList();
   });
@@ -1029,30 +1036,40 @@ function bind() {
   window.addEventListener("beforeinstallprompt", () => {});
 }
 
-const SYNC = "https://kvdb.io/carag7karaoke/";
+const SYNC = "https://kvdb.io/";
+
+function encodeShare(payload) {
+  return btoa(unescape(encodeURIComponent(JSON.stringify(payload)))).replace(/=+$/, "");
+}
+
+function decodeShare(code) {
+  try {
+    const padded = code.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((code.length + 3) % 4);
+    return JSON.parse(decodeURIComponent(escape(atob(padded))));
+  } catch {
+    return null;
+  }
+}
 
 async function exportFavorites() {
   openCode("Favoriten sichern", async (code) => {
     const payload = { favorites: [...state.favorites], playlists: state.playlists };
+    const share = encodeShare(payload);
     localStorage.setItem(`fav-${code}`, JSON.stringify(payload));
-    const response = await fetch(`${SYNC}${encodeURIComponent(code)}`, { method: "PUT", body: JSON.stringify(payload) });
-    if (!response.ok) return "Lokal gespeichert. Online-Sync ist gerade nicht erreichbar.";
-    return `Gespeichert unter ${code}. Derselbe Code funktioniert auf jedem Gerät.`;
+    localStorage.setItem(`fav-${share}`, JSON.stringify(payload));
+    try { await navigator.clipboard.writeText(share); } catch {}
+    return `Gespeichert. Auf dem anderen Gerät diesen Code einfügen:\n${share}`;
   });
 }
 
 async function importFavorites() {
   openCode("Favoriten laden", async (code) => {
-    let payload = null;
-    try {
-      const response = await fetch(`${SYNC}${encodeURIComponent(code)}`);
-      if (response.ok) payload = await response.json();
-    } catch { payload = null; }
+    let payload = decodeShare(code);
     if (!payload) {
       try { payload = JSON.parse(localStorage.getItem(`fav-${code}`) || "null"); } catch { payload = null; }
     }
     if (Array.isArray(payload)) payload = { favorites: payload, playlists: [] };
-    if (!payload || !Array.isArray(payload.favorites)) return "Zu diesem Code ist nichts gespeichert.";
+    if (!payload || !Array.isArray(payload.favorites)) return "Zu diesem Code ist nichts gespeichert. Füge den kopierten Code ein.";
     if (state.favorites.size || state.playlists.length) {
       const ok = await warnReplace();
       if (!ok) return "Abgebrochen.";
@@ -1069,13 +1086,17 @@ async function importFavorites() {
 
 function warnReplace() {
   return new Promise((resolve) => {
-    const modal = document.getElementById("codeModal");
-    const message = document.getElementById("codeMessage");
-    document.getElementById("codeTitle").textContent = "ACHTUNG";
-    message.textContent = "Vorhandene Favoriten und Listen werden ersetzt.";
-    const form = document.getElementById("codeForm");
-    form.onsubmit = (event) => { event.preventDefault(); resolve(true); };
-    document.getElementById("codeCancel").onclick = () => { modal.hidden = true; resolve(false); };
+    const modal = document.getElementById("warnModal");
+    modal.hidden = false;
+    document.getElementById("warnForm").onsubmit = (event) => {
+      event.preventDefault();
+      modal.hidden = true;
+      resolve(true);
+    };
+    document.getElementById("warnCancel").onclick = () => {
+      modal.hidden = true;
+      resolve(false);
+    };
   });
 }
 

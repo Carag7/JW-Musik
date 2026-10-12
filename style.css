@@ -429,8 +429,19 @@ body.pseudo-fullscreen .flyer { left: 0; }
 .intro-number { margin: 0; color: var(--accent); font-size: 28px; letter-spacing: 0.16em; font-weight: 800; }
 .title-intro.is-out { opacity: 0; }
 .sidebar { z-index: 60; }
-.split-handle { display: none !important; }
-body.glass-open:not(.pseudo-fullscreen):not(:fullscreen) .split-handle { display: block !important; }
+body.is-fullscreen .split-handle,
+body.pseudo-fullscreen .split-handle,
+:fullscreen .split-handle { display: none !important; }
+.start-actions { display: flex; flex-direction: row; flex-wrap: nowrap; gap: 12px; }
+.start-actions .chip { flex: 1 1 0; }
+.start-panel { padding-bottom: 180px; }
+@media (max-width: 900px) {
+  .timeline { max-width: 50%; }
+}
+@media (max-width: 520px) {
+  .flyer { flex-direction: column; }
+  .timeline { max-width: 100%; }
+}
 .song-list { padding-bottom: 240px !important; }
 @media (min-width: 700px) {
   .flyer { flex-direction: row !important; align-items: center; justify-content: flex-start; }
