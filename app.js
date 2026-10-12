@@ -211,6 +211,7 @@ function fillPlaylists() {
   const box = document.getElementById("playlistButtons");
   const glass = !document.getElementById("lyricSearchWrap").hidden;
   if (select) {
+    document.getElementById("playlistSelectWrap").hidden = !glass;
     select.hidden = !glass;
     const current = state.activePlaylist;
     select.innerHTML = `<option value="">Liste wählen</option>`;
@@ -975,6 +976,7 @@ function bind() {
   el.lyrics.addEventListener("pointerdown", markUserScroll);
   document.addEventListener("fullscreenchange", () => {
     el.fullscreen.textContent = document.fullscreenElement ? "Vollbild beenden" : "Vollbild";
+    document.getElementById("splitHandle").hidden = Boolean(document.fullscreenElement) || document.body.classList.contains("pseudo-fullscreen") || document.getElementById("lyricSearchWrap").hidden;
   });
   document.addEventListener("keydown", (event) => {
     if (event.target === el.search) return;
