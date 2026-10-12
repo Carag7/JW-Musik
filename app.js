@@ -228,7 +228,7 @@ function fillPlaylists() {
     select.value = current || "";
   }
   if (box) {
-    box.hidden = glass;
+    box.hidden = false;
     box.innerHTML = "";
     state.playlists.forEach((list) => {
       const button = document.createElement("button");
@@ -244,6 +244,16 @@ function fillPlaylists() {
       });
       box.append(button);
     });
+    if (glass) {
+      const create = document.createElement("button");
+      create.type = "button";
+      create.className = "chip";
+      create.textContent = "neue Liste erstellen";
+      create.addEventListener("click", () => {
+        document.getElementById("playlistCreateBox").hidden = false;
+      });
+      box.append(create);
+    }
   }
 }
 
@@ -287,6 +297,23 @@ function fillCategories() {
     el.category.append(option);
   });
   el.category.value = current;
+  const list = document.getElementById("categoryList");
+  if (!list) return;
+  list.innerHTML = "";
+  ["", ...names].forEach((name) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "chip";
+    button.textContent = name || "Alle Kategorien";
+    if (name === state.category) button.setAttribute("aria-pressed", "true");
+    button.addEventListener("click", () => {
+      state.category = name;
+      el.category.value = name;
+      list.hidden = true;
+      renderList();
+    });
+    list.append(button);
+  });
 }
 
 function renderList() {
@@ -773,9 +800,10 @@ function bind() {
     state.query = el.search.value;
     renderList();
   });
-  el.category.addEventListener("change", () => {
-    state.category = el.category.value;
-    renderList();
+  el.category.addEventListener("mousedown", (event) => {
+    event.preventDefault();
+    const list = document.getElementById("categoryList");
+    list.hidden = !list.hidden;
   });
   el.menu.addEventListener("click", () => {
     if (state.mode === "songs" && state.sidebarOpen) {
@@ -799,7 +827,7 @@ function bind() {
     document.getElementById("playlistBar").hidden = false;
     document.getElementById("eigeneToggle").setAttribute("aria-pressed", "true");
     el.menu.setAttribute("aria-expanded", "false");
-    el.favoritesToggle.textContent = document.getElementById("lyricSearchWrap").hidden ? "Auswahl" : (state.selectMode ? "alle Lieder" : "Auswahl");
+    el.favoritesToggle.textContent = document.getElementById("lyricSearchWrap").hidden ? "Wiedergabe" : (state.selectMode ? "alle Lieder" : "Auswahl");
     setSidebar(true);
     fillPlaylists();
     updateEditTools();
@@ -907,8 +935,12 @@ function bind() {
   el.progress.addEventListener("input", seek);
   el.progress.addEventListener("change", seek);
   el.shuffleBtn.addEventListener("click", () => {
-    state.shuffle = !state.shuffle;
-    el.shuffleBtn.setAttribute("aria-pressed", String(state.shuffle));
+    state.shuffle = true;
+    el.shuffleBtn.setAttribute("aria-pressed", "true");
+    const pool = playPool();
+    if (!pool.length) return;
+    const pick = pool[Math.floor(Math.random() * pool.length)];
+    selectSong(state.songs.indexOf(pick), true);
   });
   el.currentTime.addEventListener("click", () => {
     if (!el.audio.src && !el.audio.currentSrc) return;
@@ -928,7 +960,12 @@ function bind() {
   el.favorite.addEventListener("click", toggleFavorite);
   el.favoritesToggle.addEventListener("click", () => {
     if (state.mode === "playlists") {
-      if (document.getElementById("lyricSearchWrap").hidden) return;
+      if (document.getElementById("lyricSearchWrap").hidden) {
+        state.shuffle = false;
+        const pool = playPool();
+        if (pool.length) selectSong(state.songs.indexOf(pool[0]), true);
+        return;
+      }
       state.selectMode = !state.selectMode;
       el.favoritesToggle.setAttribute("aria-pressed", String(state.selectMode));
       el.favoritesToggle.textContent = state.selectMode ? "alle Lieder" : "Auswahl";
@@ -992,55 +1029,73 @@ function bind() {
   window.addEventListener("beforeinstallprompt", () => {});
 }
 
-function exportFavorites() {
-  const payload = { favorites: [...state.favorites], playlists: state.playlists };
-  const code = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
-  localStorage.setItem(`fav-${code.slice(0, 12)}`, JSON.stringify(payload));
-  navigator.clipboard?.writeText(code).catch(() => {});
-  openCode("Favoriten sichern", null, `Code kopiert. In jedem Browser einfügen:\n${code}`);
+const SYNC = "https://kvdb.io/carag7karaoke/";
+
+async function exportFavorites() {
+  openCode("Favoriten sichern", async (code) => {
+    const payload = { favorites: [...state.favorites], playlists: state.playlists };
+    localStorage.setItem(`fav-${code}`, JSON.stringify(payload));
+    const response = await fetch(`${SYNC}${encodeURIComponent(code)}`, { method: "PUT", body: JSON.stringify(payload) });
+    if (!response.ok) return "Lokal gespeichert. Online-Sync ist gerade nicht erreichbar.";
+    return `Gespeichert unter ${code}. Derselbe Code funktioniert auf jedem Gerät.`;
+  });
 }
 
-function importFavorites() {
-  openCode("Favoriten laden", (code) => {
+async function importFavorites() {
+  openCode("Favoriten laden", async (code) => {
     let payload = null;
-    try { payload = JSON.parse(decodeURIComponent(escape(atob(code)))); } catch { payload = null; }
+    try {
+      const response = await fetch(`${SYNC}${encodeURIComponent(code)}`);
+      if (response.ok) payload = await response.json();
+    } catch { payload = null; }
     if (!payload) {
       try { payload = JSON.parse(localStorage.getItem(`fav-${code}`) || "null"); } catch { payload = null; }
     }
     if (Array.isArray(payload)) payload = { favorites: payload, playlists: [] };
-    if (!payload || !Array.isArray(payload.favorites)) return "Zu diesem Code ist nichts gespeichert. Füge den kopierten Code ein.";
-    const apply = () => {
-      state.favorites = new Set(payload.favorites);
-      if (Array.isArray(payload.playlists)) state.playlists = payload.playlists;
-      saveFavorites();
-      savePlaylists();
-      fillPlaylists();
-      renderList();
-    };
+    if (!payload || !Array.isArray(payload.favorites)) return "Zu diesem Code ist nichts gespeichert.";
     if (state.favorites.size || state.playlists.length) {
-      if (!confirm("Vorhandene Favoriten und Listen werden ersetzt. Fortfahren?")) return "Abgebrochen.";
+      const ok = await warnReplace();
+      if (!ok) return "Abgebrochen.";
     }
-    apply();
+    state.favorites = new Set(payload.favorites);
+    if (Array.isArray(payload.playlists)) state.playlists = payload.playlists;
+    saveFavorites();
+    savePlaylists();
+    fillPlaylists();
+    renderList();
     return `${payload.favorites.length} Favoriten und ${state.playlists.length} Listen geladen.`;
   });
 }
 
-function openCode(title, onSubmit, preset) {
+function warnReplace() {
+  return new Promise((resolve) => {
+    const modal = document.getElementById("codeModal");
+    const message = document.getElementById("codeMessage");
+    document.getElementById("codeTitle").textContent = "ACHTUNG";
+    message.textContent = "Vorhandene Favoriten und Listen werden ersetzt.";
+    const form = document.getElementById("codeForm");
+    form.onsubmit = (event) => { event.preventDefault(); resolve(true); };
+    document.getElementById("codeCancel").onclick = () => { modal.hidden = true; resolve(false); };
+  });
+}
+
+function openCode(title, onSubmit) {
   const modal = document.getElementById("codeModal");
   const input = document.getElementById("codeInput");
   const message = document.getElementById("codeMessage");
   document.getElementById("codeTitle").textContent = title;
-  input.value = preset || "";
-  message.textContent = preset ? "Code wurde kopiert. Mit OK schließen." : "";
+  input.value = "";
+  message.textContent = "";
   modal.hidden = false;
   input.focus();
   const form = document.getElementById("codeForm");
-  form.onsubmit = (event) => {
+  form.onsubmit = async (event) => {
     event.preventDefault();
     if (!onSubmit) { modal.hidden = true; return; }
     const code = input.value.trim();
     if (code.length < 4) { message.textContent = "Mindestens 4 Zeichen."; return; }
-    const result = onSubmit(code);
+    message.textContent = "Bitte warten …";
+    const result = await onSubmit(code);
     if (result) message.textContent = result;
   };
   document.getElementById("codeCancel").onclick = () => { modal.hidden = true; };
