@@ -435,9 +435,13 @@ body.is-fullscreen .split-handle,
 body.pseudo-fullscreen .split-handle,
 :fullscreen .split-handle,
 :fullscreen .split-handle::after { display: none !important; }
-.flyer { flex-direction: row; align-items: center; }
-.timeline, .bar-row, .bar-row input { max-width: none !important; width: 100% !important; flex: 1 1 auto !important; }
-body.bar-tight .time-btn, body.bar-tight #duration { display: none; }
+.flyer { z-index: 90 !important; }
+.topbar { position: relative; }
+.fav-tools-main { position: absolute; left: 50%; transform: translateX(-50%); z-index: 2; }
+body.bar-half .timeline { max-width: 50% !important; flex: 0 1 50% !important; width: 50% !important; }
+body.bar-tight .time-btn, body.bar-tight #duration { display: none !important; }
+body.bar-stack .flyer { flex-direction: column !important; }
+body.bar-stack .timeline, body.bar-stack .bar-row, body.bar-stack .bar-row input { max-width: none !important; width: 100% !important; flex: 1 1 auto !important; }
 @media (max-width: 640px) {
   .flyer { flex-direction: column; }
   .timeline { width: 100% !important; }

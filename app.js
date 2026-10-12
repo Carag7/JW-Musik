@@ -1037,10 +1037,10 @@ function bind() {
     }
   });
   const fitBar = () => {
-    const flyer = document.querySelector(".flyer");
-    const tight = flyer && flyer.scrollWidth > flyer.clientWidth + 8;
-    document.body.classList.toggle("bar-tight", tight && window.innerWidth > 520);
-    document.body.classList.toggle("bar-stack", window.innerWidth <= 520);
+    const w = window.innerWidth;
+    document.body.classList.toggle("bar-half", w < 1100 && w >= 560);
+    document.body.classList.toggle("bar-tight", w < 800 && w >= 560);
+    document.body.classList.toggle("bar-stack", w < 560);
   };
   window.addEventListener("resize", fitBar);
   fitBar();
