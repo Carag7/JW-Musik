@@ -18,9 +18,9 @@
 <body>
   <div id="loginGate" class="login-gate" hidden>
     <form id="loginForm" class="login-card">
-      <p class="eyebrow">Sing Out Joyfully</p>
-      <h2>Zugang</h2>
+      <h2>Karaoke</h2>
       <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Passwort" required />
+      <label class="remember"><input id="rememberLogin" type="checkbox" checked /> Login im Browser speichern</label>
       <button class="chip" type="submit">Öffnen</button>
       <p id="loginError" class="login-error" hidden>Passwort stimmt nicht</p>
     </form>
@@ -38,11 +38,16 @@
       <button id="splitLeft" class="ghost" type="button" aria-label="Liste schmaler">←</button>
       <button id="splitRight" class="ghost" type="button" aria-label="Liste breiter">→</button>
     </div>
+    <div id="favTools" class="fav-tools-main" hidden>
+      <button id="exportFav" class="chip" type="button">Favoriten exportieren</button>
+      <button id="importFav" class="chip" type="button">Favoriten importieren</button>
+    </div>
     <div class="top-actions">
       <button id="smallerBtn" class="ghost" type="button" aria-label="Schrift kleiner">A−</button>
       <button id="largerBtn" class="ghost" type="button" aria-label="Schrift größer">A+</button>
       <button id="fullscreenBtn" class="ghost" type="button">Vollbild</button>
       <a id="lyricsLink" class="ghost text-link" href="https://www.jw.org/en/library/music-songs/sing-out-joyfully/" target="_blank" rel="noopener">Text</a>
+      <button id="logoutBtn" class="ghost" type="button" hidden>Logout</button>
     </div>
   </header>
   <div class="app">
@@ -54,6 +59,25 @@
         </div>
         <button id="lyricSearchToggle" class="ghost" type="button" aria-label="im Liedtext suchen">⌕</button>
       </header>
+
+      <div id="playlistBar" class="playlist-bar" hidden>
+        <label class="search-wrap">
+          <span class="sr-only">Liste</span>
+          <select id="playlistSelect">
+            <option value="">Liste wählen</option>
+          </select>
+        </label>
+        <div id="playlistCreateBox" class="playlist-create" hidden>
+          <input id="playlistName" type="text" placeholder="Name der Liste" autocomplete="off" />
+          <button id="playlistCreate" class="chip" type="button">Erstellen</button>
+        </div>
+        <div id="playlistEdit" class="edit-tools" hidden>
+          <input id="playlistRename" type="text" placeholder="Name ändern" autocomplete="off" />
+          <button id="playlistRenameBtn" class="chip" type="button">Umbenennen</button>
+          <button id="playlistDelete" class="chip danger" type="button">Löschen</button>
+          <button id="playlistDeleteConfirm" class="chip danger" type="button" hidden>Wirklich löschen?</button>
+        </div>
+      </div>
 
       <label id="lyricSearchWrap" class="search-wrap" hidden>
         <span class="sr-only">im Liedtext suchen</span>
@@ -72,21 +96,6 @@
         </select>
       </label>
 
-      <div id="playlistBar" class="playlist-bar" hidden>
-        <label class="search-wrap">
-          <span class="sr-only">Liste</span>
-          <select id="playlistSelect">
-            <option value="">Liste wählen</option>
-          </select>
-        </label>
-        <div class="playlist-create">
-          <input id="playlistName" type="text" placeholder="Name der Liste" autocomplete="off" />
-          <button id="playlistCreate" class="chip" type="button">Erstellen</button>
-        </div>
-        <button id="playlistDelete" class="chip danger" type="button" hidden>Löschen</button>
-        <button id="playlistDeleteConfirm" class="chip danger" type="button" hidden>Wirklich löschen?</button>
-      </div>
-
       <div class="filters">
         <button id="favoritesToggle" class="chip" type="button" aria-pressed="false">alle Lieder</button>
         <button id="shuffleBtn" class="chip" type="button" aria-pressed="false">Zufall</button>
@@ -100,10 +109,6 @@
 
     <main class="stage">
       <section class="now">
-        <div id="favTools" class="fav-tools-main" hidden>
-          <button id="exportFav" class="chip" type="button">Favoriten exportieren</button>
-          <button id="importFav" class="chip" type="button">Favoriten importieren</button>
-        </div>
         <div class="title-row" id="titleRow" hidden>
           <p id="currentNumber" class="eyebrow song-number">—</p>
           <button id="favoriteBtn" class="star-btn" type="button" aria-pressed="false" aria-label="Favorit" hidden>☆</button>
@@ -151,7 +156,7 @@
     <form id="codeForm" class="login-card">
       <p class="eyebrow">Favoriten</p>
       <h2 id="codeTitle">Code</h2>
-      <input id="codeInput" inputmode="numeric" maxlength="4" placeholder="4 Ziffern" autocomplete="off" />
+      <input id="codeInput" type="text" minlength="4" placeholder="mindestens 4 Zeichen" autocomplete="off" />
       <button class="chip" type="submit">OK</button>
       <button id="codeCancel" class="ghost" type="button">Abbrechen</button>
       <p id="codeMessage" class="login-error"></p>

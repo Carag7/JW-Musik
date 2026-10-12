@@ -416,17 +416,29 @@ body.pseudo-fullscreen .flyer { left: 0; }
 }
 .login-card input { min-height: 48px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel-2); color: var(--text); font-size: 16px; }
 .login-error { color: #f87171; margin: 0; }
+.topbar { overflow-x: auto; }
 .title-intro {
-  position: fixed; inset: 0; z-index: 80;
-  display: grid; place-items: center; text-align: center;
-  background: rgba(7, 11, 20, 0.88);
-  animation: titleIn 0.6s ease;
+  position: fixed; left: 0; right: 0; top: var(--topbar); bottom: var(--flyer-h); z-index: 40;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+  padding-top: 28px; text-align: center;
+  background: rgba(7, 11, 20, 0.55);
+  animation: titleIn 0.9s ease;
+  pointer-events: none;
 }
 .title-intro h2 { margin: 8px 0 0; font-size: clamp(36px, 6vw, 72px); }
 .intro-number { margin: 0; color: var(--accent); font-size: 22px; letter-spacing: 0.14em; }
-.title-intro.is-out { animation: titleOut 0.5s ease forwards; }
-@keyframes titleIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: none; } }
+.title-intro.is-out { animation: titleOut 0.9s ease forwards; }
+@keyframes titleIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes titleOut { to { opacity: 0; } }
+.fav-tools-main { display: flex; gap: 8px; margin: 0 auto; }
+.song-list { overflow: visible; flex: none; }
+.sidebar { overflow-y: auto !important; }
+body.pseudo-fullscreen .split-handle, body:fullscreen .split-handle { display: none !important; }
+.remember { display: flex; align-items: center; gap: 8px; }
+.edit-tools { display: flex; flex-wrap: wrap; gap: 8px; }
+.edit-tools input { flex: 1; min-width: 120px; min-height: 48px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel-2); color: var(--text); }
+#eigeneToggle[aria-pressed="true"] { background: var(--accent); color: #1b1404; }
+#menuToggle[aria-expanded="false"] { background: var(--panel-2); color: var(--text); }
 .time-btn { border: 0; background: transparent; color: var(--muted); font: inherit; font-variant-numeric: tabular-nums; cursor: pointer; min-width: 48px; }
 .filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .filters .chip { flex: 1 1 120px; }

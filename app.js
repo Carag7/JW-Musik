@@ -217,7 +217,18 @@ function fillPlaylists() {
     option.textContent = list.name;
     select.append(option);
   });
-  select.value = current;
+  const create = document.createElement("option");
+  create.value = "__new__";
+  create.textContent = "neue Liste erstellen";
+  select.append(create);
+  select.value = current || "";
+}
+
+function updateEditTools() {
+  const glass = !document.getElementById("lyricSearchWrap").hidden;
+  const edit = document.getElementById("playlistEdit");
+  if (edit) edit.hidden = !(glass && state.mode === "playlists" && state.activePlaylist);
+  document.getElementById("logoutBtn").hidden = !glass;
 }
 
 async function cacheLyric(song) {
@@ -264,15 +275,16 @@ function renderList() {
     const item = document.createElement("li");
     item.className = "song-row";
     if (state.mode === "playlists" && playlist) {
+      const glass = !document.getElementById("lyricSearchWrap").hidden;
       const check = document.createElement("input");
       check.type = "checkbox";
       check.className = "song-check";
       check.checked = playlist.songs.includes(song.id);
-      check.hidden = !state.selectMode;
+      check.hidden = !state.selectMode || !glass;
       check.addEventListener("click", (event) => event.stopPropagation());
       check.addEventListener("change", () => togglePlaylistSong(song.id, check.checked));
       item.append(check);
-      if (!state.selectMode) {
+      if (!state.selectMode && glass) {
         const up = document.createElement("button");
         up.type = "button";
         up.className = "sort-btn";
@@ -635,7 +647,7 @@ async function toggleFullscreen() {
   if (!apiOpen && document.documentElement.requestFullscreen) {
     try {
       await document.documentElement.requestFullscreen();
-      el.fullscreen.textContent = "Beenden";
+      el.fullscreen.textContent = "Vollbild beenden";
       return;
     } catch {
       /* Tesla ignoriert die API oft */
@@ -650,7 +662,7 @@ async function toggleFullscreen() {
     }
   }
   document.body.classList.toggle("pseudo-fullscreen");
-  el.fullscreen.textContent = document.body.classList.contains("pseudo-fullscreen") ? "Beenden" : "Vollbild";
+  el.fullscreen.textContent = document.body.classList.contains("pseudo-fullscreen") ? "Vollbild beenden" : "Vollbild";
 }
 
 async function requestWakeLock() {
@@ -698,7 +710,9 @@ function bind() {
     el.lyricSearchWrap.hidden = !open;
     document.getElementById("listTools").hidden = !open;
     document.getElementById("favTools").hidden = !open;
-    document.getElementById("splitHandle").hidden = !open;
+    document.getElementById("splitHandle").hidden = !open || document.fullscreenElement || document.body.classList.contains("pseudo-fullscreen");
+    updateEditTools();
+    renderList();
     if (open) el.lyricSearch.focus();
   });
   el.lyricSearch.addEventListener("input", () => searchLyrics(el.lyricSearch.value));
@@ -718,26 +732,44 @@ function bind() {
     renderList();
   });
   el.menu.addEventListener("click", () => {
+    if (state.mode === "songs" && state.sidebarOpen) {
+      setSidebar(false);
+      return;
+    }
     state.mode = "songs";
     document.getElementById("playlistBar").hidden = true;
     document.getElementById("eigeneToggle").setAttribute("aria-pressed", "false");
+    el.menu.setAttribute("aria-expanded", "true");
     el.favoritesToggle.textContent = state.favoritesOnly ? "Favoriten" : "alle Lieder";
     setSidebar(true);
     renderList();
   });
   document.getElementById("eigeneToggle").addEventListener("click", () => {
+    if (state.mode === "playlists" && state.sidebarOpen) {
+      setSidebar(false);
+      return;
+    }
     state.mode = "playlists";
     document.getElementById("playlistBar").hidden = false;
     document.getElementById("eigeneToggle").setAttribute("aria-pressed", "true");
+    el.menu.setAttribute("aria-expanded", "false");
     el.favoritesToggle.textContent = state.selectMode ? "alle Lieder" : "Auswahl";
     setSidebar(true);
     fillPlaylists();
+    updateEditTools();
     renderList();
   });
   document.getElementById("playlistSelect").addEventListener("change", (event) => {
+    if (event.target.value === "__new__") {
+      document.getElementById("playlistCreateBox").hidden = false;
+      state.activePlaylist = "";
+      document.getElementById("playlistEdit").hidden = true;
+      renderList();
+      return;
+    }
+    document.getElementById("playlistCreateBox").hidden = true;
     state.activePlaylist = event.target.value;
-    document.getElementById("playlistDelete").hidden = !state.activePlaylist;
-    document.getElementById("playlistDeleteConfirm").hidden = true;
+    updateEditTools();
     renderList();
   });
   document.getElementById("playlistCreate").addEventListener("click", () => {
@@ -750,9 +782,19 @@ function bind() {
     savePlaylists();
     fillPlaylists();
     document.getElementById("playlistName").value = "";
-    document.getElementById("playlistDelete").hidden = false;
+    document.getElementById("playlistCreateBox").hidden = true;
+    updateEditTools();
     el.favoritesToggle.textContent = "alle Lieder";
     renderList();
+  });
+  document.getElementById("playlistRenameBtn").addEventListener("click", () => {
+    const playlist = currentPlaylist();
+    const name = document.getElementById("playlistRename").value.trim();
+    if (!playlist || !name) return;
+    playlist.name = name;
+    savePlaylists();
+    fillPlaylists();
+    document.getElementById("playlistRename").value = "";
   });
   document.getElementById("playlistDelete").addEventListener("click", () => {
     document.getElementById("playlistDeleteConfirm").hidden = false;
@@ -762,7 +804,7 @@ function bind() {
     state.activePlaylist = "";
     savePlaylists();
     fillPlaylists();
-    document.getElementById("playlistDelete").hidden = true;
+    updateEditTools();
     document.getElementById("playlistDeleteConfirm").hidden = true;
     renderList();
   });
@@ -828,11 +870,17 @@ function bind() {
       setStatus("Spielt", "is-play");
     }).catch(() => {});
   });
+  document.getElementById("logoutBtn").addEventListener("click", () => {
+    localStorage.removeItem(STORAGE.auth);
+    sessionStorage.removeItem(STORAGE.auth);
+    location.reload();
+  });
   document.getElementById("exportFav").addEventListener("click", exportFavorites);
   document.getElementById("importFav").addEventListener("click", importFavorites);
   el.favorite.addEventListener("click", toggleFavorite);
   el.favoritesToggle.addEventListener("click", () => {
     if (state.mode === "playlists") {
+      if (document.getElementById("lyricSearchWrap").hidden) return;
       state.selectMode = !state.selectMode;
       el.favoritesToggle.setAttribute("aria-pressed", String(state.selectMode));
       el.favoritesToggle.textContent = state.selectMode ? "alle Lieder" : "Auswahl";
@@ -879,7 +927,7 @@ function bind() {
   el.lyrics.addEventListener("touchmove", markUserScroll, { passive: true });
   el.lyrics.addEventListener("pointerdown", markUserScroll);
   document.addEventListener("fullscreenchange", () => {
-    el.fullscreen.textContent = document.fullscreenElement ? "Beenden" : "Vollbild";
+    el.fullscreen.textContent = document.fullscreenElement ? "Vollbild beenden" : "Vollbild";
   });
   document.addEventListener("keydown", (event) => {
     if (event.target === el.search) return;
@@ -908,18 +956,20 @@ function exportFavorites() {
 function importFavorites() {
   openCode("Favoriten laden", (code, raw) => {
     let payload = null;
-    if (raw.includes(":")) {
-      try { payload = JSON.parse(raw.slice(raw.indexOf(":") + 1)); } catch { payload = null; }
+    const stored = localStorage.getItem(`fav-${code}`);
+    if (stored) {
+      try { payload = JSON.parse(stored); } catch { payload = null; }
     }
-    if (!payload) {
-      try { payload = JSON.parse(localStorage.getItem(`fav-${code}`) || "null"); } catch { payload = null; }
+    if (!payload && raw.includes("{")) {
+      try { payload = JSON.parse(raw.slice(raw.indexOf("{"))); } catch { payload = null; }
     }
     if (Array.isArray(payload)) payload = { favorites: payload, playlists: [] };
-    if (!payload || !Array.isArray(payload.favorites)) return "Zu diesem Code ist hier nichts gespeichert.";
+    if (!payload || !Array.isArray(payload.favorites)) return "Zu diesem Code ist hier nichts gespeichert. Exportiere zuerst in diesem Browser oder füge den kopierten Text ein.";
     state.favorites = new Set(payload.favorites);
     if (Array.isArray(payload.playlists)) state.playlists = payload.playlists;
     saveFavorites();
     savePlaylists();
+    localStorage.setItem(`fav-${code}`, JSON.stringify(payload));
     fillPlaylists();
     renderList();
     return `${payload.favorites.length} Favoriten und ${state.playlists.length} Listen geladen.`;
@@ -939,8 +989,8 @@ function openCode(title, onSubmit) {
   const submit = (event) => {
     event.preventDefault();
     const code = input.value.trim();
-    if (!/^\d{4}$/.test(code)) {
-      message.textContent = "Bitte genau 4 Ziffern eingeben.";
+    if (code.length < 4) {
+      message.textContent = "Mindestens 4 Zeichen.";
       return;
     }
     const result = onSubmit(code, input.value.trim());
@@ -953,7 +1003,7 @@ function openCode(title, onSubmit) {
 
 function checkLogin() {
   const gate = document.getElementById("loginGate");
-  if (localStorage.getItem(STORAGE.auth) === "ok") {
+  if (localStorage.getItem(STORAGE.auth) === "ok" || sessionStorage.getItem(STORAGE.auth) === "ok") {
     gate.hidden = true;
     return;
   }
@@ -962,7 +1012,8 @@ function checkLogin() {
     event.preventDefault();
     const value = document.getElementById("loginPassword").value;
     if (value === window.APP_PASSWORD) {
-      localStorage.setItem(STORAGE.auth, "ok");
+      if (document.getElementById("rememberLogin").checked) localStorage.setItem(STORAGE.auth, "ok");
+      else sessionStorage.setItem(STORAGE.auth, "ok");
       gate.hidden = true;
     } else {
       document.getElementById("loginError").hidden = false;
