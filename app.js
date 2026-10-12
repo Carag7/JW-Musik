@@ -721,7 +721,9 @@ async function toggleFullscreen() {
       await document.documentElement.requestFullscreen();
       el.fullscreen.textContent = "Vollbild beenden";
       document.body.classList.add("is-fullscreen");
-      document.getElementById("splitHandle").hidden = true;
+      const bar = document.getElementById("splitHandle");
+      bar.hidden = true;
+      bar.style.display = "none";
       return;
     } catch {
       /* Tesla ignoriert die API oft */
@@ -1052,13 +1054,19 @@ function decodeShare(code) {
 }
 
 async function exportFavorites() {
-  openCode("Favoriten sichern", async (code) => {
+  openCode("Favoriten sichern", async (code, mode) => {
     const payload = { favorites: [...state.favorites], playlists: state.playlists };
+    if (mode === "local") {
+      localStorage.setItem(`fav-${code}`, JSON.stringify(payload));
+      return `Lokal unter „${code}“ gespeichert. Gilt nur in diesem Browser.`;
+    }
     const share = encodeShare(payload);
-    localStorage.setItem(`fav-${code}`, JSON.stringify(payload));
     localStorage.setItem(`fav-${share}`, JSON.stringify(payload));
+    const qr = document.getElementById("syncQr");
+    qr.hidden = false;
+    qr.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(share)}`;
     try { await navigator.clipboard.writeText(share); } catch {}
-    return `Gespeichert. Auf dem anderen Gerät diesen Code einfügen:\n${share}`;
+    return `Code enthält die Daten, keine Server-Adresse. Am Tesla den QR-Code scannen oder den Code kopieren:\n${share}`;
   });
 }
 
@@ -1069,7 +1077,7 @@ async function importFavorites() {
       try { payload = JSON.parse(localStorage.getItem(`fav-${code}`) || "null"); } catch { payload = null; }
     }
     if (Array.isArray(payload)) payload = { favorites: payload, playlists: [] };
-    if (!payload || !Array.isArray(payload.favorites)) return "Zu diesem Code ist nichts gespeichert. Füge den kopierten Code ein.";
+    if (!payload || !Array.isArray(payload.favorites)) return "Zu diesem Code ist nichts gespeichert.";
     if (state.favorites.size || state.playlists.length) {
       const ok = await warnReplace();
       if (!ok) return "Abgebrochen.";
@@ -1104,19 +1112,23 @@ function openCode(title, onSubmit) {
   const modal = document.getElementById("codeModal");
   const input = document.getElementById("codeInput");
   const message = document.getElementById("codeMessage");
+  const qr = document.getElementById("syncQr");
   document.getElementById("codeTitle").textContent = title;
   input.value = "";
-  message.textContent = "";
+  message.textContent = "Lokal: eigenes Passwort. Anderes Gerät: Daten stecken im Code.";
+  qr.hidden = true;
   modal.hidden = false;
   input.focus();
+  let mode = "local";
+  document.getElementById("syncLocal").onclick = () => { mode = "local"; input.placeholder = "eigenes Passwort"; };
+  document.getElementById("syncDevice").onclick = () => { mode = "device"; input.value = "teilen"; input.placeholder = "OK drücken"; };
   const form = document.getElementById("codeForm");
   form.onsubmit = async (event) => {
     event.preventDefault();
-    if (!onSubmit) { modal.hidden = true; return; }
     const code = input.value.trim();
-    if (code.length < 4) { message.textContent = "Mindestens 4 Zeichen."; return; }
+    if (mode === "local" && code.length < 4) { message.textContent = "Mindestens 4 Zeichen."; return; }
     message.textContent = "Bitte warten …";
-    const result = await onSubmit(code);
+    const result = await onSubmit(code || "teilen", mode);
     if (result) message.textContent = result;
   };
   document.getElementById("codeCancel").onclick = () => { modal.hidden = true; };

@@ -162,10 +162,16 @@
       <button id="warnCancel" class="ghost" type="button">Abbrechen</button>
     </form>
   </div>
+  <div id="codeModal" class="login-gate" hidden>
     <form id="codeForm" class="login-card">
       <p class="eyebrow">Favoriten</p>
       <h2 id="codeTitle">Code</h2>
-      <input id="codeInput" type="text" minlength="4" placeholder="mindestens 4 Zeichen" autocomplete="off" />
+      <div class="sync-choice">
+        <button id="syncLocal" class="chip" type="button">Lokal, eigenes Passwort</button>
+        <button id="syncDevice" class="chip" type="button">Anderes Gerät</button>
+      </div>
+      <input id="codeInput" type="text" minlength="4" placeholder="eigenes Passwort, mind. 4 Zeichen" autocomplete="off" />
+      <img id="syncQr" alt="" hidden />
       <button class="chip" type="submit">OK</button>
       <button id="codeCancel" class="ghost" type="button">Abbrechen</button>
       <p id="codeMessage" class="login-error"></p>

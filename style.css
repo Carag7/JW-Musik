@@ -429,9 +429,15 @@ body.pseudo-fullscreen .flyer { left: 0; }
 .intro-number { margin: 0; color: var(--accent); font-size: 28px; letter-spacing: 0.16em; font-weight: 800; }
 .title-intro.is-out { opacity: 0; }
 .sidebar { z-index: 60; }
+.split-handle, .split-handle::after { display: none !important; }
+body.glass-open:not(.is-fullscreen):not(.pseudo-fullscreen) .split-handle { display: block !important; }
 body.is-fullscreen .split-handle,
 body.pseudo-fullscreen .split-handle,
-:fullscreen .split-handle { display: none !important; }
+:fullscreen .split-handle,
+:fullscreen .split-handle::after { display: none !important; }
+.timeline, .bar-row { max-width: 280px; }
+.sync-choice { display: flex; gap: 8px; flex-wrap: wrap; }
+#syncQr { width: 180px; height: 180px; margin: 8px auto; background: #fff; }
 .start-actions { display: flex; flex-direction: row; flex-wrap: nowrap; gap: 12px; }
 .start-actions .chip { flex: 1 1 0; }
 .start-panel { padding-bottom: 180px; }
