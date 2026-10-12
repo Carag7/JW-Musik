@@ -1084,21 +1084,32 @@ async function exportFavorites() {
     showQr(link);
     try { await navigator.clipboard.writeText(link); } catch {}
     return "QR enthält den Link. Scannen öffnet die Seite und übernimmt die Favoriten.";
-  });
+  }, "export");
 }
 
 async function importFavorites() {
-  const payload = { favorites: [...state.favorites], playlists: state.playlists };
   openCode("Favoriten laden", async (code, mode) => {
     if (mode === "device") {
-      showQr(shareLink(payload));
-      return "Diesen QR auf dem anderen Gerät scannen. Dort werden die Favoriten übernommen.";
+      const raw = code.trim();
+      const fromLink = raw.includes("sync=") ? decodeURIComponent(raw.split("sync=").pop().split("&")[0]) : raw;
+      const data = decodeShare(fromLink);
+      if (!data || !Array.isArray(data.favorites)) return "Link oder Code vom anderen Gerät einfügen.";
+      if (state.favorites.size || state.playlists.length) {
+        document.getElementById("codeModal").hidden = true;
+        const ok = await warnReplace();
+        document.getElementById("codeModal").hidden = false;
+        if (!ok) return "Abgebrochen.";
+      }
+      state.favorites = new Set(data.favorites);
+      if (Array.isArray(data.playlists)) state.playlists = data.playlists;
+      saveFavorites();
+      savePlaylists();
+      fillPlaylists();
+      renderList();
+      return `${data.favorites.length} Favoriten übernommen.`;
     }
-    let data = decodeShare(code);
-    if (!data) {
-      try { data = JSON.parse(localStorage.getItem(`fav-${code}`) || "null"); } catch { data = null; }
-    }
-    if (Array.isArray(data)) data = { favorites: data, playlists: [] };
+    let data = null;
+    try { data = JSON.parse(localStorage.getItem(`fav-${code}`) || "null"); } catch { data = null; }
     if (!data || !Array.isArray(data.favorites)) return "Zu diesem Passwort ist hier nichts gespeichert.";
     if (state.favorites.size || state.playlists.length) {
       document.getElementById("codeModal").hidden = true;
@@ -1113,7 +1124,7 @@ async function importFavorites() {
     fillPlaylists();
     renderList();
     return `${data.favorites.length} Favoriten und ${state.playlists.length} Listen geladen.`;
-  });
+  }, "import");
 }
 
 function warnReplace() {
@@ -1132,33 +1143,47 @@ function warnReplace() {
   });
 }
 
-function openCode(title, onSubmit) {
+function openCode(title, onSubmit, kind) {
   const modal = document.getElementById("codeModal");
   const input = document.getElementById("codeInput");
   const message = document.getElementById("codeMessage");
   const qr = document.getElementById("syncQr");
+  const ok = document.getElementById("codeOk");
   document.getElementById("codeTitle").textContent = title;
   input.value = "";
-  message.textContent = "Lokal: eigenes Passwort. Anderes Gerät: Daten stecken im Code.";
+  message.textContent = kind === "import"
+    ? "Anderes Gerät: Link vom Export hier einfügen. Vom Handy zum Tesla den Link kopieren."
+    : "Lokal: eigenes Passwort. Anderes Gerät: QR erzeugen, das andere Gerät scannt.";
   qr.hidden = true;
+  ok.hidden = false;
+  ok.textContent = kind === "import" ? "Übernehmen" : "QR-Code erzeugen";
   modal.hidden = false;
   input.focus();
   let mode = "local";
   const mark = () => {
     document.getElementById("syncLocal").setAttribute("aria-pressed", String(mode === "local"));
     document.getElementById("syncDevice").setAttribute("aria-pressed", String(mode === "device"));
+    ok.textContent = mode === "device" && kind !== "import" ? "QR-Code erzeugen" : "Übernehmen";
   };
   mark();
-  document.getElementById("syncLocal").onclick = () => { mode = "local"; input.placeholder = "eigenes Passwort"; qr.hidden = true; mark(); };
-  document.getElementById("syncDevice").onclick = () => { mode = "device"; input.value = ""; input.placeholder = "QR wird erzeugt"; qr.hidden = false; mark(); };
+  document.getElementById("syncLocal").onclick = () => { mode = "local"; input.placeholder = "eigenes Passwort"; qr.hidden = true; ok.hidden = false; mark(); };
+  document.getElementById("syncDevice").onclick = () => {
+    mode = "device";
+    qr.hidden = kind === "import";
+    input.placeholder = kind === "import" ? "Link vom anderen Gerät einfügen" : "QR wird erzeugt";
+    ok.hidden = false;
+    mark();
+  };
   const form = document.getElementById("codeForm");
   form.onsubmit = async (event) => {
     event.preventDefault();
     const code = input.value.trim();
     if (mode === "local" && code.length < 4) { message.textContent = "Mindestens 4 Zeichen."; return; }
+    if (mode === "device" && kind === "import" && !code) { message.textContent = "Link einfügen."; return; }
     message.textContent = "Bitte warten …";
-    const result = await onSubmit(code || "teilen", mode);
+    const result = await onSubmit(code, mode);
     if (result) message.textContent = result;
+    if (mode === "device" && kind !== "import") ok.hidden = true;
   };
   document.getElementById("codeCancel").onclick = () => { modal.hidden = true; };
 }

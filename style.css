@@ -435,10 +435,13 @@ body.is-fullscreen .split-handle,
 body.pseudo-fullscreen .split-handle,
 :fullscreen .split-handle,
 :fullscreen .split-handle::after { display: none !important; }
-.timeline, .bar-row { max-width: none; flex: 1; }
-.flyer { gap: 8px; padding-left: 8px; padding-right: 8px; }
-.timeline { min-width: 0; }
+.flyer { flex-direction: row; align-items: center; }
+.timeline, .bar-row, .bar-row input { max-width: none !important; width: 100% !important; flex: 1 1 auto !important; }
 body.bar-tight .time-btn, body.bar-tight #duration { display: none; }
+@media (max-width: 640px) {
+  .flyer { flex-direction: column; }
+  .timeline { width: 100% !important; }
+}
 .sync-choice .chip[aria-pressed="true"] { background: var(--accent); color: #1b1404; }
 .sync-choice { display: flex; gap: 8px; flex-wrap: wrap; }
 #syncQr { width: 180px; height: 180px; margin: 8px auto; background: #fff; }
