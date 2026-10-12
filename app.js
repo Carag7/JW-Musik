@@ -1,6 +1,7 @@
 const STORAGE = {
   favorites: "teslaKaraokeFavorites",
-  scale: "teslaKaraokeLyricsScale"
+  scale: "teslaKaraokeLyricsScale",
+  auth: "teslaKaraokeAuth"
 };
 
 const PAGE = {
@@ -245,6 +246,7 @@ function renderLyrics(lines) {
   const panel = document.getElementById("startPanel");
   if (panel) panel.hidden = true;
   el.lyrics.innerHTML = "";
+  el.lyrics.scrollTop = 0;
   if (!lines || !lines.length) {
     el.lyrics.innerHTML = '<p class="empty">Keine Liedtexte gefunden</p>';
     return;
@@ -254,8 +256,37 @@ function renderLyrics(lines) {
     row.className = "lyric-line";
     row.dataset.time = line.time;
     row.textContent = line.text;
+    row.addEventListener("click", () => seekToLine(line.time));
     el.lyrics.append(row);
   });
+}
+
+function seekToLine(time) {
+  if (!el.audio.src && !el.audio.currentSrc) return;
+  el.audio.currentTime = Math.max(0, time);
+  if (el.audio.paused) el.audio.play().catch(() => {});
+  el.play.textContent = "❚❚";
+  setStatus("Spielt", "is-play");
+}
+
+function showTitleIntro(song) {
+  const intro = document.getElementById("titleIntro");
+  document.getElementById("introNumber").textContent = `LIED ${song.id}`;
+  document.getElementById("introTitle").textContent = song.title;
+  intro.hidden = false;
+  intro.classList.remove("is-out");
+  state.introActive = true;
+}
+
+function hideTitleIntro() {
+  const intro = document.getElementById("titleIntro");
+  if (intro.hidden) return;
+  intro.classList.add("is-out");
+  state.introActive = false;
+  state.holdTop = true;
+  el.lyrics.scrollTop = 0;
+  setTimeout(() => { intro.hidden = true; }, 500);
+  setTimeout(() => { state.holdTop = false; }, 2500);
 }
 
 function officialUrl(song) {
@@ -374,7 +405,10 @@ async function selectSong(index, autoplay) {
   if (!document.fullscreenElement && !document.body.classList.contains("pseudo-fullscreen")) {
     setSidebar(false);
   }
-  if (autoplay) el.audio.addEventListener("canplay", () => togglePlay(), { once: true });
+  if (autoplay) {
+    showTitleIntro(song);
+    el.audio.addEventListener("canplay", () => togglePlay(), { once: true });
+  }
 }
 
 function togglePlay() {
@@ -401,6 +435,7 @@ function togglePlay() {
 }
 
 function centerActive(force) {
+  if (state.introActive || state.holdTop) return;
   if (state.userScrolling && !force) return;
   const active = el.lyrics.querySelector(".lyric-line.active");
   if (!active) return;
@@ -414,6 +449,8 @@ function updateLyrics() {
   const lines = el.lyrics.querySelectorAll(".lyric-line");
   if (!lines.length) return;
   const now = el.audio.currentTime || 0;
+  const first = Number(lines[0].dataset.time);
+  if (state.introActive && now >= Math.max(0, first - 2)) hideTitleIntro();
   let active = null;
   lines.forEach((line, index) => {
     const start = Number(line.dataset.time);
@@ -562,6 +599,7 @@ function bind() {
     const open = el.lyricSearchWrap.hidden;
     el.lyricSearchWrap.hidden = !open;
     document.getElementById("listTools").hidden = !open;
+    document.getElementById("favTools").hidden = !open;
     document.getElementById("splitHandle").hidden = !open;
     if (open) el.lyricSearch.focus();
   });
@@ -600,7 +638,18 @@ function bind() {
     const next = Number.isFinite(px) ? px : current;
     const width = Math.max(180, Math.min(window.innerWidth - 160, next));
     document.documentElement.style.setProperty("--sidebar", `${width}px`);
+    positionArrow();
   };
+  const positionArrow = () => {
+    const sidebar = document.getElementById("sidebar");
+    const arrow = document.getElementById("toTopBtn");
+    if (!sidebar || !arrow || sidebar.offsetParent === null) return;
+    const right = sidebar.getBoundingClientRect().right;
+    arrow.style.left = `${Math.max(8, right - 66)}px`;
+    arrow.style.right = "auto";
+  };
+  window.addEventListener("resize", positionArrow);
+  positionArrow();
   document.getElementById("splitLeft").addEventListener("click", () => setSidebarWidth(parseInt(getComputedStyle(document.documentElement).getPropertyValue("--sidebar"), 10) - 40));
   document.getElementById("splitRight").addEventListener("click", () => setSidebarWidth(parseInt(getComputedStyle(document.documentElement).getPropertyValue("--sidebar"), 10) + 40));
   const handle = document.getElementById("splitHandle");
@@ -623,7 +672,16 @@ function bind() {
     state.shuffle = !state.shuffle;
     el.shuffleBtn.setAttribute("aria-pressed", String(state.shuffle));
   });
-  el.progress.addEventListener("input", seek);
+  el.currentTime.addEventListener("click", () => {
+    if (!el.audio.src && !el.audio.currentSrc) return;
+    el.audio.currentTime = 0;
+    el.audio.play().then(() => {
+      el.play.textContent = "❚❚";
+      setStatus("Spielt", "is-play");
+    }).catch(() => {});
+  });
+  document.getElementById("exportFav").addEventListener("click", exportFavorites);
+  document.getElementById("importFav").addEventListener("click", importFavorites);
   el.favorite.addEventListener("click", toggleFavorite);
   el.favoritesToggle.addEventListener("click", () => {
     state.favoritesOnly = !state.favoritesOnly;
@@ -682,7 +740,69 @@ function bind() {
   window.addEventListener("beforeinstallprompt", () => {});
 }
 
+function exportFavorites() {
+  const code = prompt("Vierstelligen Code für diese Favoriten eingeben");
+  if (!code || !/^\d{4}$/.test(code)) {
+    alert("Bitte genau 4 Ziffern eingeben.");
+    return;
+  }
+  const ids = [...state.favorites];
+  localStorage.setItem(`fav-${code}`, JSON.stringify(ids));
+  const share = `${code}:${ids.join(",")}`;
+  navigator.clipboard?.writeText(share).catch(() => {});
+  alert(`Gespeichert unter Code ${code}.\nZum Übertragen auf ein anderes Gerät diesen Text kopieren:\n${share}`);
+}
+
+function importFavorites() {
+  const input = prompt("Vierstelligen Code oder den kopierten Text eingeben");
+  if (!input) return;
+  const text = input.trim();
+  let code = text;
+  let ids = null;
+  if (text.includes(":")) {
+    const [pin, list] = text.split(":");
+    code = pin;
+    ids = list.split(",").filter(Boolean);
+  }
+  if (!/^\d{4}$/.test(code)) {
+    alert("Bitte genau 4 Ziffern eingeben.");
+    return;
+  }
+  if (!ids) {
+    try { ids = JSON.parse(localStorage.getItem(`fav-${code}`) || "null"); } catch { ids = null; }
+  }
+  if (!Array.isArray(ids)) {
+    alert("Zu diesem Code sind hier keine Favoriten gespeichert.");
+    return;
+  }
+  state.favorites = new Set(ids);
+  saveFavorites();
+  localStorage.setItem(`fav-${code}`, JSON.stringify(ids));
+  renderList();
+  alert(`${ids.length} Favoriten mit Code ${code} geladen.`);
+}
+
+function checkLogin() {
+  const gate = document.getElementById("loginGate");
+  if (localStorage.getItem(STORAGE.auth) === "ok") {
+    gate.hidden = true;
+    return;
+  }
+  gate.hidden = false;
+  document.getElementById("loginForm").addEventListener("submit", (event) => {
+    event.preventDefault();
+    const value = document.getElementById("loginPassword").value;
+    if (value === window.APP_PASSWORD) {
+      localStorage.setItem(STORAGE.auth, "ok");
+      gate.hidden = true;
+    } else {
+      document.getElementById("loginError").hidden = false;
+    }
+  });
+}
+
 function init() {
+  checkLogin();
   loadFavorites();
   state.scale = Number(localStorage.getItem(STORAGE.scale) || 42);
   applyScale();

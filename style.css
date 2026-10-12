@@ -403,4 +403,32 @@ body.pseudo-fullscreen .flyer { left: 0; }
   overflow-y: auto !important;
   padding-bottom: 180px !important;
 }
-.start-panel { padding-bottom: 40px; }
+.login-gate {
+  position: fixed; inset: 0; z-index: 100;
+  display: grid; place-items: center;
+  background: rgba(7, 11, 20, 0.96);
+}
+.login-card {
+  width: min(92vw, 360px);
+  display: flex; flex-direction: column; gap: 12px;
+  padding: 24px; border-radius: 18px;
+  background: var(--panel); border: 1px solid var(--line);
+}
+.login-card input { min-height: 48px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel-2); color: var(--text); font-size: 16px; }
+.login-error { color: #f87171; margin: 0; }
+.title-intro {
+  position: fixed; inset: 0; z-index: 80;
+  display: grid; place-items: center; text-align: center;
+  background: rgba(7, 11, 20, 0.88);
+  animation: titleIn 0.6s ease;
+}
+.title-intro h2 { margin: 8px 0 0; font-size: clamp(36px, 6vw, 72px); }
+.intro-number { margin: 0; color: var(--accent); font-size: 22px; letter-spacing: 0.14em; }
+.title-intro.is-out { animation: titleOut 0.5s ease forwards; }
+@keyframes titleIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: none; } }
+@keyframes titleOut { to { opacity: 0; } }
+.time-btn { border: 0; background: transparent; color: var(--muted); font: inherit; font-variant-numeric: tabular-nums; cursor: pointer; min-width: 48px; }
+.fav-tools { display: flex; gap: 8px; flex-wrap: wrap; }
+.song-list { padding-bottom: 160px !important; }
+.sidebar { padding-bottom: 160px !important; }
+.lyric-line { cursor: pointer; }
