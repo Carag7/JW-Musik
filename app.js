@@ -166,7 +166,7 @@ function goHome() {
 function setSidebar(open) {
   state.sidebarOpen = open;
   el.app.classList.toggle("sidebar-hidden", !open);
-  el.menu.setAttribute("aria-expanded", String(open));
+  el.menu.setAttribute("aria-expanded", String(open && state.mode === "songs"));
   el.menu.textContent = "Lieder";
 }
 
@@ -208,20 +208,42 @@ function savePlaylists() {
 
 function fillPlaylists() {
   const select = document.getElementById("playlistSelect");
-  if (!select) return;
-  const current = state.activePlaylist;
-  select.innerHTML = `<option value="">Liste wählen</option>`;
-  state.playlists.forEach((list) => {
-    const option = document.createElement("option");
-    option.value = list.id;
-    option.textContent = list.name;
-    select.append(option);
-  });
-  const create = document.createElement("option");
-  create.value = "__new__";
-  create.textContent = "neue Liste erstellen";
-  select.append(create);
-  select.value = current || "";
+  const box = document.getElementById("playlistButtons");
+  const glass = !document.getElementById("lyricSearchWrap").hidden;
+  if (select) {
+    select.hidden = !glass;
+    const current = state.activePlaylist;
+    select.innerHTML = `<option value="">Liste wählen</option>`;
+    state.playlists.forEach((list) => {
+      const option = document.createElement("option");
+      option.value = list.id;
+      option.textContent = list.name;
+      select.append(option);
+    });
+    const create = document.createElement("option");
+    create.value = "__new__";
+    create.textContent = "neue Liste erstellen";
+    select.append(create);
+    select.value = current || "";
+  }
+  if (box) {
+    box.hidden = glass;
+    box.innerHTML = "";
+    state.playlists.forEach((list) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "chip";
+      button.textContent = list.name;
+      if (list.id === state.activePlaylist) button.setAttribute("aria-pressed", "true");
+      button.addEventListener("click", () => {
+        state.activePlaylist = list.id;
+        state.selectMode = false;
+        fillPlaylists();
+        renderList();
+      });
+      box.append(button);
+    });
+  }
 }
 
 function updateEditTools() {
@@ -274,6 +296,27 @@ function renderList() {
   songs.forEach((song) => {
     const item = document.createElement("li");
     item.className = "song-row";
+    if (state.mode === "songs" && !document.getElementById("lyricSearchWrap").hidden) {
+      const check = document.createElement("input");
+      check.type = "checkbox";
+      check.className = "song-check";
+      check.checked = state.favorites.has(song.id);
+      check.addEventListener("click", (event) => event.stopPropagation());
+      check.addEventListener("change", () => {
+        if (check.checked) state.favorites.add(song.id);
+        else state.favorites.delete(song.id);
+        saveFavorites();
+      });
+      const up = document.createElement("button");
+      up.type = "button";
+      up.className = "sort-btn";
+      up.textContent = "↑";
+      const down = document.createElement("button");
+      down.type = "button";
+      down.className = "sort-btn";
+      down.textContent = "↓";
+      item.append(check, up, down);
+    }
     if (state.mode === "playlists" && playlist) {
       const glass = !document.getElementById("lyricSearchWrap").hidden;
       const check = document.createElement("input");
@@ -555,7 +598,7 @@ function updateLyrics() {
   if (!lines.length) return;
   const now = el.audio.currentTime || 0;
   const first = Number(lines[0].dataset.time);
-  if (state.introActive && now >= Math.max(0, first - 2)) hideTitleIntro();
+  if (state.introActive && now >= Math.max(0, first - 4)) hideTitleIntro();
   let active = null;
   lines.forEach((line, index) => {
     const start = Number(line.dataset.time);
@@ -587,8 +630,9 @@ function updateProgress() {
 }
 
 function seek() {
-  if (!el.audio.duration) return;
-  el.audio.currentTime = el.audio.duration * (Number(el.progress.value) / 1000);
+  const duration = el.audio.duration;
+  if (!duration || !Number.isFinite(duration)) return;
+  el.audio.currentTime = duration * (Number(el.progress.value) / 1000);
 }
 
 function playPool() {
@@ -708,6 +752,7 @@ function bind() {
   el.lyricSearchToggle.addEventListener("click", () => {
     const open = el.lyricSearchWrap.hidden;
     el.lyricSearchWrap.hidden = !open;
+    document.body.classList.toggle("glass-open", open);
     document.getElementById("listTools").hidden = !open;
     document.getElementById("favTools").hidden = !open;
     document.getElementById("splitHandle").hidden = !open || document.fullscreenElement || document.body.classList.contains("pseudo-fullscreen");
@@ -753,7 +798,7 @@ function bind() {
     document.getElementById("playlistBar").hidden = false;
     document.getElementById("eigeneToggle").setAttribute("aria-pressed", "true");
     el.menu.setAttribute("aria-expanded", "false");
-    el.favoritesToggle.textContent = state.selectMode ? "alle Lieder" : "Auswahl";
+    el.favoritesToggle.textContent = document.getElementById("lyricSearchWrap").hidden ? "Auswahl" : (state.selectMode ? "alle Lieder" : "Auswahl");
     setSidebar(true);
     fillPlaylists();
     updateEditTools();
@@ -858,6 +903,8 @@ function bind() {
   el.next.addEventListener("click", () => step(1));
   el.back15.addEventListener("click", () => skip(-15));
   el.fwd15.addEventListener("click", () => skip(15));
+  el.progress.addEventListener("input", seek);
+  el.progress.addEventListener("change", seek);
   el.shuffleBtn.addEventListener("click", () => {
     state.shuffle = !state.shuffle;
     el.shuffleBtn.setAttribute("aria-pressed", String(state.shuffle));
@@ -944,60 +991,56 @@ function bind() {
 }
 
 function exportFavorites() {
-  openCode("Favoriten sichern", (code) => {
-    const payload = { favorites: [...state.favorites], playlists: state.playlists };
-    localStorage.setItem(`fav-${code}`, JSON.stringify(payload));
-    const share = `${code}:${JSON.stringify(payload)}`;
-    navigator.clipboard?.writeText(share).catch(() => {});
-    return `Gespeichert unter ${code}. Text zum Übertragen wurde kopiert.`;
-  });
+  const payload = { favorites: [...state.favorites], playlists: state.playlists };
+  const code = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+  localStorage.setItem(`fav-${code.slice(0, 12)}`, JSON.stringify(payload));
+  navigator.clipboard?.writeText(code).catch(() => {});
+  openCode("Favoriten sichern", null, `Code kopiert. In jedem Browser einfügen:\n${code}`);
 }
 
 function importFavorites() {
-  openCode("Favoriten laden", (code, raw) => {
+  openCode("Favoriten laden", (code) => {
     let payload = null;
-    const stored = localStorage.getItem(`fav-${code}`);
-    if (stored) {
-      try { payload = JSON.parse(stored); } catch { payload = null; }
-    }
-    if (!payload && raw.includes("{")) {
-      try { payload = JSON.parse(raw.slice(raw.indexOf("{"))); } catch { payload = null; }
+    try { payload = JSON.parse(decodeURIComponent(escape(atob(code)))); } catch { payload = null; }
+    if (!payload) {
+      try { payload = JSON.parse(localStorage.getItem(`fav-${code}`) || "null"); } catch { payload = null; }
     }
     if (Array.isArray(payload)) payload = { favorites: payload, playlists: [] };
-    if (!payload || !Array.isArray(payload.favorites)) return "Zu diesem Code ist hier nichts gespeichert. Exportiere zuerst in diesem Browser oder füge den kopierten Text ein.";
-    state.favorites = new Set(payload.favorites);
-    if (Array.isArray(payload.playlists)) state.playlists = payload.playlists;
-    saveFavorites();
-    savePlaylists();
-    localStorage.setItem(`fav-${code}`, JSON.stringify(payload));
-    fillPlaylists();
-    renderList();
+    if (!payload || !Array.isArray(payload.favorites)) return "Zu diesem Code ist nichts gespeichert. Füge den kopierten Code ein.";
+    const apply = () => {
+      state.favorites = new Set(payload.favorites);
+      if (Array.isArray(payload.playlists)) state.playlists = payload.playlists;
+      saveFavorites();
+      savePlaylists();
+      fillPlaylists();
+      renderList();
+    };
+    if (state.favorites.size || state.playlists.length) {
+      if (!confirm("Vorhandene Favoriten und Listen werden ersetzt. Fortfahren?")) return "Abgebrochen.";
+    }
+    apply();
     return `${payload.favorites.length} Favoriten und ${state.playlists.length} Listen geladen.`;
   });
 }
 
-function openCode(title, onSubmit) {
+function openCode(title, onSubmit, preset) {
   const modal = document.getElementById("codeModal");
   const input = document.getElementById("codeInput");
   const message = document.getElementById("codeMessage");
   document.getElementById("codeTitle").textContent = title;
-  input.value = "";
-  message.textContent = "";
+  input.value = preset || "";
+  message.textContent = preset ? "Code wurde kopiert. Mit OK schließen." : "";
   modal.hidden = false;
   input.focus();
   const form = document.getElementById("codeForm");
-  const submit = (event) => {
+  form.onsubmit = (event) => {
     event.preventDefault();
+    if (!onSubmit) { modal.hidden = true; return; }
     const code = input.value.trim();
-    if (code.length < 4) {
-      message.textContent = "Mindestens 4 Zeichen.";
-      return;
-    }
-    const result = onSubmit(code, input.value.trim());
+    if (code.length < 4) { message.textContent = "Mindestens 4 Zeichen."; return; }
+    const result = onSubmit(code);
     if (result) message.textContent = result;
-    if (result && !result.includes("nichts") && !result.includes("genau")) setTimeout(() => { modal.hidden = true; }, 900);
   };
-  form.onsubmit = submit;
   document.getElementById("codeCancel").onclick = () => { modal.hidden = true; };
 }
 

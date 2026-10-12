@@ -418,18 +418,31 @@ body.pseudo-fullscreen .flyer { left: 0; }
 .login-error { color: #f87171; margin: 0; }
 .topbar { overflow-x: auto; }
 .title-intro {
-  position: fixed; left: 0; right: 0; top: var(--topbar); bottom: var(--flyer-h); z-index: 40;
+  position: fixed; left: var(--sidebar); right: 0; top: var(--topbar); bottom: var(--flyer-h); z-index: 30;
   display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
-  padding-top: 28px; text-align: center;
-  background: rgba(7, 11, 20, 0.55);
-  animation: titleIn 0.9s ease;
-  pointer-events: none;
+  padding-top: 18vh; text-align: center;
+  background: #070b14;
+  transition: opacity 1.2s ease, background 1.2s ease;
 }
-.title-intro h2 { margin: 8px 0 0; font-size: clamp(36px, 6vw, 72px); }
-.intro-number { margin: 0; color: var(--accent); font-size: 22px; letter-spacing: 0.14em; }
-.title-intro.is-out { animation: titleOut 0.9s ease forwards; }
-@keyframes titleIn { from { opacity: 0; } to { opacity: 1; } }
-@keyframes titleOut { to { opacity: 0; } }
+.app.sidebar-hidden .title-intro { left: 0; }
+.title-intro.is-out { opacity: 0; background: transparent; }
+.sidebar { z-index: 50; }
+.split-handle { display: none; }
+body.glass-open .split-handle { display: block; }
+body.pseudo-fullscreen .split-handle,
+body.pseudo-fullscreen.glass-open .split-handle,
+:fullscreen .split-handle { display: none !important; }
+.playlist-create { display: flex; gap: 8px; align-items: center; }
+.playlist-create input { flex: 1; min-width: 0; }
+.playlist-create .chip { flex: 0 0 auto; white-space: nowrap; }
+.playlist-list { display: flex; flex-direction: column; gap: 8px; }
+.playlist-list button { min-height: 52px; text-align: left; padding: 0 12px; }
+.search-wrap select { min-height: 52px; font-size: 18px; }
+@media (max-width: 860px) {
+  .flyer { flex-direction: column; align-items: stretch; }
+  .timeline { width: 100%; }
+  .song-list { padding-bottom: 220px !important; }
+}
 .fav-tools-main { display: flex; gap: 8px; margin: 0 auto; }
 .song-list { overflow: visible; flex: none; }
 .sidebar { overflow-y: auto !important; }
