@@ -31,6 +31,7 @@
   </div>
   <header class="topbar">
     <button id="menuToggle" class="lieder-toggle" type="button" aria-expanded="true">Lieder</button>
+    <button id="eigeneToggle" class="lieder-toggle" type="button" aria-pressed="false">eigene</button>
     <div id="listTools" class="list-tools" hidden>
       <button id="listSmaller" class="ghost" type="button" aria-label="Liste kleiner">A−</button>
       <button id="listLarger" class="ghost" type="button" aria-label="Liste größer">A+</button>
@@ -71,10 +72,22 @@
         </select>
       </label>
 
-      <div id="favTools" class="fav-tools" hidden>
-        <button id="exportFav" class="chip" type="button">Favoriten exportieren</button>
-        <button id="importFav" class="chip" type="button">Favoriten importieren</button>
+      <div id="playlistBar" class="playlist-bar" hidden>
+        <label class="search-wrap">
+          <span class="sr-only">Liste</span>
+          <select id="playlistSelect">
+            <option value="">Liste wählen</option>
+          </select>
+        </label>
+        <div class="playlist-create">
+          <input id="playlistName" type="text" placeholder="Name der Liste" autocomplete="off" />
+          <button id="playlistCreate" class="chip" type="button">Erstellen</button>
+        </div>
+        <button id="playlistDelete" class="chip danger" type="button" hidden>Löschen</button>
+        <button id="playlistDeleteConfirm" class="chip danger" type="button" hidden>Wirklich löschen?</button>
       </div>
+
+      <div class="filters">
         <button id="favoritesToggle" class="chip" type="button" aria-pressed="false">alle Lieder</button>
         <button id="shuffleBtn" class="chip" type="button" aria-pressed="false">Zufall</button>
         <span id="songCount" class="count">0</span>
@@ -87,6 +100,10 @@
 
     <main class="stage">
       <section class="now">
+        <div id="favTools" class="fav-tools-main" hidden>
+          <button id="exportFav" class="chip" type="button">Favoriten exportieren</button>
+          <button id="importFav" class="chip" type="button">Favoriten importieren</button>
+        </div>
         <div class="title-row" id="titleRow" hidden>
           <p id="currentNumber" class="eyebrow song-number">—</p>
           <button id="favoriteBtn" class="star-btn" type="button" aria-pressed="false" aria-label="Favorit" hidden>☆</button>
@@ -129,6 +146,17 @@
       <p id="nextSong" class="nav-song">—</p>
     </div>
   </footer>
+
+  <div id="codeModal" class="login-gate" hidden>
+    <form id="codeForm" class="login-card">
+      <p class="eyebrow">Favoriten</p>
+      <h2 id="codeTitle">Code</h2>
+      <input id="codeInput" inputmode="numeric" maxlength="4" placeholder="4 Ziffern" autocomplete="off" />
+      <button class="chip" type="submit">OK</button>
+      <button id="codeCancel" class="ghost" type="button">Abbrechen</button>
+      <p id="codeMessage" class="login-error"></p>
+    </form>
+  </div>
 
   <audio id="audio" preload="none"></audio>
   <script src="app.js"></script>

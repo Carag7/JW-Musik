@@ -1,6 +1,8 @@
 const STORAGE = {
   favorites: "teslaKaraokeFavorites",
+  playlists: "teslaKaraokePlaylists",
   scale: "teslaKaraokeLyricsScale",
+  listSize: "teslaKaraokeListSize",
   auth: "teslaKaraokeAuth"
 };
 
@@ -73,6 +75,11 @@ const state = {
   playFavorites: false,
   shuffle: false,
   favorites: new Set(),
+  playlists: [],
+  activePlaylist: "",
+  selectMode: false,
+  mode: "songs",
+  listSize: 16,
   lyrics: [],
   scale: 42,
   wakeLock: null,
@@ -165,8 +172,14 @@ function setSidebar(open) {
 
 function visibleSongs() {
   const q = state.query.trim().toLowerCase();
-  return state.songs.filter((song) => {
-    if (state.favoritesOnly && !state.favorites.has(song.id)) return false;
+  const playlist = currentPlaylist();
+  let songs = state.songs;
+  if (state.mode === "playlists" && playlist && !state.selectMode) {
+    const order = new Map(playlist.songs.map((id, index) => [id, index]));
+    songs = state.songs.filter((song) => order.has(song.id)).sort((a, b) => order.get(a.id) - order.get(b.id));
+  }
+  return songs.filter((song) => {
+    if (state.mode === "songs" && state.favoritesOnly && !state.favorites.has(song.id)) return false;
     if (state.category && song.category !== state.category) return false;
     if (state.lyricQuery) {
       const text = (state.lyricCache.get(song.id) || "").toLowerCase();
@@ -174,6 +187,37 @@ function visibleSongs() {
     }
     return song.title.toLowerCase().includes(q) || String(song.number).includes(q) || song.id.includes(q);
   });
+}
+
+function currentPlaylist() {
+  return state.playlists.find((list) => list.id === state.activePlaylist) || null;
+}
+
+function loadPlaylists() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(STORAGE.playlists) || "[]");
+    state.playlists = Array.isArray(raw) ? raw : [];
+  } catch {
+    state.playlists = [];
+  }
+}
+
+function savePlaylists() {
+  localStorage.setItem(STORAGE.playlists, JSON.stringify(state.playlists));
+}
+
+function fillPlaylists() {
+  const select = document.getElementById("playlistSelect");
+  if (!select) return;
+  const current = state.activePlaylist;
+  select.innerHTML = `<option value="">Liste wählen</option>`;
+  state.playlists.forEach((list) => {
+    const option = document.createElement("option");
+    option.value = list.id;
+    option.textContent = list.name;
+    select.append(option);
+  });
+  select.value = current;
 }
 
 async function cacheLyric(song) {
@@ -215,8 +259,33 @@ function renderList() {
   const songs = visibleSongs();
   el.count.textContent = String(songs.length);
   el.list.innerHTML = "";
+  const playlist = currentPlaylist();
   songs.forEach((song) => {
     const item = document.createElement("li");
+    item.className = "song-row";
+    if (state.mode === "playlists" && playlist) {
+      const check = document.createElement("input");
+      check.type = "checkbox";
+      check.className = "song-check";
+      check.checked = playlist.songs.includes(song.id);
+      check.hidden = !state.selectMode;
+      check.addEventListener("click", (event) => event.stopPropagation());
+      check.addEventListener("change", () => togglePlaylistSong(song.id, check.checked));
+      item.append(check);
+      if (!state.selectMode) {
+        const up = document.createElement("button");
+        up.type = "button";
+        up.className = "sort-btn";
+        up.textContent = "↑";
+        up.addEventListener("click", (event) => { event.stopPropagation(); movePlaylistSong(song.id, -1); });
+        const down = document.createElement("button");
+        down.type = "button";
+        down.className = "sort-btn";
+        down.textContent = "↓";
+        down.addEventListener("click", (event) => { event.stopPropagation(); movePlaylistSong(song.id, 1); });
+        item.append(up, down);
+      }
+    }
     const button = document.createElement("button");
     button.type = "button";
     button.className = "song-btn";
@@ -230,6 +299,30 @@ function renderList() {
     item.append(button);
     el.list.append(item);
   });
+  applyListSize();
+}
+
+function togglePlaylistSong(id, on) {
+  const playlist = currentPlaylist();
+  if (!playlist) return;
+  playlist.songs = on ? [...playlist.songs.filter((item) => item !== id), id] : playlist.songs.filter((item) => item !== id);
+  savePlaylists();
+}
+
+function movePlaylistSong(id, delta) {
+  const playlist = currentPlaylist();
+  if (!playlist) return;
+  const at = playlist.songs.indexOf(id);
+  const next = at + delta;
+  if (at < 0 || next < 0 || next >= playlist.songs.length) return;
+  const [item] = playlist.songs.splice(at, 1);
+  playlist.songs.splice(next, 0, item);
+  savePlaylists();
+  renderList();
+}
+
+function applyListSize() {
+  document.documentElement.style.setProperty("--list-size", `${state.listSize}px`);
 }
 
 function parseLrc(text) {
@@ -487,6 +580,11 @@ function seek() {
 }
 
 function playPool() {
+  const playlist = currentPlaylist();
+  if (state.mode === "playlists" && playlist) {
+    const order = new Map(playlist.songs.map((id, index) => [id, index]));
+    return state.songs.filter((song) => order.has(song.id)).sort((a, b) => order.get(a.id) - order.get(b.id));
+  }
   return state.playFavorites
     ? state.songs.filter((song) => state.favorites.has(song.id))
     : state.songs;
@@ -619,18 +717,68 @@ function bind() {
     state.category = el.category.value;
     renderList();
   });
-  el.menu.addEventListener("click", () => setSidebar(!state.sidebarOpen));
+  el.menu.addEventListener("click", () => {
+    state.mode = "songs";
+    document.getElementById("playlistBar").hidden = true;
+    document.getElementById("eigeneToggle").setAttribute("aria-pressed", "false");
+    el.favoritesToggle.textContent = state.favoritesOnly ? "Favoriten" : "alle Lieder";
+    setSidebar(true);
+    renderList();
+  });
+  document.getElementById("eigeneToggle").addEventListener("click", () => {
+    state.mode = "playlists";
+    document.getElementById("playlistBar").hidden = false;
+    document.getElementById("eigeneToggle").setAttribute("aria-pressed", "true");
+    el.favoritesToggle.textContent = state.selectMode ? "alle Lieder" : "Auswahl";
+    setSidebar(true);
+    fillPlaylists();
+    renderList();
+  });
+  document.getElementById("playlistSelect").addEventListener("change", (event) => {
+    state.activePlaylist = event.target.value;
+    document.getElementById("playlistDelete").hidden = !state.activePlaylist;
+    document.getElementById("playlistDeleteConfirm").hidden = true;
+    renderList();
+  });
+  document.getElementById("playlistCreate").addEventListener("click", () => {
+    const name = document.getElementById("playlistName").value.trim();
+    if (!name) return;
+    const list = { id: `${Date.now()}`, name, songs: [] };
+    state.playlists.push(list);
+    state.activePlaylist = list.id;
+    state.selectMode = true;
+    savePlaylists();
+    fillPlaylists();
+    document.getElementById("playlistName").value = "";
+    document.getElementById("playlistDelete").hidden = false;
+    el.favoritesToggle.textContent = "alle Lieder";
+    renderList();
+  });
+  document.getElementById("playlistDelete").addEventListener("click", () => {
+    document.getElementById("playlistDeleteConfirm").hidden = false;
+  });
+  document.getElementById("playlistDeleteConfirm").addEventListener("click", () => {
+    state.playlists = state.playlists.filter((list) => list.id !== state.activePlaylist);
+    state.activePlaylist = "";
+    savePlaylists();
+    fillPlaylists();
+    document.getElementById("playlistDelete").hidden = true;
+    document.getElementById("playlistDeleteConfirm").hidden = true;
+    renderList();
+  });
   document.getElementById("homeBtn").addEventListener("click", goHome);
-  let listSize = 15;
+  let listSize = Number(localStorage.getItem(STORAGE.listSize) || 16);
+  state.listSize = listSize;
+  applyListSize();
   document.getElementById("listSmaller").addEventListener("click", () => {
-    listSize = Math.max(12, listSize - 2);
-    document.documentElement.style.setProperty("--list-size", `${listSize}px`);
-    document.querySelectorAll(".song-btn span, .song-btn strong").forEach((node) => node.style.fontSize = `${listSize}px`);
+    state.listSize = Math.max(12, state.listSize - 3);
+    localStorage.setItem(STORAGE.listSize, String(state.listSize));
+    applyListSize();
   });
   document.getElementById("listLarger").addEventListener("click", () => {
-    listSize = Math.min(32, listSize + 2);
-    document.documentElement.style.setProperty("--list-size", `${listSize}px`);
-    document.querySelectorAll(".song-btn span, .song-btn strong").forEach((node) => node.style.fontSize = `${listSize}px`);
+    state.listSize = Math.min(36, state.listSize + 3);
+    localStorage.setItem(STORAGE.listSize, String(state.listSize));
+    applyListSize();
   });
   const setSidebarWidth = (px) => {
     const raw = getComputedStyle(document.documentElement).getPropertyValue("--sidebar");
@@ -684,6 +832,13 @@ function bind() {
   document.getElementById("importFav").addEventListener("click", importFavorites);
   el.favorite.addEventListener("click", toggleFavorite);
   el.favoritesToggle.addEventListener("click", () => {
+    if (state.mode === "playlists") {
+      state.selectMode = !state.selectMode;
+      el.favoritesToggle.setAttribute("aria-pressed", String(state.selectMode));
+      el.favoritesToggle.textContent = state.selectMode ? "alle Lieder" : "Auswahl";
+      renderList();
+      return;
+    }
     state.favoritesOnly = !state.favoritesOnly;
     el.favoritesToggle.setAttribute("aria-pressed", String(state.favoritesOnly));
     el.favoritesToggle.textContent = state.favoritesOnly ? "Favoriten" : "alle Lieder";
@@ -741,45 +896,59 @@ function bind() {
 }
 
 function exportFavorites() {
-  const code = prompt("Vierstelligen Code für diese Favoriten eingeben");
-  if (!code || !/^\d{4}$/.test(code)) {
-    alert("Bitte genau 4 Ziffern eingeben.");
-    return;
-  }
-  const ids = [...state.favorites];
-  localStorage.setItem(`fav-${code}`, JSON.stringify(ids));
-  const share = `${code}:${ids.join(",")}`;
-  navigator.clipboard?.writeText(share).catch(() => {});
-  alert(`Gespeichert unter Code ${code}.\nZum Übertragen auf ein anderes Gerät diesen Text kopieren:\n${share}`);
+  openCode("Favoriten sichern", (code) => {
+    const payload = { favorites: [...state.favorites], playlists: state.playlists };
+    localStorage.setItem(`fav-${code}`, JSON.stringify(payload));
+    const share = `${code}:${JSON.stringify(payload)}`;
+    navigator.clipboard?.writeText(share).catch(() => {});
+    return `Gespeichert unter ${code}. Text zum Übertragen wurde kopiert.`;
+  });
 }
 
 function importFavorites() {
-  const input = prompt("Vierstelligen Code oder den kopierten Text eingeben");
-  if (!input) return;
-  const text = input.trim();
-  let code = text;
-  let ids = null;
-  if (text.includes(":")) {
-    const [pin, list] = text.split(":");
-    code = pin;
-    ids = list.split(",").filter(Boolean);
-  }
-  if (!/^\d{4}$/.test(code)) {
-    alert("Bitte genau 4 Ziffern eingeben.");
-    return;
-  }
-  if (!ids) {
-    try { ids = JSON.parse(localStorage.getItem(`fav-${code}`) || "null"); } catch { ids = null; }
-  }
-  if (!Array.isArray(ids)) {
-    alert("Zu diesem Code sind hier keine Favoriten gespeichert.");
-    return;
-  }
-  state.favorites = new Set(ids);
-  saveFavorites();
-  localStorage.setItem(`fav-${code}`, JSON.stringify(ids));
-  renderList();
-  alert(`${ids.length} Favoriten mit Code ${code} geladen.`);
+  openCode("Favoriten laden", (code, raw) => {
+    let payload = null;
+    if (raw.includes(":")) {
+      try { payload = JSON.parse(raw.slice(raw.indexOf(":") + 1)); } catch { payload = null; }
+    }
+    if (!payload) {
+      try { payload = JSON.parse(localStorage.getItem(`fav-${code}`) || "null"); } catch { payload = null; }
+    }
+    if (Array.isArray(payload)) payload = { favorites: payload, playlists: [] };
+    if (!payload || !Array.isArray(payload.favorites)) return "Zu diesem Code ist hier nichts gespeichert.";
+    state.favorites = new Set(payload.favorites);
+    if (Array.isArray(payload.playlists)) state.playlists = payload.playlists;
+    saveFavorites();
+    savePlaylists();
+    fillPlaylists();
+    renderList();
+    return `${payload.favorites.length} Favoriten und ${state.playlists.length} Listen geladen.`;
+  });
+}
+
+function openCode(title, onSubmit) {
+  const modal = document.getElementById("codeModal");
+  const input = document.getElementById("codeInput");
+  const message = document.getElementById("codeMessage");
+  document.getElementById("codeTitle").textContent = title;
+  input.value = "";
+  message.textContent = "";
+  modal.hidden = false;
+  input.focus();
+  const form = document.getElementById("codeForm");
+  const submit = (event) => {
+    event.preventDefault();
+    const code = input.value.trim();
+    if (!/^\d{4}$/.test(code)) {
+      message.textContent = "Bitte genau 4 Ziffern eingeben.";
+      return;
+    }
+    const result = onSubmit(code, input.value.trim());
+    if (result) message.textContent = result;
+    if (result && !result.includes("nichts") && !result.includes("genau")) setTimeout(() => { modal.hidden = true; }, 900);
+  };
+  form.onsubmit = submit;
+  document.getElementById("codeCancel").onclick = () => { modal.hidden = true; };
 }
 
 function checkLogin() {
@@ -804,6 +973,8 @@ function checkLogin() {
 function init() {
   checkLogin();
   loadFavorites();
+  loadPlaylists();
+  fillPlaylists();
   state.scale = Number(localStorage.getItem(STORAGE.scale) || 42);
   applyScale();
   bind();
