@@ -1038,9 +1038,9 @@ function bind() {
   });
   const fitBar = () => {
     const w = window.innerWidth;
-    document.body.classList.toggle("bar-half", w < 1100 && w >= 560);
-    document.body.classList.toggle("bar-tight", w < 800 && w >= 560);
-    document.body.classList.toggle("bar-stack", w < 560);
+    document.body.classList.toggle("bar-half", w < 1000 && w >= 520);
+    document.body.classList.toggle("bar-tight", w < 620 && w >= 520);
+    document.body.classList.toggle("bar-stack", w < 520);
   };
   window.addEventListener("resize", fitBar);
   fitBar();
