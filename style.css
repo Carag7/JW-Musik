@@ -435,7 +435,11 @@ body.is-fullscreen .split-handle,
 body.pseudo-fullscreen .split-handle,
 :fullscreen .split-handle,
 :fullscreen .split-handle::after { display: none !important; }
-.timeline, .bar-row { max-width: 280px; }
+.timeline, .bar-row { max-width: none; flex: 1; }
+.flyer { gap: 8px; padding-left: 8px; padding-right: 8px; }
+.timeline { min-width: 0; }
+body.bar-tight .time-btn, body.bar-tight #duration { display: none; }
+.sync-choice .chip[aria-pressed="true"] { background: var(--accent); color: #1b1404; }
 .sync-choice { display: flex; gap: 8px; flex-wrap: wrap; }
 #syncQr { width: 180px; height: 180px; margin: 8px auto; background: #fff; }
 .start-actions { display: flex; flex-direction: row; flex-wrap: nowrap; gap: 12px; }
@@ -444,10 +448,8 @@ body.pseudo-fullscreen .split-handle,
 @media (max-width: 900px) {
   .timeline { max-width: 50%; }
 }
-@media (max-width: 520px) {
-  .flyer { flex-direction: column; }
-  .timeline { max-width: 100%; }
-}
+body.bar-stack .flyer { flex-direction: column; }
+body.bar-stack .timeline { width: 100%; }
 .song-list { padding-bottom: 240px !important; }
 @media (min-width: 700px) {
   .flyer { flex-direction: row !important; align-items: center; justify-content: flex-start; }

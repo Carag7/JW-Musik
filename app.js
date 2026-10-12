@@ -791,6 +791,7 @@ function bind() {
     document.getElementById("listTools").hidden = !open;
     document.getElementById("favTools").hidden = !open;
     document.getElementById("splitHandle").hidden = !open || document.fullscreenElement || document.body.classList.contains("pseudo-fullscreen");
+    if (state.mode === "playlists") fillPlaylists();
     updateEditTools();
     renderList();
     if (open) el.lyricSearch.focus();
@@ -1035,7 +1036,14 @@ function bind() {
       step(-1);
     }
   });
-  window.addEventListener("beforeinstallprompt", () => {});
+  const fitBar = () => {
+    const flyer = document.querySelector(".flyer");
+    const tight = flyer && flyer.scrollWidth > flyer.clientWidth + 8;
+    document.body.classList.toggle("bar-tight", tight && window.innerWidth > 520);
+    document.body.classList.toggle("bar-stack", window.innerWidth <= 520);
+  };
+  window.addEventListener("resize", fitBar);
+  fitBar();
 }
 
 const SYNC = "https://kvdb.io/";
@@ -1053,42 +1061,58 @@ function decodeShare(code) {
   }
 }
 
+function shareLink(payload) {
+  const share = encodeShare(payload);
+  return `${location.origin}${location.pathname}?sync=${encodeURIComponent(share)}`;
+}
+
+function showQr(link) {
+  const qr = document.getElementById("syncQr");
+  qr.hidden = false;
+  qr.src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(link)}`;
+}
+
 async function exportFavorites() {
+  const payload = { favorites: [...state.favorites], playlists: state.playlists };
   openCode("Favoriten sichern", async (code, mode) => {
-    const payload = { favorites: [...state.favorites], playlists: state.playlists };
     if (mode === "local") {
       localStorage.setItem(`fav-${code}`, JSON.stringify(payload));
+      document.getElementById("syncQr").hidden = true;
       return `Lokal unter „${code}“ gespeichert. Gilt nur in diesem Browser.`;
     }
-    const share = encodeShare(payload);
-    localStorage.setItem(`fav-${share}`, JSON.stringify(payload));
-    const qr = document.getElementById("syncQr");
-    qr.hidden = false;
-    qr.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(share)}`;
-    try { await navigator.clipboard.writeText(share); } catch {}
-    return `Code enthält die Daten, keine Server-Adresse. Am Tesla den QR-Code scannen oder den Code kopieren:\n${share}`;
+    const link = shareLink(payload);
+    showQr(link);
+    try { await navigator.clipboard.writeText(link); } catch {}
+    return "QR enthält den Link. Scannen öffnet die Seite und übernimmt die Favoriten.";
   });
 }
 
 async function importFavorites() {
-  openCode("Favoriten laden", async (code) => {
-    let payload = decodeShare(code);
-    if (!payload) {
-      try { payload = JSON.parse(localStorage.getItem(`fav-${code}`) || "null"); } catch { payload = null; }
+  const payload = { favorites: [...state.favorites], playlists: state.playlists };
+  openCode("Favoriten laden", async (code, mode) => {
+    if (mode === "device") {
+      showQr(shareLink(payload));
+      return "Diesen QR auf dem anderen Gerät scannen. Dort werden die Favoriten übernommen.";
     }
-    if (Array.isArray(payload)) payload = { favorites: payload, playlists: [] };
-    if (!payload || !Array.isArray(payload.favorites)) return "Zu diesem Code ist nichts gespeichert.";
+    let data = decodeShare(code);
+    if (!data) {
+      try { data = JSON.parse(localStorage.getItem(`fav-${code}`) || "null"); } catch { data = null; }
+    }
+    if (Array.isArray(data)) data = { favorites: data, playlists: [] };
+    if (!data || !Array.isArray(data.favorites)) return "Zu diesem Passwort ist hier nichts gespeichert.";
     if (state.favorites.size || state.playlists.length) {
+      document.getElementById("codeModal").hidden = true;
       const ok = await warnReplace();
+      document.getElementById("codeModal").hidden = false;
       if (!ok) return "Abgebrochen.";
     }
-    state.favorites = new Set(payload.favorites);
-    if (Array.isArray(payload.playlists)) state.playlists = payload.playlists;
+    state.favorites = new Set(data.favorites);
+    if (Array.isArray(data.playlists)) state.playlists = data.playlists;
     saveFavorites();
     savePlaylists();
     fillPlaylists();
     renderList();
-    return `${payload.favorites.length} Favoriten und ${state.playlists.length} Listen geladen.`;
+    return `${data.favorites.length} Favoriten und ${state.playlists.length} Listen geladen.`;
   });
 }
 
@@ -1120,8 +1144,13 @@ function openCode(title, onSubmit) {
   modal.hidden = false;
   input.focus();
   let mode = "local";
-  document.getElementById("syncLocal").onclick = () => { mode = "local"; input.placeholder = "eigenes Passwort"; };
-  document.getElementById("syncDevice").onclick = () => { mode = "device"; input.value = "teilen"; input.placeholder = "OK drücken"; };
+  const mark = () => {
+    document.getElementById("syncLocal").setAttribute("aria-pressed", String(mode === "local"));
+    document.getElementById("syncDevice").setAttribute("aria-pressed", String(mode === "device"));
+  };
+  mark();
+  document.getElementById("syncLocal").onclick = () => { mode = "local"; input.placeholder = "eigenes Passwort"; qr.hidden = true; mark(); };
+  document.getElementById("syncDevice").onclick = () => { mode = "device"; input.value = ""; input.placeholder = "QR wird erzeugt"; qr.hidden = false; mark(); };
   const form = document.getElementById("codeForm");
   form.onsubmit = async (event) => {
     event.preventDefault();
@@ -1134,6 +1163,17 @@ function openCode(title, onSubmit) {
   document.getElementById("codeCancel").onclick = () => { modal.hidden = true; };
 }
 
+function applySyncFromUrl() {
+  const value = new URLSearchParams(location.search).get("sync");
+  if (!value) return;
+  const payload = decodeShare(value);
+  if (!payload || !Array.isArray(payload.favorites)) return;
+  state.favorites = new Set(payload.favorites);
+  if (Array.isArray(payload.playlists)) state.playlists = payload.playlists;
+  saveFavorites();
+  savePlaylists();
+  history.replaceState(null, "", location.pathname);
+}
 function checkLogin() {
   const gate = document.getElementById("loginGate");
   if (localStorage.getItem(STORAGE.auth) === "ok" || sessionStorage.getItem(STORAGE.auth) === "ok") {
@@ -1158,6 +1198,7 @@ function init() {
   checkLogin();
   loadFavorites();
   loadPlaylists();
+  applySyncFromUrl();
   fillPlaylists();
   state.scale = Number(localStorage.getItem(STORAGE.scale) || 42);
   applyScale();
