@@ -437,7 +437,16 @@ body.pseudo-fullscreen .split-handle,
 :fullscreen .split-handle::after { display: none !important; }
 .flyer { z-index: 90 !important; }
 /* .topbar { position: relative; } */
-.fav-tools-main { position: absolute; left: 50%; transform: translateX(-50%); z-index: 2; }
+.fav-tools-main {
+  position: static !important;
+  left: auto !important;
+  transform: none !important;
+  z-index: auto !important;
+  display: flex;
+  gap: 8px;
+  margin: 0;
+  flex: 0 0 auto;
+}
 .flyer { left: 0 !important; right: 0 !important; width: 100% !important; justify-content: flex-start !important; padding: 8px !important; box-sizing: border-box; }
 .timeline { flex: 1 1 auto !important; width: 100% !important; max-width: none !important; min-width: 0 !important; display: flex !important; }
 .bar-row, .bar-row input { width: 100% !important; max-width: none !important; flex: 1 1 auto !important; }
@@ -511,3 +520,15 @@ html:fullscreen .split-handle { display: none !important; }
 .song-list { padding-bottom: 160px !important; }
 .sidebar { padding-bottom: 160px !important; }
 .lyric-line { cursor: pointer; }
+.topbar {
+  justify-content: flex-start !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  white-space: nowrap;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+
+.topbar > * {
+  flex-shrink: 0;
+}
