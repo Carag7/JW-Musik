@@ -436,7 +436,7 @@ body.pseudo-fullscreen .split-handle,
 :fullscreen .split-handle,
 :fullscreen .split-handle::after { display: none !important; }
 .flyer { z-index: 90 !important; }
-.topbar { position: relative; }
+/* .topbar { position: relative; } */
 .fav-tools-main { position: absolute; left: 50%; transform: translateX(-50%); z-index: 2; }
 .flyer { left: 0 !important; right: 0 !important; width: 100% !important; justify-content: flex-start !important; padding: 8px !important; box-sizing: border-box; }
 .timeline { flex: 1 1 auto !important; width: 100% !important; max-width: none !important; min-width: 0 !important; display: flex !important; }
