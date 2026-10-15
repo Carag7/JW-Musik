@@ -6,29 +6,47 @@ export default {
     if (path.endsWith(".mp3")) {
       const filename = path.split("/").pop();
       const range = request.headers.get("range");
-      const opts = range ? { range: parseRange(range) } : {};
 
-      let obj = await env.MUSIK.get("musik/" + filename, opts);
-      if (!obj) obj = await env.MUSIK.get(filename, opts);
+      let key = "musik/" + filename;
+      let head = await env.MUSIK.head(key);
+      if (!head) {
+        key = filename;
+        head = await env.MUSIK.head(key);
+      }
 
-      if (obj) {
-        const h = new Headers();
-        obj.writeHttpMetadata(h);
-        h.set("etag", obj.httpEtag);
-        h.set("accept-ranges", "bytes");
-        h.set("cache-control", "public, max-age=3600");
+      if (!head) {
+        return env.ASSETS ? env.ASSETS.fetch(request) : new Response("Not Found", { status: 404 });
+      }
 
-        if (range) {
-          if (obj.rangeHeader) {
-            h.set("content-range", obj.rangeHeader);
+      const h = new Headers();
+      head.writeHttpMetadata(h);
+      h.set("etag", head.httpEtag);
+      h.set("accept-ranges", "bytes");
+      h.set("cache-control", "public, max-age=3600");
+
+      if (range) {
+        const parsed = parseRange(range);
+        let start = 0, end = head.size - 1;
+        if (parsed) {
+          if (parsed.offset !== undefined) start = parsed.offset;
+          if (parsed.length !== undefined) end = start + parsed.length - 1;
+          if (parsed.suffix !== undefined) {
+            start = head.size - parsed.suffix;
+            end = head.size - 1;
           }
-          h.set("content-length", String(obj.size));
-          return new Response(obj.body, { status: 206, headers: h });
         }
 
-        h.set("content-length", String(obj.size));
-        return new Response(obj.body, { headers: h });
+        const obj = await env.MUSIK.get(key, { range: { offset: start, length: end - start + 1 } });
+        if (!obj) return new Response("Not Found", { status: 404 });
+
+        h.set("content-range", `bytes ${start}-${end}/${head.size}`);
+        h.set("content-length", String(end - start + 1));
+        return new Response(obj.body, { status: 206, headers: h });
       }
+
+      const obj = await env.MUSIK.get(key);
+      h.set("content-length", String(head.size));
+      return new Response(obj.body, { headers: h });
     }
 
     return env.ASSETS ? env.ASSETS.fetch(request) : new Response("Not Found", { status: 404 });
