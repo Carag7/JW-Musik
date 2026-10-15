@@ -17,11 +17,15 @@ export default {
         h.set("etag", obj.httpEtag);
         h.set("accept-ranges", "bytes");
         h.set("cache-control", "public, max-age=3600");
-        if (obj.rangeHeader) {
-          h.set("content-range", obj.rangeHeader);
+
+        if (range) {
+          if (obj.rangeHeader) {
+            h.set("content-range", obj.rangeHeader);
+          }
           h.set("content-length", String(obj.size));
           return new Response(obj.body, { status: 206, headers: h });
         }
+
         h.set("content-length", String(obj.size));
         return new Response(obj.body, { headers: h });
       }
