@@ -1038,9 +1038,9 @@ function bind() {
   });
   const fitBar = () => {
     const w = window.innerWidth;
-    document.body.classList.toggle("bar-half", false);
-    document.body.classList.toggle("bar-tight", w < 620 && w >= 520);
-    document.body.classList.toggle("bar-stack", w < 520);
+    document.body.classList.toggle("bar-half", w < 900 && w >= 680);
+    document.body.classList.toggle("bar-tight", w < 680 && w >= 540);
+    document.body.classList.toggle("bar-stack", w < 540);
   };
   window.addEventListener("resize", fitBar);
   fitBar();
@@ -1080,10 +1080,15 @@ async function exportFavorites() {
       document.getElementById("syncQr").hidden = true;
       return `Lokal unter „${code}“ gespeichert. Gilt nur in diesem Browser.`;
     }
-    const link = shareLink(payload);
+    const short = (code || Math.random().toString(36).slice(2, 7)).toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 6) || "abcd";
+    try {
+      await fetch(`/sync/${short}`, { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) });
+    } catch {}
+    const link = `${location.origin}${location.pathname}?sync=${short}`;
     showQr(link);
     try { await navigator.clipboard.writeText(link); } catch {}
-    return "QR enthält den Link. Scannen öffnet die Seite und übernimmt die Favoriten.";
+    document.getElementById("codeInput").value = short;
+    return `Kurzer Code: ${short}\nLink: ${link}`;
   }, "export");
 }
 
@@ -1091,9 +1096,18 @@ async function importFavorites() {
   openCode("Favoriten laden", async (code, mode) => {
     if (mode === "device") {
       const raw = code.trim();
-      const fromLink = raw.includes("sync=") ? decodeURIComponent(raw.split("sync=").pop().split("&")[0]) : raw;
-      const data = decodeShare(fromLink);
-      if (!data || !Array.isArray(data.favorites)) return "Link oder Code vom anderen Gerät einfügen.";
+      let data = null;
+      if (raw.length <= 8 && !raw.includes("http") && !raw.includes("sync=")) {
+        try {
+          const res = await fetch(`/sync/${raw.toLowerCase()}`);
+          if (res.ok) data = await res.json();
+        } catch {}
+      }
+      if (!data) {
+        const fromLink = raw.includes("sync=") ? decodeURIComponent(raw.split("sync=").pop().split("&")[0]) : raw;
+        data = decodeShare(fromLink) || (fromLink.length <= 8 ? null : decodeShare(fromLink));
+      }
+      if (!data || !Array.isArray(data.favorites)) return "Code oder Link nicht gefunden.";
       if (state.favorites.size || state.playlists.length) {
         document.getElementById("codeModal").hidden = true;
         const ok = await warnReplace();
@@ -1170,7 +1184,7 @@ function openCode(title, onSubmit, kind) {
   document.getElementById("syncDevice").onclick = () => {
     mode = "device";
     qr.hidden = kind === "import";
-    input.placeholder = kind === "import" ? "Link vom anderen Gerät einfügen" : "QR wird erzeugt";
+    input.placeholder = kind === "import" ? "Link oder kurzen Code einfügen" : "";
     ok.hidden = false;
     mark();
   };

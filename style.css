@@ -415,7 +415,7 @@ body.pseudo-fullscreen .flyer { left: 0; }
   background: var(--panel); border: 1px solid var(--line);
 }
 .login-card input { min-height: 48px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel-2); color: var(--text); font-size: 16px; }
-.login-error { color: #f87171; margin: 0; }
+#codeMessage { word-break: break-all; font-size: 12px; max-height: 80px; overflow: auto; }
 .topbar { overflow-x: auto; }
 .title-intro {
   position: fixed; left: 0; right: 0; top: var(--topbar); bottom: var(--flyer-h); z-index: 40;
@@ -451,9 +451,13 @@ body.pseudo-fullscreen .split-handle,
 .timeline { flex: 1 1 auto !important; width: 100% !important; max-width: none !important; min-width: 0 !important; display: flex !important; }
 .bar-row, .bar-row input { width: 100% !important; max-width: none !important; flex: 1 1 auto !important; }
 .time-btn, #duration { display: inline-flex !important; }
+body.bar-half:not(.bar-stack) .bar-row input { max-width: 50% !important; flex: 0 1 50% !important; width: 50% !important; }
 body.bar-tight:not(.bar-stack) .time-btn, body.bar-tight:not(.bar-stack) #duration { display: none !important; }
 body.bar-stack .flyer { flex-direction: column !important; }
-body.bar-stack .timeline, body.bar-stack .bar-row, body.bar-stack .bar-row input { width: 100% !important; max-width: none !important; }
+body.bar-stack .timeline, body.bar-stack .bar-row, body.bar-stack .bar-row input { width: 100% !important; max-width: none !important; flex: 1 1 auto !important; }
+body.bar-stack .time-btn, body.bar-stack #duration { display: inline-flex !important; }
+input[type="range"] { outline: none; }
+input[type="range"]:focus { outline: none; box-shadow: none; }
 @media (max-width: 640px) {
   .flyer { flex-direction: column; }
   .timeline { width: 100% !important; }
