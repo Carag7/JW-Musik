@@ -578,14 +578,17 @@ async function selectSong(index, autoplay) {
   state.currentAudio = url;
   setAudioSource(url);
   setMediaSession(song);
+  el.app.classList.add("song-open");
   if (!document.fullscreenElement && !document.body.classList.contains("pseudo-fullscreen")) {
     setSidebar(false);
   }
   if (autoplay) {
-    el.app.classList.add("song-open");
-  showTitleIntro(song);
+    showTitleIntro(song);
     el.audio.addEventListener("canplay", () => togglePlay(), { once: true });
   }
+  setTimeout(() => {
+    if (state.introActive && (!state.lyrics.length || (el.audio.currentTime || 0) >= 0)) hideTitleIntro();
+  }, 6000);
 }
 
 function togglePlay() {
@@ -807,7 +810,6 @@ function bind() {
     document.getElementById("listTools").hidden = !open;
     document.getElementById("favTools").hidden = !open;
     document.getElementById("refreshBtn").hidden = !open;
-    document.getElementById("playerToggle").hidden = !open || window.innerWidth > 640;
     document.getElementById("splitHandle").hidden = !open || document.fullscreenElement || document.body.classList.contains("pseudo-fullscreen");
     if (state.mode === "playlists") fillPlaylists();
     updateEditTools();
@@ -980,9 +982,16 @@ function bind() {
   });
   document.getElementById("refreshBtn").addEventListener("click", () => location.reload());
   document.getElementById("playerToggle").addEventListener("click", () => {
-    document.body.classList.toggle("player-hidden");
-    document.getElementById("playerToggle").textContent = document.body.classList.contains("player-hidden") ? "Player an" : "Player";
+    const hidden = document.body.classList.toggle("player-hidden");
+    document.getElementById("playerToggle").setAttribute("aria-pressed", String(!hidden));
   });
+  let holdTimer = 0;
+  el.duration.addEventListener("pointerdown", () => {
+    if (document.getElementById("lyricSearchWrap").hidden) return;
+    holdTimer = setTimeout(openTimecode, 5000);
+  });
+  el.duration.addEventListener("pointerup", () => clearTimeout(holdTimer));
+  el.duration.addEventListener("pointerleave", () => clearTimeout(holdTimer));
   const holdSize = (button, target) => {
     let timer = 0;
     button.addEventListener("pointerdown", () => {
@@ -1203,6 +1212,68 @@ async function importFavorites() {
   }, "import");
 }
 
+function openTimecode() {
+  const pass = prompt("Timecode Passwort");
+  if (pass !== window.TIMECODE_PASSWORD) return;
+  document.body.classList.add("edit-mode");
+  const lines = el.lyrics.querySelectorAll(".lyric-line");
+  lines.forEach((line) => {
+    if (line.querySelector(".time-edit")) return;
+    const input = document.createElement("input");
+    input.className = "time-edit";
+    input.value = formatTime(Number(line.dataset.time) || 0);
+    input.addEventListener("change", () => {
+      const parts = input.value.split(":");
+      line.dataset.time = String(Number(parts[0] || 0) * 60 + Number(parts[1] || 0));
+    });
+    const take = document.createElement("button");
+    take.type = "button";
+    take.className = "chip";
+    take.textContent = "Zeit";
+    take.addEventListener("click", () => {
+      line.dataset.time = String(el.audio.currentTime || 0);
+      input.value = formatTime(el.audio.currentTime || 0);
+    });
+    line.prepend(take);
+    line.prepend(input);
+  });
+  if (!document.getElementById("editPanel")) {
+    const panel = document.createElement("div");
+    panel.id = "editPanel";
+    panel.className = "edit-panel";
+    [0.5, 0.8, 1, 1.5, 2].forEach((rate) => {
+      const btn = document.createElement("button");
+      btn.className = "chip";
+      btn.textContent = `${rate}x`;
+      btn.addEventListener("click", () => { el.audio.playbackRate = rate; });
+      panel.append(btn);
+    });
+    const save = document.createElement("button");
+    save.className = "chip";
+    save.textContent = "Speichern";
+    save.addEventListener("click", () => {
+      if (!confirm("Timecodes lokal speichern?")) return;
+      const song = state.songs[state.index];
+      if (!song) return;
+      const data = [...el.lyrics.querySelectorAll(".lyric-line")].map((line) => ({
+        time: Number(line.dataset.time),
+        text: line.textContent.replace(/^\s*Zeit\s*/, "").trim()
+      }));
+      localStorage.setItem(`lrc-${song.id}`, JSON.stringify(data));
+      alert("Lokal gespeichert.");
+    });
+    const exit = document.createElement("button");
+    exit.className = "chip danger";
+    exit.textContent = "Beenden";
+    exit.addEventListener("click", () => {
+      document.body.classList.remove("edit-mode");
+      panel.remove();
+      if (state.songs[state.index]) loadLyrics(state.songs[state.index]);
+    });
+    panel.append(save, exit);
+    document.body.append(panel);
+  }
+}
 function warnReplace() {
   return new Promise((resolve) => {
     const modal = document.getElementById("warnModal");
