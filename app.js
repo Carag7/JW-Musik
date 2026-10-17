@@ -1378,6 +1378,14 @@ function buildEditPanel() {
     if (state.songs[state.index]) loadLyrics(state.songs[state.index]);
   });
   panel.append(save, exit);
+  const showBtn = document.createElement("button");
+  showBtn.className = "chip";
+  showBtn.textContent = "Panel";
+  showBtn.addEventListener("click", () => {
+    panel.classList.add("hidden-panel");
+    document.getElementById("panelShow").hidden = false;
+  });
+  panel.append(showBtn);
   document.body.append(panel);
 }
 
@@ -1412,22 +1420,23 @@ function startSpectrum() {
   const draw = () => {
     if (!state.waveData) return;
     const g = canvas.getContext("2d");
+    const total = state.waveData.length;
     canvas.width = canvas.clientWidth || 300;
-    canvas.height = 80;
-    g.fillStyle = "#2a2a2a";
+    canvas.height = 60;
+    g.fillStyle = "#1a1a1a";
     g.fillRect(0, 0, canvas.width, canvas.height);
     const current = el.audio.currentTime || 0;
     const pos = current / (el.audio.duration || 1);
     const center = Math.floor(pos * total);
-    const view = Math.floor(total / (state.waveZoom || 1));
-    const start = Math.max(0, Math.min(center - view / 2, total - view));
+    const view = Math.max(1, Math.floor(total / (state.waveZoom || 1)));
+    const start = Math.max(0, Math.min(center - Math.floor(view / 2), total - view));
     const step = view / canvas.width;
     g.strokeStyle = "#5b7cff";
     g.lineWidth = 1;
     g.beginPath();
     for (let x = 0; x < canvas.width; x++) {
       const i = Math.floor(start + x * step);
-      const v = state.waveData[i] || 0;
+      const v = state.waveData[Math.min(i, total - 1)] || 0;
       const y = canvas.height / 2 - v * canvas.height / 2;
       if (x === 0) g.moveTo(x, y);
       else g.lineTo(x, y);
@@ -1436,7 +1445,7 @@ function startSpectrum() {
     g.beginPath();
     for (let x = 0; x < canvas.width; x++) {
       const i = Math.floor(start + x * step);
-      const v = state.waveData[i] || 0;
+      const v = state.waveData[Math.min(i, total - 1)] || 0;
       const y = canvas.height / 2 + v * canvas.height / 2;
       if (x === 0) g.moveTo(x, y);
       else g.lineTo(x, y);
@@ -1478,7 +1487,7 @@ function startSpectrum() {
       }
       state.waveData = peaks;
       draw();
-    }).catch(() => { canvas.hidden = true; });
+    }).catch(() => {});
   } else draw();
 }
 function warnReplace() {

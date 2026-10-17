@@ -418,7 +418,17 @@ body.pseudo-fullscreen .flyer { left: 0; }
 .spectrum { width: 100%; height: 60px; background: #1a1a1a; border-radius: 8px; display: block; }
 .col-head { position: sticky; top: 0; z-index: 10; background: var(--bg); display: grid; grid-template-columns: 100px 80px 50px 1fr; gap: 6px; font-size: 11px; color: var(--muted); padding: 6px 0; }
 .panel-show { position: fixed; right: 8px; bottom: calc(var(--flyer-h) + 8px); z-index: 97; }
-body.edit-mode .lyric-line.active { color: var(--accent); }
+body.edit-mode .lyric-line.active,
+body.edit-mode .lyric-line.active .lyric-text { color: var(--accent); }
+body.edit-mode .lyrics { padding-left: 4px; padding-right: 4px; }
+@media (max-width: 640px) {
+  body.edit-mode .lyrics { padding-left: 2px; padding-right: 2px; }
+  body.edit-mode .time-edit { width: 72px; font-size: 13px; }
+  body.edit-mode .now-btn { min-width: 60px; font-size: 12px; }
+}
+.col-head { position: sticky; top: 0; z-index: 10; background: var(--bg); display: grid; grid-template-columns: 100px 86px 56px 1fr; gap: 6px; align-items: center; font-size: 11px; color: var(--muted); padding: 6px 0; }
+body.player-hidden .stage { height: calc(100vh - var(--topbar)) !important; }
+body.player-hidden .lyrics { padding-bottom: 16px !important; }
 .player-icon { background: transparent url("icon2.svg") center/60% no-repeat; }
 .player-icon[aria-pressed="false"] { background: var(--accent) url("icon.svg") center/60% no-repeat; }
 .edit-panel.hidden-panel { display: none; }
