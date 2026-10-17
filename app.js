@@ -1019,7 +1019,8 @@ function bind() {
   holdSize(document.getElementById("largerBtn"), "lyrics");
   holdSize(document.getElementById("listSmaller"), "list");
   holdSize(document.getElementById("listLarger"), "list");
-  document.getElementById("logoutBtn").addEventListener("click", () => {
+  const logout = document.getElementById("logoutBtn");
+  if (logout) logout.addEventListener("click", () => {
     localStorage.removeItem(STORAGE.auth);
     sessionStorage.removeItem(STORAGE.auth);
     location.reload();

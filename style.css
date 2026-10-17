@@ -465,12 +465,23 @@ body.bar-stack .flyer { flex-direction: column !important; }
 body.bar-stack .timeline, body.bar-stack .bar-row, body.bar-stack .bar-row input { width: 100% !important; max-width: none !important; flex: 1 1 auto !important; }
 .player-icon {
   width: 40px; height: 40px; padding: 0; border-radius: 12px;
-  background: url("icon2.svg") center/cover no-repeat;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  display: grid; place-items: center;
 }
-.player-icon[aria-pressed="false"] { background-image: url("icon.svg"); }
+.player-icon::before {
+  content: "";
+  width: 22px; height: 22px;
+  background: url("icon.svg") center/contain no-repeat;
+  filter: grayscale(1) brightness(2);
+}
+.player-icon[aria-pressed="true"]::before {
+  background-image: url("icon2.svg");
+  filter: none;
+}
 body.player-hidden .flyer { display: none !important; }
 @media (max-width: 640px) {
-  .round.nav, .round.play { height: 28px; width: 28px; font-size: 14px; }
+  .round.nav, .round.play { height: 28px; min-width: 56px; font-size: 14px; }
   .flyer { min-height: 64px; }
   .brand { padding-right: 8px; }
   #lyricSearchToggle { margin-right: 4px; }
@@ -482,7 +493,7 @@ body.edit-mode .lyric-line { display: flex; align-items: center; gap: 8px; }
 body.bar-stack .time-btn, body.bar-stack #duration { display: inline-flex !important; }
 body.bar-half:not(.bar-stack) .bar-row input { max-width: 50% !important; flex: 0 1 50% !important; width: 50% !important; }
 @media (max-width: 640px) {
-  .round.nav, .round.play { height: 28px; width: 28px; font-size: 14px; }
+  .round.nav, .round.play { height: 28px; min-width: 56px; font-size: 14px; }
   .flyer { min-height: 64px; }
   .brand { padding-right: 8px; }
   #lyricSearchToggle { margin-right: 4px; }
