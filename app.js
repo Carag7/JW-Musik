@@ -1066,7 +1066,9 @@ function bind() {
     sessionStorage.removeItem(STORAGE.auth);
     location.reload();
   });
+  document.getElementById("exportFav").addEventListener("click", exportFavorites);
   document.getElementById("syncFav").addEventListener("click", syncFavorites);
+  document.getElementById("importFav").addEventListener("click", importFavorites);
   autoSync();
   document.getElementById("importFav").addEventListener("click", importFavorites);
   el.favorite.addEventListener("click", toggleFavorite);
@@ -1178,10 +1180,35 @@ function showQr(link) {
 }
 
 async function syncFavorites() {
-  const code = prompt("Sync-Code", localStorage.getItem("sync-code") || "");
-  if (!code || code.length < 4) return;
-  localStorage.setItem("sync-code", code);
-  await doSync(code);
+  const saved = localStorage.getItem("sync-code") || "";
+  openCode("Synchronisieren", async (code) => {
+    localStorage.setItem("sync-code", code);
+    const payload = { favorites: [...state.favorites], playlists: state.playlists, saved: new Date().toISOString() };
+    let exists = false;
+    try {
+      const res = await fetch(`${SYNC_BASE}/sync/${code.toLowerCase()}`);
+      exists = res.ok;
+    } catch {}
+    if (!exists) {
+      if (!confirm("Neuer Code. Zuerst exportieren?")) return "Abgebrochen.";
+      await fetch(`${SYNC_BASE}/sync/${code.toLowerCase()}`, { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) });
+      return "Exportiert.";
+    }
+    const remote = await (await fetch(`${SYNC_BASE}/sync/${code.toLowerCase()}`)).json();
+    const same = JSON.stringify(payload.favorites.sort()) === JSON.stringify((remote.favorites || []).sort());
+    if (same) return "Bereits gleich.";
+    const pick = confirm(`Unterschiedlich.\nLokal: jetzt\nServer: ${remote.saved || "—"}\n\nOK = Server laden, Abbrechen = Lokal hochladen`);
+    if (pick) {
+      state.favorites = new Set(remote.favorites || []);
+      state.playlists = remote.playlists || [];
+      saveFavorites();
+      renderList();
+      return "Server geladen.";
+    }
+    await fetch(`${SYNC_BASE}/sync/${code.toLowerCase()}`, { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) });
+    return "Lokal hochgeladen.";
+  }, "export");
+  document.getElementById("codeInput").value = saved;
 }
 async function autoSync() {
   const code = localStorage.getItem("sync-code");
