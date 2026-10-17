@@ -1007,6 +1007,11 @@ function bind() {
       setStatus("Spielt", "is-play");
     }).catch(() => {});
   });
+  document.getElementById("waveToggle").addEventListener("click", () => {
+    const canvas = document.getElementById("spectrum");
+    canvas.hidden = !canvas.hidden;
+    if (!canvas.hidden) startSpectrum();
+  });
   document.getElementById("panelShow").addEventListener("click", () => {
     const panel = document.getElementById("editPanel");
     if (panel) {
