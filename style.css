@@ -416,10 +416,9 @@ body.pseudo-fullscreen .flyer { left: 0; }
 .player-icon[aria-pressed="false"] { background-image: url("playeron.svg") !important; }
 .wave-toggle { position: fixed; right: 8px; bottom: calc(var(--flyer-h) + 48px); z-index: 98; }
 .spectrum[hidden] { display: none !important; }
-@media (max-width: 900px) and (orientation: landscape) {
-  .now, .col-head { display: none; }
-  .lyrics { overflow: auto !important; }
-  .lyric-line { white-space: nowrap; overflow-x: auto; }
+@media (max-width: 900px) {
+  .lyrics { overflow-x: auto !important; overflow-y: auto !important; }
+  .lyric-line { display: flex; white-space: nowrap; min-width: max-content; }
 }
 .col-head { position: sticky; top: 0; z-index: 10; background: var(--bg); display: grid; grid-template-columns: 100px 80px 50px 1fr; gap: 6px; font-size: 11px; color: var(--muted); padding: 6px 0; }
 .panel-show { position: fixed; right: 8px; bottom: calc(var(--flyer-h) + 8px); z-index: 97; }

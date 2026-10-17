@@ -1192,6 +1192,8 @@ async function syncFavorites() {
     if (!exists) {
       if (!confirm("Neuer Code. Zuerst exportieren?")) return "Abgebrochen.";
       await fetch(`${SYNC_BASE}/sync/${code.toLowerCase()}`, { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) });
+      localStorage.setItem("sync-last", new Date().toISOString());
+      localStorage.setItem("sync-dir", "gesendet");
       return "Exportiert.";
     }
     const remote = await (await fetch(`${SYNC_BASE}/sync/${code.toLowerCase()}`)).json();
@@ -1203,12 +1205,38 @@ async function syncFavorites() {
       state.playlists = remote.playlists || [];
       saveFavorites();
       renderList();
+      localStorage.setItem("sync-last", new Date().toISOString());
+      localStorage.setItem("sync-dir", "empfangen");
       return "Server geladen.";
     }
     await fetch(`${SYNC_BASE}/sync/${code.toLowerCase()}`, { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) });
+    localStorage.setItem("sync-last", new Date().toISOString());
+    localStorage.setItem("sync-dir", "gesendet");
     return "Lokal hochgeladen.";
-  }, "export");
+  }, "sync");
   document.getElementById("codeInput").value = saved;
+  document.querySelector(".sync-choice").hidden = true;
+  document.getElementById("codeMessage").textContent = "Mit diesem Passwort kannst du alle deine Geräte synchronisieren.";
+  const last = localStorage.getItem("sync-last");
+  const dir = localStorage.getItem("sync-dir") || "";
+  const info = document.getElementById("syncInfo");
+  info.hidden = false;
+  info.textContent = last ? `Zuletzt: ${last.slice(0, 16).replace("T", " ")} (${dir})` : "Noch nie synchronisiert.";
+  const del = document.getElementById("syncDelete");
+  del.hidden = false;
+  del.onclick = () => {
+    if (!confirm("Alle Favoriten und Listen löschen?")) return;
+    const alsoServer = confirm("Auch auf dem Server löschen?");
+    state.favorites = new Set();
+    state.playlists = [];
+    saveFavorites();
+    savePlaylists();
+    renderList();
+    if (alsoServer && saved) {
+      fetch(`${SYNC_BASE}/sync/${saved.toLowerCase()}`, { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ favorites: [], playlists: [], saved: new Date().toISOString() }) });
+    }
+    document.getElementById("codeModal").hidden = true;
+  };
 }
 async function autoSync() {
   const code = localStorage.getItem("sync-code");
