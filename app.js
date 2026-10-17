@@ -1009,8 +1009,9 @@ function bind() {
   });
   document.getElementById("waveToggle").addEventListener("click", () => {
     const canvas = document.getElementById("spectrum");
-    canvas.hidden = !canvas.hidden;
-    if (!canvas.hidden) startSpectrum();
+    const show = canvas.hidden;
+    canvas.hidden = !show;
+    if (show) startSpectrum();
   });
   document.getElementById("panelShow").addEventListener("click", () => {
     const panel = document.getElementById("editPanel");
