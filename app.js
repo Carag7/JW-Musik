@@ -1066,7 +1066,8 @@ function bind() {
     sessionStorage.removeItem(STORAGE.auth);
     location.reload();
   });
-  document.getElementById("exportFav").addEventListener("click", exportFavorites);
+  document.getElementById("syncFav").addEventListener("click", syncFavorites);
+  autoSync();
   document.getElementById("importFav").addEventListener("click", importFavorites);
   el.favorite.addEventListener("click", toggleFavorite);
   el.favoritesToggle.addEventListener("click", () => {
@@ -1176,6 +1177,48 @@ function showQr(link) {
   qr.src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(link)}`;
 }
 
+async function syncFavorites() {
+  const code = prompt("Sync-Code", localStorage.getItem("sync-code") || "");
+  if (!code || code.length < 4) return;
+  localStorage.setItem("sync-code", code);
+  await doSync(code);
+}
+async function autoSync() {
+  const code = localStorage.getItem("sync-code");
+  if (code) doSync(code, true);
+}
+async function doSync(code, silent) {
+  try {
+    const res = await fetch(`${SYNC_BASE}/sync/${code.toLowerCase()}`);
+    if (!res.ok) {
+      if (!silent) alert("Kein Code gefunden. Exportiere zuerst.");
+      return;
+    }
+    const remote = await res.json();
+    const local = { favorites: [...state.favorites], playlists: state.playlists, saved: localStorage.getItem("sync-local-time") || "" };
+    const same = JSON.stringify(local.favorites.sort()) === JSON.stringify((remote.favorites || []).sort())
+      && JSON.stringify(local.playlists) === JSON.stringify(remote.playlists || []);
+    if (same) return;
+    const localTime = local.saved || "lokal";
+    const remoteTime = remote.saved || "Server";
+    const pick = confirm(`Unterschiedliche Daten.\nLokal: ${localTime}\nServer: ${remoteTime}\n\nOK = Server übernehmen, Abbrechen = Lokal behalten und hochladen`);
+    if (pick) {
+      state.favorites = new Set(remote.favorites || []);
+      state.playlists = remote.playlists || [];
+      saveFavorites();
+      renderList();
+    } else {
+      await fetch(`${SYNC_BASE}/sync/${code.toLowerCase()}`, {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ ...local, saved: new Date().toISOString() })
+      });
+      localStorage.setItem("sync-local-time", new Date().toISOString());
+    }
+  } catch {
+    if (!silent) alert("Sync fehlgeschlagen.");
+  }
+}
 async function exportFavorites() {
   const payload = { favorites: [...state.favorites], playlists: state.playlists };
   openCode("Favoriten sichern", async (code, mode) => {
