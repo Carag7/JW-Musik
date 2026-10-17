@@ -465,9 +465,10 @@ body.bar-stack .flyer { flex-direction: column !important; }
 body.bar-stack .timeline, body.bar-stack .bar-row, body.bar-stack .bar-row input { width: 100% !important; max-width: none !important; flex: 1 1 auto !important; }
 .player-icon {
   width: 40px; height: 40px; padding: 0; border-radius: 12px;
-  background: url("icon.svg") center/cover no-repeat;
+  background: url("icon2.svg") center/cover no-repeat;
 }
-.player-icon[aria-pressed="false"] { filter: invert(1) hue-rotate(180deg); }
+.player-icon[aria-pressed="false"] { background-image: url("icon.svg"); }
+body.player-hidden .flyer { display: none !important; }
 @media (max-width: 640px) {
   .round.nav, .round.play { height: 28px; width: 28px; font-size: 14px; }
   .flyer { min-height: 64px; }
@@ -481,11 +482,10 @@ body.edit-mode .lyric-line { display: flex; align-items: center; gap: 8px; }
 body.bar-stack .time-btn, body.bar-stack #duration { display: inline-flex !important; }
 body.bar-half:not(.bar-stack) .bar-row input { max-width: 50% !important; flex: 0 1 50% !important; width: 50% !important; }
 @media (max-width: 640px) {
-  .app { grid-template-columns: 1fr !important; }
-  .sidebar { width: 100% !important; }
-  .stage { display: none; }
-  .app.song-open .stage { display: grid; }
-  .app.song-open .sidebar { display: none; }
+  .round.nav, .round.play { height: 28px; width: 28px; font-size: 14px; }
+  .flyer { min-height: 64px; }
+  .brand { padding-right: 8px; }
+  #lyricSearchToggle { margin-right: 4px; }
 }
 input[type="range"] { outline: none; }
 input[type="range"]:focus { outline: none; box-shadow: none; }

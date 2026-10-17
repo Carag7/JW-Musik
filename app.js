@@ -585,10 +585,8 @@ async function selectSong(index, autoplay) {
   if (autoplay) {
     showTitleIntro(song);
     el.audio.addEventListener("canplay", () => togglePlay(), { once: true });
+    setTimeout(() => { if (state.introActive) hideTitleIntro(); }, 4000);
   }
-  setTimeout(() => {
-    if (state.introActive && (!state.lyrics.length || (el.audio.currentTime || 0) >= 0)) hideTitleIntro();
-  }, 6000);
 }
 
 function togglePlay() {
@@ -983,7 +981,8 @@ function bind() {
   document.getElementById("refreshBtn").addEventListener("click", () => location.reload());
   document.getElementById("playerToggle").addEventListener("click", () => {
     const hidden = document.body.classList.toggle("player-hidden");
-    document.getElementById("playerToggle").setAttribute("aria-pressed", String(!hidden));
+    const btn = document.getElementById("playerToggle");
+    btn.setAttribute("aria-pressed", String(!hidden));
   });
   let holdTimer = 0;
   el.duration.addEventListener("pointerdown", () => {
