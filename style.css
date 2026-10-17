@@ -415,7 +415,15 @@ body.pseudo-fullscreen .flyer { left: 0; }
   background: var(--panel); border: 1px solid var(--line);
 }
 .login-card input { min-height: 48px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel-2); color: var(--text); font-size: 16px; }
-#codeMessage { word-break: break-all; font-size: 12px; max-height: 80px; overflow: auto; }
+.sync-link { word-break: break-all; font-size: 12px; background: var(--panel-2); padding: 8px; border-radius: 8px; user-select: all; max-height: 90px; overflow: auto; }
+.to-top { z-index: 95 !important; }
+@media (max-width: 640px) {
+  .to-top { bottom: calc(var(--flyer-h) + 20px) !important; }
+  .meta-row { flex-direction: column; align-items: flex-start; }
+  .title-row { flex-direction: column; align-items: flex-start; }
+}
+input[type="range"] { outline: none !important; }
+input[type="range"]:focus { outline: none !important; box-shadow: none !important; }
 .topbar { overflow-x: auto; }
 .title-intro {
   position: fixed; left: 0; right: 0; top: var(--topbar); bottom: var(--flyer-h); z-index: 40;
@@ -455,7 +463,16 @@ body.bar-half:not(.bar-stack) .bar-row input { max-width: 50% !important; flex: 
 body.bar-tight:not(.bar-stack) .time-btn, body.bar-tight:not(.bar-stack) #duration { display: none !important; }
 body.bar-stack .flyer { flex-direction: column !important; }
 body.bar-stack .timeline, body.bar-stack .bar-row, body.bar-stack .bar-row input { width: 100% !important; max-width: none !important; flex: 1 1 auto !important; }
+body.player-hidden .flyer { display: none; }
 body.bar-stack .time-btn, body.bar-stack #duration { display: inline-flex !important; }
+body.bar-half:not(.bar-stack) .bar-row input { max-width: 50% !important; flex: 0 1 50% !important; width: 50% !important; }
+@media (max-width: 640px) {
+  .app { grid-template-columns: 1fr !important; }
+  .sidebar { width: 100% !important; }
+  .stage { display: none; }
+  .app.song-open .stage { display: grid; }
+  .app.song-open .sidebar { display: none; }
+}
 input[type="range"] { outline: none; }
 input[type="range"]:focus { outline: none; box-shadow: none; }
 @media (max-width: 640px) {

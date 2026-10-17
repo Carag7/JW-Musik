@@ -4,23 +4,10 @@ export default {
     const path = url.pathname;
 
     if (path.startsWith("/sync/")) {
-      const code = path.slice(6).toLowerCase().replace(/[^a-z0-9]/g, "");
-      if (!code || code.length < 3) return new Response("bad code", { status: 400 });
-      const key = "sync/" + code + ".json";
-      if (request.method === "PUT" || request.method === "POST") {
-        const body = await request.text();
-        await env.MUSIK.put(key, body, { httpMetadata: { contentType: "application/json" } });
-        return new Response(JSON.stringify({ ok: true, code }), { headers: { "content-type": "application/json", "access-control-allow-origin": "*" } });
-      }
-      if (request.method === "GET") {
-        const obj = await env.MUSIK.get(key);
-        if (!obj) return new Response("not found", { status: 404, headers: { "access-control-allow-origin": "*" } });
-        return new Response(obj.body, { headers: { "content-type": "application/json", "access-control-allow-origin": "*" } });
-      }
-      if (request.method === "OPTIONS") {
-        return new Response(null, { headers: { "access-control-allow-origin": "*", "access-control-allow-methods": "GET,PUT,POST,OPTIONS" } });
-      }
+      return handleSync(request, env, path);
     }
+
+    if (path.endsWith(".mp3")) {
       const filename = path.split("/").pop();
       const range = request.headers.get("range");
 
@@ -52,10 +39,8 @@ export default {
             end = head.size - 1;
           }
         }
-
         const obj = await env.MUSIK.get(key, { range: { offset: start, length: end - start + 1 } });
         if (!obj) return new Response("Not Found", { status: 404 });
-
         h.set("content-range", `bytes ${start}-${end}/${head.size}`);
         h.set("content-length", String(end - start + 1));
         return new Response(obj.body, { status: 206, headers: h });
@@ -69,6 +54,59 @@ export default {
     return env.ASSETS ? env.ASSETS.fetch(request) : new Response("Not Found", { status: 404 });
   }
 };
+
+async function handleSync(request, env, path) {
+  const cors = {
+    "access-control-allow-origin": "*",
+    "access-control-allow-methods": "GET,PUT,POST,OPTIONS",
+    "access-control-allow-headers": "content-type"
+  };
+  if (request.method === "OPTIONS") return new Response(null, { headers: cors });
+
+  if (path === "/sync/" || path === "/sync") {
+    const meta = await readMeta(env);
+    return json({ count: meta.codes.length, last: meta.last || null, codes: meta.codes.slice(-20) }, cors);
+  }
+
+  const code = path.slice(6).toLowerCase().replace(/[^a-z0-9]/g, "");
+  if (!code || code.length < 3) return new Response("bad code", { status: 400, headers: cors });
+  const key = "sync/" + code + ".json";
+
+  if (request.method === "PUT" || request.method === "POST") {
+    const body = await request.text();
+    await env.MUSIK.put(key, body, { httpMetadata: { contentType: "application/json" } });
+    const meta = await readMeta(env);
+    const now = new Date().toISOString();
+    meta.codes = meta.codes.filter((item) => item.code !== code);
+    meta.codes.push({ code, created: now });
+    meta.last = now;
+    await env.MUSIK.put("sync/_index.json", JSON.stringify(meta), { httpMetadata: { contentType: "application/json" } });
+    return json({ ok: true, code, created: now }, cors);
+  }
+
+  if (request.method === "GET") {
+    const obj = await env.MUSIK.get(key);
+    if (!obj) return new Response("not found", { status: 404, headers: cors });
+    return new Response(obj.body, { headers: { ...cors, "content-type": "application/json" } });
+  }
+
+  return new Response("method", { status: 405, headers: cors });
+}
+
+async function readMeta(env) {
+  try {
+    const obj = await env.MUSIK.get("sync/_index.json");
+    if (!obj) return { codes: [], last: null };
+    const data = await obj.json();
+    return { codes: Array.isArray(data.codes) ? data.codes : [], last: data.last || null };
+  } catch {
+    return { codes: [], last: null };
+  }
+}
+
+function json(data, headers) {
+  return new Response(JSON.stringify(data), { headers: { ...headers, "content-type": "application/json" } });
+}
 
 function parseRange(r) {
   const m = r.match(/bytes=(\d*)-(\d*)/);

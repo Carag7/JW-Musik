@@ -582,13 +582,20 @@ async function selectSong(index, autoplay) {
     setSidebar(false);
   }
   if (autoplay) {
-    showTitleIntro(song);
+    el.app.classList.add("song-open");
+  showTitleIntro(song);
     el.audio.addEventListener("canplay", () => togglePlay(), { once: true });
   }
 }
 
 function togglePlay() {
   if (!state.currentAudio) {
+    const pool = visibleSongs();
+    const first = pool[0] || state.songs[0];
+    if (first) {
+      selectSong(state.songs.indexOf(first), true);
+      return;
+    }
     el.status.textContent = "Bitte zuerst ein Lied wählen";
     return;
   }
@@ -774,6 +781,15 @@ async function loadSongs() {
 function playRandom(favorites) {
   const pool = favorites ? state.songs.filter((song) => state.favorites.has(song.id)) : state.songs;
   if (!pool.length) {
+    if (favorites) {
+      const modal = document.getElementById("warnModal");
+      document.querySelector("#warnForm h2").textContent = "Favoriten";
+      document.querySelector("#warnForm p").textContent = "Bitte wähle zuerst deine Favoriten aus damit ich sie abspielen kann";
+      document.querySelector("#warnForm button[type=submit]").textContent = "OK";
+      document.getElementById("warnCancel").hidden = true;
+      modal.hidden = false;
+      document.getElementById("warnForm").onsubmit = (event) => { event.preventDefault(); modal.hidden = true; document.getElementById("warnCancel").hidden = false; };
+    }
     el.status.textContent = favorites ? "Keine Favoriten markiert" : "Keine Lieder";
     return;
   }
@@ -790,6 +806,8 @@ function bind() {
     document.body.classList.toggle("glass-open", open);
     document.getElementById("listTools").hidden = !open;
     document.getElementById("favTools").hidden = !open;
+    document.getElementById("refreshBtn").hidden = !open;
+    document.getElementById("playerToggle").hidden = !open || window.innerWidth > 640;
     document.getElementById("splitHandle").hidden = !open || document.fullscreenElement || document.body.classList.contains("pseudo-fullscreen");
     if (state.mode === "playlists") fillPlaylists();
     updateEditTools();
@@ -960,6 +978,39 @@ function bind() {
       setStatus("Spielt", "is-play");
     }).catch(() => {});
   });
+  document.getElementById("refreshBtn").addEventListener("click", () => location.reload());
+  document.getElementById("playerToggle").addEventListener("click", () => {
+    document.body.classList.toggle("player-hidden");
+    document.getElementById("playerToggle").textContent = document.body.classList.contains("player-hidden") ? "Player an" : "Player";
+  });
+  const holdSize = (button, target) => {
+    let timer = 0;
+    button.addEventListener("pointerdown", () => {
+      if (document.getElementById("lyricSearchWrap").hidden) return;
+      timer = setTimeout(() => {
+        const current = target === "list" ? state.listSize : state.scale;
+        const value = prompt("Schriftgröße", String(current));
+        const next = Number(value);
+        if (!Number.isFinite(next)) return;
+        if (target === "list") {
+          state.listSize = Math.max(10, Math.min(48, next));
+          localStorage.setItem(STORAGE.listSize, String(state.listSize));
+          applyListSize();
+        } else {
+          state.scale = Math.max(10, Math.min(200, next));
+          localStorage.setItem(STORAGE.scale, String(state.scale));
+          applyScale();
+        }
+      }, 5000);
+    });
+    const clear = () => clearTimeout(timer);
+    button.addEventListener("pointerup", clear);
+    button.addEventListener("pointerleave", clear);
+  };
+  holdSize(document.getElementById("smallerBtn"), "lyrics");
+  holdSize(document.getElementById("largerBtn"), "lyrics");
+  holdSize(document.getElementById("listSmaller"), "list");
+  holdSize(document.getElementById("listLarger"), "list");
   document.getElementById("logoutBtn").addEventListener("click", () => {
     localStorage.removeItem(STORAGE.auth);
     sessionStorage.removeItem(STORAGE.auth);
@@ -1017,6 +1068,9 @@ function bind() {
     }
     const code = el.audio.error ? el.audio.error.code : 0;
     el.status.textContent = `Audio-Fehler ${code}. Datei fehlt im Repository, das iPhone spielt den Release nicht.`;
+    if (!document.getElementById("lyricSearchWrap").hidden) {
+      document.getElementById("titleIntro").hidden = true;
+    }
   });
   el.lyrics.addEventListener("wheel", markUserScroll, { passive: true });
   el.lyrics.addEventListener("touchmove", markUserScroll, { passive: true });
@@ -1078,17 +1132,27 @@ async function exportFavorites() {
     if (mode === "local") {
       localStorage.setItem(`fav-${code}`, JSON.stringify(payload));
       document.getElementById("syncQr").hidden = true;
+      document.getElementById("syncLink").hidden = true;
       return `Lokal unter „${code}“ gespeichert. Gilt nur in diesem Browser.`;
     }
     const short = (code || Math.random().toString(36).slice(2, 7)).toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 6) || "abcd";
+    let stored = false;
     try {
-      await fetch(`/sync/${short}`, { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) });
+      const res = await fetch(`${location.origin}/sync/${short}`, { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) });
+      stored = res.ok;
     } catch {}
-    const link = `${location.origin}${location.pathname}?sync=${short}`;
+    const link = stored
+      ? `${location.origin}${location.pathname}?sync=${short}`
+      : shareLink(payload);
     showQr(link);
+    const linkEl = document.getElementById("syncLink");
+    linkEl.hidden = false;
+    linkEl.textContent = link;
     try { await navigator.clipboard.writeText(link); } catch {}
     document.getElementById("codeInput").value = short;
-    return `Kurzer Code: ${short}\nLink: ${link}`;
+    return stored
+      ? `Kurzer Code: ${short}\nLink zum Kopieren steht unter dem QR.`
+      : `Server nicht erreichbar. Langer Link mit allen Daten steht unter dem QR.`;
   }, "export");
 }
 
@@ -1097,17 +1161,15 @@ async function importFavorites() {
     if (mode === "device") {
       const raw = code.trim();
       let data = null;
-      if (raw.length <= 8 && !raw.includes("http") && !raw.includes("sync=")) {
+      const short = raw.includes("sync=") ? decodeURIComponent(raw.split("sync=").pop().split("&")[0]) : raw;
+      if (short.length <= 8 && !short.includes("http")) {
         try {
-          const res = await fetch(`/sync/${raw.toLowerCase()}`);
+          const res = await fetch(`${location.origin}/sync/${short.toLowerCase()}`);
           if (res.ok) data = await res.json();
         } catch {}
       }
-      if (!data) {
-        const fromLink = raw.includes("sync=") ? decodeURIComponent(raw.split("sync=").pop().split("&")[0]) : raw;
-        data = decodeShare(fromLink) || (fromLink.length <= 8 ? null : decodeShare(fromLink));
-      }
-      if (!data || !Array.isArray(data.favorites)) return "Code oder Link nicht gefunden.";
+      if (!data) data = decodeShare(short);
+      if (!data || !Array.isArray(data.favorites)) return "Code oder Link nicht gefunden. Worker muss deployed sein.";
       if (state.favorites.size || state.playlists.length) {
         document.getElementById("codeModal").hidden = true;
         const ok = await warnReplace();
@@ -1169,6 +1231,18 @@ function openCode(title, onSubmit, kind) {
     ? "Anderes Gerät: Link vom Export hier einfügen. Vom Handy zum Tesla den Link kopieren."
     : "Lokal: eigenes Passwort. Anderes Gerät: QR erzeugen, das andere Gerät scannt.";
   qr.hidden = true;
+  const linkEl = document.getElementById("syncLink");
+  linkEl.hidden = true;
+  linkEl.textContent = "";
+  const meta = document.getElementById("syncMeta");
+  meta.textContent = "";
+  if (kind === "import") {
+    fetch(`${location.origin}/sync/`).then((res) => res.json()).then((info) => {
+      meta.textContent = info && info.count != null
+        ? `${info.count} Codes aktiv. Letzter: ${info.last ? info.last.slice(0, 16).replace("T", " ") : "—"}`
+        : "";
+    }).catch(() => {});
+  }
   ok.hidden = false;
   ok.textContent = kind === "import" ? "Übernehmen" : "QR-Code erzeugen";
   modal.hidden = false;

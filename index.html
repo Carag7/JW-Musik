@@ -47,7 +47,8 @@
       <button id="largerBtn" class="ghost" type="button" aria-label="Schrift größer">A+</button>
       <button id="fullscreenBtn" class="ghost" type="button">Vollbild</button>
       <a id="lyricsLink" class="ghost text-link" href="https://www.jw.org/en/library/music-songs/sing-out-joyfully/" target="_blank" rel="noopener">Text</a>
-      <button id="logoutBtn" class="ghost" type="button" hidden>Logout</button>
+      <button id="refreshBtn" class="ghost" type="button" hidden>Neu laden</button>
+      <button id="playerToggle" class="ghost" type="button" hidden>Player</button>
     </div>
   </header>
   <div class="app">
@@ -172,6 +173,8 @@
       </div>
       <input id="codeInput" type="text" minlength="4" placeholder="eigenes Passwort, mind. 4 Zeichen" autocomplete="off" />
       <img id="syncQr" alt="" hidden />
+      <p id="syncLink" class="sync-link" hidden></p>
+      <p id="syncMeta" class="login-error"></p>
       <button id="codeOk" class="chip" type="submit">QR-Code erzeugen</button>
       <button id="codeCancel" class="ghost" type="button">Abbrechen</button>
       <p id="codeMessage" class="login-error"></p>
