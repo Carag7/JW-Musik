@@ -11,7 +11,7 @@
     </linearGradient>
   </defs>
 
-  <rect x="0" y="0" width="1024" height="1024" rx="180" fill="url(#bg)"/>
+  <rect x="0" y="0" width="1024" height="1024" rx="180" fill="url(#bk)"/>
 
   <circle cx="285" cy="700" r="88" fill="url(#gold)"/>
 
