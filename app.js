@@ -494,14 +494,6 @@ function showLyricLink(song) {
 
 async function loadLyrics(song) {
   state.lyrics = [];
-  const saved = localStorage.getItem(`lrc-${song.id}`);
-  if (saved) {
-    try {
-      state.lyrics = JSON.parse(saved);
-      renderLyrics(state.lyrics);
-      return;
-    } catch {}
-  }
   try {
     const res = await fetch(`${SYNC_BASE}/sync/lrc-${song.id}`);
     if (res.ok) {
@@ -513,6 +505,14 @@ async function loadLyrics(song) {
       }
     }
   } catch {}
+  const saved = localStorage.getItem(`lrc-${song.id}`);
+  if (saved) {
+    try {
+      state.lyrics = JSON.parse(saved);
+      renderLyrics(state.lyrics);
+      return;
+    } catch {}
+  }
   const local = song.lyrics || `lyrics/sjj_E_${String(song.number).padStart(2, "0")}.lrc`;
   const remote = `https://github.com/Carag7/JW-Musik/releases/download/JW-Lyrics/sjj_E_${String(song.number).padStart(2, "0")}.lrc`;
   for (const url of [local, remote]) {
@@ -641,7 +641,8 @@ function togglePlay() {
 }
 
 function centerActive(force) {
-  if (state.introActive || state.holdTop || state.karaokeHold) return;
+  if (state.introActive || state.holdTop) return;
+  if (state.karaokeHold && !force) return;
   if (state.userScrolling && !force) return;
   const active = el.lyrics.querySelector(".lyric-line.active");
   if (!active) return;
@@ -685,6 +686,7 @@ function updateProgress() {
   el.currentTime.textContent = formatTime(current, false);
   el.duration.textContent = formatTime(duration, false);
   updateLyrics();
+  if (state.drawWave && !document.getElementById("spectrum").hidden) state.drawWave();
   if (document.body.classList.contains("edit-mode")) {
     el.lyrics.querySelectorAll(".now-btn").forEach((btn) => {
       btn.textContent = formatTime(current, true);
@@ -835,7 +837,7 @@ function bind() {
     el.lyricSearchToggle.setAttribute("aria-pressed", String(open));
     document.getElementById("listTools").hidden = !open;
     document.getElementById("favTools").hidden = !open;
-    document.getElementById("refreshBtn").hidden = !open;
+    document.getElementById("waveToggle").hidden = !open;
     document.getElementById("splitHandle").hidden = !open || document.fullscreenElement || document.body.classList.contains("pseudo-fullscreen");
     if (state.mode === "playlists") fillPlaylists();
     updateEditTools();
@@ -1006,7 +1008,11 @@ function bind() {
       setStatus("Spielt", "is-play");
     }).catch(() => {});
   });
-  document.getElementById("refreshBtn").addEventListener("click", () => location.reload());
+  document.getElementById("waveToggle").addEventListener("click", () => {
+    const canvas = document.getElementById("spectrum");
+    canvas.hidden = !canvas.hidden;
+    if (!canvas.hidden) startSpectrum();
+  });
   document.getElementById("playerToggle").addEventListener("click", () => {
     const hidden = document.body.classList.toggle("player-hidden");
     const btn = document.getElementById("playerToggle");
@@ -1278,8 +1284,17 @@ function attachTimecodeUi() {
     take.addEventListener("click", (event) => {
       event.stopPropagation();
       const t = el.audio.currentTime || 0;
+      const old = line.dataset.saved || line.dataset.time;
+      if (!line.dataset.saved) line.dataset.saved = old;
       line.dataset.time = String(t);
       input.value = formatTime(t, true);
+      let oldLabel = line.querySelector(".saved-old");
+      if (!oldLabel) {
+        oldLabel = document.createElement("span");
+        oldLabel.className = "saved-old";
+        input.after(oldLabel);
+      }
+      oldLabel.textContent = formatTime(Number(line.dataset.saved), true);
       state.editDirty = true;
     });
     const textInput = document.createElement("input");
@@ -1320,7 +1335,10 @@ function buildEditPanel() {
   const toggle = document.createElement("button");
   toggle.className = "chip";
   toggle.textContent = "Panel";
-  toggle.addEventListener("click", () => panel.classList.toggle("hidden-panel"));
+  toggle.addEventListener("click", () => {
+    panel.classList.toggle("hidden-panel");
+    toggle.textContent = panel.classList.contains("hidden-panel") ? "Panel an" : "Panel";
+  });
   panel.append(toggle);
   [0.3, 0.5, 0.8, 1, 1.5, 2].forEach((rate) => {
     const btn = document.createElement("button");
@@ -1370,7 +1388,11 @@ async function saveTimecode() {
     time: Number(line.dataset.time),
     text: (line.querySelector(".lyric-text") || {}).value || line.textContent.trim()
   }));
-  const lrc = lines.map((line) => `[${formatTime(line.time, true).replace(".", ":").padStart(9, "0")}]${line.text}`).join("\n");
+  const lrc = lines.map((line) => {
+    const t = formatTime(line.time, true);
+    const [m, rest] = t.split(":");
+    return `[${m.padStart(2, "0")}:${rest}]${line.text}`;
+  }).join("\n");
   localStorage.setItem(`lrc-${song.id}`, JSON.stringify(lines));
   try {
     const res = await fetch(`${SYNC_BASE}/sync/lrc-${song.id}`, { method: "PUT", headers: { "content-type": "text/plain" }, body: lrc });
@@ -1393,9 +1415,11 @@ function startSpectrum() {
     canvas.height = 80;
     g.fillStyle = "#2a2a2a";
     g.fillRect(0, 0, canvas.width, canvas.height);
-    const total = state.waveData.length;
+    const current = el.audio.currentTime || 0;
+    const pos = current / (el.audio.duration || 1);
+    const center = Math.floor(pos * total);
     const view = Math.floor(total / (state.waveZoom || 1));
-    const start = Math.min(state.waveOffset || 0, total - view);
+    const start = Math.max(0, Math.min(center - view / 2, total - view));
     const step = view / canvas.width;
     g.strokeStyle = "#5b7cff";
     g.lineWidth = 1;
@@ -1416,6 +1440,12 @@ function startSpectrum() {
       if (x === 0) g.moveTo(x, y);
       else g.lineTo(x, y);
     }
+    g.stroke();
+    const lineX = ((center - start) / view) * canvas.width;
+    g.strokeStyle = "#fff";
+    g.beginPath();
+    g.moveTo(lineX, 0);
+    g.lineTo(lineX, canvas.height);
     g.stroke();
   };
   canvas.onclick = (event) => {
