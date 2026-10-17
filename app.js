@@ -641,8 +641,7 @@ function togglePlay() {
 }
 
 function centerActive(force) {
-  if (state.introActive || state.holdTop) return;
-  if (state.karaokeHold && !force) return;
+  if (state.introActive || state.holdTop || state.karaokeHold) return;
   if (state.userScrolling && !force) return;
   const active = el.lyrics.querySelector(".lyric-line.active");
   if (!active) return;
@@ -1008,10 +1007,12 @@ function bind() {
       setStatus("Spielt", "is-play");
     }).catch(() => {});
   });
-  document.getElementById("waveToggle").addEventListener("click", () => {
-    const canvas = document.getElementById("spectrum");
-    canvas.hidden = !canvas.hidden;
-    if (!canvas.hidden) startSpectrum();
+  document.getElementById("panelShow").addEventListener("click", () => {
+    const panel = document.getElementById("editPanel");
+    if (panel) {
+      panel.classList.remove("hidden-panel");
+      document.getElementById("panelShow").hidden = true;
+    }
   });
   document.getElementById("playerToggle").addEventListener("click", () => {
     const hidden = document.body.classList.toggle("player-hidden");
@@ -1336,8 +1337,8 @@ function buildEditPanel() {
   toggle.className = "chip";
   toggle.textContent = "Panel";
   toggle.addEventListener("click", () => {
-    panel.classList.toggle("hidden-panel");
-    toggle.textContent = panel.classList.contains("hidden-panel") ? "Panel an" : "Panel";
+    panel.classList.add("hidden-panel");
+    document.getElementById("panelShow").hidden = false;
   });
   panel.append(toggle);
   [0.3, 0.5, 0.8, 1, 1.5, 2].forEach((rate) => {

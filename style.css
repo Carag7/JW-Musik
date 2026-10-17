@@ -413,11 +413,12 @@ body.pseudo-fullscreen .flyer { left: 0; }
 .login-card button, .login-card input { width: auto; }
 .meta-i { position: absolute; top: 4px; right: 4px; width: 16px; height: 16px; border-radius: 50%; font-size: 10px; padding: 0; line-height: 16px; }
 .player-icon { width: 40px; height: 40px; padding: 0; border: 0; border-radius: 12px; background: url("playeron.svg") center/cover no-repeat; }
-.player-icon[aria-pressed="false"] { background-image: url("playeroff.svg"); filter: invert(1); }
-.col-head { position: sticky; top: 0; z-index: 5; background: var(--bg); display: flex; gap: 6px; font-size: 11px; color: var(--muted); padding: 4px 0; }
-.saved-old { font-size: 10px; color: var(--muted); display: block; }
-.edit-panel { max-height: 50vh; overflow-y: auto; }
-.wave-toggle { position: fixed; right: 8px; bottom: 8px; z-index: 96; }
+.player-icon[aria-pressed="false"] { background-image: url("playeroff.svg"); }
+.wave-toggle { position: absolute; right: 8px; top: -36px; z-index: 96; }
+.spectrum { width: 100%; height: 60px; background: #1a1a1a; border-radius: 8px; display: block; }
+.col-head { position: sticky; top: 0; z-index: 10; background: var(--bg); display: grid; grid-template-columns: 100px 80px 50px 1fr; gap: 6px; font-size: 11px; color: var(--muted); padding: 6px 0; }
+.panel-show { position: fixed; right: 8px; bottom: calc(var(--flyer-h) + 8px); z-index: 97; }
+body.edit-mode .lyric-line.active { color: var(--accent); }
 .player-icon { background: transparent url("icon2.svg") center/60% no-repeat; }
 .player-icon[aria-pressed="false"] { background: var(--accent) url("icon.svg") center/60% no-repeat; }
 .edit-panel.hidden-panel { display: none; }
@@ -476,7 +477,7 @@ body.pseudo-fullscreen .split-handle,
   flex: 0 0 auto;
 }
 .flyer { left: 0 !important; right: 0 !important; width: 100% !important; justify-content: flex-start !important; padding: 8px !important; box-sizing: border-box; }
-.timeline { flex: 1 1 auto !important; width: 100% !important; max-width: none !important; min-width: 0 !important; display: flex !important; }
+.timeline { position: relative; }
 .bar-row, .bar-row input { width: 100% !important; max-width: none !important; flex: 1 1 auto !important; }
 .time-btn, #duration { display: inline-flex !important; }
 body.bar-half:not(.bar-stack) .bar-row input { max-width: 50% !important; flex: 0 1 50% !important; width: 50% !important; }
