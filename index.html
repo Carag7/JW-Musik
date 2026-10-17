@@ -152,6 +152,7 @@
         <input id="progressBar" type="range" min="0" max="1000" value="0" aria-label="Position" />
         <span id="duration">0:00</span>
       </div>
+      <canvas id="spectrum" class="spectrum" hidden></canvas>
       <p id="nextSong" class="nav-song">—</p>
     </div>
   </footer>
@@ -175,7 +176,9 @@
       <input id="codeInput" type="text" minlength="4" placeholder="eigenes Passwort, mind. 4 Zeichen" autocomplete="off" />
       <img id="syncQr" alt="" hidden />
       <p id="syncLink" class="sync-link" hidden></p>
-      <p id="syncMeta" class="login-error"></p>
+      <button id="copyLink" class="chip" type="button" hidden>Kopieren</button>
+      <button id="metaToggle" class="ghost" type="button" hidden>i</button>
+      <p id="syncMeta" class="login-error" hidden></p>
       <button id="codeOk" class="chip" type="submit">QR-Code erzeugen</button>
       <button id="codeCancel" class="ghost" type="button">Abbrechen</button>
       <p id="codeMessage" class="login-error"></p>

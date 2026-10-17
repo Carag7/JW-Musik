@@ -68,7 +68,7 @@ async function handleSync(request, env, path) {
     return json({ count: meta.codes.length, last: meta.last || null, codes: meta.codes.slice(-20) }, cors);
   }
 
-  const code = path.slice(6).toLowerCase().replace(/[^a-z0-9]/g, "");
+  const code = path.slice(6).toLowerCase().replace(/[^a-z0-9-]/g, "");
   if (!code || code.length < 3) return new Response("bad code", { status: 400, headers: cors });
   const key = "sync/" + code + ".json";
 

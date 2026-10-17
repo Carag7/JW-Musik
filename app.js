@@ -135,11 +135,13 @@ function setStatus(text, kind) {
   if (kind) el.status.classList.add(kind);
 }
 
-function formatTime(seconds) {
-  if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
+function formatTime(seconds, ms) {
+  if (!Number.isFinite(seconds) || seconds < 0) return ms ? "0:00.000" : "0:00";
   const mins = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60);
-  return `${mins}:${String(secs).padStart(2, "0")}`;
+  if (!ms) return `${mins}:${String(secs).padStart(2, "0")}`;
+  const milli = Math.floor((seconds % 1) * 1000);
+  return `${mins}:${String(secs).padStart(2, "0")}.${String(milli).padStart(3, "0")}`;
 }
 
 function loadFavorites() {
@@ -435,6 +437,7 @@ function renderLyrics(lines) {
     row.addEventListener("click", () => seekToLine(line.time));
     el.lyrics.append(row);
   });
+  if (document.body.classList.contains("edit-mode")) attachTimecodeUi();
 }
 
 function seekToLine(time) {
@@ -490,6 +493,25 @@ function showLyricLink(song) {
 
 async function loadLyrics(song) {
   state.lyrics = [];
+  const saved = localStorage.getItem(`lrc-${song.id}`);
+  if (saved) {
+    try {
+      state.lyrics = JSON.parse(saved);
+      renderLyrics(state.lyrics);
+      return;
+    } catch {}
+  }
+  try {
+    const res = await fetch(`${location.origin}/sync/lrc-${song.id}`);
+    if (res.ok) {
+      const text = await res.text();
+      if (text.includes("[")) {
+        state.lyrics = parseLrc(text);
+        renderLyrics(state.lyrics);
+        return;
+      }
+    }
+  } catch {}
   const local = song.lyrics || `lyrics/sjj_E_${String(song.number).padStart(2, "0")}.lrc`;
   const remote = `https://github.com/Carag7/JW-Musik/releases/download/JW-Lyrics/sjj_E_${String(song.number).padStart(2, "0")}.lrc`;
   for (const url of [local, remote]) {
@@ -501,9 +523,7 @@ async function loadLyrics(song) {
       state.lyrics = parseLrc(text);
       renderLyrics(state.lyrics);
       return;
-    } catch {
-      /* nächste Quelle */
-    }
+    } catch {}
   }
   renderLyrics([]);
 }
@@ -660,9 +680,14 @@ function updateProgress() {
   const duration = el.audio.duration || 0;
   const current = el.audio.currentTime || 0;
   if (duration > 0) el.progress.value = String((current / duration) * 1000);
-  el.currentTime.textContent = formatTime(current);
-  el.duration.textContent = formatTime(duration);
+  el.currentTime.textContent = formatTime(current, true);
+  el.duration.textContent = formatTime(duration, true);
   updateLyrics();
+  if (document.body.classList.contains("edit-mode")) {
+    el.lyrics.querySelectorAll(".now-btn").forEach((btn) => {
+      btn.textContent = formatTime(current, true);
+    });
+  }
 }
 
 function seek() {
@@ -1157,6 +1182,8 @@ async function exportFavorites() {
     const linkEl = document.getElementById("syncLink");
     linkEl.hidden = false;
     linkEl.textContent = link;
+    document.getElementById("copyLink").hidden = false;
+    document.getElementById("copyLink").onclick = () => navigator.clipboard.writeText(link).catch(() => {});
     try { await navigator.clipboard.writeText(link); } catch {}
     document.getElementById("codeInput").value = short;
     return stored
@@ -1167,35 +1194,20 @@ async function exportFavorites() {
 
 async function importFavorites() {
   openCode("Favoriten laden", async (code, mode) => {
-    if (mode === "device") {
-      const raw = code.trim();
-      let data = null;
-      const short = raw.includes("sync=") ? decodeURIComponent(raw.split("sync=").pop().split("&")[0]) : raw;
-      if (short.length <= 8 && !short.includes("http")) {
-        try {
-          const res = await fetch(`${location.origin}/sync/${short.toLowerCase()}`);
-          if (res.ok) data = await res.json();
-        } catch {}
-      }
-      if (!data) data = decodeShare(short);
-      if (!data || !Array.isArray(data.favorites)) return "Code oder Link nicht gefunden. Worker muss deployed sein.";
-      if (state.favorites.size || state.playlists.length) {
-        document.getElementById("codeModal").hidden = true;
-        const ok = await warnReplace();
-        document.getElementById("codeModal").hidden = false;
-        if (!ok) return "Abgebrochen.";
-      }
-      state.favorites = new Set(data.favorites);
-      if (Array.isArray(data.playlists)) state.playlists = data.playlists;
-      saveFavorites();
-      savePlaylists();
-      fillPlaylists();
-      renderList();
-      return `${data.favorites.length} Favoriten übernommen.`;
-    }
+    const raw = code.trim();
     let data = null;
-    try { data = JSON.parse(localStorage.getItem(`fav-${code}`) || "null"); } catch { data = null; }
-    if (!data || !Array.isArray(data.favorites)) return "Zu diesem Passwort ist hier nichts gespeichert.";
+    const short = raw.includes("sync=") ? decodeURIComponent(raw.split("sync=").pop().split("&")[0]) : raw;
+    if (short.length <= 8 && !short.includes("http")) {
+      try {
+        const res = await fetch(`${location.origin}/sync/${short.toLowerCase()}`);
+        if (res.ok) data = await res.json();
+      } catch {}
+    }
+    if (!data) data = decodeShare(short);
+    if (!data) {
+      try { data = JSON.parse(localStorage.getItem(`fav-${raw}`) || "null"); } catch { data = null; }
+    }
+    if (!data || !Array.isArray(data.favorites)) return "Code oder Link nicht gefunden.";
     if (state.favorites.size || state.playlists.length) {
       document.getElementById("codeModal").hidden = true;
       const ok = await warnReplace();
@@ -1213,65 +1225,146 @@ async function importFavorites() {
 }
 
 function openTimecode() {
-  const pass = prompt("Timecode Passwort");
-  if (pass !== window.TIMECODE_PASSWORD) return;
-  document.body.classList.add("edit-mode");
-  const lines = el.lyrics.querySelectorAll(".lyric-line");
-  lines.forEach((line) => {
+  if (!document.body.classList.contains("edit-mode")) {
+    const pass = prompt("Timecode Passwort");
+    if (pass !== window.TIMECODE_PASSWORD) return;
+    document.body.classList.add("edit-mode");
+    state.editDirty = false;
+  }
+  attachTimecodeUi();
+  if (!document.getElementById("editPanel")) buildEditPanel();
+  startSpectrum();
+}
+
+function attachTimecodeUi() {
+  el.lyrics.querySelectorAll(".lyric-line").forEach((line) => {
     if (line.querySelector(".time-edit")) return;
     const input = document.createElement("input");
     input.className = "time-edit";
-    input.value = formatTime(Number(line.dataset.time) || 0);
+    input.value = formatTime(Number(line.dataset.time) || 0, true);
     input.addEventListener("change", () => {
-      const parts = input.value.split(":");
-      line.dataset.time = String(Number(parts[0] || 0) * 60 + Number(parts[1] || 0));
+      line.dataset.time = String(parseTime(input.value));
+      state.editDirty = true;
     });
+    const now = document.createElement("button");
+    now.type = "button";
+    now.className = "chip now-btn";
+    now.textContent = formatTime(el.audio.currentTime || 0, true);
     const take = document.createElement("button");
     take.type = "button";
     take.className = "chip";
     take.textContent = "Zeit";
     take.addEventListener("click", () => {
-      line.dataset.time = String(el.audio.currentTime || 0);
-      input.value = formatTime(el.audio.currentTime || 0);
+      const t = el.audio.currentTime || 0;
+      line.dataset.time = String(t);
+      input.value = formatTime(t, true);
+      state.editDirty = true;
+      el.audio.currentTime = t;
+      if (el.audio.paused) el.audio.play().catch(() => {});
     });
     line.prepend(take);
+    line.prepend(now);
     line.prepend(input);
   });
-  if (!document.getElementById("editPanel")) {
-    const panel = document.createElement("div");
-    panel.id = "editPanel";
-    panel.className = "edit-panel";
-    [0.5, 0.8, 1, 1.5, 2].forEach((rate) => {
-      const btn = document.createElement("button");
-      btn.className = "chip";
-      btn.textContent = `${rate}x`;
-      btn.addEventListener("click", () => { el.audio.playbackRate = rate; });
-      panel.append(btn);
-    });
-    const save = document.createElement("button");
-    save.className = "chip";
-    save.textContent = "Speichern";
-    save.addEventListener("click", () => {
-      if (!confirm("Timecodes lokal speichern?")) return;
-      const song = state.songs[state.index];
-      if (!song) return;
-      const data = [...el.lyrics.querySelectorAll(".lyric-line")].map((line) => ({
-        time: Number(line.dataset.time),
-        text: line.textContent.replace(/^\s*Zeit\s*/, "").trim()
-      }));
-      localStorage.setItem(`lrc-${song.id}`, JSON.stringify(data));
-      alert("Lokal gespeichert.");
-    });
-    const exit = document.createElement("button");
-    exit.className = "chip danger";
-    exit.textContent = "Beenden";
-    exit.addEventListener("click", () => {
-      document.body.classList.remove("edit-mode");
-      panel.remove();
-      if (state.songs[state.index]) loadLyrics(state.songs[state.index]);
-    });
-    panel.append(save, exit);
-    document.body.append(panel);
+}
+
+function parseTime(value) {
+  const parts = String(value).split(":");
+  const mins = Number(parts[0] || 0);
+  const rest = String(parts[1] || "0").split(".");
+  return mins * 60 + Number(rest[0] || 0) + Number(`0.${rest[1] || 0}`);
+}
+
+function buildEditPanel() {
+  const panel = document.createElement("div");
+  panel.id = "editPanel";
+  panel.className = "edit-panel";
+  [0.3, 0.5, 0.8, 1, 1.5, 2].forEach((rate) => {
+    const btn = document.createElement("button");
+    btn.className = "chip";
+    btn.textContent = `${rate}x`;
+    btn.addEventListener("click", () => { el.audio.playbackRate = rate; });
+    panel.append(btn);
+  });
+  const zoom = document.createElement("input");
+  zoom.type = "range";
+  zoom.min = "1";
+  zoom.max = "8";
+  zoom.value = "1";
+  zoom.addEventListener("input", () => { state.spectrumZoom = Number(zoom.value); });
+  panel.append(zoom);
+  const save = document.createElement("button");
+  save.className = "chip";
+  save.textContent = "Speichern";
+  save.addEventListener("click", saveTimecode);
+  const exit = document.createElement("button");
+  exit.className = "chip danger";
+  exit.textContent = "Beenden";
+  exit.addEventListener("click", () => {
+    if (state.editDirty && !confirm("Änderungen verwerfen?")) return;
+    document.body.classList.remove("edit-mode");
+    state.editDirty = false;
+    panel.remove();
+    document.getElementById("spectrum").hidden = true;
+    if (state.songs[state.index]) loadLyrics(state.songs[state.index]);
+  });
+  panel.append(save, exit);
+  document.body.append(panel);
+}
+
+async function saveTimecode() {
+  const song = state.songs[state.index];
+  if (!song) return;
+  if (!confirm("Timecodes speichern?")) return;
+  const lines = [...el.lyrics.querySelectorAll(".lyric-line")].map((line) => ({
+    time: Number(line.dataset.time),
+    text: line.textContent.replace(/^\s*[\d:.]+|Zeit/g, "").trim()
+  }));
+  const lrc = lines.map((line) => `[${formatTime(line.time, true).replace(".", ":").padStart(9, "0")}]${line.text}`).join("\n");
+  localStorage.setItem(`lrc-${song.id}`, JSON.stringify(lines));
+  try {
+    const res = await fetch(`${location.origin}/sync/lrc-${song.id}`, { method: "PUT", headers: { "content-type": "text/plain" }, body: lrc });
+    alert(res.ok ? "Gespeichert. Auf allen Geräten verfügbar." : "Lokal gespeichert. Server nicht erreichbar.");
+  } catch {
+    alert("Lokal gespeichert. Server nicht erreichbar.");
+  }
+  state.editDirty = false;
+}
+
+function startSpectrum() {
+  const canvas = document.getElementById("spectrum");
+  canvas.hidden = false;
+  if (state.spectrum) return;
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const source = ctx.createMediaElementSource(el.audio);
+    const analyser = ctx.createAnalyser();
+    analyser.fftSize = 256;
+    source.connect(analyser);
+    analyser.connect(ctx.destination);
+    state.spectrum = analyser;
+    state.spectrumZoom = 1;
+    const data = new Uint8Array(analyser.frequencyBinCount);
+    const draw = () => {
+      if (!document.body.classList.contains("edit-mode")) return;
+      requestAnimationFrame(draw);
+      analyser.getByteFrequencyData(data);
+      const g = canvas.getContext("2d");
+      canvas.width = canvas.clientWidth;
+      canvas.height = 48;
+      g.clearRect(0, 0, canvas.width, canvas.height);
+      const zoom = state.spectrumZoom || 1;
+      const count = Math.floor(data.length / zoom);
+      const w = canvas.width / count;
+      for (let i = 0; i < count; i++) {
+        const h = (data[i] / 255) * canvas.height;
+        g.fillStyle = "#ffd700";
+        g.fillRect(i * w, canvas.height - h, Math.max(1, w - 1), h);
+      }
+    };
+    draw();
+  } catch {
+    canvas.hidden = true;
   }
 }
 function warnReplace() {
@@ -1306,13 +1399,17 @@ function openCode(title, onSubmit, kind) {
   linkEl.hidden = true;
   linkEl.textContent = "";
   const meta = document.getElementById("syncMeta");
-  meta.textContent = "";
+  const metaBtn = document.getElementById("metaToggle");
+  meta.hidden = true;
+  metaBtn.hidden = true;
   if (kind === "import") {
+    metaBtn.hidden = false;
+    metaBtn.onclick = () => { meta.hidden = !meta.hidden; };
     fetch(`${location.origin}/sync/`).then((res) => res.json()).then((info) => {
       meta.textContent = info && info.count != null
         ? `${info.count} Codes aktiv. Letzter: ${info.last ? info.last.slice(0, 16).replace("T", " ") : "—"}`
-        : "";
-    }).catch(() => {});
+        : "Keine Info vom Server.";
+    }).catch(() => { meta.textContent = "Server nicht erreichbar."; });
   }
   ok.hidden = false;
   ok.textContent = kind === "import" ? "Übernehmen" : "QR-Code erzeugen";
@@ -1388,6 +1485,12 @@ function init() {
   applyScale();
   bind();
   loadSongs();
+  window.addEventListener("beforeunload", (event) => {
+    if (state.editDirty) {
+      event.preventDefault();
+      event.returnValue = "";
+    }
+  });
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
       navigator.serviceWorker.register("./sw.js").catch(() => {});
