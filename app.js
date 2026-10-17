@@ -139,9 +139,10 @@ function formatTime(seconds, ms) {
   if (!Number.isFinite(seconds) || seconds < 0) return ms ? "0:00.000" : "0:00";
   const mins = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60);
-  if (!ms) return `${mins}:${String(secs).padStart(2, "0")}`;
+  const base = `${mins}:${String(secs).padStart(2, "0")}`;
+  if (!ms) return base;
   const milli = Math.floor((seconds % 1) * 1000);
-  return `${mins}:${String(secs).padStart(2, "0")}.${String(milli).padStart(3, "0")}`;
+  return `${base}.${String(milli).padStart(3, "0")}`;
 }
 
 function loadFavorites() {
@@ -502,7 +503,7 @@ async function loadLyrics(song) {
     } catch {}
   }
   try {
-    const res = await fetch(`${location.origin}/sync/lrc-${song.id}`);
+    const res = await fetch(`${SYNC_BASE}/sync/lrc-${song.id}`);
     if (res.ok) {
       const text = await res.text();
       if (text.includes("[")) {
@@ -575,6 +576,7 @@ async function selectSong(index, autoplay) {
   if (index < 0 || index >= state.songs.length) return;
   state.index = index;
   state.audioTry = 0;
+  state.waveData = null;
   const song = state.songs[index];
   el.number.textContent = `Lied ${song.id}`;
   el.title.textContent = song.title;
@@ -680,8 +682,8 @@ function updateProgress() {
   const duration = el.audio.duration || 0;
   const current = el.audio.currentTime || 0;
   if (duration > 0) el.progress.value = String((current / duration) * 1000);
-  el.currentTime.textContent = formatTime(current, true);
-  el.duration.textContent = formatTime(duration, true);
+  el.currentTime.textContent = formatTime(current, document.body.classList.contains("edit-mode"));
+  el.duration.textContent = formatTime(duration, document.body.classList.contains("edit-mode"));
   updateLyrics();
   if (document.body.classList.contains("edit-mode")) {
     el.lyrics.querySelectorAll(".now-btn").forEach((btn) => {
@@ -830,6 +832,7 @@ function bind() {
     const open = el.lyricSearchWrap.hidden;
     el.lyricSearchWrap.hidden = !open;
     document.body.classList.toggle("glass-open", open);
+    el.lyricSearchToggle.setAttribute("aria-pressed", String(open));
     document.getElementById("listTools").hidden = !open;
     document.getElementById("favTools").hidden = !open;
     document.getElementById("refreshBtn").hidden = !open;
@@ -1134,7 +1137,7 @@ function bind() {
   fitBar();
 }
 
-const SYNC = "https://kvdb.io/";
+const SYNC_BASE = window.SYNC_BASE || location.origin;
 
 function encodeShare(payload) {
   return btoa(unescape(encodeURIComponent(JSON.stringify(payload)))).replace(/=+$/, "");
@@ -1172,7 +1175,7 @@ async function exportFavorites() {
     const short = (code || Math.random().toString(36).slice(2, 7)).toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 6) || "abcd";
     let stored = false;
     try {
-      const res = await fetch(`${location.origin}/sync/${short}`, { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) });
+      const res = await fetch(`${SYNC_BASE}/sync/${short}`, { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) });
       stored = res.ok;
     } catch {}
     const link = stored
@@ -1183,7 +1186,13 @@ async function exportFavorites() {
     linkEl.hidden = false;
     linkEl.textContent = link;
     document.getElementById("copyLink").hidden = false;
-    document.getElementById("copyLink").onclick = () => navigator.clipboard.writeText(link).catch(() => {});
+    document.getElementById("copyLink").onclick = () => {
+      navigator.clipboard.writeText(link).then(() => {
+        document.getElementById("codeMessage").textContent = "In die Zwischenablage kopiert.";
+      }).catch(() => {
+        document.getElementById("codeMessage").textContent = "Kopieren nicht möglich. Bitte markieren.";
+      });
+    };
     try { await navigator.clipboard.writeText(link); } catch {}
     document.getElementById("codeInput").value = short;
     return stored
@@ -1199,7 +1208,7 @@ async function importFavorites() {
     const short = raw.includes("sync=") ? decodeURIComponent(raw.split("sync=").pop().split("&")[0]) : raw;
     if (short.length <= 8 && !short.includes("http")) {
       try {
-        const res = await fetch(`${location.origin}/sync/${short.toLowerCase()}`);
+        const res = await fetch(`${SYNC_BASE}/sync/${short.toLowerCase()}`);
         if (res.ok) data = await res.json();
       } catch {}
     }
@@ -1239,6 +1248,8 @@ function openTimecode() {
 function attachTimecodeUi() {
   el.lyrics.querySelectorAll(".lyric-line").forEach((line) => {
     if (line.querySelector(".time-edit")) return;
+    const text = line.textContent;
+    line.textContent = "";
     const input = document.createElement("input");
     input.className = "time-edit";
     input.value = formatTime(Number(line.dataset.time) || 0, true);
@@ -1259,12 +1270,14 @@ function attachTimecodeUi() {
       line.dataset.time = String(t);
       input.value = formatTime(t, true);
       state.editDirty = true;
-      el.audio.currentTime = t;
+      el.audio.currentTime = Math.max(0, t);
       if (el.audio.paused) el.audio.play().catch(() => {});
     });
-    line.prepend(take);
-    line.prepend(now);
-    line.prepend(input);
+    const textInput = document.createElement("input");
+    textInput.className = "lyric-text";
+    textInput.value = text;
+    textInput.addEventListener("change", () => { state.editDirty = true; });
+    line.append(input, now, take, textInput);
   });
 }
 
@@ -1289,9 +1302,13 @@ function buildEditPanel() {
   const zoom = document.createElement("input");
   zoom.type = "range";
   zoom.min = "1";
-  zoom.max = "8";
+  zoom.max = "20";
   zoom.value = "1";
-  zoom.addEventListener("input", () => { state.spectrumZoom = Number(zoom.value); });
+  zoom.title = "Wellenform zoomen";
+  zoom.addEventListener("input", () => {
+    state.waveZoom = Number(zoom.value);
+    if (state.drawWave) state.drawWave();
+  });
   panel.append(zoom);
   const save = document.createElement("button");
   save.className = "chip";
@@ -1318,12 +1335,12 @@ async function saveTimecode() {
   if (!confirm("Timecodes speichern?")) return;
   const lines = [...el.lyrics.querySelectorAll(".lyric-line")].map((line) => ({
     time: Number(line.dataset.time),
-    text: line.textContent.replace(/^\s*[\d:.]+|Zeit/g, "").trim()
+    text: (line.querySelector(".lyric-text") || {}).value || line.textContent.trim()
   }));
   const lrc = lines.map((line) => `[${formatTime(line.time, true).replace(".", ":").padStart(9, "0")}]${line.text}`).join("\n");
   localStorage.setItem(`lrc-${song.id}`, JSON.stringify(lines));
   try {
-    const res = await fetch(`${location.origin}/sync/lrc-${song.id}`, { method: "PUT", headers: { "content-type": "text/plain" }, body: lrc });
+    const res = await fetch(`${SYNC_BASE}/sync/lrc-${song.id}`, { method: "PUT", headers: { "content-type": "text/plain" }, body: lrc });
     alert(res.ok ? "Gespeichert. Auf allen Geräten verfügbar." : "Lokal gespeichert. Server nicht erreichbar.");
   } catch {
     alert("Lokal gespeichert. Server nicht erreichbar.");
@@ -1334,38 +1351,71 @@ async function saveTimecode() {
 function startSpectrum() {
   const canvas = document.getElementById("spectrum");
   canvas.hidden = false;
-  if (state.spectrum) return;
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const source = ctx.createMediaElementSource(el.audio);
-    const analyser = ctx.createAnalyser();
-    analyser.fftSize = 256;
-    source.connect(analyser);
-    analyser.connect(ctx.destination);
-    state.spectrum = analyser;
-    state.spectrumZoom = 1;
-    const data = new Uint8Array(analyser.frequencyBinCount);
-    const draw = () => {
-      if (!document.body.classList.contains("edit-mode")) return;
-      requestAnimationFrame(draw);
-      analyser.getByteFrequencyData(data);
-      const g = canvas.getContext("2d");
-      canvas.width = canvas.clientWidth;
-      canvas.height = 48;
-      g.clearRect(0, 0, canvas.width, canvas.height);
-      const zoom = state.spectrumZoom || 1;
-      const count = Math.floor(data.length / zoom);
-      const w = canvas.width / count;
-      for (let i = 0; i < count; i++) {
-        const h = (data[i] / 255) * canvas.height;
-        g.fillStyle = "#ffd700";
-        g.fillRect(i * w, canvas.height - h, Math.max(1, w - 1), h);
-      }
-    };
+  state.waveZoom = 1;
+  state.waveOffset = 0;
+  const draw = () => {
+    if (!state.waveData) return;
+    const g = canvas.getContext("2d");
+    canvas.width = canvas.clientWidth || 300;
+    canvas.height = 80;
+    g.fillStyle = "#2a2a2a";
+    g.fillRect(0, 0, canvas.width, canvas.height);
+    const total = state.waveData.length;
+    const view = Math.floor(total / (state.waveZoom || 1));
+    const start = Math.min(state.waveOffset || 0, total - view);
+    const step = view / canvas.width;
+    g.strokeStyle = "#5b7cff";
+    g.lineWidth = 1;
+    g.beginPath();
+    for (let x = 0; x < canvas.width; x++) {
+      const i = Math.floor(start + x * step);
+      const v = state.waveData[i] || 0;
+      const y = canvas.height / 2 - v * canvas.height / 2;
+      if (x === 0) g.moveTo(x, y);
+      else g.lineTo(x, y);
+    }
+    g.stroke();
+    g.beginPath();
+    for (let x = 0; x < canvas.width; x++) {
+      const i = Math.floor(start + x * step);
+      const v = state.waveData[i] || 0;
+      const y = canvas.height / 2 + v * canvas.height / 2;
+      if (x === 0) g.moveTo(x, y);
+      else g.lineTo(x, y);
+    }
+    g.stroke();
+  };
+  canvas.onclick = (event) => {
+    if (!state.waveData || !el.audio.duration) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const view = state.waveData.length / (state.waveZoom || 1);
+    const pos = ((state.waveOffset || 0) + (x / canvas.width) * view) / state.waveData.length;
+    el.audio.currentTime = pos * el.audio.duration;
+  };
+  canvas.onwheel = (event) => {
+    event.preventDefault();
+    state.waveZoom = Math.max(1, Math.min(20, (state.waveZoom || 1) * (event.deltaY > 0 ? 0.8 : 1.25)));
     draw();
-  } catch {
-    canvas.hidden = true;
-  }
+  };
+  state.drawWave = draw;
+  if (state.currentAudio && !state.waveData) {
+    fetch(state.currentAudio).then((r) => r.arrayBuffer()).then((buf) => {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      return ctx.decodeAudioData(buf);
+    }).then((audio) => {
+      const raw = audio.getChannelData(0);
+      const peaks = new Float32Array(1000);
+      const size = Math.floor(raw.length / peaks.length);
+      for (let i = 0; i < peaks.length; i++) {
+        let max = 0;
+        for (let j = 0; j < size; j++) max = Math.max(max, Math.abs(raw[i * size + j] || 0));
+        peaks[i] = max;
+      }
+      state.waveData = peaks;
+      draw();
+    }).catch(() => { canvas.hidden = true; });
+  } else draw();
 }
 function warnReplace() {
   return new Promise((resolve) => {
@@ -1405,7 +1455,7 @@ function openCode(title, onSubmit, kind) {
   if (kind === "import") {
     metaBtn.hidden = false;
     metaBtn.onclick = () => { meta.hidden = !meta.hidden; };
-    fetch(`${location.origin}/sync/`).then((res) => res.json()).then((info) => {
+    fetch(`${SYNC_BASE}/sync/`).then((res) => res.json()).then((info) => {
       meta.textContent = info && info.count != null
         ? `${info.count} Codes aktiv. Letzter: ${info.last ? info.last.slice(0, 16).replace("T", " ") : "—"}`
         : "Keine Info vom Server.";
