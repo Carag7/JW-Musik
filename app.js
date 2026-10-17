@@ -641,7 +641,7 @@ function togglePlay() {
 }
 
 function centerActive(force) {
-  if (state.introActive || state.holdTop) return;
+  if (state.introActive || state.holdTop || state.karaokeHold) return;
   if (state.userScrolling && !force) return;
   const active = el.lyrics.querySelector(".lyric-line.active");
   if (!active) return;
@@ -682,8 +682,8 @@ function updateProgress() {
   const duration = el.audio.duration || 0;
   const current = el.audio.currentTime || 0;
   if (duration > 0) el.progress.value = String((current / duration) * 1000);
-  el.currentTime.textContent = formatTime(current, document.body.classList.contains("edit-mode"));
-  el.duration.textContent = formatTime(duration, document.body.classList.contains("edit-mode"));
+  el.currentTime.textContent = formatTime(current, false);
+  el.duration.textContent = formatTime(duration, false);
   updateLyrics();
   if (document.body.classList.contains("edit-mode")) {
     el.lyrics.querySelectorAll(".now-btn").forEach((btn) => {
@@ -1239,6 +1239,7 @@ function openTimecode() {
     if (pass !== window.TIMECODE_PASSWORD) return;
     document.body.classList.add("edit-mode");
     state.editDirty = false;
+    state.karaokeHold = true;
   }
   attachTimecodeUi();
   if (!document.getElementById("editPanel")) buildEditPanel();
@@ -1246,13 +1247,22 @@ function openTimecode() {
 }
 
 function attachTimecodeUi() {
+  if (!document.getElementById("colHead")) {
+    const head = document.createElement("div");
+    head.id = "colHead";
+    head.className = "col-head";
+    head.innerHTML = "<span>Gespeichert</span><span>Aktuell</span><span></span><span>Text</span>";
+    el.lyrics.prepend(head);
+  }
   el.lyrics.querySelectorAll(".lyric-line").forEach((line) => {
     if (line.querySelector(".time-edit")) return;
     const text = line.textContent;
+    const saved = line.dataset.time;
     line.textContent = "";
     const input = document.createElement("input");
     input.className = "time-edit";
-    input.value = formatTime(Number(line.dataset.time) || 0, true);
+    input.value = formatTime(Number(saved) || 0, true);
+    input.title = "Gespeicherte Zeit";
     input.addEventListener("change", () => {
       line.dataset.time = String(parseTime(input.value));
       state.editDirty = true;
@@ -1265,18 +1275,23 @@ function attachTimecodeUi() {
     take.type = "button";
     take.className = "chip";
     take.textContent = "Zeit";
-    take.addEventListener("click", () => {
+    take.addEventListener("click", (event) => {
+      event.stopPropagation();
       const t = el.audio.currentTime || 0;
       line.dataset.time = String(t);
       input.value = formatTime(t, true);
       state.editDirty = true;
-      el.audio.currentTime = Math.max(0, t);
-      if (el.audio.paused) el.audio.play().catch(() => {});
     });
     const textInput = document.createElement("input");
     textInput.className = "lyric-text";
     textInput.value = text;
     textInput.addEventListener("change", () => { state.editDirty = true; });
+    textInput.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const t = Number(line.dataset.time) || 0;
+      el.audio.currentTime = t;
+      if (el.audio.paused) el.audio.play().catch(() => {});
+    });
     line.append(input, now, take, textInput);
   });
 }
@@ -1292,6 +1307,21 @@ function buildEditPanel() {
   const panel = document.createElement("div");
   panel.id = "editPanel";
   panel.className = "edit-panel";
+  const hold = document.createElement("button");
+  hold.className = "chip";
+  hold.textContent = "Karaoke aus";
+  hold.setAttribute("aria-pressed", "true");
+  hold.addEventListener("click", () => {
+    state.karaokeHold = !state.karaokeHold;
+    hold.setAttribute("aria-pressed", String(state.karaokeHold));
+    hold.textContent = state.karaokeHold ? "Karaoke aus" : "Karaoke an";
+  });
+  panel.append(hold);
+  const toggle = document.createElement("button");
+  toggle.className = "chip";
+  toggle.textContent = "Panel";
+  toggle.addEventListener("click", () => panel.classList.toggle("hidden-panel"));
+  panel.append(toggle);
   [0.3, 0.5, 0.8, 1, 1.5, 2].forEach((rate) => {
     const btn = document.createElement("button");
     btn.className = "chip";
@@ -1318,10 +1348,13 @@ function buildEditPanel() {
   exit.className = "chip danger";
   exit.textContent = "Beenden";
   exit.addEventListener("click", () => {
-    if (state.editDirty && !confirm("Änderungen verwerfen?")) return;
+    if (state.editDirty && !confirm("Ungespeicherte Änderungen. Ohne Speichern verlassen?")) return;
     document.body.classList.remove("edit-mode");
     state.editDirty = false;
+    state.karaokeHold = false;
     panel.remove();
+    const head = document.getElementById("colHead");
+    if (head) head.remove();
     document.getElementById("spectrum").hidden = true;
     if (state.songs[state.index]) loadLyrics(state.songs[state.index]);
   });
@@ -1538,7 +1571,7 @@ function init() {
   window.addEventListener("beforeunload", (event) => {
     if (state.editDirty) {
       event.preventDefault();
-      event.returnValue = "";
+      event.returnValue = "Ungespeicherte Änderungen. Ohne Speichern verlassen?";
     }
   });
   if ("serviceWorker" in navigator) {

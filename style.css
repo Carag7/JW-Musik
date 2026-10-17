@@ -408,7 +408,20 @@ body.pseudo-fullscreen .flyer { left: 0; }
   display: grid; place-items: center;
   background: rgba(7, 11, 20, 0.96);
 }
-.login-card { position: relative; }
+.login-card { position: relative; display: flex; flex-direction: column; gap: 12px; }
+.login-card .sync-choice { flex-direction: column; }
+.login-card button, .login-card input { width: 100%; }
+.player-icon { background: transparent url("icon2.svg") center/60% no-repeat; }
+.player-icon[aria-pressed="false"] { background: var(--accent) url("icon.svg") center/60% no-repeat; }
+.edit-panel.hidden-panel { display: none; }
+.edit-panel button[aria-pressed="true"] { background: var(--accent); color: #1b1404; }
+.col-head { display: flex; gap: 6px; font-size: 11px; color: var(--muted); padding: 4px 0; }
+.col-head span:nth-child(1) { width: 100px; }
+.col-head span:nth-child(2) { width: 80px; }
+.col-head span:nth-child(3) { width: 50px; }
+@media (min-width: 900px) {
+  .spectrum { display: block !important; }
+}
   width: min(92vw, 360px);
   display: flex; flex-direction: column; gap: 12px;
   padding: 24px; border-radius: 18px;
