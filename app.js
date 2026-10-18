@@ -1737,6 +1737,22 @@ init();
 
 window.testWOL = function () {
 
-  alert("testWOL wurde gestartet");
+  alert("testWOL gestartet");
 
 };
+
+document.addEventListener("DOMContentLoaded", () => {
+
+  const btn =
+    document.getElementById("testWol");
+
+  if (btn) {
+
+    btn.addEventListener(
+      "click",
+      window.testWOL
+    );
+
+  }
+
+});
