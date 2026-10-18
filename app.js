@@ -1732,8 +1732,11 @@ init();
 
 
 
-window.testWOL = async function () {
 
-  alert("Test gestartet");
+
+
+window.testWOL = function () {
+
+  alert("testWOL wurde gestartet");
 
 };
