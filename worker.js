@@ -6,6 +6,9 @@ export default {
     if (path.startsWith("/sync/")) {
       return handleSync(request, env, path);
     }
+    if (path.startsWith("/ludwt")) {
+    return handleLudwt(request, env, path);
+}
 
     if (path.endsWith(".mp3")) {
       const filename = path.split("/").pop();
