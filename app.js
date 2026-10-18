@@ -1735,24 +1735,26 @@ init();
 
 
 
-window.testWOL = function () {
+window.testWOL = async function () {
 
-  alert("testWOL gestartet");
+  alert("Start");
 
-};
+  try {
 
-document.addEventListener("DOMContentLoaded", () => {
+    const response = await fetch(
+      "https://wol.jw.org/en/wol/meetings/r1/lp-e/2026/42"
+    );
 
-  const btn =
-    document.getElementById("testWol");
+    alert(
+      "Status: " + response.status
+    );
 
-  if (btn) {
+  } catch (err) {
 
-    btn.addEventListener(
-      "click",
-      window.testWOL
+    alert(
+      "Fehler:\n" + err.message
     );
 
   }
 
-});
+};});
