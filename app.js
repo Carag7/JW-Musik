@@ -1726,3 +1726,19 @@ function init() {
 }
 
 init();
+
+
+
+
+
+
+import {
+  testWOL
+} from "./test-wol.js";
+
+document
+  .getElementById("testWol")
+  ?.addEventListener(
+    "click",
+    testWOL
+  );
