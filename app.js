@@ -1735,26 +1735,13 @@ init();
 
 
 
-window.testWOL = async function () {
+import {
+  testWOL
+} from "./test-wol.js";
 
-  alert("Start");
-
-  try {
-
-    const response = await fetch(
-      "https://wol.jw.org/en/wol/meetings/r1/lp-e/2026/42"
-    );
-
-    alert(
-      "Status: " + response.status
-    );
-
-  } catch (err) {
-
-    alert(
-      "Fehler:\n" + err.message
-    );
-
-  }
-
-};
+document
+  .getElementById("testWol")
+  ?.addEventListener(
+    "click",
+    testWOL
+  );
