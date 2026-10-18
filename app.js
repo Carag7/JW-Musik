@@ -1732,13 +1732,8 @@ init();
 
 
 
-import {
-  testWOL
-} from "./test-wol.js";
+window.testWOL = async function () {
 
-document
-  .getElementById("testWol")
-  ?.addEventListener(
-    "click",
-    testWOL
-  );
+  alert("Test gestartet");
+
+};
