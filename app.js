@@ -86,7 +86,8 @@ const state = {
   sidebarOpen: true,
   userScrolling: false,
   scrollTimer: 0,
-  centering: false
+  centering: false,
+  ludwtWeek: ""
 };
 
 const el = {
@@ -174,6 +175,7 @@ function setSidebar(open) {
 }
 
 function visibleSongs() {
+  if (state.mode === "ludwt") return ludwtSongs();
   const q = state.query.trim().toLowerCase();
   const playlist = currentPlaylist();
   let songs = state.songs;
@@ -190,6 +192,74 @@ function visibleSongs() {
     }
     return song.title.toLowerCase().includes(q) || String(song.number).includes(q) || song.id.includes(q);
   });
+}
+
+function ludwtRows() {
+  return window.LUDWT ? LUDWT.rows(state.ludwtWeek, state.songs) : [];
+}
+
+function ludwtSongs() {
+  const seen = new Set();
+  return ludwtRows()
+    .filter((row) => row.song && !seen.has(row.song.id) && seen.add(row.song.id))
+    .map((row) => row.song);
+}
+
+function fillLudwtWeeks() {
+  const select = document.getElementById("ludwtWeek");
+  const info = document.getElementById("ludwtInfo");
+  if (!window.LUDWT || !select) return;
+  if (!state.ludwtWeek || !LUDWT.hasWeek(state.ludwtWeek)) state.ludwtWeek = LUDWT.defaultWeek();
+  LUDWT.fillWeekSelect(select, state.ludwtWeek);
+  const count = LUDWT.weekCount();
+  info.textContent = count
+    ? `${count} ${count === 1 ? "Woche" : "Wochen"} heruntergeladen`
+    : "Noch keine Wochen geladen. Unter „Synchronisieren“ aktualisieren.";
+}
+
+function renderLudwtList() {
+  const rows = ludwtRows();
+  el.count.textContent = String(rows.length);
+  el.list.innerHTML = "";
+  if (!rows.length) {
+    const empty = document.createElement("li");
+    empty.className = "empty";
+    empty.textContent = "Keine Lieder für diese Woche";
+    el.list.append(empty);
+    return;
+  }
+  rows.forEach((row) => {
+    const item = document.createElement("li");
+    item.className = "song-row";
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "song-btn";
+    const number = document.createElement("strong");
+    number.textContent = row.song ? row.song.id : String(row.number).padStart(3, "0");
+    const text = document.createElement("div");
+    text.className = "song-text";
+    const title = document.createElement("span");
+    title.textContent = row.song ? `${state.favorites.has(row.song.id) ? "★ " : ""}${row.song.title}` : "nicht in der Liederliste";
+    text.append(title, LUDWT.whenEl(row));
+    button.append(number, text);
+    if (row.song) {
+      if (state.songs[state.index] === row.song) button.classList.add("active");
+      button.addEventListener("click", () => selectSong(state.songs.indexOf(row.song), true));
+    } else {
+      button.disabled = true;
+      button.classList.add("missing");
+    }
+    item.append(button);
+    el.list.append(item);
+  });
+  applyListSize();
+  LUDWT.fitLabels(el.list);
+}
+
+function leaveLudwt() {
+  document.body.classList.remove("ludwt-mode");
+  document.getElementById("ludwtBar").hidden = true;
+  document.getElementById("ludwtToggle").setAttribute("aria-pressed", "false");
 }
 
 function currentPlaylist() {
@@ -320,6 +390,7 @@ function fillCategories() {
 }
 
 function renderList() {
+  if (state.mode === "ludwt") { renderLudwtList(); return; }
   const songs = visibleSongs();
   el.count.textContent = String(songs.length);
   el.list.innerHTML = "";
@@ -482,7 +553,9 @@ function songLabel(index) {
 
 function updateNeighbors() {
   if (!el.prevSong || !el.nextSong || state.index < 0) return;
-  const pool = state.playFavorites ? state.songs.filter((song) => state.favorites.has(song.id)) : state.songs;
+  const pool = state.mode === "ludwt"
+    ? ludwtSongs()
+    : (state.playFavorites ? state.songs.filter((song) => state.favorites.has(song.id)) : state.songs);
   const current = state.songs[state.index];
   const pos = pool.indexOf(current);
   el.prevSong.textContent = pos > 0 ? songLabel(state.songs.indexOf(pool[pos - 1])) : "—";
@@ -700,6 +773,7 @@ function seek() {
 }
 
 function playPool() {
+  if (state.mode === "ludwt") return ludwtSongs();
   const playlist = currentPlaylist();
   if (state.mode === "playlists" && playlist) {
     const order = new Map(playlist.songs.map((id, index) => [id, index]));
@@ -717,7 +791,7 @@ function step(delta) {
     return;
   }
   const playing = !el.audio.paused;
-  if (state.shuffle) {
+  if (state.shuffle && state.mode !== "ludwt") {
     const choices = pool.filter((song) => song !== state.songs[state.index]);
     const pick = (choices.length ? choices : pool)[Math.floor(Math.random() * (choices.length || pool.length))];
     selectSong(state.songs.indexOf(pick), true);
@@ -866,6 +940,7 @@ function bind() {
       return;
     }
     state.mode = "songs";
+    leaveLudwt();
     document.getElementById("playlistBar").hidden = true;
     document.getElementById("eigeneToggle").setAttribute("aria-pressed", "false");
     el.menu.setAttribute("aria-expanded", "true");
@@ -879,6 +954,7 @@ function bind() {
       return;
     }
     state.mode = "playlists";
+    leaveLudwt();
     document.getElementById("playlistBar").hidden = false;
     document.getElementById("playlistSelectWrap").hidden = false;
     document.getElementById("eigeneToggle").setAttribute("aria-pressed", "true");
@@ -889,6 +965,41 @@ function bind() {
     requestAnimationFrame(() => fillPlaylists());
     updateEditTools();
     renderList();
+  });
+  document.getElementById("ludwtToggle").addEventListener("click", async () => {
+    if (state.mode === "ludwt" && state.sidebarOpen) {
+      setSidebar(false);
+      return;
+    }
+    state.mode = "ludwt";
+    document.body.classList.add("ludwt-mode");
+    document.getElementById("playlistBar").hidden = true;
+    document.getElementById("ludwtBar").hidden = false;
+    document.getElementById("ludwtToggle").setAttribute("aria-pressed", "true");
+    document.getElementById("eigeneToggle").setAttribute("aria-pressed", "false");
+    el.menu.setAttribute("aria-expanded", "false");
+    setSidebar(true);
+    renderList();
+    if (window.LUDWT) {
+      await LUDWT.ensureLoaded();
+      fillLudwtWeeks();
+      renderList();
+    }
+  });
+  document.getElementById("ludwtWeek").addEventListener("change", (event) => {
+    state.ludwtWeek = event.target.value;
+    renderList();
+    updateNeighbors();
+  });
+  document.getElementById("ludwtPlay").addEventListener("click", () => {
+    const pool = ludwtSongs();
+    if (!pool.length) {
+      el.status.textContent = "Keine abspielbaren Lieder in dieser Woche";
+      return;
+    }
+    state.shuffle = false;
+    el.shuffleBtn.setAttribute("aria-pressed", "false");
+    selectSong(state.songs.indexOf(pool[0]), true);
   });
   document.getElementById("playlistSelect").addEventListener("change", (event) => {
     if (event.target.value === "__new__") {
@@ -1215,6 +1326,7 @@ async function syncFavorites() {
     return "Lokal hochgeladen.";
   }, "sync");
   document.getElementById("codeInput").value = saved;
+  if (window.LUDWT) LUDWT.mountSync();
   document.querySelector(".sync-choice").hidden = true;
   document.getElementById("codeMessage").textContent = "Mit diesem Passwort kannst du alle deine Geräte synchronisieren.";
   const last = localStorage.getItem("sync-last");
@@ -1612,6 +1724,9 @@ function warnReplace() {
 
 function openCode(title, onSubmit, kind) {
   const modal = document.getElementById("codeModal");
+  const ludwtBox = document.getElementById("ludwtSync");
+  if (ludwtBox) ludwtBox.hidden = kind !== "sync";
+  document.getElementById("codeForm").classList.toggle("has-ludwt", kind === "sync");
   const input = document.getElementById("codeInput");
   const message = document.getElementById("codeMessage");
   const qr = document.getElementById("syncQr");
@@ -1641,7 +1756,8 @@ function openCode(title, onSubmit, kind) {
   ok.hidden = false;
   ok.textContent = kind === "import" ? "Übernehmen" : "QR-Code erzeugen";
   modal.hidden = false;
-  input.focus();
+  document.getElementById("codeForm").scrollTop = 0;
+  if (kind !== "sync") input.focus();
   let mode = "local";
   const mark = () => {
     document.getElementById("syncLocal").setAttribute("aria-pressed", String(mode === "local"));
@@ -1711,6 +1827,15 @@ function init() {
   state.scale = Number(localStorage.getItem(STORAGE.scale) || 42);
   applyScale();
   bind();
+  if (window.LUDWT) {
+    LUDWT.onChange = () => {
+      if (state.mode === "ludwt") {
+        fillLudwtWeeks();
+        renderList();
+      }
+    };
+    LUDWT.ensureLoaded();
+  }
   loadSongs();
   window.addEventListener("beforeunload", (event) => {
     if (state.editDirty) {

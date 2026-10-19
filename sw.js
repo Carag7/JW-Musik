@@ -1,5 +1,5 @@
-const CACHE = "tesla-karaoke-v51";
-const SHELL = ["./", "./index.html", "./style.css", "./app.js", "./password.js", "./manifest.json", "./icon.svg", "./songs.json"];
+const CACHE = "tesla-karaoke-v52";
+const SHELL = ["./", "./index.html", "./style.css", "./app.js", "./ludwt.js", "./password.js", "./manifest.json", "./icon.svg", "./songs.json"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(SHELL)));

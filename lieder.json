@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "sprache": "de",
+  "quelle": "https://wol.jw.org",
+  "aktualisiert": "2026-10-19T17:00:00Z",
+  "wochen": [
+    {
+      "woche": "2026-W43",
+      "montag": "2026-10-19",
+      "sonntag": "2026-10-25",
+      "leben_und_dienst": {
+        "lieder": [
+          { "position": "anfang", "nummer": 21 },
+          { "position": "mitte", "nummer": 117 },
+          { "position": "schluss", "nummer": 87 }
+        ],
+        "thema": "Jeremia 45-46",
+        "doc_id": 202026258,
+        "url": "https://wol.jw.org/de/wol/d/r10/lp-x/202026258",
+        "abfrage": "manuell"
+      },
+      "wachtturm": {
+        "lieder": [
+          { "position": "anfang", "nummer": 106, "titel": "In der Liebe wachsen" },
+          { "position": "schluss", "nummer": 154, "titel": "Liebe versagt nie" }
+        ],
+        "thema": "Eine Bitte auf der Grundlage der Liebe",
+        "doc_id": 2026522,
+        "url": "https://wol.jw.org/de/wol/d/r10/lp-x/2026522",
+        "abfrage": "manuell"
+      },
+      "playlist": [21, 117, 87, 106, 154]
+    }
+  ]
+}
