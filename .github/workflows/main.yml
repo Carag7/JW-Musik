@@ -1,0 +1,47 @@
+name: Lieder aktualisieren
+
+on:
+  schedule:
+    - cron: "17 4 * * 1"   # einmal pro Woche: montags 04:17 UTC
+  workflow_dispatch:        # manuell startbar (Button auf der Webseite oder Actions -> Run workflow)
+
+permissions:
+  contents: write
+
+concurrency:
+  group: lieder-update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Abhängigkeiten installieren
+        run: pip install requests beautifulsoup4
+
+      - name: Lieder abfragen (Option 1 und 2)
+        id: normal
+        continue-on-error: true
+        run: python scrape_lieder.py
+
+      - name: Lieder abfragen (Option 3 - Headless-Browser)
+        if: steps.normal.outcome == 'failure'
+        run: |
+          pip install playwright
+          playwright install --with-deps chromium
+          python scrape_lieder.py --browser
+
+      # always(): auch bei Fehlern wird status.json (Fehlerprotokoll) gespeichert
+      - name: Änderungen committen
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lieder.json status.json
+          git diff --cached --quiet || (git commit -m "Lieder aktualisiert" && git pull --rebase && git push)
