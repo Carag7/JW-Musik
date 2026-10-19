@@ -3,6 +3,10 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname;
 
+    if (path === "/api/refresh") {
+      return handleRefresh(request, env);
+    }
+
     if (path.startsWith("/sync/")) {
       return handleSync(request, env, path);
     }
@@ -116,4 +120,37 @@ function parseRange(r) {
   if (s !== null && e === null) return { offset: s };
   if (s !== null && e !== null) return { offset: s, length: e - s + 1 };
   return undefined;
+}
+
+// Startet den GitHub-Workflow "update.yml" (Button "Jetzt aktualisieren" im Synchronisieren-Dialog).
+// Cloudflare: Secret GITHUB_TOKEN (Fine-grained Token, Repo-Berechtigung "Actions: Read and write"),
+// optional Secret REFRESH_PIN. GITHUB_REPO und GITHUB_BRANCH stehen in wrangler.jsonc.
+async function handleRefresh(request, env) {
+  const reply = (obj, status = 200) => new Response(JSON.stringify(obj), {
+    status,
+    headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" }
+  });
+  if (request.method !== "POST") return reply({ ok: false, fehler: "Nur POST erlaubt." }, 405);
+  if (!env.GITHUB_TOKEN || !env.GITHUB_REPO) {
+    return reply({ ok: false, fehler: "Server nicht eingerichtet: Secret GITHUB_TOKEN fehlt in Cloudflare." }, 500);
+  }
+  if (env.REFRESH_PIN) {
+    const body = await request.json().catch(() => ({}));
+    if (String(body.pin || "") !== String(env.REFRESH_PIN)) {
+      return reply({ ok: false, pin_erforderlich: true, fehler: "PIN falsch oder fehlt." }, 401);
+    }
+  }
+  const res = await fetch(`https://api.github.com/repos/${env.GITHUB_REPO}/actions/workflows/update.yml/dispatches`, {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${env.GITHUB_TOKEN}`,
+      accept: "application/vnd.github+json",
+      "x-github-api-version": "2022-11-28",
+      "user-agent": "jw-musik-refresh"
+    },
+    body: JSON.stringify({ ref: env.GITHUB_BRANCH || "main" })
+  });
+  if (res.status === 204) return reply({ ok: true });
+  const text = (await res.text()).slice(0, 300);
+  return reply({ ok: false, fehler: `GitHub antwortete ${res.status}: ${text}` }, 502);
 }
