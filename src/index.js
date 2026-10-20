@@ -5,7 +5,10 @@ export default {
 
 
 
-    return new Response("TEST 7");
+    return new Response(
+      env.GITHUB_TOKEN ? "TOKEN OK" : "TOKEN FEHLT"
+    );
+
 
 
 
