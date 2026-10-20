@@ -90,6 +90,10 @@
           <select id="ludwtWeek" aria-label="Woche wählen"></select>
         </label>
         <button id="ludwtPlay" class="chip" type="button">▶ Woche abspielen</button>
+        <div class="ludwt-nav">
+          <button id="ludwtPrev" class="chip" type="button" aria-label="Woche davor">◀ Davor</button>
+          <button id="ludwtNext" class="chip" type="button" aria-label="Woche danach">Danach ▶</button>
+        </div>
         <p id="ludwtInfo" class="ludwt-info"></p>
       </div>
 
@@ -183,7 +187,6 @@
       <p class="eyebrow">Favoriten</p>
       <button id="metaToggle" class="ghost meta-i" type="button" hidden>i</button>
       <h2 id="codeTitle">Code</h2>
-      <section id="ludwtSync" class="ludwt-sync" hidden></section>
       <div class="sync-choice">
         <button id="syncLocal" class="chip" type="button">Lokal, eigenes Passwort</button>
         <button id="syncDevice" class="chip" type="button">Anderes Gerät</button>
@@ -198,8 +201,32 @@
       <p id="codeMessage" class="login-error"></p>
       <p id="syncInfo" class="login-error" hidden></p>
       <button id="syncDelete" class="chip danger" type="button" hidden>Alles löschen</button>
+      <section id="ludwtSync" class="ludwt-sync" hidden></section>
     </form>
   </div>
+
+  <div id="ludwtPopup" class="login-gate" hidden>
+    <div class="login-card dlg-card" role="dialog" aria-labelledby="ludwtPopupTitle">
+      <p class="eyebrow">Lieder LuD+WT</p>
+      <h2 id="ludwtPopupTitle">Manuell aktualisieren</h2>
+      <p class="dlg-text">Die Lieder werden jede Woche automatisch aktualisiert (montags). Die manuelle Aktualisierung ist nur für den Notfall gedacht, zum Beispiel wenn die automatische einmal nicht funktioniert hat.</p>
+      <div class="dlg-actions">
+        <button id="ludwtPopupGo" class="chip" type="button">Jetzt aktualisieren</button>
+        <button id="ludwtPopupClose" class="ghost" type="button">Schließen</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="dialogModal" class="login-gate dlg-gate" hidden>
+    <form id="dialogForm" class="login-card dlg-card" role="dialog" aria-labelledby="dialogTitle">
+      <p id="dialogEyebrow" class="eyebrow" hidden></p>
+      <h2 id="dialogTitle"></h2>
+      <div id="dialogBody" class="dlg-body"></div>
+      <input id="dialogInput" type="text" autocomplete="off" hidden />
+      <div id="dialogButtons" class="dlg-actions"></div>
+    </form>
+  </div>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
   <audio id="audio" preload="none"></audio>
   <script src="ludwt.js"></script>

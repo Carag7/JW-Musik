@@ -127,7 +127,7 @@
   /* ---------- Synchronisieren-Dialog ---------- */
   function weekCard(w) {
     const card = h("div", `ls-week${isCurrent(w) ? " is-now" : ""}`);
-    const head = h("div", "ls-head");
+    const head = h("div", "ls-top");
     head.append(h("b", "", `${rangeLabel(w)} ${parseDay(w.montag).getFullYear()}`));
     if (isCurrent(w)) head.append(h("em", "", "aktuelle Woche"));
     card.append(head);
@@ -163,8 +163,13 @@
     });
     const body = await res.json().catch(() => ({}));
     if (res.status === 401 && body.pin_erforderlich) {
-      const p = prompt("PIN für die Aktualisierung:");
-      if (p === null) return { abgebrochen: true };
+      const p = await window.uiDialog({
+        eyebrow: "Lieder LuD+WT", title: "PIN erforderlich",
+        lines: ["Bitte die PIN für die Aktualisierung eingeben."],
+        input: { type: "password", placeholder: "PIN", inputMode: "numeric" },
+        buttons: [{ value: "ok", kind: "primary", label: "Aktualisieren" }, { value: null, kind: "cancel", label: "Abbrechen" }]
+      });
+      if (p === null || p === "") return { abgebrochen: true };
       const out = await startUpdate(p);
       try { sessionStorage.setItem("ludwtPin", p); } catch {}
       return out;
@@ -212,10 +217,30 @@
     });
   }
 
+  function openPopup(root) {
+    const pop = document.getElementById("ludwtPopup");
+    const close = () => { pop.hidden = true; };
+    document.getElementById("ludwtPopupClose").onclick = close;
+    pop.onclick = (event) => { if (event.target === pop) close(); };
+    document.getElementById("ludwtPopupGo").onclick = () => {
+      close();
+      const btn = { disabled: false };
+      onRefresh(root, btn);
+    };
+    pop.hidden = false;
+  }
+
   function build(root, keepOpen) {
     const wasOpen = keepOpen != null ? keepOpen : !!root.querySelector(".ls-all:not([hidden])");
     root.replaceChildren();
-    root.append(h("h3", "", "Lieder LuD+WT"));
+    const head = h("div", "ls-top");
+    head.append(h("h3", "", "Lieder LuD+WT"));
+    const info = h("button", "ghost ls-i", "i");
+    info.type = "button";
+    info.setAttribute("aria-label", "Info zur manuellen Aktualisierung");
+    info.addEventListener("click", () => openPopup(root));
+    head.append(info);
+    root.append(head, h("p", "ls-note", "Nur zur Information – hier musst du nichts auswählen."));
 
     const runs = (status && status.laeufe) || [];
     const latest = runs[0];
@@ -238,10 +263,7 @@
       root.append(h("p", "ls-count", "Noch keine Wochen heruntergeladen."));
     }
 
-    const btn = h("button", "chip", "Jetzt aktualisieren");
-    btn.type = "button";
-    btn.addEventListener("click", () => onRefresh(root, btn));
-    root.append(btn, h("p", "ls-msg"));
+    root.append(h("p", "ls-msg"));
 
     if (list.length) {
       root.append(h("p", "ls-small ls-title", "Aktuelle Woche"));

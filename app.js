@@ -87,7 +87,11 @@ const state = {
   userScrolling: false,
   scrollTimer: 0,
   centering: false,
-  ludwtWeek: ""
+  ludwtWeek: "",
+  selectToken: 0,
+  canplayHandler: null,
+  wasPlaying: false,
+  timeOffset: 0
 };
 
 const el = {
@@ -129,6 +133,126 @@ const el = {
   fwd15: document.getElementById("fwd15"),
   menu: document.getElementById("menuToggle")
 };
+
+/* ---------- Eigene Dialoge (statt confirm/prompt/alert) ---------- */
+function uiDialog(opts) {
+  return new Promise((resolve) => {
+    const modal = document.getElementById("dialogModal");
+    const form = document.getElementById("dialogForm");
+    const body = document.getElementById("dialogBody");
+    const box = document.getElementById("dialogButtons");
+    const input = document.getElementById("dialogInput");
+    const eyebrow = document.getElementById("dialogEyebrow");
+    eyebrow.textContent = opts.eyebrow || "";
+    eyebrow.hidden = !opts.eyebrow;
+    document.getElementById("dialogTitle").textContent = opts.title || "";
+    body.replaceChildren();
+    (opts.lines || []).forEach((line) => {
+      const item = typeof line === "string" ? { text: line } : line;
+      const p = document.createElement("p");
+      p.textContent = item.text;
+      if (item.cls) p.className = item.cls;
+      body.append(p);
+    });
+    if (opts.input) {
+      input.hidden = false;
+      input.type = opts.input.type || "text";
+      input.placeholder = opts.input.placeholder || "";
+      input.value = opts.input.value || "";
+      input.inputMode = opts.input.inputMode || "";
+    } else {
+      input.hidden = true;
+      input.value = "";
+    }
+    box.replaceChildren();
+    let primary = null;
+    let onKey = null;
+    const finish = (value) => {
+      modal.hidden = true;
+      form.onsubmit = null;
+      document.removeEventListener("keydown", onKey, true);
+      resolve(value);
+    };
+    (opts.buttons || [{ value: true, label: "OK", kind: "primary" }]).forEach((b) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = `chip dlg-btn ${b.kind || ""}`.trim();
+      if (b.dir) {
+        const dir = document.createElement("small");
+        dir.className = "dlg-dir";
+        dir.textContent = b.dir;
+        btn.append(dir);
+      }
+      const label = document.createElement("strong");
+      label.textContent = b.label;
+      btn.append(label);
+      if (b.sub) {
+        const sub = document.createElement("small");
+        sub.className = "dlg-sub";
+        sub.textContent = b.sub;
+        btn.append(sub);
+      }
+      btn.addEventListener("click", () => finish(opts.input && b.kind !== "cancel" ? input.value : b.value));
+      box.append(btn);
+      if (!primary && b.kind !== "cancel") primary = btn;
+    });
+    form.onsubmit = (event) => {
+      event.preventDefault();
+      if (primary) primary.click();
+    };
+    onKey = (event) => {
+      if (event.key === "Escape") {
+        event.stopPropagation();
+        finish(opts.input ? null : (opts.cancelValue === undefined ? null : opts.cancelValue));
+      }
+    };
+    document.addEventListener("keydown", onKey, true);
+    modal.hidden = false;
+    if (opts.input) input.focus();
+    else if (primary) primary.focus();
+  });
+}
+
+function uiConfirm(o) {
+  return uiDialog({
+    eyebrow: o.eyebrow,
+    title: o.title,
+    lines: o.lines || (o.text ? [o.text] : []),
+    cancelValue: false,
+    buttons: [
+      { value: true, kind: o.danger ? "danger" : "primary", label: o.ok || "OK" },
+      { value: false, kind: "cancel", label: o.cancel || "Abbrechen" }
+    ]
+  }).then((value) => value === true);
+}
+
+function uiAlert(title, text) {
+  return uiDialog({ title, lines: text ? [text] : [], buttons: [{ value: true, kind: "primary", label: "OK" }] });
+}
+
+function uiPrompt(o) {
+  return uiDialog({
+    eyebrow: o.eyebrow,
+    title: o.title,
+    lines: o.text ? [o.text] : [],
+    input: { type: o.type || "text", placeholder: o.placeholder || "", value: o.value || "", inputMode: o.inputMode },
+    buttons: [
+      { value: "ok", kind: "primary", label: o.ok || "OK" },
+      { value: null, kind: "cancel", label: "Abbrechen" }
+    ]
+  });
+}
+window.uiDialog = uiDialog;
+
+let toastTimer = 0;
+function showToast(text) {
+  const toast = document.getElementById("toast");
+  if (!toast || !text) return;
+  toast.textContent = text;
+  toast.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { toast.hidden = true; }, 5000);
+}
 
 function setStatus(text, kind) {
   el.status.textContent = text;
@@ -211,6 +335,7 @@ function fillLudwtWeeks() {
   if (!window.LUDWT || !select) return;
   if (!state.ludwtWeek || !LUDWT.hasWeek(state.ludwtWeek)) state.ludwtWeek = LUDWT.defaultWeek();
   LUDWT.fillWeekSelect(select, state.ludwtWeek);
+  updateLudwtNav();
   const count = LUDWT.weekCount();
   info.textContent = count
     ? `${count} ${count === 1 ? "Woche" : "Wochen"} heruntergeladen`
@@ -234,6 +359,7 @@ function renderLudwtList() {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "song-btn";
+    if (row.song) button.dataset.id = row.song.id;
     const number = document.createElement("strong");
     number.textContent = row.song ? row.song.id : String(row.number).padStart(3, "0");
     const text = document.createElement("div");
@@ -254,6 +380,27 @@ function renderLudwtList() {
   });
   applyListSize();
   LUDWT.fitLabels(el.list);
+}
+
+function updateLudwtNav() {
+  if (!window.LUDWT) return;
+  const list = LUDWT.weeks();
+  const at = list.findIndex((week) => week.montag === state.ludwtWeek);
+  document.getElementById("ludwtPrev").disabled = at <= 0;
+  document.getElementById("ludwtNext").disabled = at < 0 || at >= list.length - 1;
+}
+
+function shiftLudwtWeek(delta) {
+  if (!window.LUDWT) return;
+  const list = LUDWT.weeks();
+  const at = list.findIndex((week) => week.montag === state.ludwtWeek);
+  const next = list[at + delta];
+  if (!next) return;
+  state.ludwtWeek = next.montag;
+  document.getElementById("ludwtWeek").value = next.montag;
+  renderList();
+  updateNeighbors();
+  updateLudwtNav();
 }
 
 function leaveLudwt() {
@@ -446,6 +593,7 @@ function renderList() {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "song-btn";
+    button.dataset.id = song.id;
     if (state.songs[state.index] === song) button.classList.add("active");
     const number = document.createElement("strong");
     number.textContent = song.id;
@@ -476,6 +624,18 @@ function movePlaylistSong(id, delta) {
   playlist.songs.splice(next, 0, item);
   savePlaylists();
   renderList();
+}
+
+/* Nur die Markierung des aktuellen Lieds ändern, statt die ganze Liste neu aufzubauen (schneller im Tesla) */
+function markActive() {
+  const current = state.songs[state.index];
+  let target = null;
+  document.querySelectorAll("#songList .song-btn").forEach((button) => {
+    const on = Boolean(current) && button.dataset.id === current.id;
+    button.classList.toggle("active", on);
+    if (on && !target) target = button;
+  });
+  if (target && state.sidebarOpen) target.scrollIntoView({ block: "nearest" });
 }
 
 function applyListSize() {
@@ -566,11 +726,15 @@ function showLyricLink(song) {
 }
 
 async function loadLyrics(song) {
+  const token = state.selectToken;
+  const stale = () => token !== state.selectToken;
   state.lyrics = [];
   try {
     const res = await fetch(`${SYNC_BASE}/sync/lrc-${song.id}`);
+    if (stale()) return;
     if (res.ok) {
       const text = await res.text();
+      if (stale()) return;
       if (text.includes("[")) {
         state.lyrics = parseLrc(text);
         renderLyrics(state.lyrics);
@@ -591,15 +755,17 @@ async function loadLyrics(song) {
   for (const url of [local, remote]) {
     try {
       const response = await fetch(url, { cache: "no-store" });
+      if (stale()) return;
       if (!response.ok) continue;
       const text = await response.text();
+      if (stale()) return;
       if (!text.includes("[")) continue;
       state.lyrics = parseLrc(text);
       renderLyrics(state.lyrics);
       return;
     } catch {}
   }
-  renderLyrics([]);
+  if (!stale()) renderLyrics([]);
 }
 
 function audioCandidates(song) {
@@ -643,11 +809,20 @@ function setMediaSession(song) {
   navigator.mediaSession.setActionHandler("nexttrack", () => step(1));
   navigator.mediaSession.setActionHandler("play", togglePlay);
   navigator.mediaSession.setActionHandler("pause", togglePlay);
+  const optional = (action, handler) => {
+    try { navigator.mediaSession.setActionHandler(action, handler); } catch { /* nicht überall unterstützt */ }
+  };
+  optional("seekbackward", () => skip(-15));
+  optional("seekforward", () => skip(15));
+  optional("seekto", (details) => {
+    if (details && Number.isFinite(details.seekTime)) el.audio.currentTime = details.seekTime;
+  });
 }
 
 async function selectSong(index, autoplay) {
   if (index < 0 || index >= state.songs.length) return;
   state.index = index;
+  const token = (state.selectToken = (state.selectToken || 0) + 1);
   state.audioTry = 0;
   state.waveData = null;
   const song = state.songs[index];
@@ -665,11 +840,12 @@ async function selectSong(index, autoplay) {
   el.currentTime.textContent = "0:00";
   el.duration.textContent = "0:00";
   el.play.textContent = "▶";
-  renderList();
+  markActive();
   showLyricLink(song);
   updateNeighbors();
-  await loadLyrics(song);
-  const url = await resolveAudio(song);
+  // Liedtext und Audio-Quelle gleichzeitig suchen: Wiedergabe startet schneller
+  const [, url] = await Promise.all([loadLyrics(song), resolveAudio(song)]);
+  if (token !== state.selectToken) return;  // inzwischen anderes Lied gewählt
   state.currentAudio = url;
   setAudioSource(url);
   setMediaSession(song);
@@ -677,9 +853,15 @@ async function selectSong(index, autoplay) {
   if (!document.fullscreenElement && !document.body.classList.contains("pseudo-fullscreen")) {
     setSidebar(false);
   }
+  if (state.canplayHandler) el.audio.removeEventListener("canplay", state.canplayHandler);
+  state.canplayHandler = null;
   if (autoplay) {
     showTitleIntro(song);
-    el.audio.addEventListener("canplay", () => togglePlay(), { once: true });
+    state.canplayHandler = () => {
+      state.canplayHandler = null;
+      if (token === state.selectToken && el.audio.paused) togglePlay();
+    };
+    el.audio.addEventListener("canplay", state.canplayHandler, { once: true });
     setTimeout(() => { if (state.introActive) hideTitleIntro(); }, 4000);
   }
 }
@@ -902,6 +1084,38 @@ function playRandom(favorites) {
   const pick = pool[Math.floor(Math.random() * pool.length)];
   selectSong(state.songs.indexOf(pick), true);
 }
+/* Neu laden: Wiedergabe stoppen, Zwischenspeicher + Service Worker leeren, Seite frisch laden.
+   Favoriten, Listen und Sync-Daten (localStorage) bleiben erhalten. */
+async function hardRefresh() {
+  const btn = document.getElementById("refreshBtn");
+  btn.disabled = true;
+  btn.textContent = "Lädt …";
+  try { el.audio.pause(); el.audio.removeAttribute("src"); el.audio.load(); } catch { /* egal */ }
+  try { if (state.wakeLock) { await state.wakeLock.release(); state.wakeLock = null; } } catch { /* egal */ }
+  try {
+    if ("caches" in window) await Promise.all((await caches.keys()).map((key) => caches.delete(key)));
+  } catch { /* egal */ }
+  try {
+    if ("serviceWorker" in navigator) await Promise.all((await navigator.serviceWorker.getRegistrations()).map((reg) => reg.unregister()));
+  } catch { /* egal */ }
+  location.replace(`${location.pathname}?r=${Date.now()}`);
+}
+
+/* Nach Ein-/Aussteigen im Tesla: Display-Sperre neu anfordern, kaputte Audio-Verbindung selbst reparieren */
+function recoverAfterResume() {
+  if (document.visibilityState !== "visible") return;
+  if (!el.audio.paused) requestWakeLock();
+  const broken = state.currentAudio && (el.audio.error || el.audio.networkState === 3);
+  if (!broken) return;
+  const time = el.audio.currentTime || 0;
+  const resume = state.wasPlaying;
+  setAudioSource(state.currentAudio);
+  el.audio.addEventListener("loadedmetadata", () => {
+    try { el.audio.currentTime = time; } catch { /* egal */ }
+    if (resume) el.audio.play().then(() => { el.play.textContent = "❚❚"; }).catch(() => {});
+  }, { once: true });
+}
+
 function bind() {
   el.lyricSearchToggle.addEventListener("click", () => {
     const open = el.lyricSearchWrap.hidden;
@@ -911,6 +1125,7 @@ function bind() {
     document.getElementById("listTools").hidden = !open;
     document.getElementById("favTools").hidden = !open;
     document.getElementById("waveToggle").hidden = !open;
+    document.getElementById("refreshBtn").hidden = !open;
     document.getElementById("splitHandle").hidden = !open || document.fullscreenElement || document.body.classList.contains("pseudo-fullscreen");
     if (state.mode === "playlists") fillPlaylists();
     updateEditTools();
@@ -990,6 +1205,7 @@ function bind() {
     state.ludwtWeek = event.target.value;
     renderList();
     updateNeighbors();
+    updateLudwtNav();
   });
   document.getElementById("ludwtPlay").addEventListener("click", () => {
     const pool = ludwtSongs();
@@ -1147,9 +1363,10 @@ function bind() {
     let timer = 0;
     button.addEventListener("pointerdown", () => {
       if (document.getElementById("lyricSearchWrap").hidden) return;
-      timer = setTimeout(() => {
+      timer = setTimeout(async () => {
         const current = target === "list" ? state.listSize : state.scale;
-        const value = prompt("Schriftgröße", String(current));
+        const value = await uiPrompt({ eyebrow: "Anzeige", title: "Schriftgröße", value: String(current), type: "number", inputMode: "numeric", ok: "Übernehmen" });
+        if (value === null) return;
         const next = Number(value);
         if (!Number.isFinite(next)) return;
         if (target === "list") {
@@ -1181,7 +1398,6 @@ function bind() {
   document.getElementById("syncFav").addEventListener("click", syncFavorites);
   document.getElementById("importFav").addEventListener("click", importFavorites);
   autoSync();
-  document.getElementById("importFav").addEventListener("click", importFavorites);
   el.favorite.addEventListener("click", toggleFavorite);
   el.favoritesToggle.addEventListener("click", () => {
     if (state.mode === "playlists") {
@@ -1203,6 +1419,14 @@ function bind() {
     renderList();
   });
   el.fullscreen.addEventListener("click", toggleFullscreen);
+  document.getElementById("refreshBtn").addEventListener("click", hardRefresh);
+  document.getElementById("ludwtPrev").addEventListener("click", () => shiftLudwtWeek(-1));
+  document.getElementById("ludwtNext").addEventListener("click", () => shiftLudwtWeek(1));
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") state.wasPlaying = !el.audio.paused;
+    else recoverAfterResume();
+  });
+  window.addEventListener("pageshow", (event) => { if (event.persisted) recoverAfterResume(); });
   el.smaller.addEventListener("click", () => {
     state.scale = Math.max(12, state.scale - 8);
     localStorage.setItem(STORAGE.scale, String(state.scale));
@@ -1244,7 +1468,8 @@ function bind() {
     document.getElementById("splitHandle").hidden = Boolean(document.fullscreenElement) || document.body.classList.contains("pseudo-fullscreen") || document.getElementById("lyricSearchWrap").hidden;
   });
   document.addEventListener("keydown", (event) => {
-    if (event.target === el.search) return;
+    if (event.target === el.search || ["INPUT", "SELECT", "TEXTAREA"].includes(event.target.tagName)) return;
+    if (!document.getElementById("dialogModal").hidden || !document.getElementById("codeModal").hidden) return;
     if (event.code === "Space") {
       event.preventDefault();
       togglePlay();
@@ -1290,102 +1515,296 @@ function showQr(link) {
   qr.src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(link)}`;
 }
 
+/* ---------- Abgleich von Favoriten und Wiedergabelisten ----------
+   Drei-Wege-Abgleich: "Basis" = Stand beim letzten erfolgreichen Abgleich (pro Speicher-Name).
+   - Nur Hinzugefügtes (auf einer oder beiden Seiten) -> automatisch zusammenführen, keine Warnung.
+   - Gelöscht (gegenüber der Basis) -> Hinweis mit Anzahl, du entscheidest. */
+const syncBaseKey = (store) => `sync-base-${store}`;
+
+function cloneData(data) {
+  return JSON.parse(JSON.stringify(data));
+}
+
+function normalizeSync(raw) {
+  const data = raw && typeof raw === "object" ? raw : {};
+  return {
+    favorites: [...new Set(Array.isArray(data.favorites) ? data.favorites : [])].sort(),
+    playlists: (Array.isArray(data.playlists) ? data.playlists : []).map((list) => ({
+      id: String(list.id),
+      name: String(list.name || ""),
+      songs: Array.isArray(list.songs) ? [...list.songs] : []
+    }))
+  };
+}
+
+function readSyncBase(store) {
+  try {
+    const raw = JSON.parse(localStorage.getItem(syncBaseKey(store)) || "null");
+    return raw ? normalizeSync(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeSyncBase(store, data) {
+  try { localStorage.setItem(syncBaseKey(store), JSON.stringify(normalizeSync(data))); } catch { /* voll/gesperrt */ }
+}
+
+function clearSyncBases() {
+  try {
+    Object.keys(localStorage).filter((key) => key.startsWith("sync-base-")).forEach((key) => localStorage.removeItem(key));
+  } catch { /* egal */ }
+}
+
+function syncSnapshot() {
+  return normalizeSync({ favorites: [...state.favorites], playlists: state.playlists });
+}
+
+function sameSync(a, b) {
+  const key = (d) => {
+    const n = normalizeSync(d);
+    return JSON.stringify({ f: n.favorites, p: n.playlists.slice().sort((x, y) => x.id.localeCompare(y.id)) });
+  };
+  return key(a) === key(b);
+}
+
+/* Was steht in "to", aber nicht in "from"? (Favoriten, Listen, Lieder in bestehenden Listen) */
+function gainCount(from, to) {
+  const out = { favorites: 0, lists: 0, songs: 0, total: 0 };
+  if (!from || !to) return out;
+  const favs = new Set(from.favorites);
+  to.favorites.forEach((id) => { if (!favs.has(id)) out.favorites += 1; });
+  const lists = new Map(from.playlists.map((list) => [list.id, list]));
+  to.playlists.forEach((list) => {
+    const old = lists.get(list.id);
+    if (!old) { out.lists += 1; return; }
+    const had = new Set(old.songs);
+    list.songs.forEach((id) => { if (!had.has(id)) out.songs += 1; });
+  });
+  out.total = out.favorites + out.lists + out.songs;
+  return out;
+}
+
+function countText(c) {
+  const parts = [];
+  if (c.favorites) parts.push(`${c.favorites} ${c.favorites === 1 ? "Favorit" : "Favoriten"}`);
+  if (c.lists) parts.push(`${c.lists} ${c.lists === 1 ? "Wiedergabeliste" : "Wiedergabelisten"}`);
+  if (c.songs) parts.push(`${c.songs} ${c.songs === 1 ? "Lied" : "Lieder"} in Wiedergabelisten`);
+  return parts.join(", ");
+}
+
+/* Nur Hinzugefügtes: Vereinigung beider Seiten */
+function mergeSync(base, local, remote) {
+  const baseLists = new Map((base ? base.playlists : []).map((list) => [list.id, list]));
+  const localLists = new Map(local.playlists.map((list) => [list.id, list]));
+  const remoteLists = new Map(remote.playlists.map((list) => [list.id, list]));
+  const same = (a, b) => Boolean(a && b) && a.name === b.name && JSON.stringify(a.songs) === JSON.stringify(b.songs);
+  const ids = [...local.playlists.map((list) => list.id), ...remote.playlists.map((list) => list.id).filter((id) => !localLists.has(id))];
+  const playlists = ids.map((id) => {
+    const l = localLists.get(id), r = remoteLists.get(id), b = baseLists.get(id);
+    if (l && !r) return l;
+    if (r && !l) return r;
+    if (same(l, r)) return l;
+    if (same(l, b)) return r;      // nur auf dem Server geändert
+    if (same(r, b)) return l;      // nur hier geändert
+    const songs = [...r.songs, ...l.songs.filter((song) => !r.songs.includes(song))];
+    return { id, name: b && l.name === b.name ? r.name : l.name, songs };
+  });
+  return { favorites: [...new Set([...local.favorites, ...remote.favorites])].sort(), playlists };
+}
+
+function applySyncData(data) {
+  state.favorites = new Set(data.favorites);
+  state.playlists = cloneData(data.playlists);
+  if (!state.playlists.some((list) => list.id === state.activePlaylist)) state.activePlaylist = "";
+  saveFavorites();
+  savePlaylists();
+  fillPlaylists();
+  updateEditTools();
+  renderList();
+}
+
+async function putSync(store, data) {
+  const res = await fetch(`${SYNC_BASE}/sync/${store}`, {
+    method: "PUT",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ favorites: data.favorites, playlists: data.playlists, saved: new Date().toISOString() })
+  });
+  if (!res.ok) throw new Error(`Server ${res.status}`);
+}
+
+function stampSync(direction) {
+  try {
+    localStorage.setItem("sync-last", new Date().toISOString());
+    localStorage.setItem("sync-dir", direction);
+  } catch { /* egal */ }
+}
+
+function refreshSyncInfo() {
+  const info = document.getElementById("syncInfo");
+  if (!info) return;
+  const last = localStorage.getItem("sync-last");
+  const dir = localStorage.getItem("sync-dir") || "";
+  info.hidden = false;
+  info.textContent = last
+    ? `Zuletzt: ${new Date(last).toLocaleString("de-AT", { dateStyle: "medium", timeStyle: "short" })} (${dir})`
+    : "Noch nie synchronisiert.";
+}
+
+function askSyncConflict(store, lostLocal, lostRemote, gainedLocal, gainedRemote) {
+  const lines = [
+    { text: `Speicher: „${store}“`, cls: "dlg-store" },
+    { text: "Beim Abgleich wurde etwas gelöscht. Bitte entscheide, welcher Stand gelten soll." }
+  ];
+  if (lostLocal.total) lines.push({ text: `Auf diesem Gerät gelöscht: ${countText(lostLocal)}`, cls: "dlg-lost" });
+  if (lostRemote.total) lines.push({ text: `Auf dem Server gelöscht: ${countText(lostRemote)}`, cls: "dlg-lost" });
+  if (gainedRemote && gainedRemote.total) lines.push({ text: `Neu nur auf dem Server (geht bei „behalten“ verloren): ${countText(gainedRemote)}`, cls: "dlg-hint" });
+  if (gainedLocal && gainedLocal.total) lines.push({ text: `Neu nur auf diesem Gerät (geht bei „überschreiben“ verloren): ${countText(gainedLocal)}`, cls: "dlg-hint" });
+  return uiDialog({
+    eyebrow: "Synchronisieren",
+    title: "Es wurde etwas gelöscht",
+    lines,
+    cancelValue: null,
+    buttons: [
+      { value: "keep", kind: "up", dir: "↑ Zum Server hochladen", label: "Eigene Favoriten behalten", sub: `Dein Stand von diesem Gerät ersetzt den Speicher „${store}“ auf dem Server.` },
+      { value: "overwrite", kind: "down", dir: "↓ Vom Server herunterladen", label: "Eigene Favoriten überschreiben", sub: `Der Speicher „${store}“ wird vom Server geladen und auf diesem Gerät wiederhergestellt.` },
+      { value: null, kind: "cancel", label: "Abbrechen" }
+    ]
+  });
+}
+
+async function runSync(code, silent) {
+  const store = code.toLowerCase().replace(/[^a-z0-9-]/g, "");
+  let res;
+  try {
+    res = await fetch(`${SYNC_BASE}/sync/${store}`, { cache: "no-store" });
+  } catch {
+    return silent ? "" : "Server nicht erreichbar.";
+  }
+  const local = syncSnapshot();
+  if (!res.ok) {
+    if (silent) return "";
+    const answer = await uiDialog({
+      eyebrow: "Synchronisieren",
+      title: "Neuer Speicher",
+      lines: [
+        { text: `Den Speicher „${store}“ gibt es auf dem Server noch nicht.` },
+        { text: `Deine ${local.favorites.length} Favoriten und ${local.playlists.length} Wiedergabelisten werden dort angelegt.` }
+      ],
+      buttons: [
+        { value: "up", kind: "up", dir: "↑ Zum Server hochladen", label: "Speicher anlegen", sub: "Von diesem Gerät auf den Server" },
+        { value: null, kind: "cancel", label: "Abbrechen" }
+      ]
+    });
+    if (answer !== "up") return "Abgebrochen.";
+    await putSync(store, local);
+    writeSyncBase(store, local);
+    stampSync("gesendet");
+    return `Hochgeladen: Speicher „${store}“ ist angelegt.`;
+  }
+
+  const remote = normalizeSync(await res.json());
+  const base = readSyncBase(store);
+  const lostLocal = gainCount(local, base);
+  const lostRemote = gainCount(remote, base);
+
+  if (!lostLocal.total && !lostRemote.total) {
+    const merged = mergeSync(base, local, remote);
+    const toLocal = gainCount(local, merged);
+    const toRemote = gainCount(remote, merged);
+    const changeLocal = !sameSync(merged, local);
+    const changeRemote = !sameSync(merged, remote);
+    if (changeLocal) applySyncData(merged);
+    if (changeRemote) await putSync(store, merged);
+    writeSyncBase(store, merged);
+    if (changeLocal || changeRemote) stampSync(changeLocal && changeRemote ? "abgeglichen" : changeRemote ? "gesendet" : "empfangen");
+    const parts = [];
+    if (toLocal.total) parts.push(`Vom Server geladen: ${countText(toLocal)}.`);
+    if (toRemote.total) parts.push(`Zum Server hochgeladen: ${countText(toRemote)}.`);
+    if (!parts.length) parts.push(changeLocal || changeRemote ? "Abgeglichen." : "Bereits gleich.");
+    return parts.join(" ");
+  }
+
+  const choice = await askSyncConflict(store, lostLocal, lostRemote, base && gainCount(base, local), base && gainCount(base, remote));
+  if (choice === "keep") {
+    await putSync(store, local);
+    writeSyncBase(store, local);
+    stampSync("gesendet");
+    return `Hochgeladen: Dein Stand ersetzt den Speicher „${store}“.`;
+  }
+  if (choice === "overwrite") {
+    applySyncData(remote);
+    writeSyncBase(store, remote);
+    stampSync("empfangen");
+    return `Heruntergeladen: Speicher „${store}“ ist auf diesem Gerät wiederhergestellt.`;
+  }
+  return "Abgebrochen.";
+}
+
 async function syncFavorites() {
   const saved = localStorage.getItem("sync-code") || "";
   openCode("Synchronisieren", async (code) => {
     localStorage.setItem("sync-code", code);
-    const payload = { favorites: [...state.favorites], playlists: state.playlists, saved: new Date().toISOString() };
-    let exists = false;
     try {
-      const res = await fetch(`${SYNC_BASE}/sync/${code.toLowerCase()}`);
-      exists = res.ok;
-    } catch {}
-    if (!exists) {
-      if (!confirm("Neuer Code. Zuerst exportieren?")) return "Abgebrochen.";
-      await fetch(`${SYNC_BASE}/sync/${code.toLowerCase()}`, { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) });
-      localStorage.setItem("sync-last", new Date().toISOString());
-      localStorage.setItem("sync-dir", "gesendet");
-      return "Exportiert.";
+      const message = await runSync(code, false);
+      refreshSyncInfo();
+      return message;
+    } catch {
+      return "Synchronisieren fehlgeschlagen. Bitte später noch einmal versuchen.";
     }
-    const remote = await (await fetch(`${SYNC_BASE}/sync/${code.toLowerCase()}`)).json();
-    const same = JSON.stringify(payload.favorites.sort()) === JSON.stringify((remote.favorites || []).sort());
-    if (same) return "Bereits gleich.";
-    const pick = confirm(`Unterschiedlich.\nLokal: jetzt\nServer: ${remote.saved || "—"}\n\nOK = Server laden, Abbrechen = Lokal hochladen`);
-    if (pick) {
-      state.favorites = new Set(remote.favorites || []);
-      state.playlists = remote.playlists || [];
-      saveFavorites();
-      renderList();
-      localStorage.setItem("sync-last", new Date().toISOString());
-      localStorage.setItem("sync-dir", "empfangen");
-      return "Server geladen.";
-    }
-    await fetch(`${SYNC_BASE}/sync/${code.toLowerCase()}`, { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) });
-    localStorage.setItem("sync-last", new Date().toISOString());
-    localStorage.setItem("sync-dir", "gesendet");
-    return "Lokal hochgeladen.";
   }, "sync");
-  document.getElementById("codeInput").value = saved;
-  if (window.LUDWT) LUDWT.mountSync();
+  const input = document.getElementById("codeInput");
+  input.value = saved;
+  input.placeholder = "Name des Speichers, mind. 4 Zeichen";
+  document.getElementById("codeOk").textContent = "Synchronisieren";
   document.querySelector(".sync-choice").hidden = true;
-  document.getElementById("codeMessage").textContent = "Mit diesem Passwort kannst du alle deine Geräte synchronisieren.";
-  const last = localStorage.getItem("sync-last");
-  const dir = localStorage.getItem("sync-dir") || "";
-  const info = document.getElementById("syncInfo");
-  info.hidden = false;
-  info.textContent = last ? `Zuletzt: ${last.slice(0, 16).replace("T", " ")} (${dir})` : "Noch nie synchronisiert.";
+  document.getElementById("codeMessage").textContent = "Mit diesem Speicher-Namen kannst du alle deine Geräte abgleichen. Hinzugefügtes wird automatisch zusammengeführt.";
+  refreshSyncInfo();
+  if (window.LUDWT) LUDWT.mountSync();
   const del = document.getElementById("syncDelete");
   del.hidden = false;
-  del.onclick = () => {
-    if (!confirm("Alle Favoriten und Listen löschen?")) return;
-    const alsoServer = confirm("Auch auf dem Server löschen?");
+  del.onclick = async () => {
+    const store = (localStorage.getItem("sync-code") || input.value.trim()).toLowerCase();
+    const buttons = [{ value: "local", kind: "danger", label: "Nur auf diesem Gerät löschen" }];
+    if (store) buttons.push({ value: "both", kind: "danger", dir: "↑ Server leeren", label: "Auch auf dem Server löschen", sub: `Der Speicher „${store}“ wird geleert.` });
+    buttons.push({ value: null, kind: "cancel", label: "Abbrechen" });
+    const choice = await uiDialog({
+      eyebrow: "Favoriten",
+      title: "Alles löschen?",
+      lines: [`${state.favorites.size} Favoriten und ${state.playlists.length} Wiedergabelisten werden auf diesem Gerät gelöscht.`],
+      cancelValue: null,
+      buttons
+    });
+    if (!choice) return;
     state.favorites = new Set();
     state.playlists = [];
+    state.activePlaylist = "";
     saveFavorites();
     savePlaylists();
+    fillPlaylists();
+    updateEditTools();
     renderList();
-    if (alsoServer && saved) {
-      fetch(`${SYNC_BASE}/sync/${saved.toLowerCase()}`, { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ favorites: [], playlists: [], saved: new Date().toISOString() }) });
+    if (choice === "both" && store) {
+      try {
+        await putSync(store, { favorites: [], playlists: [] });
+        writeSyncBase(store, { favorites: [], playlists: [] });
+      } catch {
+        showToast("Server nicht erreichbar – nur lokal gelöscht.");
+      }
     }
     document.getElementById("codeModal").hidden = true;
   };
 }
+
 async function autoSync() {
   const code = localStorage.getItem("sync-code");
-  if (code) doSync(code, true);
-}
-async function doSync(code, silent) {
+  if (!code) return;
   try {
-    const res = await fetch(`${SYNC_BASE}/sync/${code.toLowerCase()}`);
-    if (!res.ok) {
-      if (!silent) alert("Kein Code gefunden. Exportiere zuerst.");
-      return;
-    }
-    const remote = await res.json();
-    const local = { favorites: [...state.favorites], playlists: state.playlists, saved: localStorage.getItem("sync-local-time") || "" };
-    const same = JSON.stringify(local.favorites.sort()) === JSON.stringify((remote.favorites || []).sort())
-      && JSON.stringify(local.playlists) === JSON.stringify(remote.playlists || []);
-    if (same) return;
-    const localTime = local.saved || "lokal";
-    const remoteTime = remote.saved || "Server";
-    const pick = confirm(`Unterschiedliche Daten.\nLokal: ${localTime}\nServer: ${remoteTime}\n\nOK = Server übernehmen, Abbrechen = Lokal behalten und hochladen`);
-    if (pick) {
-      state.favorites = new Set(remote.favorites || []);
-      state.playlists = remote.playlists || [];
-      saveFavorites();
-      renderList();
-    } else {
-      await fetch(`${SYNC_BASE}/sync/${code.toLowerCase()}`, {
-        method: "PUT",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ ...local, saved: new Date().toISOString() })
-      });
-      localStorage.setItem("sync-local-time", new Date().toISOString());
-    }
-  } catch {
-    if (!silent) alert("Sync fehlgeschlagen.");
-  }
+    const message = await runSync(code, true);
+    if (message && !message.startsWith("Bereits")) showToast(`Synchronisiert: ${message}`);
+  } catch { /* still */ }
 }
+
 async function exportFavorites() {
   const payload = { favorites: [...state.favorites], playlists: state.playlists };
   openCode("Favoriten sichern", async (code, mode) => {
@@ -1450,15 +1869,16 @@ async function importFavorites() {
     if (Array.isArray(data.playlists)) state.playlists = data.playlists;
     saveFavorites();
     savePlaylists();
+    clearSyncBases();  // nächster Abgleich ohne Löschwarnung (es wird nur zusammengeführt)
     fillPlaylists();
     renderList();
     return `${data.favorites.length} Favoriten und ${state.playlists.length} Listen geladen.`;
   }, "import");
 }
 
-function openTimecode() {
+async function openTimecode() {
   if (!document.body.classList.contains("edit-mode")) {
-    const pass = prompt("Timecode Passwort");
+    const pass = await uiPrompt({ eyebrow: "Bearbeiten", title: "Timecode-Passwort", type: "password", placeholder: "Passwort", ok: "Öffnen" });
     if (pass !== window.TIMECODE_PASSWORD) return;
     document.body.classList.add("edit-mode");
     state.editDirty = false;
@@ -1498,9 +1918,8 @@ function attachTimecodeUi() {
     take.type = "button";
     take.className = "chip";
     take.textContent = "Zeit";
-    take.addEventListener("click", (event) => {
-      event.stopPropagation();
-      const t = el.audio.currentTime || 0;
+    const applyStamp = () => {
+      const t = Math.max(0, (el.audio.currentTime || 0) + state.timeOffset / 1000);
       const old = line.dataset.saved || line.dataset.time;
       if (!line.dataset.saved) line.dataset.saved = old;
       line.dataset.time = String(t);
@@ -1513,6 +1932,18 @@ function attachTimecodeUi() {
       }
       oldLabel.textContent = formatTime(Number(line.dataset.saved), true);
       state.editDirty = true;
+    };
+    // Zeit schon beim Antippen (pointerdown) übernehmen, nicht erst beim Loslassen (click): spart 50-150 ms
+    let fromPointer = false;
+    take.addEventListener("pointerdown", (event) => {
+      event.stopPropagation();
+      fromPointer = true;
+      applyStamp();
+    });
+    take.addEventListener("click", (event) => {
+      event.stopPropagation();
+      if (fromPointer) { fromPointer = false; return; }
+      applyStamp();  // Bedienung per Tastatur
     });
     const textInput = document.createElement("input");
     textInput.className = "lyric-text";
@@ -1535,6 +1966,19 @@ function parseTime(value) {
   return mins * 60 + Number(rest[0] || 0) + Number(`0.${rest[1] || 0}`);
 }
 
+/* Einmalig zur aktuell gespielten Zeile springen (ohne dem Lied dauerhaft zu folgen) */
+function jumpToActiveLine() {
+  const active = el.lyrics.querySelector(".lyric-line.active");
+  if (!active) {
+    setStatus("Noch keine aktive Zeile", "is-info");
+    return;
+  }
+  state.centering = true;
+  const target = active.offsetTop - (el.lyrics.clientHeight * 0.33) + (active.offsetHeight / 2);
+  el.lyrics.scrollTo({ top: Math.max(0, target), behavior: "smooth" });
+  setTimeout(() => { state.centering = false; }, 450);
+}
+
 function buildEditPanel() {
   const panel = document.createElement("div");
   panel.id = "editPanel";
@@ -1549,6 +1993,12 @@ function buildEditPanel() {
     hold.textContent = state.karaokeHold ? "Karaoke aus" : "Karaoke an";
   });
   panel.append(hold);
+  const jump = document.createElement("button");
+  jump.className = "chip";
+  jump.textContent = "Zur Zeile";
+  jump.title = "Einmalig zur aktuell gespielten Zeile springen";
+  jump.addEventListener("click", jumpToActiveLine);
+  panel.append(jump);
   const toggle = document.createElement("button");
   toggle.className = "chip";
   toggle.textContent = "Panel";
@@ -1575,6 +2025,25 @@ function buildEditPanel() {
     if (state.drawWave) state.drawWave();
   });
   panel.append(zoom);
+  const offsetWrap = document.createElement("label");
+  offsetWrap.className = "offset-wrap";
+  offsetWrap.title = "Versatz beim Zeit-Setzen in Millisekunden (negativ = früher)";
+  offsetWrap.append(document.createTextNode("Versatz ms"));
+  const offset = document.createElement("input");
+  offset.type = "number";
+  offset.step = "10";
+  offset.min = "-1000";
+  offset.max = "1000";
+  offset.inputMode = "numeric";
+  offset.value = String(state.timeOffset);
+  offset.addEventListener("change", () => {
+    const value = Math.max(-1000, Math.min(1000, Number(offset.value) || 0));
+    state.timeOffset = value;
+    offset.value = String(value);
+    try { localStorage.setItem("teslaKaraokeTimeOffset", String(value)); } catch { /* egal */ }
+  });
+  offsetWrap.append(offset);
+  panel.append(offsetWrap);
   const save = document.createElement("button");
   save.className = "chip";
   save.textContent = "Speichern";
@@ -1582,8 +2051,8 @@ function buildEditPanel() {
   const exit = document.createElement("button");
   exit.className = "chip danger";
   exit.textContent = "Beenden";
-  exit.addEventListener("click", () => {
-    if (state.editDirty && !confirm("Ungespeicherte Änderungen. Ohne Speichern verlassen?")) return;
+  exit.addEventListener("click", async () => {
+    if (state.editDirty && !(await uiConfirm({ eyebrow: "Bearbeiten", title: "Ungespeicherte Änderungen", text: "Ohne Speichern verlassen?", ok: "Verlassen", danger: true }))) return;
     document.body.classList.remove("edit-mode");
     state.editDirty = false;
     state.karaokeHold = false;
@@ -1608,7 +2077,7 @@ function buildEditPanel() {
 async function saveTimecode() {
   const song = state.songs[state.index];
   if (!song) return;
-  if (!confirm("Timecodes speichern?")) return;
+  if (!(await uiConfirm({ eyebrow: "Bearbeiten", title: "Timecodes speichern?", text: `Lied ${song.id} – ${song.title}`, ok: "Speichern" }))) return;
   const lines = [...el.lyrics.querySelectorAll(".lyric-line")].map((line) => ({
     time: Number(line.dataset.time),
     text: (line.querySelector(".lyric-text") || {}).value || line.textContent.trim()
@@ -1621,9 +2090,9 @@ async function saveTimecode() {
   localStorage.setItem(`lrc-${song.id}`, JSON.stringify(lines));
   try {
     const res = await fetch(`${SYNC_BASE}/sync/lrc-${song.id}`, { method: "PUT", headers: { "content-type": "text/plain" }, body: lrc });
-    alert(res.ok ? "Gespeichert. Auf allen Geräten verfügbar." : "Lokal gespeichert. Server nicht erreichbar.");
+    await uiAlert(res.ok ? "Gespeichert" : "Nur lokal gespeichert", res.ok ? "Auf allen Geräten verfügbar." : "Der Server war nicht erreichbar.");
   } catch {
-    alert("Lokal gespeichert. Server nicht erreichbar.");
+    await uiAlert("Nur lokal gespeichert", "Der Server war nicht erreichbar.");
   }
   state.editDirty = false;
 }
@@ -1819,6 +2288,8 @@ function checkLogin() {
 }
 
 function init() {
+  if (location.search.includes("r=")) history.replaceState(null, "", location.pathname);
+  state.timeOffset = Number(localStorage.getItem("teslaKaraokeTimeOffset") || 0) || 0;
   checkLogin();
   loadFavorites();
   loadPlaylists();

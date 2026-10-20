@@ -35,3 +35,7 @@ GitHub → Actions → „Lieder aktualisieren“ → Run workflow. Danach läuf
 
 Vor `ludwt.js` in `index.html` einfügen: `<script>window.LUDWT_BASE = "https://andere-seite/";</script>`
 (die andere Seite muss `lieder.json` und `status.json` mit CORS ausliefern).
+
+## Hinweis (Update Oktober 2026)
+- "Jetzt aktualisieren" ist jetzt im Synchronisieren-Fenster hinter dem kleinen "i" der LuD+WT-Box (nur für den Notfall).
+- Neue Dateien/Änderungen: index.html, app.js, style.css, ludwt.js, sw.js, src/index.js – alle ersetzen.
