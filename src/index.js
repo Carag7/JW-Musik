@@ -78,6 +78,7 @@ async function handleSync(request, env, path) {
 
   if (request.method === "PUT" || request.method === "POST") {
     const body = await request.text();
+    if (body.length > 512 * 1024) return new Response("too large", { status: 413, headers: cors });
     await env.MUSIK.put(key, body, { httpMetadata: { contentType: code.startsWith("lrc-") ? "text/plain" : "application/json" } });
     const meta = await readMeta(env);
     const now = new Date().toISOString();
