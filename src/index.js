@@ -30,7 +30,7 @@ export default {
       head.writeHttpMetadata(h);
       h.set("etag", head.httpEtag);
       h.set("accept-ranges", "bytes");
-      h.set("cache-control", "public, max-age=3600");
+      h.set("cache-control", "public, max-age=86400");
 
       if (range) {
         const parsed = parseRange(range);
@@ -63,13 +63,14 @@ async function handleSync(request, env, path) {
   const cors = {
     "access-control-allow-origin": "*",
     "access-control-allow-methods": "GET,PUT,POST,OPTIONS",
-    "access-control-allow-headers": "content-type"
+    "access-control-allow-headers": "content-type,x-write-key"
   };
   if (request.method === "OPTIONS") return new Response(null, { headers: cors });
 
   if (path === "/sync/" || path === "/sync") {
     const meta = await readMeta(env);
-    return json({ count: meta.codes.length, last: meta.last || null, codes: meta.codes.slice(-20) }, cors);
+    // Namen der Speicher werden nicht mehr veröffentlicht (sie sind das "Passwort" des Speichers)
+    return json({ count: meta.codes.length, last: meta.last || null }, cors);
   }
 
   const code = path.slice(6).toLowerCase().replace(/[^a-z0-9-]/g, "");
@@ -77,6 +78,10 @@ async function handleSync(request, env, path) {
   const key = "sync/" + code + (code.startsWith("lrc-") ? ".lrc" : ".json");
 
   if (request.method === "PUT" || request.method === "POST") {
+    // Liedtext-Zeiten (lrc-...) nur mit Schreib-Schlüssel, wenn in Cloudflare das Secret WRITE_KEY gesetzt ist
+    if (code.startsWith("lrc-") && env.WRITE_KEY && request.headers.get("x-write-key") !== env.WRITE_KEY) {
+      return new Response("unauthorized", { status: 401, headers: cors });
+    }
     const body = await request.text();
     if (body.length > 512 * 1024) return new Response("too large", { status: 413, headers: cors });
     await env.MUSIK.put(key, body, { httpMetadata: { contentType: code.startsWith("lrc-") ? "text/plain" : "application/json" } });
