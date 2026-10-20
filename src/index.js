@@ -1,7 +1,4 @@
-wrangler.jsonc
-
-
-
+console.log("TEST 7 AKTIV");
 
 
 
