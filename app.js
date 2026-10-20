@@ -314,6 +314,7 @@ function setSidebar(open) {
   el.app.classList.toggle("sidebar-hidden", !open);
   el.menu.setAttribute("aria-expanded", String(open && state.mode === "songs"));
   el.menu.textContent = "Lieder";
+  updateChrome();
 }
 
 function visibleSongs() {
@@ -1144,18 +1145,19 @@ function recoverAfterResume() {
 }
 
 /* Handy quer: Menüleiste beim Abspielen / Bearbeiten ausblenden, bei Wischen oder Antippen oben wieder einblenden */
-const phoneLand = window.matchMedia("(orientation: landscape) and (max-height: 480px) and (max-width: 1000px)");
+const phoneLand = window.matchMedia("(orientation: landscape) and (max-height: 480px) and (max-width: 1000px) and (pointer: coarse)");
 let chromeTimer = 0;
 function updateChrome() {
   clearTimeout(chromeTimer);
   const body = document.body;
-  const hide = phoneLand.matches && (!el.audio.paused || body.classList.contains("edit-mode"));
+  const hide = phoneLand.matches && !state.sidebarOpen && (!el.audio.paused || body.classList.contains("edit-mode"));
   body.classList.toggle("chrome-hidden", hide);
   body.classList.remove("chrome-peek");
 }
 function peekChrome() {
   const body = document.body;
   if (!body.classList.contains("chrome-hidden")) return;
+  if (body.classList.contains("edit-mode")) return;  // im Bearbeiten bleibt die Leiste weg
   body.classList.add("chrome-peek");
   clearTimeout(chromeTimer);
   chromeTimer = setTimeout(() => body.classList.remove("chrome-peek"), 5000);
@@ -1177,7 +1179,7 @@ function bindChrome() {
 
 /* Beim Öffnen automatisch abspielen (letztes Lied, sonst Zufall). Blockiert der Browser das, startet es beim ersten Antippen. */
 function tryAutoStart() {
-  if (localStorage.getItem("autoStart") === "0") return;
+  if (localStorage.getItem("autoStart") !== "1") return;
   if (!document.getElementById("loginGate").hidden || !state.songs.length) return;
   const last = localStorage.getItem("lastSongId");
   const at = state.songs.findIndex((song) => song.id === last);
@@ -2017,7 +2019,7 @@ async function syncFavorites() {
     try { localStorage.setItem("sync-auto-max", String(value)); } catch { /* egal */ }
   };
   const auto = document.getElementById("autoPlayOpt");
-  auto.checked = localStorage.getItem("autoStart") !== "0";
+  auto.checked = localStorage.getItem("autoStart") === "1";
   auto.onchange = () => { try { localStorage.setItem("autoStart", auto.checked ? "1" : "0"); } catch { /* egal */ } };
   if (window.LUDWT) LUDWT.mountSync();
   const del = document.getElementById("syncDelete");
