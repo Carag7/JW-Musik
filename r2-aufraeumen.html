@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>R2 aufräumen</title>
+<style>
+body{font:16px/1.5 system-ui;max-width:760px;margin:24px auto;padding:0 16px;background:#0b1220;color:#eee}
+input,button{font:inherit;padding:10px 14px;border-radius:10px;border:1px solid #445;background:#162033;color:#eee;margin:4px 0}
+input{width:100%;box-sizing:border-box}
+button{background:#f0b429;color:#1b1404;font-weight:700;cursor:pointer;margin-right:6px}button.sec{background:#162033;color:#eee}button:disabled{opacity:.5}
+pre{background:#162033;padding:12px;border-radius:10px;white-space:pre-wrap;word-break:break-all;max-height:50vh;overflow:auto;font-size:13px}
+small{color:#9ab}h1{font-size:22px}
+</style></head><body>
+<h1>R2 aufräumen</h1>
+<p><small>Sortiert deine Dateien in R2 in feste Ordner: <b>karaoke/audio</b>, <b>karaoke/lrc</b>, <b>meeting/audio</b>, <b>meeting/lrc</b>, <b>meeting/video</b>, <b>favoriten</b>. Es wird immer erst kopiert, die Größe geprüft und erst dann das Original gelöscht. Die Seite funktioniert auch während des Aufräumens (alte Orte werden weiter gelesen).</small></p>
+<label>Schlüssel (das Secret <code>WRITE_KEY</code> in Cloudflare = dein Timecode-Passwort)
+<input id="key" type="password" autocomplete="off"></label>
+<button id="plan" class="sec" type="button">1. Plan anzeigen (ändert nichts)</button>
+<button id="run" type="button">2. Aufräumen starten</button>
+<button id="idx" class="sec" type="button">Dateiverzeichnis prüfen</button>
+<pre id="out">Bereit.</pre>
+<script>
+const $=id=>document.getElementById(id), out=t=>{$("out").textContent=t};
+const hdr=()=>({"x-write-key":$("key").value});
+async function call(path,opt={}){const r=await fetch(path,{...opt,headers:{...hdr(),...(opt.headers||{})}});const j=await r.json().catch(()=>({}));if(!r.ok||j.ok===false)throw new Error(j.fehler||("Fehler "+r.status));return j}
+$("plan").onclick=async()=>{try{const j=await call("/api/r2-plan");out(j.anzahl+" Dateien werden verschoben:\n\n"+j.verschieben.map(m=>m.from+"\n   → "+m.to).join("\n")+(j.unveraendert_gelassen.length?"\n\nNicht zugeordnet (bleiben liegen):\n"+j.unveraendert_gelassen.join("\n"):""))}catch(e){out("⚠ "+e.message)}};
+$("run").onclick=async()=>{
+  if(!confirm("Dateien in R2 jetzt verschieben?"))return; $("run").disabled=true; let log="",total=0;
+  try{ for(let i=0;i<500;i++){ const j=await call("/api/r2-run?limit=6",{method:"POST"}); total+=j.erledigt.length;
+      log+=j.erledigt.map(m=>"✓ "+m.from+" → "+m.to).join("\n")+(j.erledigt.length?"\n":"")+j.probleme.map(m=>"⚠ "+m.from+": "+m.fehler).join("\n")+(j.probleme.length?"\n":"");
+      out("Erledigt: "+total+" | noch offen: "+j.verbleibend+"\n\n"+log);
+      if(!j.erledigt.length||j.verbleibend<=0)break; }
+    out("Fertig. Verschoben: "+total+"\n\n"+log); }catch(e){out("⚠ "+e.message+"\n\n"+log)} $("run").disabled=false};
+$("idx").onclick=async()=>{try{const r=await fetch("/api/media-index?refresh=1");const j=await r.json();out(JSON.stringify(j.anzahl,null,1)+"\n\nMeeting-Audio: "+Object.keys(j.meeting.audio).join(", ")+"\nVideos: "+Object.keys(j.meeting.video).join(", ")+"\nMeeting-Texte: "+Object.keys(j.meeting.lrc).join(", ")+"\nKaraoke-Audio: "+Object.keys(j.karaoke.audio).length+" Lieder")}catch(e){out("⚠ "+e.message)}};
+</script></body></html>

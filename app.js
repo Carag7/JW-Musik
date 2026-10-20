@@ -89,6 +89,10 @@ const state = {
   centering: false,
   ludwtWeek: "",
   selectToken: 0,
+  version: "karaoke",
+  curVersion: "karaoke",
+  media: null,
+  unsynced: false,
   canplayHandler: null,
   wasPlaying: false,
   timeOffset: 0
@@ -314,7 +318,15 @@ function setSidebar(open) {
   el.app.classList.toggle("sidebar-hidden", !open);
   el.menu.setAttribute("aria-expanded", String(open && state.mode === "songs"));
   el.menu.textContent = "Lieder";
+  document.body.classList.toggle("sidebar-open", open);
   updateChrome();
+  if (open) setTimeout(centerActiveInList, 80);
+}
+
+function centerActiveInList() {
+  markActive();
+  const target = document.querySelector("#songList .song-btn.active");
+  if (target) target.scrollIntoView({ block: "center" });
 }
 
 function visibleSongs() {
@@ -752,47 +764,232 @@ function showLyricLink(song) {
   if (el.lyricsLink) el.lyricsLink.href = officialUrl(song);
 }
 
-async function loadLyrics(song) {
-  const token = state.selectToken;
-  const stale = () => token !== state.selectToken;
-  state.lyrics = [];
+/* Liedtext der gesungenen Karaoke-Fassung (Server -> Browser -> lyrics/ -> GitHub) */
+async function fetchKaraokeLines(song, stale) {
   try {
     const res = await fetch(`${SYNC_BASE}/sync/lrc-${song.id}`);
-    if (stale()) return;
+    if (stale()) return [];
     if (res.ok) {
       const text = await res.text();
-      if (stale()) return;
-      if (text.includes("[")) {
-        state.lyrics = parseLrc(text);
-        renderLyrics(state.lyrics);
-        return;
-      }
+      if (stale()) return [];
+      if (text.includes("[")) return parseLrc(text);
     }
   } catch {}
   const saved = localStorage.getItem(`lrc-${song.id}`);
   if (saved) {
-    try {
-      state.lyrics = JSON.parse(saved);
-      renderLyrics(state.lyrics);
-      return;
-    } catch {}
+    try { return JSON.parse(saved); } catch {}
   }
-  const local = song.lyrics || `lyrics/sjj_E_${String(song.number).padStart(2, "0")}.lrc`;
-  const remote = `https://github.com/Carag7/JW-Musik/releases/download/JW-Lyrics/sjj_E_${String(song.number).padStart(2, "0")}.lrc`;
+  const num = String(song.number).padStart(2, "0");
+  const local = song.lyrics || `lyrics/sjj_E_${num}.lrc`;
+  const remote = `https://github.com/Carag7/JW-Musik/releases/download/JW-Lyrics/sjj_E_${num}.lrc`;
   for (const url of [local, remote]) {
     try {
       const response = await fetch(url, { cache: "no-store" });
-      if (stale()) return;
+      if (stale()) return [];
       if (!response.ok) continue;
       const text = await response.text();
-      if (stale()) return;
+      if (stale()) return [];
       if (!text.includes("[")) continue;
-      state.lyrics = parseLrc(text);
-      renderLyrics(state.lyrics);
-      return;
+      return parseLrc(text);
     } catch {}
   }
-  if (!stale()) renderLyrics([]);
+  return [];
+}
+
+/* Liedtext der Instrumental-Fassung (eigene Datei lrcm-<nr>) */
+async function fetchMeetingLines(song, stale) {
+  try {
+    const res = await fetch(`${SYNC_BASE}/sync/lrcm-${song.id}`);
+    if (stale()) return [];
+    if (res.ok) {
+      const text = await res.text();
+      if (stale()) return [];
+      if (text.includes("[")) return parseLrc(text);
+    }
+  } catch {}
+  const saved = localStorage.getItem(`lrcm-${song.id}`);
+  if (saved) {
+    try { return JSON.parse(saved); } catch {}
+  }
+  return [];
+}
+
+/* Nur Titel und Bild im großen Fenster (Instrumental ohne eigenen Text) */
+function renderPlain(song, kind) {
+  const panel = document.getElementById("startPanel");
+  if (panel) panel.hidden = true;
+  el.lyrics.innerHTML = "";
+  el.lyrics.scrollTop = 0;
+  const box = document.createElement("div");
+  box.className = "plain-panel";
+  const eyebrow = document.createElement("p");
+  eyebrow.className = "eyebrow";
+  eyebrow.textContent = `Lied ${song.id}`;
+  const img = document.createElement("img");
+  img.className = "start-image";
+  img.src = "start-bg.png";
+  img.alt = "";
+  const title = document.createElement("h2");
+  title.textContent = song.title;
+  const hint = document.createElement("p");
+  hint.className = "plain-hint";
+  hint.textContent = kind === "video" ? "Video" : "Instrumental";
+  box.append(eyebrow, img, title, hint);
+  el.lyrics.append(box);
+}
+
+async function loadLyrics(song, kind) {
+  const token = state.selectToken;
+  const stale = () => token !== state.selectToken;
+  state.lyrics = [];
+  state.unsynced = false;
+  if (!kind || kind === "karaoke") {
+    const lines = await fetchKaraokeLines(song, stale);
+    if (stale()) return;
+    state.lyrics = lines;
+    renderLyrics(lines);
+    return;
+  }
+  const lines = kind === "meeting" ? await fetchMeetingLines(song, stale) : [];
+  if (stale()) return;
+  if (lines.length) {
+    state.lyrics = lines;
+    renderLyrics(lines);
+    return;
+  }
+  renderPlain(song, kind);
+}
+
+/* Option „Karaoketext anzeigen“ bei Instrumental/Video ohne eigenen Text (mit Warnung) */
+async function toggleUnsynced() {
+  const song = state.songs[state.index];
+  if (!song) return;
+  if (state.unsynced) {
+    state.unsynced = false;
+    state.lyrics = [];
+    renderPlain(song, state.curVersion);
+    updateVersionBar();
+    return;
+  }
+  const ok = await uiConfirm({
+    eyebrow: "Karaoketext",
+    title: "Text noch nicht synchronisiert",
+    lines: [
+      "Der Karaoketext ist auf die gesungene Fassung abgestimmt und passt zeitlich nicht zur Instrumental-Fassung.",
+      "Solange für diese Fassung keine eigene Text-Datei in R2 liegt (meeting/lrc), wird der vorhandene Text aus dem Lyrics-Verzeichnis gezeigt. Im Bearbeitungsmodus kannst du ihn für diese Fassung neu abstimmen."
+    ],
+    ok: "Trotzdem anzeigen"
+  });
+  if (!ok) return;
+  const lines = await fetchKaraokeLines(song, () => false);
+  if (!lines.length) {
+    await uiAlert("Kein Text vorhanden", "Für dieses Lied gibt es keinen Karaoketext.");
+    return;
+  }
+  state.unsynced = true;
+  state.lyrics = lines;
+  renderLyrics(lines);
+  setStatus("Text nicht synchron", "is-info");
+  updateVersionBar();
+}
+
+/* ---------- Fassungen: Karaoke / Instrumental / Video (Dateiverzeichnis aus dem Worker) ---------- */
+const mediaUrl = (key) => `${SYNC_BASE}/media/${key.split("/").map(encodeURIComponent).join("/")}`;
+function mediaKey(type, number) {
+  const m = state.media;
+  if (!m) return null;
+  const table = type === "karaoke" ? m.karaoke.audio : type === "meeting" ? m.meeting.audio : type === "video" ? m.meeting.video : m.meeting.lrc;
+  return table[String(number)] || null;
+}
+
+async function loadMedia() {
+  try {
+    const res = await fetch(`${SYNC_BASE}/api/media-index`);
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data || !data.ok) return;
+    state.media = data;
+    if (window.LUDWT) await LUDWT.ensureLoaded();
+    addMissingSongs();
+    updateVersionBar();
+    renderList();
+  } catch { /* Worker nicht erreichbar: alles bleibt wie bisher */ }
+}
+
+/* Lieder, die nur als Instrumental/Video vorliegen (nicht in songs.json), spielbar machen – z. B. für LuD+WT */
+function addMissingSongs() {
+  if (!state.media || !window.LUDWT) return;
+  const have = new Set(state.songs.map((song) => song.number));
+  const current = state.songs[state.index];
+  let added = false;
+  for (const week of LUDWT.weeks()) {
+    for (const key of ["leben_und_dienst", "wachtturm"]) {
+      for (const lied of (week[key] && week[key].lieder) || []) {
+        const n = lied.nummer;
+        if (have.has(n) || !(mediaKey("meeting", n) || mediaKey("video", n))) continue;
+        state.songs.push({ id: String(n).padStart(3, "0"), number: n, title: `Lied ${n}`, category: "", extra: true });
+        have.add(n);
+        added = true;
+      }
+    }
+  }
+  if (!added) return;
+  state.songs.sort((a, b) => a.number - b.number);
+  if (current) state.index = state.songs.indexOf(current);
+}
+
+function updateVersionBar() {
+  const bar = document.getElementById("versionBar");
+  if (!bar) return;
+  const m = state.media;
+  const any = m && (Object.keys(m.meeting.audio).length || Object.keys(m.meeting.video).length);
+  const song = state.songs[state.index];
+  bar.hidden = !any || !song;
+  if (bar.hidden) return;
+  const n = song.number;
+  const avail = { karaoke: !song.extra, meeting: Boolean(mediaKey("meeting", n)), video: Boolean(mediaKey("video", n)) };
+  bar.querySelectorAll(".seg-btn[data-ver]").forEach((btn) => {
+    const v = btn.dataset.ver;
+    btn.disabled = !avail[v];
+    btn.setAttribute("aria-pressed", String(state.curVersion === v));
+  });
+  const text = document.getElementById("verText");
+  const own = Boolean(mediaKey("lrc", n));
+  text.hidden = state.curVersion === "karaoke" || own || state.curVersion === "video";
+  text.setAttribute("aria-pressed", String(state.unsynced));
+  text.textContent = state.unsynced ? "Karaoketext ausblenden" : "Karaoketext anzeigen";
+}
+
+async function pickSource(song, want) {
+  const n = song.number;
+  const video = mediaKey("video", n), meet = mediaKey("meeting", n);
+  if (want === "video" && video) return { version: "video", url: mediaUrl(video) };
+  if ((want === "video" || want === "meeting") && meet) return { version: "meeting", url: mediaUrl(meet) };
+  const kKey = mediaKey("karaoke", n);
+  if (kKey) return { version: "karaoke", url: mediaUrl(kKey) };
+  if (!song.extra) {
+    const url = await resolveAudio(song);
+    const sameOrigin = !/^https?:/i.test(url) || url.startsWith(`${SYNC_BASE}/`);
+    if (sameOrigin || (!meet && !video)) return { version: "karaoke", url };
+    // Fremde Quelle: kurz prüfen, ob die Datei dort wirklich liegt, sonst Instrumental nehmen
+    try {
+      const ctl = new AbortController();
+      const timer = setTimeout(() => ctl.abort(), 4000);
+      const head = await fetch(url, { method: "HEAD", signal: ctl.signal });
+      clearTimeout(timer);
+      if (head.ok) return { version: "karaoke", url };
+    } catch { /* nicht erreichbar -> Ersatz */ }
+  }
+  if (meet) return { version: "meeting", url: mediaUrl(meet), fallback: true };
+  if (video) return { version: "video", url: mediaUrl(video), fallback: true };
+  return { version: "karaoke", url: song.extra ? "" : await resolveAudio(song) };
+}
+
+function chooseVersion(version) {
+  if (state.version === version && state.curVersion === version) return;
+  state.version = version;
+  const wasPlaying = !el.audio.paused;
+  if (state.index >= 0) selectSong(state.index, wasPlaying);
 }
 
 function audioCandidates(song) {
@@ -800,7 +997,8 @@ function audioCandidates(song) {
   const remote = song.remote || `https://github.com/Carag7/JW-Musik/releases/download/JW-Vocals/${file}`;
   const paths = [file, `songs/${file}`, `songs1/${file}`, `songs2/${file}`];
   const cdn = paths.map((path) => `https://cdn.jsdelivr.net/gh/Carag7/JW-Musik@main/${path}`);
-  return [...paths, ...cdn, remote];
+  const viaWorker = SYNC_BASE !== location.origin ? [`${SYNC_BASE}/${file}`] : [];
+  return [...viaWorker, ...paths, ...cdn, remote];
 }
 
 async function resolveAudio(song) {
@@ -871,11 +1069,21 @@ async function selectSong(index, autoplay) {
   try { localStorage.setItem("lastSongId", song.id); } catch { /* egal */ }
   showLyricLink(song);
   updateNeighbors();
-  // Liedtext und Audio-Quelle gleichzeitig suchen: Wiedergabe startet schneller
-  const [, url] = await Promise.all([loadLyrics(song), resolveAudio(song)]);
+  // Fassung wählen (Standard: Karaoke; fehlt sie, wird Instrumental/Video genommen)
+  const src = await pickSource(song, state.version);
   if (token !== state.selectToken) return;  // inzwischen anderes Lied gewählt
+  state.curVersion = src.version;
+  document.body.classList.toggle("video-mode", src.version === "video");
+  updateVersionBar();
+  const url = src.url;
+  if (!url) {
+    el.status.textContent = "Für dieses Lied gibt es keine Datei.";
+    return;
+  }
+  if (src.fallback) el.status.textContent = src.version === "meeting" ? "Karaoke-MP3 fehlt – Instrumental wird gespielt" : "Karaoke-MP3 fehlt – Video wird gespielt";
   state.currentAudio = url;
   setAudioSource(url);
+  loadLyrics(song, src.version);  // läuft parallel zum Audio-Laden
   setMediaSession(song);
   el.app.classList.add("song-open");
   if (!document.fullscreenElement && !document.body.classList.contains("pseudo-fullscreen")) {
@@ -1162,6 +1370,17 @@ function peekChrome() {
   clearTimeout(chromeTimer);
   chromeTimer = setTimeout(() => body.classList.remove("chrome-peek"), 5000);
 }
+function updateAutoIcon() {
+  const on = localStorage.getItem("autoStart") === "1";
+  const btn = document.getElementById("autoStartBtn");
+  if (btn) {
+    btn.setAttribute("aria-pressed", String(on));
+    btn.title = on ? "Autoplay beim Öffnen: ein (antippen zum Ausschalten)" : "Autoplay beim Öffnen: aus (antippen zum Einschalten)";
+  }
+  const box = document.getElementById("autoPlayOpt");
+  if (box) box.checked = on;
+}
+
 function bindChrome() {
   ["play", "pause", "ended"].forEach((name) => el.audio.addEventListener(name, updateChrome));
   phoneLand.addEventListener("change", updateChrome);
@@ -1469,7 +1688,9 @@ function bind() {
   holdSize(document.getElementById("listSmaller"), "list");
   holdSize(document.getElementById("listLarger"), "list");
   const logout = document.getElementById("logoutBtn");
-  if (logout) logout.addEventListener("click", () => {
+  if (logout) logout.addEventListener("click", async () => {
+    const sure = await uiConfirm({ eyebrow: "Konto", title: "Wirklich abmelden?", text: "Danach musst du das Passwort wieder eingeben.", ok: "Abmelden", danger: true });
+    if (!sure) return;
     localStorage.removeItem(STORAGE.auth);
     sessionStorage.removeItem(STORAGE.auth);
     location.reload();
@@ -1500,6 +1721,16 @@ function bind() {
   });
   el.fullscreen.addEventListener("click", toggleFullscreen);
   document.getElementById("refreshBtn").addEventListener("click", hardRefresh);
+  document.querySelectorAll("#versionBar .seg-btn[data-ver]").forEach((btn) => btn.addEventListener("click", () => chooseVersion(btn.dataset.ver)));
+  document.getElementById("verText").addEventListener("click", toggleUnsynced);
+  document.getElementById("closeSidebar").addEventListener("click", () => setSidebar(false));
+  document.getElementById("autoStartBtn").addEventListener("click", () => {
+    const on = localStorage.getItem("autoStart") !== "1";
+    try { localStorage.setItem("autoStart", on ? "1" : "0"); } catch { /* egal */ }
+    updateAutoIcon();
+    showToast(on ? "Autoplay beim Öffnen: ein" : "Autoplay beim Öffnen: aus");
+  });
+  updateAutoIcon();
   document.getElementById("ludwtPrev").addEventListener("click", () => shiftLudwtWeek(-1));
   document.getElementById("ludwtNext").addEventListener("click", () => shiftLudwtWeek(1));
   document.addEventListener("visibilitychange", () => {
@@ -1569,7 +1800,7 @@ function bind() {
   fitBar();
 }
 
-const SYNC_BASE = window.SYNC_BASE || location.origin;
+const SYNC_BASE = window.SYNC_BASE || (/github\.io$/.test(location.hostname) ? "https://musik.carag.workers.dev" : location.origin);
 
 function encodeShare(payload) {
   return btoa(unescape(encodeURIComponent(JSON.stringify(payload)))).replace(/=+$/, "");
@@ -2011,6 +2242,7 @@ async function syncFavorites() {
   metaBtn.onclick = showSyncCompare;
   const settings = document.getElementById("syncSettings");
   settings.hidden = false;
+  document.getElementById("autoPlayBox").hidden = false;
   const max = document.getElementById("syncAutoMax");
   max.value = String(autoMax());
   max.onchange = () => {
@@ -2020,7 +2252,7 @@ async function syncFavorites() {
   };
   const auto = document.getElementById("autoPlayOpt");
   auto.checked = localStorage.getItem("autoStart") === "1";
-  auto.onchange = () => { try { localStorage.setItem("autoStart", auto.checked ? "1" : "0"); } catch { /* egal */ } };
+  auto.onchange = () => { try { localStorage.setItem("autoStart", auto.checked ? "1" : "0"); } catch { /* egal */ } updateAutoIcon(); };
   if (window.LUDWT) LUDWT.mountSync();
   const del = document.getElementById("syncDelete");
   del.hidden = false;
@@ -2156,11 +2388,26 @@ async function openTimecode() {
       if (pass !== null) await uiAlert("Falsches Passwort", "Der Bearbeitungsmodus bleibt gesperrt.");
       return;
     }
+    if (state.curVersion === "video") {
+      await uiAlert("Video", "Im Video-Modus kann nichts bearbeitet werden. Wähle „Instrumental“, um dafür einen Text abzustimmen.");
+      return;
+    }
     state.writeKey = pass;
     document.body.classList.add("edit-mode");
     updateChrome();
     state.editDirty = false;
     state.karaokeHold = true;
+    // Instrumental ohne eigenen Text: Karaoke-Text als Vorlage (Kopie) nehmen
+    const song = state.songs[state.index];
+    if (song && state.curVersion === "meeting" && !el.lyrics.querySelector(".lyric-line")) {
+      const template = await fetchKaraokeLines(song, () => false);
+      if (template.length) {
+        state.lyrics = template;
+        renderLyrics(template);
+        state.editDirty = true;
+        setStatus("Vorlage: Karaoke-Text (wird als eigene Kopie gespeichert)", "is-info");
+      }
+    }
   }
   attachTimecodeUi();
   if (!document.getElementById("editPanel")) buildEditPanel();
@@ -2384,10 +2631,14 @@ async function saveTimecode(skipConfirm) {
     const [m, rest] = t.split(":");
     return `[${m.padStart(2, "0")}:${rest}]${line.text}`;
   }).join("\n");
-  localStorage.setItem(`lrc-${song.id}`, JSON.stringify(lines));
+  const kind = state.curVersion === "meeting" ? "lrcm" : "lrc";
+  localStorage.setItem(`${kind}-${song.id}`, JSON.stringify(lines));
   try {
-    const res = await fetch(`${SYNC_BASE}/sync/lrc-${song.id}`, { method: "PUT", headers: { "content-type": "text/plain", "x-write-key": state.writeKey || "" }, body: lrc });
-    if (res.ok) await uiAlert("Gespeichert", "Auf allen Geräten verfügbar.");
+    const res = await fetch(`${SYNC_BASE}/sync/${kind}-${song.id}`, { method: "PUT", headers: { "content-type": "text/plain", "x-write-key": state.writeKey || "" }, body: lrc });
+    if (res.ok) {
+      if (kind === "lrcm" && state.media) state.media.meeting.lrc[String(song.number)] = `meeting/lrc/${song.id}.lrc`;
+      await uiAlert("Gespeichert", kind === "lrcm" ? "Text für die Instrumental-Fassung gespeichert, auf allen Geräten verfügbar." : "Auf allen Geräten verfügbar.");
+    }
     else await uiAlert("Nur lokal gespeichert", res.status === 401 ? "Der Server hat das Timecode-Passwort abgelehnt (WRITE_KEY in Cloudflare prüfen)." : "Der Server war nicht erreichbar.");
   } catch {
     await uiAlert("Nur lokal gespeichert", "Der Server war nicht erreichbar.");
@@ -2513,6 +2764,7 @@ function openCode(title, onSubmit, kind) {
   meta.hidden = true;
   metaBtn.hidden = true;
   document.getElementById("syncSettings").hidden = true;
+  document.getElementById("autoPlayBox").hidden = true;
   if (kind === "import") {
     metaBtn.hidden = false;
     metaBtn.onclick = () => { meta.hidden = !meta.hidden; };
@@ -2621,7 +2873,7 @@ function init() {
     };
     LUDWT.ensureLoaded();
   }
-  loadSongs().then(tryAutoStart).catch(() => {});
+  loadSongs().then(() => { tryAutoStart(); loadMedia(); }).catch(() => {});
   window.addEventListener("beforeunload", (event) => {
     if (state.editDirty) {
       event.preventDefault();

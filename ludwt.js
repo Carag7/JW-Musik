@@ -7,7 +7,7 @@
  */
 (() => {
   const BASE = window.LUDWT_BASE ? String(window.LUDWT_BASE).replace(/\/*$/, "/") : "";
-  const API = window.LUDWT_API || "/api/refresh";
+  const API = window.LUDWT_API || (/github\.io$/.test(location.hostname) ? "https://musik.carag.workers.dev/api/refresh" : "/api/refresh");
   const POLL_MS = 15000;
   const POLL_MAX_MS = 8 * 60 * 1000;
 
@@ -175,7 +175,7 @@
       return out;
     }
     if (res.status === 404 || res.status === 405) {
-      throw new Error("Die Server-Funktion /api/refresh fehlt (src/index.js und wrangler.jsonc aktualisieren).");
+      throw new Error("Die Server-Funktion /api/refresh wurde nicht gefunden. Bitte die Seite über https://musik.carag.workers.dev öffnen und src/index.js samt wrangler.jsonc aktualisieren.");
     }
     if (!res.ok || !body.ok) throw new Error(body.fehler || `Fehler ${res.status}`);
     return body;
