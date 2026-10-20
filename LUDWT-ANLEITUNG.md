@@ -39,3 +39,21 @@ Vor `ludwt.js` in `index.html` einfügen: `<script>window.LUDWT_BASE = "https://
 ## Hinweis (Update Oktober 2026)
 - "Jetzt aktualisieren" ist jetzt im Synchronisieren-Fenster hinter dem kleinen "i" der LuD+WT-Box (nur für den Notfall).
 - Neue Dateien/Änderungen: index.html, app.js, style.css, ludwt.js, sw.js, src/index.js – alle ersetzen.
+
+## Einmalig einrichten (Cloudflare)
+
+Cloudflare → Workers & Pages → Worker „musik“ → **Einstellungen → Variablen und Geheimnisse → Hinzufügen** (Typ **Geheimnis/Secret**):
+
+| Name | Wert | wofür |
+|---|---|---|
+| `GITHUB_TOKEN` | Fine-grained Token von GitHub (Repo `Carag7/JW-Musik`, Berechtigung **Actions: Read and write**) | Button „Jetzt aktualisieren“ |
+| `REFRESH_PIN` (optional) | eine PIN | schützt diesen Button |
+| `WRITE_KEY` (optional) | dein Timecode-Passwort im Klartext | nur wer es kennt, kann Liedtext-Zeiten speichern |
+
+GitHub-Token erzeugen: GitHub → Profilbild → Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token → Repository access: nur `JW-Musik` → Permissions → Repository permissions → **Actions: Read and write** → Generate → Wert kopieren.
+
+## Passwörter nicht mehr im Klartext
+1. `passwort-hash.html` im Browser öffnen (oder lokal), beide Passwörter eingeben, die erzeugten Zeilen kopieren.
+2. In `password.js` die alten Zeilen `APP_PASSWORD` / `TIMECODE_PASSWORD` durch die neuen `..._HASH`-Zeilen ersetzen.
+3. `passwort-hash.html` aus dem Repository löschen.
+Hinweis: Das hält neugierige Besucher draußen, ist aber kein Tresor (der Hash steht weiter in `password.js`).

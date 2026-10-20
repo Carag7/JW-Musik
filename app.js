@@ -149,6 +149,24 @@ function uiDialog(opts) {
     body.replaceChildren();
     (opts.lines || []).forEach((line) => {
       const item = typeof line === "string" ? { text: line } : line;
+      if (item.table) {
+        const wrap = document.createElement("div");
+        wrap.className = "dlg-table-wrap";
+        const table = document.createElement("table");
+        table.className = "dlg-table";
+        item.table.forEach((row, r) => {
+          const tr = document.createElement("tr");
+          row.forEach((cell) => {
+            const td = document.createElement(r === 0 ? "th" : "td");
+            td.textContent = String(cell);
+            tr.append(td);
+          });
+          table.append(tr);
+        });
+        wrap.append(table);
+        body.append(wrap);
+        return;
+      }
       const p = document.createElement("p");
       p.textContent = item.text;
       if (item.cls) p.className = item.cls;
@@ -386,8 +404,16 @@ function updateLudwtNav() {
   if (!window.LUDWT) return;
   const list = LUDWT.weeks();
   const at = list.findIndex((week) => week.montag === state.ludwtWeek);
+  const prev = list[at - 1], next = list[at + 1];
+  const short = (w) => {
+    if (!w) return "";
+    const f = (iso) => `${iso.slice(8, 10)}.${iso.slice(5, 7)}.`;
+    return `${f(w.montag)}–${f(w.sonntag)}`;
+  };
   document.getElementById("ludwtPrev").disabled = at <= 0;
   document.getElementById("ludwtNext").disabled = at < 0 || at >= list.length - 1;
+  document.querySelector("#ludwtPrev .nv-d").textContent = short(prev);
+  document.querySelector("#ludwtNext .nv-d").textContent = short(next);
 }
 
 function shiftLudwtWeek(delta) {
@@ -841,6 +867,7 @@ async function selectSong(index, autoplay) {
   el.duration.textContent = "0:00";
   el.play.textContent = "▶";
   markActive();
+  try { localStorage.setItem("lastSongId", song.id); } catch { /* egal */ }
   showLyricLink(song);
   updateNeighbors();
   // Liedtext und Audio-Quelle gleichzeitig suchen: Wiedergabe startet schneller
@@ -1116,7 +1143,58 @@ function recoverAfterResume() {
   }, { once: true });
 }
 
+/* Handy quer: Menüleiste beim Abspielen / Bearbeiten ausblenden, bei Wischen oder Antippen oben wieder einblenden */
+const phoneLand = window.matchMedia("(orientation: landscape) and (max-height: 480px) and (max-width: 1000px)");
+let chromeTimer = 0;
+function updateChrome() {
+  clearTimeout(chromeTimer);
+  const body = document.body;
+  const hide = phoneLand.matches && (!el.audio.paused || body.classList.contains("edit-mode"));
+  body.classList.toggle("chrome-hidden", hide);
+  body.classList.remove("chrome-peek");
+}
+function peekChrome() {
+  const body = document.body;
+  if (!body.classList.contains("chrome-hidden")) return;
+  body.classList.add("chrome-peek");
+  clearTimeout(chromeTimer);
+  chromeTimer = setTimeout(() => body.classList.remove("chrome-peek"), 5000);
+}
+function bindChrome() {
+  ["play", "pause", "ended"].forEach((name) => el.audio.addEventListener(name, updateChrome));
+  phoneLand.addEventListener("change", updateChrome);
+  let startY = null;
+  document.addEventListener("touchstart", (event) => { startY = event.touches[0].clientY; }, { passive: true });
+  document.addEventListener("touchmove", (event) => {
+    if (startY !== null && Math.abs(event.touches[0].clientY - startY) > 28) { peekChrome(); startY = null; }
+  }, { passive: true });
+  document.addEventListener("wheel", peekChrome, { passive: true });
+  document.addEventListener("pointermove", (event) => { if (event.pointerType === "mouse" && event.clientY < 24) peekChrome(); });
+  document.querySelector(".topbar").addEventListener("pointerdown", () => {
+    if (document.body.classList.contains("chrome-peek")) peekChrome();
+  });
+}
+
+/* Beim Öffnen automatisch abspielen (letztes Lied, sonst Zufall). Blockiert der Browser das, startet es beim ersten Antippen. */
+function tryAutoStart() {
+  if (localStorage.getItem("autoStart") === "0") return;
+  if (!document.getElementById("loginGate").hidden || !state.songs.length) return;
+  const last = localStorage.getItem("lastSongId");
+  const at = state.songs.findIndex((song) => song.id === last);
+  if (at >= 0) selectSong(at, true);
+  else playRandom(state.favorites.size > 0);
+  setTimeout(() => {
+    if (!el.audio.paused) return;
+    const arm = () => {
+      ["pointerdown", "keydown", "touchstart"].forEach((type) => document.removeEventListener(type, arm, true));
+      if (el.audio.paused) togglePlay();
+    };
+    ["pointerdown", "keydown", "touchstart"].forEach((type) => document.addEventListener(type, arm, true));
+  }, 2500);
+}
+
 function bind() {
+  bindChrome();
   el.lyricSearchToggle.addEventListener("click", () => {
     const open = el.lyricSearchWrap.hidden;
     el.lyricSearchWrap.hidden = !open;
@@ -1517,9 +1595,11 @@ function showQr(link) {
 
 /* ---------- Abgleich von Favoriten und Wiedergabelisten ----------
    Drei-Wege-Abgleich: "Basis" = Stand beim letzten erfolgreichen Abgleich (pro Speicher-Name).
-   - Nur Hinzugefügtes (auf einer oder beiden Seiten) -> automatisch zusammenführen, keine Warnung.
-   - Gelöscht (gegenüber der Basis) -> Hinweis mit Anzahl, du entscheidest. */
+   - Nur Hinzugefügtes -> automatisch zusammenführen.
+   - Gelöschtes -> Nachfrage, außer die Anzahl liegt unter der eigenen Schwelle ("Automatisch abgleichen bis X gelöschte Lieder"). */
 const syncBaseKey = (store) => `sync-base-${store}`;
+const nPl = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+const sgn = (n, plus) => (n ? `${plus ? "+" : "−"}${n}` : "·");
 
 function cloneData(data) {
   return JSON.parse(JSON.stringify(data));
@@ -1568,7 +1648,20 @@ function sameSync(a, b) {
   return key(a) === key(b);
 }
 
-/* Was steht in "to", aber nicht in "from"? (Favoriten, Listen, Lieder in bestehenden Listen) */
+function totals(d) {
+  return { fav: d.favorites.length, lists: d.playlists.length, songs: d.playlists.reduce((sum, list) => sum + list.songs.length, 0) };
+}
+
+function totalsText(d) {
+  const t = totals(d);
+  return `${nPl(t.fav, "Favorit", "Favoriten")} · ${nPl(t.lists, "Wiedergabeliste", "Wiedergabelisten")} · ${nPl(t.songs, "Lied", "Lieder")} in Listen`;
+}
+
+function listLines(d) {
+  return d.playlists.map((list) => ({ text: `• ${list.name || "Liste"}: ${nPl(list.songs.length, "Lied", "Lieder")}`, cls: "dlg-list" }));
+}
+
+/* Was steht in "to", aber nicht in "from"? Songs neuer/entfernter Listen zählen als Lieder mit. */
 function gainCount(from, to) {
   const out = { favorites: 0, lists: 0, songs: 0, total: 0 };
   if (!from || !to) return out;
@@ -1577,7 +1670,7 @@ function gainCount(from, to) {
   const lists = new Map(from.playlists.map((list) => [list.id, list]));
   to.playlists.forEach((list) => {
     const old = lists.get(list.id);
-    if (!old) { out.lists += 1; return; }
+    if (!old) { out.lists += 1; out.songs += list.songs.length; return; }
     const had = new Set(old.songs);
     list.songs.forEach((id) => { if (!had.has(id)) out.songs += 1; });
   });
@@ -1587,30 +1680,116 @@ function gainCount(from, to) {
 
 function countText(c) {
   const parts = [];
-  if (c.favorites) parts.push(`${c.favorites} ${c.favorites === 1 ? "Favorit" : "Favoriten"}`);
-  if (c.lists) parts.push(`${c.lists} ${c.lists === 1 ? "Wiedergabeliste" : "Wiedergabelisten"}`);
-  if (c.songs) parts.push(`${c.songs} ${c.songs === 1 ? "Lied" : "Lieder"} in Wiedergabelisten`);
+  if (c.favorites) parts.push(nPl(c.favorites, "Favorit", "Favoriten"));
+  if (c.lists) parts.push(nPl(c.lists, "Wiedergabeliste", "Wiedergabelisten"));
+  if (c.songs) parts.push(nPl(c.songs, "Lied", "Lieder") + " in Listen");
   return parts.join(", ");
 }
 
-/* Nur Hinzugefügtes: Vereinigung beider Seiten */
-function mergeSync(base, local, remote) {
-  const baseLists = new Map((base ? base.playlists : []).map((list) => [list.id, list]));
-  const localLists = new Map(local.playlists.map((list) => [list.id, list]));
-  const remoteLists = new Map(remote.playlists.map((list) => [list.id, list]));
-  const same = (a, b) => Boolean(a && b) && a.name === b.name && JSON.stringify(a.songs) === JSON.stringify(b.songs);
-  const ids = [...local.playlists.map((list) => list.id), ...remote.playlists.map((list) => list.id).filter((id) => !localLists.has(id))];
-  const playlists = ids.map((id) => {
-    const l = localLists.get(id), r = remoteLists.get(id), b = baseLists.get(id);
-    if (l && !r) return l;
-    if (r && !l) return r;
-    if (same(l, r)) return l;
-    if (same(l, b)) return r;      // nur auf dem Server geändert
-    if (same(r, b)) return l;      // nur hier geändert
-    const songs = [...r.songs, ...l.songs.filter((song) => !r.songs.includes(song))];
-    return { id, name: b && l.name === b.name ? r.name : l.name, songs };
+function diffData(a, b) {
+  const A = new Set(a.favorites), B = new Set(b.favorites);
+  const out = { favAdd: b.favorites.filter((x) => !A.has(x)).length, favDel: a.favorites.filter((x) => !B.has(x)).length, listsAdd: [], listsDel: [], changed: [] };
+  const am = new Map(a.playlists.map((l) => [l.id, l])), bm = new Map(b.playlists.map((l) => [l.id, l]));
+  b.playlists.forEach((l) => {
+    const o = am.get(l.id);
+    if (!o) { out.listsAdd.push({ name: l.name, n: l.songs.length }); return; }
+    const os = new Set(o.songs), ns = new Set(l.songs);
+    const add = l.songs.filter((x) => !os.has(x)).length, del = o.songs.filter((x) => !ns.has(x)).length;
+    if (add || del || o.name !== l.name) out.changed.push({ name: l.name, old: o.name, add, del });
   });
-  return { favorites: [...new Set([...local.favorites, ...remote.favorites])].sort(), playlists };
+  a.playlists.forEach((l) => { if (!bm.has(l.id)) out.listsDel.push({ name: l.name, n: l.songs.length }); });
+  out.total = out.favAdd + out.favDel + out.listsAdd.length + out.listsDel.length + out.changed.length;
+  return out;
+}
+
+function diffLines(d) {
+  const L = [];
+  if (d.favAdd) L.push({ text: `+ ${nPl(d.favAdd, "Favorit", "Favoriten")} hinzugefügt`, cls: "dlg-add" });
+  if (d.favDel) L.push({ text: `− ${nPl(d.favDel, "Favorit", "Favoriten")} gelöscht`, cls: "dlg-lost" });
+  d.listsAdd.forEach((l) => L.push({ text: `+ Wiedergabeliste „${l.name}“ hinzugefügt (${nPl(l.n, "Lied", "Lieder")})`, cls: "dlg-add" }));
+  d.listsDel.forEach((l) => L.push({ text: `− Wiedergabeliste „${l.name}“ gelöscht (${nPl(l.n, "Lied", "Lieder")})`, cls: "dlg-lost" }));
+  d.changed.forEach((c) => {
+    const p = [];
+    if (c.add) p.push(`${nPl(c.add, "Lied", "Lieder")} hinzugefügt`);
+    if (c.del) p.push(`${nPl(c.del, "Lied", "Lieder")} gelöscht`);
+    if (c.old !== c.name) p.push(`umbenannt (vorher „${c.old}“)`);
+    L.push({ text: `Liste „${c.name}“: ${p.join(", ")}`, cls: c.del ? "dlg-lost" : "dlg-add" });
+  });
+  if (!L.length) L.push({ text: "Keine Änderung", cls: "dlg-hint" });
+  return L;
+}
+
+function shortDiff(d) {
+  const p = [];
+  if (d.favAdd) p.push(`+${nPl(d.favAdd, "Favorit", "Favoriten")}`);
+  if (d.favDel) p.push(`−${nPl(d.favDel, "Favorit", "Favoriten")}`);
+  if (d.listsAdd.length) p.push(`+${nPl(d.listsAdd.length, "Liste", "Listen")}`);
+  if (d.listsDel.length) p.push(`−${nPl(d.listsDel.length, "Liste", "Listen")}`);
+  const sa = d.changed.reduce((n, c) => n + c.add, 0), sd = d.changed.reduce((n, c) => n + c.del, 0);
+  if (sa) p.push(`+${nPl(sa, "Lied", "Lieder")} in Listen`);
+  if (sd) p.push(`−${nPl(sd, "Lied", "Lieder")} in Listen`);
+  return p.join(", ");
+}
+
+/* Tabelle: Favoriten + jede Wiedergabeliste, vorher/nachher, hinzugefügt/gelöscht */
+function changeTable(a, b) {
+  const rows = [["", "Vorher", "Nachher", "Neu", "Weg"]];
+  const A = new Set(a.favorites), B = new Set(b.favorites);
+  rows.push(["Favoriten", a.favorites.length, b.favorites.length, sgn(b.favorites.filter((x) => !A.has(x)).length, true), sgn(a.favorites.filter((x) => !B.has(x)).length, false)]);
+  const am = new Map(a.playlists.map((l) => [l.id, l])), bm = new Map(b.playlists.map((l) => [l.id, l]));
+  [...new Set([...a.playlists.map((l) => l.id), ...b.playlists.map((l) => l.id)])].forEach((id) => {
+    const o = am.get(id), n = bm.get(id);
+    const os = new Set(o ? o.songs : []), ns = new Set(n ? n.songs : []);
+    rows.push([`${(n || o).name || "Liste"}${!o ? " (neu)" : !n ? " (gelöscht)" : ""}`, o ? o.songs.length : "–", n ? n.songs.length : "–",
+      sgn([...ns].filter((x) => !os.has(x)).length, true), sgn([...os].filter((x) => !ns.has(x)).length, false)]);
+  });
+  return rows;
+}
+
+/* Tabelle: zwei Stände nebeneinander mit Unterschied */
+function compareTable(a, b, heads) {
+  const diff = (x, y) => (typeof x === "number" && typeof y === "number" ? (y === x ? "gleich" : `${y > x ? "+" : "−"}${Math.abs(y - x)}`) : "–");
+  const ta = totals(a), tb = totals(b);
+  const rows = [["", ...(heads || ["Dieses Gerät", "Server", "Unterschied"])]];
+  rows.push(["Favoriten", ta.fav, tb.fav, diff(ta.fav, tb.fav)]);
+  rows.push(["Wiedergabelisten", ta.lists, tb.lists, diff(ta.lists, tb.lists)]);
+  rows.push(["Lieder in Listen", ta.songs, tb.songs, diff(ta.songs, tb.songs)]);
+  const am = new Map(a.playlists.map((l) => [l.id, l])), bm = new Map(b.playlists.map((l) => [l.id, l]));
+  [...new Set([...a.playlists.map((l) => l.id), ...b.playlists.map((l) => l.id)])].forEach((id) => {
+    const o = am.get(id), n = bm.get(id);
+    rows.push([`› ${(o || n).name || "Liste"}`, o ? o.songs.length : "fehlt", n ? n.songs.length : "fehlt", diff(o ? o.songs.length : NaN, n ? n.songs.length : NaN)]);
+  });
+  return rows;
+}
+
+function setMergeOrdered(base, l, r) {
+  const B = new Set(base || []), L = new Set(l), R = new Set(r);
+  const keep = (x) => (L.has(x) && R.has(x)) || (L.has(x) && !B.has(x)) || (R.has(x) && !B.has(x));
+  return [...l, ...r.filter((x) => !L.has(x))].filter(keep);
+}
+
+/* Drei-Wege-Zusammenführung: Hinzufügungen UND Löschungen beider Seiten werden übernommen */
+function threeWayMerge(base, local, remote) {
+  const bm = new Map((base ? base.playlists : []).map((list) => [list.id, list]));
+  const lm = new Map(local.playlists.map((list) => [list.id, list]));
+  const rm = new Map(remote.playlists.map((list) => [list.id, list]));
+  const same = (a, b) => Boolean(a && b) && a.name === b.name && JSON.stringify(a.songs) === JSON.stringify(b.songs);
+  const ids = [...local.playlists.map((l) => l.id), ...remote.playlists.map((l) => l.id).filter((id) => !lm.has(id))];
+  const playlists = [];
+  ids.forEach((id) => {
+    const l = lm.get(id), r = rm.get(id), b = bm.get(id);
+    if (l && r) {
+      if (same(l, r)) { playlists.push(l); return; }
+      playlists.push({ id, name: b && l.name === b.name ? r.name : l.name, songs: setMergeOrdered(b ? b.songs : null, l.songs, r.songs) });
+    } else if (l) {
+      if (b && same(l, b)) return;      // auf dem Server gelöscht, hier unverändert -> löschen
+      playlists.push(l);
+    } else if (r) {
+      if (b && same(r, b)) return;      // hier gelöscht, auf dem Server unverändert -> löschen
+      playlists.push(r);
+    }
+  });
+  return { favorites: setMergeOrdered(base ? base.favorites : null, local.favorites, remote.favorites).sort(), playlists };
 }
 
 function applySyncData(data) {
@@ -1646,20 +1825,38 @@ function refreshSyncInfo() {
   const last = localStorage.getItem("sync-last");
   const dir = localStorage.getItem("sync-dir") || "";
   info.hidden = false;
-  info.textContent = last
-    ? `Zuletzt: ${new Date(last).toLocaleString("de-AT", { dateStyle: "medium", timeStyle: "short" })} (${dir})`
-    : "Noch nie synchronisiert.";
+  info.textContent = `Auf diesem Gerät: ${totalsText(syncSnapshot())}\n` + (last
+    ? `Letzter Abgleich: ${new Date(last).toLocaleString("de-AT", { dateStyle: "medium", timeStyle: "short" })} (${dir})`
+    : "Noch nie synchronisiert.");
 }
 
-function askSyncConflict(store, lostLocal, lostRemote, gainedLocal, gainedRemote) {
-  const lines = [
-    { text: `Speicher: „${store}“`, cls: "dlg-store" },
-    { text: "Beim Abgleich wurde etwas gelöscht. Bitte entscheide, welcher Stand gelten soll." }
-  ];
+const autoMax = () => Math.max(0, Number(localStorage.getItem("sync-auto-max") || 0) || 0);
+
+/* Ergebnis eines Abgleichs: für jede geänderte Seite eine Tabelle, am Ende der gespeicherte Gesamtstand */
+function syncReport(store, device, server, final) {
+  const lines = [{ text: `Speicher: „${store}“`, cls: "dlg-store" }];
+  if (device) {
+    lines.push({ text: "Dieses Gerät", cls: "dlg-h" });
+    lines.push({ table: changeTable(device[0], device[1]) });
+  }
+  if (server) {
+    lines.push({ text: "Server", cls: "dlg-h" });
+    lines.push({ table: changeTable(server[0], server[1]) });
+  }
+  lines.push({ text: "Jetzt gespeichert", cls: "dlg-h" });
+  lines.push({ text: totalsText(final), cls: "dlg-total" });
+  return uiDialog({ eyebrow: "Synchronisieren", title: "Abgleich abgeschlossen", lines, buttons: [{ value: true, kind: "primary", label: "OK" }] });
+}
+
+function askSyncConflict(store, local, remote, lostLocal, lostRemote) {
+  const lines = [{ text: `Speicher: „${store}“`, cls: "dlg-store" }];
+  lines.push({ text: "Seit dem letzten Abgleich wurde etwas gelöscht. Entscheide, welcher Stand gelten soll:" });
   if (lostLocal.total) lines.push({ text: `Auf diesem Gerät gelöscht: ${countText(lostLocal)}`, cls: "dlg-lost" });
   if (lostRemote.total) lines.push({ text: `Auf dem Server gelöscht: ${countText(lostRemote)}`, cls: "dlg-lost" });
-  if (gainedRemote && gainedRemote.total) lines.push({ text: `Neu nur auf dem Server (geht bei „behalten“ verloren): ${countText(gainedRemote)}`, cls: "dlg-hint" });
-  if (gainedLocal && gainedLocal.total) lines.push({ text: `Neu nur auf diesem Gerät (geht bei „überschreiben“ verloren): ${countText(gainedLocal)}`, cls: "dlg-hint" });
+  lines.push({ text: "Wenn du „behalten“ wählst, ändert sich der Server so:", cls: "dlg-h" });
+  lines.push(...diffLines(diffData(remote, local)));
+  lines.push({ text: "Wenn du „überschreiben“ wählst, ändert sich dieses Gerät so:", cls: "dlg-h" });
+  lines.push(...diffLines(diffData(local, remote)));
   return uiDialog({
     eyebrow: "Synchronisieren",
     title: "Es wurde etwas gelöscht",
@@ -1688,8 +1885,10 @@ async function runSync(code, silent) {
       eyebrow: "Synchronisieren",
       title: "Neuer Speicher",
       lines: [
-        { text: `Den Speicher „${store}“ gibt es auf dem Server noch nicht.` },
-        { text: `Deine ${local.favorites.length} Favoriten und ${local.playlists.length} Wiedergabelisten werden dort angelegt.` }
+        { text: `Den Speicher „${store}“ gibt es auf dem Server noch nicht.`, cls: "dlg-store" },
+        { text: "Dieser Stand wird dort angelegt:" },
+        { text: totalsText(local), cls: "dlg-total" },
+        ...listLines(local)
       ],
       buttons: [
         { value: "up", kind: "up", dir: "↑ Zum Server hochladen", label: "Speicher anlegen", sub: "Von diesem Gerät auf den Server" },
@@ -1700,45 +1899,89 @@ async function runSync(code, silent) {
     await putSync(store, local);
     writeSyncBase(store, local);
     stampSync("gesendet");
-    return `Hochgeladen: Speicher „${store}“ ist angelegt.`;
+    return `Hochgeladen: Speicher „${store}“ angelegt (${totalsText(local)}).`;
   }
 
   const remote = normalizeSync(await res.json());
   const base = readSyncBase(store);
   const lostLocal = gainCount(local, base);
   const lostRemote = gainCount(remote, base);
+  const deletions = lostLocal.favorites + lostLocal.songs + lostRemote.favorites + lostRemote.songs;
+  const lost = lostLocal.total + lostRemote.total;
 
-  if (!lostLocal.total && !lostRemote.total) {
-    const merged = mergeSync(base, local, remote);
-    const toLocal = gainCount(local, merged);
-    const toRemote = gainCount(remote, merged);
+  if (!lost || deletions <= autoMax()) {
+    const merged = threeWayMerge(base, local, remote);
     const changeLocal = !sameSync(merged, local);
     const changeRemote = !sameSync(merged, remote);
     if (changeLocal) applySyncData(merged);
     if (changeRemote) await putSync(store, merged);
     writeSyncBase(store, merged);
-    if (changeLocal || changeRemote) stampSync(changeLocal && changeRemote ? "abgeglichen" : changeRemote ? "gesendet" : "empfangen");
-    const parts = [];
-    if (toLocal.total) parts.push(`Vom Server geladen: ${countText(toLocal)}.`);
-    if (toRemote.total) parts.push(`Zum Server hochgeladen: ${countText(toRemote)}.`);
-    if (!parts.length) parts.push(changeLocal || changeRemote ? "Abgeglichen." : "Bereits gleich.");
-    return parts.join(" ");
+    if (!changeLocal && !changeRemote) return `Bereits gleich. ${totalsText(merged)}`;
+    stampSync(changeLocal && changeRemote ? "abgeglichen" : changeRemote ? "gesendet" : "empfangen");
+    const dDev = diffData(local, merged), dSrv = diffData(remote, merged);
+    if (silent) {
+      const parts = [];
+      if (changeLocal) parts.push(`hier ${shortDiff(dDev)}`);
+      if (changeRemote) parts.push(`Server ${shortDiff(dSrv)}`);
+      return parts.join("; ");
+    }
+    if (lost) {
+      // unter der eingestellten Löschschwelle: ohne Pop-up, Zahlen stehen im Fenster
+      const parts = [];
+      if (changeLocal) parts.push(`hier: ${shortDiff(dDev)}`);
+      if (changeRemote) parts.push(`Server: ${shortDiff(dSrv)}`);
+      return `Automatisch abgeglichen (${parts.join("; ")}). Gespeichert: ${totalsText(merged)}`;
+    }
+    await syncReport(store, changeLocal ? [local, merged] : null, changeRemote ? [remote, merged] : null, merged);
+    return `Abgeglichen. Gespeichert: ${totalsText(merged)}`;
   }
 
-  const choice = await askSyncConflict(store, lostLocal, lostRemote, base && gainCount(base, local), base && gainCount(base, remote));
+  const choice = await askSyncConflict(store, local, remote, lostLocal, lostRemote);
   if (choice === "keep") {
     await putSync(store, local);
     writeSyncBase(store, local);
     stampSync("gesendet");
+    await syncReport(store, null, [remote, local], local);
     return `Hochgeladen: Dein Stand ersetzt den Speicher „${store}“.`;
   }
   if (choice === "overwrite") {
     applySyncData(remote);
     writeSyncBase(store, remote);
     stampSync("empfangen");
+    await syncReport(store, [local, remote], null, remote);
     return `Heruntergeladen: Speicher „${store}“ ist auf diesem Gerät wiederhergestellt.`;
   }
   return "Abgebrochen.";
+}
+
+/* Kleines „i“ im Synchronisieren-Fenster: Gerät und Server nebeneinander */
+async function showSyncCompare() {
+  const input = document.getElementById("codeInput");
+  const store = (input.value.trim() || localStorage.getItem("sync-code") || "").toLowerCase().replace(/[^a-z0-9-]/g, "");
+  const local = syncSnapshot();
+  if (!store) {
+    await uiAlert("Vergleich", "Bitte zuerst den Namen des Speichers eingeben.");
+    return;
+  }
+  let remote = null;
+  let problem = "";
+  try {
+    const res = await fetch(`${SYNC_BASE}/sync/${store}`, { cache: "no-store" });
+    if (res.ok) remote = normalizeSync(await res.json());
+    else problem = `Den Speicher „${store}“ gibt es auf dem Server noch nicht.`;
+  } catch {
+    problem = "Server nicht erreichbar.";
+  }
+  const lines = [{ text: `Speicher: „${store}“`, cls: "dlg-store" }];
+  if (remote) {
+    lines.push({ table: compareTable(local, remote) });
+    const same = sameSync(local, remote);
+    lines.push({ text: same ? "Gerät und Server sind gleich." : "Gerät und Server sind unterschiedlich. Beim Synchronisieren wird abgeglichen.", cls: same ? "dlg-add" : "dlg-hint" });
+  } else {
+    lines.push({ text: problem, cls: "dlg-lost" });
+    lines.push({ text: `Auf diesem Gerät: ${totalsText(local)}` });
+  }
+  await uiDialog({ eyebrow: "Synchronisieren", title: "Vergleich Gerät ↔ Server", lines, buttons: [{ value: true, kind: "primary", label: "Schließen" }] });
 }
 
 async function syncFavorites() {
@@ -1755,11 +1998,27 @@ async function syncFavorites() {
   }, "sync");
   const input = document.getElementById("codeInput");
   input.value = saved;
-  input.placeholder = "Name des Speichers, mind. 4 Zeichen";
+  input.placeholder = "Name des Speichers, am besten lang und schwer zu erraten";
   document.getElementById("codeOk").textContent = "Synchronisieren";
   document.querySelector(".sync-choice").hidden = true;
-  document.getElementById("codeMessage").textContent = "Mit diesem Speicher-Namen kannst du alle deine Geräte abgleichen. Hinzugefügtes wird automatisch zusammengeführt.";
+  document.getElementById("codeMessage").textContent = "Mit diesem Speicher-Namen gleichst du alle deine Geräte ab. Hinzugefügtes wird automatisch zusammengeführt.";
   refreshSyncInfo();
+  const metaBtn = document.getElementById("metaToggle");
+  metaBtn.hidden = false;
+  metaBtn.title = "Gerät und Server vergleichen";
+  metaBtn.onclick = showSyncCompare;
+  const settings = document.getElementById("syncSettings");
+  settings.hidden = false;
+  const max = document.getElementById("syncAutoMax");
+  max.value = String(autoMax());
+  max.onchange = () => {
+    const value = Math.max(0, Math.min(999, Math.floor(Number(max.value) || 0)));
+    max.value = String(value);
+    try { localStorage.setItem("sync-auto-max", String(value)); } catch { /* egal */ }
+  };
+  const auto = document.getElementById("autoPlayOpt");
+  auto.checked = localStorage.getItem("autoStart") !== "0";
+  auto.onchange = () => { try { localStorage.setItem("autoStart", auto.checked ? "1" : "0"); } catch { /* egal */ } };
   if (window.LUDWT) LUDWT.mountSync();
   const del = document.getElementById("syncDelete");
   del.hidden = false;
@@ -1771,7 +2030,7 @@ async function syncFavorites() {
     const choice = await uiDialog({
       eyebrow: "Favoriten",
       title: "Alles löschen?",
-      lines: [`${state.favorites.size} Favoriten und ${state.playlists.length} Wiedergabelisten werden auf diesem Gerät gelöscht.`],
+      lines: [`Auf diesem Gerät werden gelöscht: ${totalsText(syncSnapshot())}.`],
       cancelValue: null,
       buttons
     });
@@ -1859,28 +2118,45 @@ async function importFavorites() {
       try { data = JSON.parse(localStorage.getItem(`fav-${raw}`) || "null"); } catch { data = null; }
     }
     if (!data || !Array.isArray(data.favorites)) return "Code oder Link nicht gefunden.";
-    if (state.favorites.size || state.playlists.length) {
-      document.getElementById("codeModal").hidden = true;
-      const ok = await warnReplace();
-      document.getElementById("codeModal").hidden = false;
-      if (!ok) return "Abgebrochen.";
-    }
-    state.favorites = new Set(data.favorites);
-    if (Array.isArray(data.playlists)) state.playlists = data.playlists;
+    const incoming = normalizeSync(data);
+    const current = syncSnapshot();
+    const ok = await uiDialog({
+      eyebrow: "Favoriten laden",
+      title: "Das wird übernommen",
+      lines: [
+        { text: "Dein Stand auf diesem Gerät wird durch den geladenen Stand ersetzt:" },
+        { table: compareTable(current, incoming, ["Vorhanden", "Wird geladen", "Unterschied"]) },
+        { text: `Danach gespeichert: ${totalsText(incoming)}`, cls: "dlg-total" }
+      ],
+      cancelValue: null,
+      buttons: [
+        { value: true, kind: "down", dir: "↓ Auf dieses Gerät laden", label: "Übernehmen", sub: "Ersetzt Favoriten und Wiedergabelisten hier" },
+        { value: null, kind: "cancel", label: "Abbrechen" }
+      ]
+    });
+    if (!ok) return "Abgebrochen.";
+    state.favorites = new Set(incoming.favorites);
+    state.playlists = cloneData(incoming.playlists);
     saveFavorites();
     savePlaylists();
     clearSyncBases();  // nächster Abgleich ohne Löschwarnung (es wird nur zusammengeführt)
     fillPlaylists();
+    updateEditTools();
     renderList();
-    return `${data.favorites.length} Favoriten und ${state.playlists.length} Listen geladen.`;
+    return `Geladen: ${totalsText(incoming)}`;
   }, "import");
 }
 
 async function openTimecode() {
   if (!document.body.classList.contains("edit-mode")) {
     const pass = await uiPrompt({ eyebrow: "Bearbeiten", title: "Timecode-Passwort", type: "password", placeholder: "Passwort", ok: "Öffnen" });
-    if (pass !== window.TIMECODE_PASSWORD) return;
+    if (pass === null || !(await passwordOk(pass, window.TIMECODE_PASSWORD, window.TIMECODE_PASSWORD_HASH))) {
+      if (pass !== null) await uiAlert("Falsches Passwort", "Der Bearbeitungsmodus bleibt gesperrt.");
+      return;
+    }
+    state.writeKey = pass;
     document.body.classList.add("edit-mode");
+    updateChrome();
     state.editDirty = false;
     state.karaokeHold = true;
   }
@@ -1894,7 +2170,7 @@ function attachTimecodeUi() {
     const head = document.createElement("div");
     head.id = "colHead";
     head.className = "col-head";
-    head.innerHTML = "<span>Gespeichert</span><span>Aktuell</span><span></span><span>Text</span>";
+    head.innerHTML = "<span>Timecode</span><span>Player</span><span>Setzen</span><span>Liedtext</span>";
     el.lyrics.prepend(head);
   }
   el.lyrics.querySelectorAll(".lyric-line").forEach((line) => {
@@ -1902,6 +2178,8 @@ function attachTimecodeUi() {
     const text = line.textContent;
     const saved = line.dataset.time;
     line.textContent = "";
+    const cell = document.createElement("div");
+    cell.className = "time-cell";
     const input = document.createElement("input");
     input.className = "time-edit";
     input.value = formatTime(Number(saved) || 0, true);
@@ -1917,20 +2195,20 @@ function attachTimecodeUi() {
     const take = document.createElement("button");
     take.type = "button";
     take.className = "chip";
-    take.textContent = "Zeit";
+    take.textContent = "Setzen";
     const applyStamp = () => {
       const t = Math.max(0, (el.audio.currentTime || 0) + state.timeOffset / 1000);
       const old = line.dataset.saved || line.dataset.time;
       if (!line.dataset.saved) line.dataset.saved = old;
       line.dataset.time = String(t);
       input.value = formatTime(t, true);
-      let oldLabel = line.querySelector(".saved-old");
+      let oldLabel = cell.querySelector(".saved-old");
       if (!oldLabel) {
         oldLabel = document.createElement("span");
         oldLabel.className = "saved-old";
-        input.after(oldLabel);
+        cell.append(oldLabel);
       }
-      oldLabel.textContent = formatTime(Number(line.dataset.saved), true);
+      oldLabel.textContent = `vorher ${formatTime(Number(line.dataset.saved), true)}`;
       state.editDirty = true;
     };
     // Zeit schon beim Antippen (pointerdown) übernehmen, nicht erst beim Loslassen (click): spart 50-150 ms
@@ -1955,7 +2233,8 @@ function attachTimecodeUi() {
       el.audio.currentTime = t;
       if (el.audio.paused) el.audio.play().catch(() => {});
     });
-    line.append(input, now, take, textInput);
+    cell.append(input);
+    line.append(cell, now, take, textInput);
   });
 }
 
@@ -2052,8 +2331,24 @@ function buildEditPanel() {
   exit.className = "chip danger";
   exit.textContent = "Beenden";
   exit.addEventListener("click", async () => {
-    if (state.editDirty && !(await uiConfirm({ eyebrow: "Bearbeiten", title: "Ungespeicherte Änderungen", text: "Ohne Speichern verlassen?", ok: "Verlassen", danger: true }))) return;
+    if (state.editDirty) {
+      const song = state.songs[state.index];
+      const choice = await uiDialog({
+        eyebrow: "Bearbeiten",
+        title: "Nicht gespeicherte Timecodes",
+        lines: [`Es gibt Änderungen${song ? ` an Lied ${song.id}` : ""}, die noch nicht gespeichert sind.`, "Was soll damit passieren?"],
+        cancelValue: null,
+        buttons: [
+          { value: "save", kind: "up", dir: "↑ Auf dem Server speichern", label: "Speichern und beenden" },
+          { value: "discard", kind: "danger", label: "Änderungen verwerfen und beenden" },
+          { value: null, kind: "cancel", label: "Weiter bearbeiten" }
+        ]
+      });
+      if (!choice) return;
+      if (choice === "save" && !(await saveTimecode(true))) return;
+    }
     document.body.classList.remove("edit-mode");
+    updateChrome();
     state.editDirty = false;
     state.karaokeHold = false;
     panel.remove();
@@ -2074,10 +2369,10 @@ function buildEditPanel() {
   document.body.append(panel);
 }
 
-async function saveTimecode() {
+async function saveTimecode(skipConfirm) {
   const song = state.songs[state.index];
-  if (!song) return;
-  if (!(await uiConfirm({ eyebrow: "Bearbeiten", title: "Timecodes speichern?", text: `Lied ${song.id} – ${song.title}`, ok: "Speichern" }))) return;
+  if (!song) return false;
+  if (skipConfirm !== true && !(await uiConfirm({ eyebrow: "Bearbeiten", title: "Timecodes speichern?", text: `Lied ${song.id} – ${song.title}`, ok: "Speichern" }))) return false;
   const lines = [...el.lyrics.querySelectorAll(".lyric-line")].map((line) => ({
     time: Number(line.dataset.time),
     text: (line.querySelector(".lyric-text") || {}).value || line.textContent.trim()
@@ -2089,12 +2384,14 @@ async function saveTimecode() {
   }).join("\n");
   localStorage.setItem(`lrc-${song.id}`, JSON.stringify(lines));
   try {
-    const res = await fetch(`${SYNC_BASE}/sync/lrc-${song.id}`, { method: "PUT", headers: { "content-type": "text/plain" }, body: lrc });
-    await uiAlert(res.ok ? "Gespeichert" : "Nur lokal gespeichert", res.ok ? "Auf allen Geräten verfügbar." : "Der Server war nicht erreichbar.");
+    const res = await fetch(`${SYNC_BASE}/sync/lrc-${song.id}`, { method: "PUT", headers: { "content-type": "text/plain", "x-write-key": state.writeKey || "" }, body: lrc });
+    if (res.ok) await uiAlert("Gespeichert", "Auf allen Geräten verfügbar.");
+    else await uiAlert("Nur lokal gespeichert", res.status === 401 ? "Der Server hat das Timecode-Passwort abgelehnt (WRITE_KEY in Cloudflare prüfen)." : "Der Server war nicht erreichbar.");
   } catch {
     await uiAlert("Nur lokal gespeichert", "Der Server war nicht erreichbar.");
   }
   state.editDirty = false;
+  return true;
 }
 
 function startSpectrum() {
@@ -2213,6 +2510,7 @@ function openCode(title, onSubmit, kind) {
   const metaBtn = document.getElementById("metaToggle");
   meta.hidden = true;
   metaBtn.hidden = true;
+  document.getElementById("syncSettings").hidden = true;
   if (kind === "import") {
     metaBtn.hidden = false;
     metaBtn.onclick = () => { meta.hidden = !meta.hidden; };
@@ -2267,6 +2565,20 @@ function applySyncFromUrl() {
   savePlaylists();
   history.replaceState(null, "", location.pathname);
 }
+async function sha256Hex(text) {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`jw-musik:${text}`));
+  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/* Passwort prüfen: bevorzugt gegen den Hash (password.js: APP_PASSWORD_HASH / TIMECODE_PASSWORD_HASH), sonst Klartext (alt) */
+async function passwordOk(input, plain, hash) {
+  if (typeof input !== "string") return false;
+  if (hash) {
+    try { return (await sha256Hex(input)) === hash; } catch { return false; }
+  }
+  return plain !== undefined && input === plain;
+}
+
 function checkLogin() {
   const gate = document.getElementById("loginGate");
   if (localStorage.getItem(STORAGE.auth) === "ok" || sessionStorage.getItem(STORAGE.auth) === "ok") {
@@ -2274,10 +2586,10 @@ function checkLogin() {
     return;
   }
   gate.hidden = false;
-  document.getElementById("loginForm").addEventListener("submit", (event) => {
+  document.getElementById("loginForm").addEventListener("submit", async (event) => {
     event.preventDefault();
     const value = document.getElementById("loginPassword").value;
-    if (value === window.APP_PASSWORD) {
+    if (await passwordOk(value, window.APP_PASSWORD, window.APP_PASSWORD_HASH)) {
       if (document.getElementById("rememberLogin").checked) localStorage.setItem(STORAGE.auth, "ok");
       else sessionStorage.setItem(STORAGE.auth, "ok");
       gate.hidden = true;
@@ -2307,7 +2619,7 @@ function init() {
     };
     LUDWT.ensureLoaded();
   }
-  loadSongs();
+  loadSongs().then(tryAutoStart).catch(() => {});
   window.addEventListener("beforeunload", (event) => {
     if (state.editDirty) {
       event.preventDefault();

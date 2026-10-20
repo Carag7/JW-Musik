@@ -734,3 +734,83 @@ body.edit-mode .time-edit { font-size: 12px !important; }
 }
 .ludwt-nav .chip { white-space: nowrap; padding: 0 8px; font-size: 14px; }
 .ls-i { display: grid; place-items: center; }
+
+/* ===== Phase 6 ===== */
+
+/* LuD+WT-Box: klar abgesetzt, Überschrift wie „Synchronisieren“ */
+#codeForm .ludwt-sync {
+  margin-top: 44px; padding: 18px 16px 16px; border: 2px solid rgba(125, 211, 199, 0.45); border-radius: 16px;
+  background: rgba(125, 211, 199, 0.05); opacity: 1;
+}
+#codeForm .ludwt-sync h3 { font-size: 22px; font-weight: 700; color: var(--text); margin: 0; line-height: 1.2; }
+.ls-note { color: var(--muted); }
+
+/* Sync-Einstellungen */
+.sync-settings { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel-2); }
+.set-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 14px; line-height: 1.4; }
+.set-row input[type="number"] { width: 64px; min-height: 36px; text-align: center; padding: 0 6px; }
+.set-row.check input { width: 20px; min-height: 20px; height: 20px; }
+.set-hint { color: var(--muted); font-size: 12px; margin-top: -4px; }
+#syncInfo { white-space: pre-line; }
+
+/* Dialog-Details */
+.dlg-h { font-weight: 700; margin-top: 6px !important; color: var(--text); }
+.dlg-add { color: #86efac; }
+.dlg-total { font-weight: 700; color: var(--accent-2); }
+.dlg-list { color: var(--muted); font-size: 14px; }
+.dlg-table-wrap { overflow-x: auto; }
+.dlg-table { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+.dlg-table th { color: var(--muted); font-weight: 600; font-size: 12px; text-align: right; padding: 4px 6px; border-bottom: 1px solid var(--line); }
+.dlg-table td { padding: 5px 6px; text-align: right; border-bottom: 1px solid rgba(255, 255, 255, 0.06); }
+.dlg-table th:first-child, .dlg-table td:first-child { text-align: left; }
+.dlg-table tr td:first-child { max-width: 11em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dlg-table td:nth-child(4) { color: #86efac; }
+.dlg-table td:nth-child(5) { color: #fca5a5; }
+
+/* Wochen-Buttons mit Datum */
+.ludwt-nav .chip { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; padding: 4px 6px; line-height: 1.15; }
+.nv-t { font-size: 14px; font-weight: 700; }
+.nv-d { font-size: 11px; font-weight: 400; opacity: 0.75; min-height: 12px; }
+
+/* Farben der kleinen Texte in der LuD+WT-Liste */
+.song-text small.when.k-lud { color: #7dd3c7; }
+.song-text small.when.k-wt { color: #f0b429; }
+
+/* Drei Hauptbuttons: je eine Farbe, größer, füllen zusammen die Breite der Liste links */
+.topbar > #menuToggle, .topbar > #eigeneToggle, .topbar > #ludwtToggle {
+  flex: 0 0 min(calc((var(--sidebar, 300px) - 36px) / 3), 31vw) !important;
+  justify-content: center; height: 46px !important; min-height: 46px !important; font-size: 16px !important; font-weight: 800;
+  border-width: 2px !important; border-radius: 14px !important; color: var(--text); padding: 0 6px !important; white-space: nowrap;
+}
+.topbar > #menuToggle { border-color: #f0b429 !important; background: rgba(240, 180, 41, 0.14) !important; }
+.topbar > #eigeneToggle { border-color: #7dd3c7 !important; background: rgba(125, 211, 199, 0.14) !important; }
+.topbar > #ludwtToggle { border-color: #a5b4fc !important; background: rgba(165, 180, 252, 0.14) !important; }
+.topbar > #menuToggle[aria-expanded="true"], .topbar > #menuToggle[aria-pressed="true"] { background: #f0b429 !important; color: #1b1404 !important; }
+.topbar > #eigeneToggle[aria-pressed="true"] { background: #7dd3c7 !important; color: #08211d !important; }
+.topbar > #ludwtToggle[aria-pressed="true"] { background: #a5b4fc !important; color: #141a3d !important; }
+
+/* Bearbeitungsmodus: Spalten exakt unter den Überschriften, alle Schriften gleich groß */
+body.edit-mode .lyric-line, .col-head {
+  display: grid !important; grid-template-columns: 104px 92px 78px minmax(0, 1fr) !important; column-gap: 8px !important;
+  align-items: center !important; flex-wrap: nowrap !important;
+}
+.col-head { font-size: 13px !important; font-weight: 700; color: var(--muted); padding: 6px 0 !important; }
+.col-head span { width: auto !important; }
+body.edit-mode .lyric-line { row-gap: 0; padding: 2px 0; }
+body.edit-mode .time-edit, body.edit-mode .now-btn, body.edit-mode .lyric-line .chip, body.edit-mode .saved-old, body.edit-mode .time-edit::placeholder {
+  font-size: 13px !important; font-family: inherit; font-variant-numeric: tabular-nums;
+}
+body.edit-mode .time-cell { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+body.edit-mode .time-edit { width: 100% !important; min-height: 38px !important; box-sizing: border-box; }
+body.edit-mode .now-btn, body.edit-mode .lyric-line .chip { width: 100% !important; min-width: 0 !important; min-height: 38px; padding: 0 4px; justify-content: center; }
+body.edit-mode .saved-old { color: var(--muted); opacity: 0.85; white-space: nowrap; }
+
+/* Handy quer: Menüleiste beim Abspielen / Bearbeiten ausgeblendet, Wischen blendet sie wieder ein */
+@media (orientation: landscape) and (max-height: 480px) and (max-width: 1000px) {
+  body.chrome-hidden { --topbar: 0px; }
+  body.chrome-hidden .topbar { height: 52px; transform: translateY(-110%); transition: transform 0.2s ease; }
+  body.chrome-hidden.chrome-peek .topbar { transform: none; z-index: 130; }
+  #colHead { display: none !important; }
+  .topbar > #menuToggle, .topbar > #eigeneToggle, .topbar > #ludwtToggle { height: 40px !important; min-height: 40px !important; font-size: 14px !important; }
+  body.edit-mode .lyric-line { grid-template-columns: 96px 84px 70px minmax(0, 1fr) !important; }
+}

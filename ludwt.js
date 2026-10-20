@@ -99,7 +99,7 @@
 
   /* kleine Beschriftung "Leben und Dienst · Anfang" (kurz: "LuD · Anfang", wenn der Platz fehlt) */
   function whenEl(row) {
-    const small = h("small", "when");
+    const small = h("small", `when ${row.kindShort === "WT" ? "k-wt" : "k-lud"}`);
     const long = h("i", "long", row.kindLong);
     const short = h("i", "short", row.kindShort);
     small.append(long, short, document.createTextNode(` · ${row.pos}`));
@@ -212,7 +212,8 @@
         } catch { /* kurz nicht erreichbar -> weiter warten */ }
       }, POLL_MS);
     }).catch((err) => {
-      say(root, `Update konnte nicht gestartet werden: ${err.message}`, "bad");
+      const setup = /GITHUB_TOKEN/.test(err.message) ? " Einmalige Einrichtung nötig: In Cloudflare unter Worker → Einstellungen → Variablen und Geheimnisse das Secret GITHUB_TOKEN anlegen (siehe Anleitung)." : "";
+      say(root, `Update konnte nicht gestartet werden: ${err.message}${setup}`, "bad");
       btn.disabled = false;
     });
   }

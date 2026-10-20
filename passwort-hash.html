@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Passwort-Hash</title>
+<style>body{font:16px system-ui;max-width:640px;margin:24px auto;padding:0 16px;background:#0b1220;color:#eee}input,button{font:inherit;padding:10px;border-radius:8px;border:1px solid #445;background:#162033;color:#eee;width:100%;box-sizing:border-box;margin:6px 0}button{background:#f0b429;color:#1b1404;font-weight:700;cursor:pointer}pre{background:#162033;padding:12px;border-radius:8px;white-space:pre-wrap;word-break:break-all}small{color:#9ab}</style></head><body>
+<h1>Passwort-Hash erzeugen</h1>
+<p><small>Wird nur in deinem Browser berechnet, nichts wird gesendet. Diese Datei danach aus dem Repository löschen.</small></p>
+<label>Passwort für die Seite (Login)<input id="a" type="text" autocomplete="off"></label>
+<label>Passwort für den Bearbeitungsmodus (Timecode)<input id="t" type="text" autocomplete="off"></label>
+<button id="go" type="button">Zeilen für password.js erzeugen</button>
+<pre id="out">…</pre>
+<script>
+async function h(x){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode("jw-musik:"+x));return [...new Uint8Array(b)].map(v=>v.toString(16).padStart(2,"0")).join("")}
+document.getElementById("go").onclick=async()=>{const a=document.getElementById("a").value,t=document.getElementById("t").value;
+document.getElementById("out").textContent=
+ (a?`window.APP_PASSWORD_HASH = "${await h(a)}";\n`:"")+(t?`window.TIMECODE_PASSWORD_HASH = "${await h(t)}";\n`:"")+"\n// Die alten Zeilen window.APP_PASSWORD = ... und window.TIMECODE_PASSWORD = ... löschen!";};
+</script></body></html>
