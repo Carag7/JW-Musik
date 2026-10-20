@@ -1,12 +1,11 @@
-return new Response("TEST 7");
-
-
-
-
-
-
-
 export default {
+
+
+
+  return new Response("TEST 7");
+
+
+
   async fetch(request, env) {
     const url = new URL(request.url);
     const path = url.pathname;
