@@ -1,4 +1,5 @@
-console.log("TEST 7 AKTIV");
+return new Response("TEST 7");
+
 
 
 
