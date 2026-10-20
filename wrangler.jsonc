@@ -1,3 +1,20 @@
+export default {
+  async fetch(request, env) {
+    return new Response(
+      env.GITHUB_TOKEN ? "TOKEN OK" : "TOKEN FEHLT"
+    );
+  }
+}
+
+
+
+
+
+
+
+
+
+
 {
   "name": "musik",
   "main": "src/index.js",
