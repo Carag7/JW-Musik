@@ -941,6 +941,16 @@ function addMissingSongs() {
   if (current) state.index = state.songs.indexOf(current);
 }
 
+/* Video-Fenster beginnt direkt unter Titel + Fassungs-Buttons */
+function layoutVideo() {
+  const root = document.documentElement;
+  const now = document.querySelector(".stage > .now");
+  const tb = document.querySelector(".topbar");
+  let top = tb ? tb.getBoundingClientRect().bottom : 58;
+  if (now && getComputedStyle(now).display !== "none") top = Math.max(top, now.getBoundingClientRect().bottom);
+  root.style.setProperty("--vtop", `${Math.round(top)}px`);
+}
+
 function updateVersionBar() {
   const bar = document.getElementById("versionBar");
   if (!bar) return;
@@ -964,10 +974,11 @@ function updateVersionBar() {
     view.textContent = state.videoText ? "Video zeigen" : "Text statt Video";
     view.setAttribute("aria-pressed", String(Boolean(state.videoText)));
   }
-  document.body.classList.toggle("video-text", Boolean(state.videoText) && state.curVersion === "video");
+  document.body.classList.toggle("video-text", (Boolean(state.videoText) || state.unsynced) && state.curVersion === "video");
+  layoutVideo();
   const text = document.getElementById("verText");
   const own = Boolean(mediaKey("lrc", n));
-  text.hidden = state.curVersion === "karaoke" || own || state.curVersion === "video";
+  text.hidden = state.curVersion === "karaoke" || own || Boolean(state.videoLines && state.videoLines.length);
   text.setAttribute("aria-pressed", String(state.unsynced));
   text.textContent = state.unsynced ? "Karaoketext ausblenden" : "Karaoketext anzeigen";
 }
@@ -1001,6 +1012,7 @@ function chooseVersion(version) {
   if (state.version === version && state.curVersion === version) return;
   state.version = version;
   const wasPlaying = !el.audio.paused;
+  state.resumeAt = el.audio.currentTime > 1 ? el.audio.currentTime : null;
   if (state.index >= 0) selectSong(state.index, wasPlaying);
 }
 
@@ -1063,6 +1075,7 @@ async function selectSong(index, autoplay) {
   state.audioTry = 0;
   state.waveData = null;
   const song = state.songs[index];
+  const resume = state.resumeAt; state.resumeAt = null;
   el.number.textContent = `Lied ${song.id}`;
   el.title.textContent = song.title;
   el.songCategory.textContent = song.category || "";
@@ -1095,6 +1108,7 @@ async function selectSong(index, autoplay) {
   if (src.fallback) el.status.textContent = src.version === "meeting" ? "Karaoke-MP3 fehlt – Instrumental wird gespielt" : "Karaoke-MP3 fehlt – Video wird gespielt";
   state.currentAudio = url;
   setAudioSource(url);
+  if (resume) el.audio.addEventListener("loadedmetadata", () => { try { el.audio.currentTime = Math.max(0, Math.min(resume, (el.audio.duration || resume + 1) - 0.5)); } catch { /* egal */ } }, { once: true });
   loadLyrics(song, src.version);  // läuft parallel zum Audio-Laden
   setMediaSession(song);
   el.app.classList.add("song-open");
@@ -1104,7 +1118,7 @@ async function selectSong(index, autoplay) {
   if (state.canplayHandler) el.audio.removeEventListener("canplay", state.canplayHandler);
   state.canplayHandler = null;
   if (autoplay) {
-    showTitleIntro(song);
+    if (!resume) showTitleIntro(song);
     state.canplayHandler = () => {
       state.canplayHandler = null;
       if (token === state.selectToken && el.audio.paused) togglePlay();
@@ -1428,6 +1442,9 @@ function tryAutoStart() {
 
 function bind() {
   bindChrome();
+  window.addEventListener("resize", layoutVideo);
+  const nowEl = document.querySelector(".stage > .now");
+  if (nowEl && window.ResizeObserver) new ResizeObserver(layoutVideo).observe(nowEl);
   el.lyricSearchToggle.addEventListener("click", () => {
     const open = el.lyricSearchWrap.hidden;
     el.lyricSearchWrap.hidden = !open;
@@ -1771,6 +1788,13 @@ function bind() {
   });
   el.audio.addEventListener("error", () => {
     const song = state.songs[state.index];
+    if (state.curVersion && state.curVersion !== "karaoke") {
+      const c = el.audio.error ? el.audio.error.code : 0;
+      el.status.textContent = state.curVersion === "video"
+        ? `Video lässt sich nicht abspielen (Fehler ${c}${c === 4 ? ": Datei nicht gefunden oder Format/Codec nicht unterstützt – bitte als MP4 mit H.264 + AAC ablegen" : ""}).`
+        : `Instrumental-Datei lässt sich nicht abspielen (Fehler ${c}).`;
+      return;
+    }
     const list = song ? audioCandidates(song) : [];
     state.audioTry = (state.audioTry || 0) + 1;
     if (song && state.audioTry < list.length) {
