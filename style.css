@@ -899,3 +899,9 @@ body.no-verbar .version-bar { display: none !important; }
 /* Gespielte Lied in der Liste: Hintergrundfarbe (Hover behält nur den Rahmen) */
 .song-btn.active { background: #1f5a52 !important; border-color: #7dd3c7 !important; color: #fff; }
 .song-btn.active strong { color: #fff; }
+
+/* Fassungs-Buttons: eigene Zeile unter Titel/Status, rechtsbündig (Handy: linksbündig, umbrechend) */
+.stage > .now { flex-wrap: wrap !important; }
+.stage > .now > * { min-width: 0; }
+.stage > .now > .version-bar { flex: 0 0 100% !important; width: 100%; justify-content: flex-end; order: 99; padding: 6px 0 4px; }
+@media (max-width: 700px) { .stage > .now > .version-bar { justify-content: flex-start; } .version-bar .seg-btn { padding: 0 10px; } }
