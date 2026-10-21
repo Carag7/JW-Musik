@@ -4,7 +4,16 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#070b14" />
-  <meta name="color-scheme" content="dark" />
+  <meta name="color-scheme" content="dark light" />
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem("theme") || "klassisch";
+        if (t === "auto") t = matchMedia("(prefers-color-scheme: light)").matches ? "tag" : "graphit";
+        if (t !== "klassisch") document.documentElement.setAttribute("data-theme", t);
+      } catch (e) {}
+    })();
+  </script>
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="description" content="Karaoke für Smartphone, Tablet und Tesla-Browser. Liedliste, Player und LRC-Text." />
@@ -49,6 +58,7 @@
       <button id="largerBtn" class="ghost" type="button" aria-label="Schrift größer">A+</button>
       <button id="fullscreenBtn" class="ghost" type="button">Vollbild</button>
       <a id="lyricsLink" class="ghost text-link" href="https://www.jw.org/en/library/music-songs/sing-out-joyfully/" target="_blank" rel="noopener">Text</a>
+      <button id="themeBtn" class="ghost" type="button" aria-label="Design wechseln" title="Design wechseln">◐</button>
       <button id="autoStartBtn" class="ghost auto-ico" type="button" aria-pressed="false" aria-label="Autoplay beim Öffnen">⏵</button>
       <button id="refreshBtn" class="ghost" type="button" hidden>Neu laden</button>
       <button id="closeSidebar" class="ghost x-ico" type="button" aria-label="Auswahlliste ausblenden" title="Auswahlliste ausblenden">×</button>
@@ -222,6 +232,11 @@
         <p class="ap-title">Einstellung für dieses Gerät (hat nichts mit dem Synchronisieren zu tun)</p>
         <label class="set-row check"><input id="autoPlayOpt" type="checkbox" /> Beim Öffnen automatisch abspielen</label>
         <small class="set-hint">Praktisch im Auto: Die Seite startet das zuletzt gehörte Lied von selbst. Mit dem kleinen ⏵ oben rechts kannst du das jederzeit umschalten.</small>
+      </div>
+      <div id="themeBox" class="autoplay-box" hidden>
+        <p class="ap-title">Design (für dieses Gerät)</p>
+        <div id="themeSeg" class="theme-seg"></div>
+        <small class="set-hint">„Auto“ folgt dem Hell/Dunkel-Modus von Tesla bzw. des Geräts. Schnell wechseln: kleines ◐ oben rechts.</small>
       </div>
       <div id="verBarBox" class="autoplay-box" hidden>
         <p class="ap-title">Einstellung für dieses Gerät</p>

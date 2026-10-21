@@ -2305,6 +2305,8 @@ async function syncFavorites() {
     try { localStorage.setItem("sync-auto-max", String(value)); } catch { /* egal */ }
   };
   document.getElementById("verBarBox").hidden = false;
+  document.getElementById("themeBox").hidden = false;
+  applyTheme(themeSetting(), false);
   const vb = document.getElementById("verBarOpt");
   vb.checked = localStorage.getItem("verBar") !== "0";
   vb.onchange = () => { try { localStorage.setItem("verBar", vb.checked ? "1" : "0"); } catch { /* egal */ } updateVersionBar(); };
@@ -2824,6 +2826,7 @@ function openCode(title, onSubmit, kind) {
   document.getElementById("syncSettings").hidden = true;
   document.getElementById("autoPlayBox").hidden = true;
   document.getElementById("verBarBox").hidden = true;
+  document.getElementById("themeBox").hidden = true;
   if (kind === "import") {
     metaBtn.hidden = false;
     metaBtn.onclick = () => { meta.hidden = !meta.hidden; };
@@ -2947,3 +2950,50 @@ function init() {
 }
 
 init();
+
+
+/* ---------- Designs (Themes) ---------- */
+const THEMES = [
+  { id: "auto", name: "Auto", bar: null },
+  { id: "klassisch", name: "Klassisch", bar: "#070b14" },
+  { id: "graphit", name: "Graphit", bar: "#171a20" },
+  { id: "tag", name: "Tag", bar: "#eef0f3" },
+  { id: "amber", name: "Amber", bar: "#000000" }
+];
+function themeSetting() { try { return localStorage.getItem("theme") || "klassisch"; } catch { return "klassisch"; } }
+function applyTheme(setting, fade) {
+  let t = setting;
+  if (t === "auto") t = matchMedia("(prefers-color-scheme: light)").matches ? "tag" : "graphit";
+  const root = document.documentElement;
+  if (fade) { root.classList.add("theme-fade"); setTimeout(() => root.classList.remove("theme-fade"), 400); }
+  if (t === "klassisch") root.removeAttribute("data-theme"); else root.setAttribute("data-theme", t);
+  const meta = document.querySelector('meta[name="theme-color"]');
+  const info = THEMES.find((x) => x.id === t);
+  if (meta && info && info.bar) meta.setAttribute("content", info.bar);
+  document.querySelectorAll("#themeSeg .seg-btn").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.theme === setting)));
+}
+function setTheme(id, announce) {
+  try { localStorage.setItem("theme", id); } catch { /* egal */ }
+  applyTheme(id, true);
+  if (announce) showToast(`Design: ${THEMES.find((x) => x.id === id).name}`);
+}
+function buildThemeUi() {
+  const seg = document.getElementById("themeSeg");
+  if (seg && !seg.children.length) {
+    THEMES.forEach((t) => {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "seg-btn"; b.dataset.theme = t.id; b.textContent = t.name;
+      b.addEventListener("click", () => setTheme(t.id, false));
+      seg.append(b);
+    });
+  }
+  const btn = document.getElementById("themeBtn");
+  if (btn) btn.addEventListener("click", () => {
+    const cur = themeSetting();
+    const i = THEMES.findIndex((x) => x.id === cur);
+    setTheme(THEMES[(i + 1) % THEMES.length].id, true);
+  });
+  matchMedia("(prefers-color-scheme: light)").addEventListener("change", () => { if (themeSetting() === "auto") applyTheme("auto", true); });
+  applyTheme(themeSetting(), false);
+}
+buildThemeUi();

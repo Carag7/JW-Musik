@@ -255,6 +255,8 @@
       root.append(h("p", "ls-small", `Letzter Lauf: ${fmtTime(latest.zeit)} – ${trigger(latest.ausloeser)} – ${latest.ok ? "erfolgreich" : "FEHLGESCHLAGEN"}`));
     }
 
+    root.append(h("p", "ls-small", `Nächstes automatisches Update: ${nextAuto()} (GitHub kann es um einige Minuten verzögern)`));
+
     const list = weeks();
     if (list.length) {
       const a = list[0], b = list[list.length - 1];
@@ -304,6 +306,17 @@
       }
       root.append(box);
     }
+  }
+
+  /* wöchentlich montags 04:17 UTC (siehe .github/workflows/update.yml) */
+  function nextAuto() {
+    const now = new Date();
+    const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 4, 17));
+    d.setUTCDate(d.getUTCDate() + ((1 - d.getUTCDay() + 7) % 7));
+    if (d <= now) d.setUTCDate(d.getUTCDate() + 7);
+    const day = new Intl.DateTimeFormat("de-AT", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" }).format(d);
+    const days = Math.max(0, Math.ceil((d - now) / 86400000));
+    return `${day} Uhr (in ${days} ${days === 1 ? "Tag" : "Tagen"})`;
   }
 
   async function mountSync() {
