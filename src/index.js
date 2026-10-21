@@ -354,9 +354,12 @@ function json(data, headers, status = 200) {
 async function handleRefresh(request, env) {
   const reply = (obj, status = 200) => json(obj, CORS, status);
   if (request.method !== "POST") return reply({ ok: false, fehler: "Nur POST erlaubt." }, 405);
-  if (!env.GITHUB_TOKEN) {
-    return reply({ ok: false, fehler: "Server nicht eingerichtet: Secret GITHUB_TOKEN fehlt in Cloudflare (Worker „musik“, nicht ein anderer Worker)." }, 500);
+  const tokenName = Object.keys(env).find((k) => k.trim().toUpperCase() === "GITHUB_TOKEN" && env[k]);
+  if (!tokenName) {
+    const namen = Object.keys(env).filter((k) => typeof env[k] !== "object").join(", ") || "keine";
+    return reply({ ok: false, fehler: `Secret GITHUB_TOKEN fehlt in diesem Worker. Dieser Worker sieht nur diese Variablen: ${namen}.` }, 500);
   }
+  const GH_TOKEN = env[tokenName];
   if (env.REFRESH_PIN) {
     const body = await request.json().catch(() => ({}));
     if (String(body.pin || "") !== String(env.REFRESH_PIN)) {
@@ -367,7 +370,7 @@ async function handleRefresh(request, env) {
   const gh = (path, init = {}) => fetch(`https://api.github.com/repos/${repo}${path}`, {
     ...init,
     headers: {
-      authorization: `Bearer ${env.GITHUB_TOKEN}`,
+      authorization: `Bearer ${GH_TOKEN}`,
       accept: "application/vnd.github+json",
       "x-github-api-version": "2022-11-28",
       "user-agent": "jw-musik-refresh"
