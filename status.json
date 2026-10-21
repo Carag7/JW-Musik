@@ -1,5 +1,13 @@
 {
-  "letzter_lauf": null,
-  "letzter_erfolg": null,
-  "laeufe": []
+  "letzter_lauf": "2026-10-21T10:22:03Z",
+  "letzter_erfolg": "2026-10-21T10:22:03Z",
+  "laeufe": [
+    {
+      "zeit": "2026-10-21T10:22:03Z",
+      "ok": true,
+      "ausloeser": "workflow_dispatch",
+      "wochen_gefunden": 24,
+      "fehler": []
+    }
+  ]
 }
