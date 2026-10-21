@@ -1,20 +1,5 @@
 {
-  "letzter_lauf": "2026-10-20T21:16:56Z",
-  "letzter_erfolg": "2026-10-20T21:16:56Z",
-  "laeufe": [
-    {
-      "zeit": "2026-10-20T21:16:56Z",
-      "ok": true,
-      "ausloeser": "workflow_dispatch",
-      "wochen_gefunden": 24,
-      "fehler": []
-    },
-    {
-      "zeit": "2026-10-20T20:58:14Z",
-      "ok": true,
-      "ausloeser": "workflow_dispatch",
-      "wochen_gefunden": 24,
-      "fehler": []
-    }
-  ]
+  "letzter_lauf": null,
+  "letzter_erfolg": null,
+  "laeufe": []
 }

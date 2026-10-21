@@ -147,6 +147,7 @@
           <button class="seg-btn" type="button" data-ver="video" aria-pressed="false">Video</button>
         </div>
         <button id="verText" class="seg-btn text-opt" type="button" aria-pressed="false" hidden>Karaoketext anzeigen</button>
+        <button id="verView" class="seg-btn text-opt" type="button" aria-pressed="false" hidden>Text statt Video</button>
       </div>
       </section>
 
@@ -221,6 +222,11 @@
         <p class="ap-title">Einstellung für dieses Gerät (hat nichts mit dem Synchronisieren zu tun)</p>
         <label class="set-row check"><input id="autoPlayOpt" type="checkbox" /> Beim Öffnen automatisch abspielen</label>
         <small class="set-hint">Praktisch im Auto: Die Seite startet das zuletzt gehörte Lied von selbst. Mit dem kleinen ⏵ oben rechts kannst du das jederzeit umschalten.</small>
+      </div>
+      <div id="verBarBox" class="autoplay-box" hidden>
+        <p class="ap-title">Einstellung für dieses Gerät</p>
+        <label class="set-row check"><input id="verBarOpt" type="checkbox" /> Fassungs-Buttons (Karaoke / Instrumental / Video) anzeigen</label>
+        <small class="set-hint">Im Handy-Querformat sind sie immer ausgeblendet.</small>
       </div>
       <section id="ludwtSync" class="ludwt-sync" hidden></section>
     </form>

@@ -866,3 +866,38 @@ body.video-mode.sidebar-open #audio { left: var(--sidebar); width: calc(100vw - 
 /* Autoplay-Einstellung: eigener Rahmen, klar getrennt vom Synchronisieren */
 .autoplay-box { margin-top: 26px; padding: 14px 14px 12px; border: 2px dashed rgba(240, 180, 41, 0.6); border-radius: 14px; background: rgba(240, 180, 41, 0.06); display: flex; flex-direction: column; gap: 8px; }
 .ap-title { margin: 0; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--accent); }
+
+
+/* ===== Phase 8 ===== */
+/* Obere Leiste: Höhe inklusive Rand/Abstand (vorher 71 statt 58 px -> verdeckte die Liste), kein Scrollbalken */
+.topbar { box-sizing: border-box !important; height: var(--topbar) !important; min-height: var(--topbar); scrollbar-width: none !important; align-items: center !important; }
+.topbar::-webkit-scrollbar { display: none !important; height: 0 !important; }
+.topbar > #menuToggle, .topbar > #eigeneToggle, .topbar > #ludwtToggle { z-index: 1; position: relative; }
+body.chrome-hidden .topbar { height: 58px !important; }
+
+/* Fassungs-Buttons: eigene Zeile unter dem Titel, immer sichtbar, bei Bedarf wischbar */
+.version-bar { display: flex !important; flex-wrap: nowrap !important; overflow-x: auto; scrollbar-width: none; max-width: 100%; position: relative; z-index: 36; }
+.version-bar::-webkit-scrollbar { display: none; }
+.version-bar[hidden] { display: none !important; }
+.version-bar .seg, .version-bar .seg-btn { flex: 0 0 auto; white-space: nowrap; }
+body.video-mode .now { position: relative; z-index: 36; }
+body.video-mode .version-bar { position: fixed; left: 0; top: var(--topbar); right: 0; padding: 6px 10px; background: rgba(7,11,20,0.92); z-index: 37; }
+body.video-mode.sidebar-open .version-bar { left: var(--sidebar); }
+body.video-mode #audio { top: calc(var(--topbar) + 54px); height: calc(100vh - var(--topbar) - 54px - var(--flyer-h)); }
+body.video-mode .lyrics { visibility: hidden; }
+body.video-mode.video-text #audio { opacity: 0; pointer-events: none; width: 2px; height: 2px; top: auto; bottom: 0; }
+body.video-mode.video-text .lyrics { visibility: visible; }
+body.video-mode.video-text .version-bar { position: static; background: transparent; padding: 4px 0 8px; }
+body.no-verbar .version-bar { display: none !important; }
+@media (orientation: landscape) and (max-height: 480px) and (max-width: 1000px) {
+  .version-bar { display: none !important; }
+  body.video-mode #audio { top: var(--topbar); height: calc(100vh - var(--topbar) - var(--flyer-h)); }
+  .stage > .now:not(:has(#versionBar:not([hidden]))) { display: none !important; }
+  .stage > .now { display: none !important; }
+}
+/* Handy hochkant: Auswahlfenster standardmäßig volle Breite */
+@media (max-width: 700px) and (orientation: portrait) {
+  :root { --sidebar: 100vw; }
+  .topbar > #menuToggle, .topbar > #eigeneToggle, .topbar > #ludwtToggle { flex: 0 0 calc((100vw - 36px) / 3 - 4px) !important; }
+}
+.fav-tools-main[hidden] { display: none !important; }

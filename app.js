@@ -843,6 +843,7 @@ async function loadLyrics(song, kind) {
   const stale = () => token !== state.selectToken;
   state.lyrics = [];
   state.unsynced = false;
+  state.videoLines = [];
   if (!kind || kind === "karaoke") {
     const lines = await fetchKaraokeLines(song, stale);
     if (stale()) return;
@@ -850,8 +851,10 @@ async function loadLyrics(song, kind) {
     renderLyrics(lines);
     return;
   }
-  const lines = kind === "meeting" ? await fetchMeetingLines(song, stale) : [];
+  const lines = (kind === "meeting" || kind === "video") ? await fetchMeetingLines(song, stale) : [];
   if (stale()) return;
+  state.videoLines = kind === "video" ? lines : [];
+  if (kind === "video") updateVersionBar();
   if (lines.length) {
     state.lyrics = lines;
     renderLyrics(lines);
@@ -942,9 +945,11 @@ function updateVersionBar() {
   const bar = document.getElementById("versionBar");
   if (!bar) return;
   const m = state.media;
-  const any = m && (Object.keys(m.meeting.audio).length || Object.keys(m.meeting.video).length);
   const song = state.songs[state.index];
-  bar.hidden = !any || !song;
+  let on = true;
+  try { on = localStorage.getItem("verBar") !== "0"; } catch { /* egal */ }
+  document.body.classList.toggle("no-verbar", !on);
+  bar.hidden = !song;
   if (bar.hidden) return;
   const n = song.number;
   const avail = { karaoke: !song.extra, meeting: Boolean(mediaKey("meeting", n)), video: Boolean(mediaKey("video", n)) };
@@ -953,6 +958,13 @@ function updateVersionBar() {
     btn.disabled = !avail[v];
     btn.setAttribute("aria-pressed", String(state.curVersion === v));
   });
+  const view = document.getElementById("verView");
+  if (view) {
+    view.hidden = !(state.curVersion === "video" && state.videoLines && state.videoLines.length);
+    view.textContent = state.videoText ? "Video zeigen" : "Text statt Video";
+    view.setAttribute("aria-pressed", String(Boolean(state.videoText)));
+  }
+  document.body.classList.toggle("video-text", Boolean(state.videoText) && state.curVersion === "video");
   const text = document.getElementById("verText");
   const own = Boolean(mediaKey("lrc", n));
   text.hidden = state.curVersion === "karaoke" || own || state.curVersion === "video";
@@ -1721,6 +1733,8 @@ function bind() {
   });
   el.fullscreen.addEventListener("click", toggleFullscreen);
   document.getElementById("refreshBtn").addEventListener("click", hardRefresh);
+  const vv = document.getElementById("verView");
+  if (vv) vv.addEventListener("click", () => { state.videoText = !state.videoText; updateVersionBar(); });
   document.querySelectorAll("#versionBar .seg-btn[data-ver]").forEach((btn) => btn.addEventListener("click", () => chooseVersion(btn.dataset.ver)));
   document.getElementById("verText").addEventListener("click", toggleUnsynced);
   document.getElementById("closeSidebar").addEventListener("click", () => setSidebar(false));
@@ -2250,6 +2264,10 @@ async function syncFavorites() {
     max.value = String(value);
     try { localStorage.setItem("sync-auto-max", String(value)); } catch { /* egal */ }
   };
+  document.getElementById("verBarBox").hidden = false;
+  const vb = document.getElementById("verBarOpt");
+  vb.checked = localStorage.getItem("verBar") !== "0";
+  vb.onchange = () => { try { localStorage.setItem("verBar", vb.checked ? "1" : "0"); } catch { /* egal */ } updateVersionBar(); };
   const auto = document.getElementById("autoPlayOpt");
   auto.checked = localStorage.getItem("autoStart") === "1";
   auto.onchange = () => { try { localStorage.setItem("autoStart", auto.checked ? "1" : "0"); } catch { /* egal */ } updateAutoIcon(); };
@@ -2765,6 +2783,7 @@ function openCode(title, onSubmit, kind) {
   metaBtn.hidden = true;
   document.getElementById("syncSettings").hidden = true;
   document.getElementById("autoPlayBox").hidden = true;
+  document.getElementById("verBarBox").hidden = true;
   if (kind === "import") {
     metaBtn.hidden = false;
     metaBtn.onclick = () => { meta.hidden = !meta.hidden; };
