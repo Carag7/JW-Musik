@@ -42,7 +42,7 @@ export default {
 
     if (path.startsWith("/media/")) {
       const key = decodeURIComponent(path.slice(7));
-      if (!/^(karaoke|meeting)\//.test(key) || key.includes("..")) return new Response("Not Found", { status: 404, headers: CORS });
+      if (/^(favoriten|sync)\//.test(key) || key.includes("..") || key.split("/").some((p) => p.startsWith("_")) || !/\.(mp3|m4a|aac|wav|mp4|m4v|webm|mov|lrc)$/i.test(key)) return new Response("Not Found", { status: 404, headers: CORS });
       return serveR2(env, [key], request);
     }
 
