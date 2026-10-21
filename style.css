@@ -905,3 +905,16 @@ body.no-verbar .version-bar { display: none !important; }
 .stage > .now > * { min-width: 0; }
 .stage > .now > .version-bar { flex: 0 0 100% !important; width: 100%; justify-content: flex-end; order: 99; padding: 6px 0 4px; }
 @media (max-width: 700px) { .stage > .now > .version-bar { justify-content: flex-start; } .version-bar .seg-btn { padding: 0 10px; } }
+
+/* Handy hochkant: Kopfbereich des Liedes kompakter */
+@media (max-width: 700px) and (orientation: portrait) {
+  .stage > .now { padding: 6px 12px 2px !important; gap: 2px 8px !important; }
+  .stage > .now .title-row { flex-direction: row !important; align-items: center !important; justify-content: flex-start !important; gap: 10px !important; margin: 0 !important; }
+  .stage > .now .meta-row { flex-direction: row !important; flex-wrap: wrap; align-items: baseline !important; justify-content: flex-start !important; gap: 2px 12px !important; }
+  .stage > .now h2 { font-size: 20px !important; line-height: 1.15; flex: 0 0 100%; }
+  .stage > .now .song-number { font-size: 14px !important; margin: 0; }
+  .stage > .now .star-btn { min-width: 34px !important; min-height: 34px !important; width: 34px; height: 34px; font-size: 18px; }
+  .stage > .now .meta, .stage > .now #currentStatus { font-size: 13px !important; }
+  .stage > .now > .version-bar { padding: 2px 0 2px; }
+  .version-bar .seg-btn { min-height: 34px; font-size: 13px; }
+}

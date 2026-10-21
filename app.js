@@ -326,7 +326,18 @@ function setSidebar(open) {
 function centerActiveInList() {
   markActive();
   const target = document.querySelector("#songList .song-btn.active");
-  if (target) target.scrollIntoView({ block: "center" });
+  if (target) scrollInList(target, "center");
+}
+
+/* Nur die Liste scrollen – scrollIntoView würde die ganze Seite nach oben schieben (obere Leiste/Titel abgeschnitten) */
+function scrollInList(target, mode) {
+  const box = document.getElementById("sidebar");
+  if (!box || !target) return;
+  const b = box.getBoundingClientRect(), t = target.getBoundingClientRect();
+  if (mode === "center") box.scrollTop += (t.top + t.height / 2) - (b.top + b.height / 2);
+  else if (t.top < b.top) box.scrollTop += t.top - b.top;
+  else if (t.bottom > b.bottom) box.scrollTop += t.bottom - b.bottom;
+  [document.body, document.documentElement].forEach((n) => { if (n.scrollTop) n.scrollTop = 0; });
 }
 
 function visibleSongs() {
@@ -674,7 +685,7 @@ function markActive() {
     button.classList.toggle("active", on);
     if (on && !target) target = button;
   });
-  if (target && state.sidebarOpen) target.scrollIntoView({ block: "nearest" });
+  if (target && state.sidebarOpen) scrollInList(target, "nearest");
 }
 
 function applyListSize() {
@@ -1442,6 +1453,11 @@ function tryAutoStart() {
 
 function bind() {
   bindChrome();
+  // Seite darf nie von selbst verrutschen (feste Leiste oben)
+  [document.body, window].forEach((n) => n.addEventListener("scroll", () => {
+    if (document.body.scrollTop) document.body.scrollTop = 0;
+    if (document.documentElement.scrollTop) document.documentElement.scrollTop = 0;
+  }, { passive: true }));
   window.addEventListener("resize", layoutVideo);
   const nowEl = document.querySelector(".stage > .now");
   if (nowEl && window.ResizeObserver) new ResizeObserver(layoutVideo).observe(nowEl);
