@@ -349,7 +349,17 @@ function visibleSongs() {
     const order = new Map(playlist.songs.map((id, index) => [id, index]));
     songs = state.songs.filter((song) => order.has(song.id)).sort((a, b) => order.get(a.id) - order.get(b.id));
   }
+  const extraOn = showExtraSongs();
+  const srcs = extraOn ? srcSet() : null;
   return songs.filter((song) => {
+    if (state.mode !== "ludwt" && !extraOn && song.extra) {
+      const inList = playlist && state.mode === "playlists" && playlist.songs.includes(song.id);
+      if (!inList) return false;
+    }
+    if (srcs && ![...srcs].some((t) => songHasSource(song, t))) {
+      const inList = playlist && state.mode === "playlists" && !state.selectMode;
+      if (!inList) return false;
+    }
     if (state.mode === "songs" && state.favoritesOnly && !state.favorites.has(song.id)) return false;
     if (state.category && song.category !== state.category) return false;
     if (state.lyricQuery) {
@@ -508,7 +518,7 @@ function fillPlaylists() {
       if (list.id === state.activePlaylist) button.setAttribute("aria-pressed", "true");
       button.addEventListener("click", () => {
         state.activePlaylist = list.id;
-        state.selectMode = false;
+        state.selectMode = list.songs.length === 0;   // leere Liste: alle Lieder zum Hinzufügen zeigen
         fillPlaylists();
         renderList();
       });
@@ -586,7 +596,20 @@ function fillCategories() {
   });
 }
 
+/* Umschalter „Auswahl / alle Lieder“ bei Wiedergabelisten: beide Stellungen farbig gefüllt */
+function syncSelectBtn() {
+  const b = el.favoritesToggle;
+  if (!b) return;
+  const pl = state.mode === "playlists";
+  b.classList.toggle("filled", pl);
+  if (!pl) return;
+  const glass = !document.getElementById("lyricSearchWrap").hidden;
+  b.textContent = !glass ? "Wiedergabe" : (state.selectMode ? "alle Lieder" : "Auswahl");
+  b.setAttribute("aria-pressed", "true");
+}
+
 function renderList() {
+  syncSelectBtn();
   if (state.mode === "ludwt") { renderLudwtList(); return; }
   const songs = visibleSongs();
   el.count.textContent = String(songs.length);
@@ -644,12 +667,21 @@ function renderList() {
     button.type = "button";
     button.className = "song-btn";
     button.dataset.id = song.id;
+    if (song.extra) { item.classList.add("extra-song"); button.classList.add("is-extra"); }
     if (state.songs[state.index] === song) button.classList.add("active");
     const number = document.createElement("strong");
     number.textContent = song.id;
     const title = document.createElement("span");
     title.textContent = `${state.favorites.has(song.id) ? "★ " : ""}${song.title}`;
     button.append(number, title);
+    if (showExtraSongs() && state.media) {
+      const tags = document.createElement("span");
+      tags.className = "src-tags";
+      if (!song.extra) tags.append(Object.assign(document.createElement("i"), { className: "t-k", textContent: "K", title: "Karaoke" }));
+      if (mediaKey("meeting", song.number)) tags.append(Object.assign(document.createElement("i"), { className: "t-i", textContent: "♪", title: "Instrumental" }));
+      if (mediaKey("video", song.number)) tags.append(Object.assign(document.createElement("i"), { className: "t-v", textContent: "▶", title: "Video" }));
+      button.append(tags);
+    }
     button.addEventListener("click", () => selectSong(state.songs.indexOf(song), true));
     item.append(button);
     el.list.append(item);
@@ -931,25 +963,92 @@ async function loadMedia() {
 }
 
 /* Lieder, die nur als Instrumental/Video vorliegen (nicht in songs.json), spielbar machen – z. B. für LuD+WT */
+const showExtraSongs = () => { try { return localStorage.getItem("showExtra") === "1"; } catch { return false; } };
+
 function addMissingSongs() {
-  if (!state.media || !window.LUDWT) return;
+  if (!state.media) return;
   const have = new Set(state.songs.map((song) => song.number));
   const current = state.songs[state.index];
-  let added = false;
-  for (const week of LUDWT.weeks()) {
-    for (const key of ["leben_und_dienst", "wachtturm"]) {
-      for (const lied of (week[key] && week[key].lieder) || []) {
-        const n = lied.nummer;
-        if (have.has(n) || !(mediaKey("meeting", n) || mediaKey("video", n))) continue;
-        state.songs.push({ id: String(n).padStart(3, "0"), number: n, title: `Lied ${n}`, category: "", extra: true });
-        have.add(n);
-        added = true;
+  const titles = new Map();
+  if (window.LUDWT) {
+    for (const week of LUDWT.weeks()) {
+      for (const key of ["leben_und_dienst", "wachtturm"]) {
+        for (const lied of (week[key] && week[key].lieder) || []) if (lied.titel) titles.set(lied.nummer, lied.titel);
       }
     }
+  }
+  const wanted = new Set();
+  const weekly = new Set();
+  if (window.LUDWT) {
+    for (const week of LUDWT.weeks()) {
+      for (const key of ["leben_und_dienst", "wachtturm"]) {
+        for (const lied of (week[key] && week[key].lieder) || []) weekly.add(lied.nummer);
+      }
+    }
+  }
+  const m = state.media.meeting || {};
+  const numbers = [...Object.keys(m.audio || {}), ...Object.keys(m.video || {})].map(Number);
+  for (const n of numbers) if (n > 0 && (showExtraSongs() || weekly.has(n))) wanted.add(n);
+  let added = false;
+  for (const n of wanted) {
+    if (have.has(n) || !(mediaKey("meeting", n) || mediaKey("video", n))) continue;
+    state.songs.push({ id: String(n).padStart(3, "0"), number: n, title: titles.get(n) || `Lied ${n}`, category: "", extra: true });
+    have.add(n);
+    added = true;
   }
   if (!added) return;
   state.songs.sort((a, b) => a.number - b.number);
   if (current) state.index = state.songs.indexOf(current);
+}
+
+/* Schalter „Weitere Lieder“ geändert: Zusatzlieder neu aufbauen */
+function rebuildExtras() {
+  const current = state.songs[state.index];
+  state.songs = state.songs.filter((s) => !s.extra || (current && s === current));
+  if (current && current.extra) state.songs = state.songs.filter((s) => !(s.extra && s !== current));
+  state.index = current ? state.songs.indexOf(current) : -1;
+  addMissingSongs();
+  if (current) state.index = state.songs.indexOf(current);
+  updateSourceFilterUi();
+  renderList();
+}
+
+/* Quellen-Auswahl (Karaoke / Instrumental / Video) in der Liste, nur bei aktivem Schalter + Lupe */
+const SRC_TYPES = [["karaoke", "Karaoke"], ["meeting", "Instrumental"], ["video", "Video"]];
+function srcSet() {
+  try { const a = JSON.parse(localStorage.getItem("srcFilter") || "null"); if (Array.isArray(a) && a.length) return new Set(a); } catch { /* egal */ }
+  return new Set(SRC_TYPES.map((t) => t[0]));
+}
+function songHasSource(song, type) {
+  if (type === "karaoke") return !song.extra;
+  if (!state.media) return false;
+  return Boolean(mediaKey(type, song.number));
+}
+function updateSourceFilterUi() {
+  const box = document.getElementById("sourceFilter");
+  if (!box) return;
+  const glass = !document.getElementById("lyricSearchWrap").hidden;
+  const on = showExtraSongs();
+  box.hidden = !(on && glass);
+  document.body.classList.toggle("show-extra", on);
+  if (box.hidden) return;
+  const set = srcSet();
+  box.replaceChildren();
+  const lab = document.createElement("span"); lab.className = "src-label"; lab.textContent = "Anzeigen:";
+  box.append(lab);
+  SRC_TYPES.forEach(([id, name]) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = `chip src-chip src-${id}`; b.textContent = name;
+    b.setAttribute("aria-pressed", String(set.has(id)));
+    b.addEventListener("click", () => {
+      const cur = srcSet();
+      if (cur.has(id)) cur.delete(id); else cur.add(id);
+      if (!cur.size) cur.add(id);
+      try { localStorage.setItem("srcFilter", JSON.stringify([...cur])); } catch { /* egal */ }
+      updateSourceFilterUi(); renderList();
+    });
+    box.append(b);
+  });
 }
 
 /* Video-Fenster beginnt direkt unter Titel + Fassungs-Buttons */
@@ -1468,6 +1567,7 @@ function bind() {
     el.lyricSearchToggle.setAttribute("aria-pressed", String(open));
     document.getElementById("listTools").hidden = !open;
     document.getElementById("favTools").hidden = !open;
+    updateSourceFilterUi();
     document.getElementById("waveToggle").hidden = !open;
     document.getElementById("refreshBtn").hidden = !open;
     document.getElementById("splitHandle").hidden = !open || document.fullscreenElement || document.body.classList.contains("pseudo-fullscreen");
@@ -1571,6 +1671,8 @@ function bind() {
     }
     document.getElementById("playlistCreateBox").hidden = true;
     state.activePlaylist = event.target.value;
+    const chosen = state.playlists.find((l) => l.id === state.activePlaylist);
+    state.selectMode = !chosen || chosen.songs.length === 0;
     updateEditTools();
     renderList();
   });
@@ -1740,9 +1842,9 @@ function bind() {
     sessionStorage.removeItem(STORAGE.auth);
     location.reload();
   });
-  document.getElementById("exportFav").addEventListener("click", exportFavorites);
-  document.getElementById("syncFav").addEventListener("click", syncFavorites);
-  document.getElementById("importFav").addEventListener("click", importFavorites);
+  document.getElementById("exportFav").addEventListener("click", () => { state.fromSettings = true; exportFavorites(); });
+  document.getElementById("syncFav").addEventListener("click", () => syncFavorites());
+  document.getElementById("importFav").addEventListener("click", () => { state.fromSettings = true; importFavorites(); });
   autoSync();
   el.favorite.addEventListener("click", toggleFavorite);
   el.favoritesToggle.addEventListener("click", () => {
@@ -2271,9 +2373,14 @@ async function showSyncCompare() {
   await uiDialog({ eyebrow: "Synchronisieren", title: "Vergleich Gerät ↔ Server", lines, buttons: [{ value: true, kind: "primary", label: "Schließen" }] });
 }
 
-async function syncFavorites() {
+async function syncFavorites(tab) {
+  await syncFavoritesCore();
+  showSetTab(tab || state.setTab || "abgleich");
+}
+
+async function syncFavoritesCore() {
   const saved = localStorage.getItem("sync-code") || "";
-  openCode("Synchronisieren", async (code) => {
+  openCode("Einstellungen", async (code) => {
     localStorage.setItem("sync-code", code);
     try {
       const message = await runSync(code, false);
@@ -2305,8 +2412,11 @@ async function syncFavorites() {
     try { localStorage.setItem("sync-auto-max", String(value)); } catch { /* egal */ }
   };
   document.getElementById("verBarBox").hidden = false;
+  document.getElementById("extraBox").hidden = false;
+  const ex = document.getElementById("extraSongsOpt");
+  ex.checked = showExtraSongs();
+  ex.onchange = () => { try { localStorage.setItem("showExtra", ex.checked ? "1" : "0"); } catch { /* egal */ } rebuildExtras(); };
   document.getElementById("themeBox").hidden = false;
-  applyTheme(themeSetting(), false);
   const vb = document.getElementById("verBarOpt");
   vb.checked = localStorage.getItem("verBar") !== "0";
   vb.onchange = () => { try { localStorage.setItem("verBar", vb.checked ? "1" : "0"); } catch { /* egal */ } updateVersionBar(); };
@@ -2811,6 +2921,11 @@ function openCode(title, onSubmit, kind) {
   const qr = document.getElementById("syncQr");
   const ok = document.getElementById("codeOk");
   document.getElementById("codeTitle").textContent = title;
+  const settingsMode = kind === "sync";
+  document.getElementById("codeForm").classList.toggle("settings-mode", settingsMode);
+  document.getElementById("codeEyebrow").textContent = settingsMode ? "Menü" : "Favoriten";
+  document.getElementById("codeCancel").textContent = settingsMode ? "Schließen" : (state.fromSettings ? "Zurück" : "Abbrechen");
+  if (!settingsMode) document.getElementById("codeForm").querySelectorAll("[data-tab]").forEach((n) => n.classList.toggle("tab-off", n.dataset.tab !== "abgleich"));
   input.value = "";
   message.textContent = kind === "import"
     ? "Anderes Gerät: Link vom Export hier einfügen. Vom Handy zum Tesla den Link kopieren."
@@ -2826,6 +2941,7 @@ function openCode(title, onSubmit, kind) {
   document.getElementById("syncSettings").hidden = true;
   document.getElementById("autoPlayBox").hidden = true;
   document.getElementById("verBarBox").hidden = true;
+  document.getElementById("extraBox").hidden = true;
   document.getElementById("themeBox").hidden = true;
   if (kind === "import") {
     metaBtn.hidden = false;
@@ -2867,7 +2983,11 @@ function openCode(title, onSubmit, kind) {
     if (result) message.textContent = result;
     if (mode === "device" && kind !== "import") ok.hidden = true;
   };
-  document.getElementById("codeCancel").onclick = () => { modal.hidden = true; };
+  document.getElementById("codeCancel").onclick = () => {
+    if (kind !== "sync" && state.fromSettings) { state.fromSettings = false; syncFavorites("sichern"); return; }
+    state.fromSettings = false;
+    modal.hidden = true;
+  };
 }
 
 function applySyncFromUrl() {
@@ -2952,48 +3072,22 @@ function init() {
 init();
 
 
-/* ---------- Designs (Themes) ---------- */
-const THEMES = [
-  { id: "auto", name: "Auto", bar: null },
-  { id: "klassisch", name: "Klassisch", bar: "#070b14" },
-  { id: "graphit", name: "Graphit", bar: "#171a20" },
-  { id: "tag", name: "Tag", bar: "#eef0f3" },
-  { id: "amber", name: "Amber", bar: "#000000" }
-];
-function themeSetting() { try { return localStorage.getItem("theme") || "klassisch"; } catch { return "klassisch"; } }
-function applyTheme(setting, fade) {
-  let t = setting;
-  if (t === "auto") t = matchMedia("(prefers-color-scheme: light)").matches ? "tag" : "graphit";
-  const root = document.documentElement;
-  if (fade) { root.classList.add("theme-fade"); setTimeout(() => root.classList.remove("theme-fade"), 400); }
-  if (t === "klassisch") root.removeAttribute("data-theme"); else root.setAttribute("data-theme", t);
-  const meta = document.querySelector('meta[name="theme-color"]');
-  const info = THEMES.find((x) => x.id === t);
-  if (meta && info && info.bar) meta.setAttribute("content", info.bar);
-  document.querySelectorAll("#themeSeg .seg-btn").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.theme === setting)));
-}
-function setTheme(id, announce) {
-  try { localStorage.setItem("theme", id); } catch { /* egal */ }
-  applyTheme(id, true);
-  if (announce) showToast(`Design: ${THEMES.find((x) => x.id === id).name}`);
-}
-function buildThemeUi() {
-  const seg = document.getElementById("themeSeg");
-  if (seg && !seg.children.length) {
-    THEMES.forEach((t) => {
-      const b = document.createElement("button");
-      b.type = "button"; b.className = "seg-btn"; b.dataset.theme = t.id; b.textContent = t.name;
-      b.addEventListener("click", () => setTheme(t.id, false));
-      seg.append(b);
-    });
-  }
+/* ---------- Designs (Themes): Logik in theme.js ---------- */
+(function bindTheme() {
   const btn = document.getElementById("themeBtn");
   if (btn) btn.addEventListener("click", () => {
-    const cur = themeSetting();
-    const i = THEMES.findIndex((x) => x.id === cur);
-    setTheme(THEMES[(i + 1) % THEMES.length].id, true);
+    const r = window.THEME.cycle();
+    showToast(`Design: ${r.name}${r.wasAuto ? " (Automatik aus)" : ""}`);
   });
-  matchMedia("(prefers-color-scheme: light)").addEventListener("change", () => { if (themeSetting() === "auto") applyTheme("auto", true); });
-  applyTheme(themeSetting(), false);
+})();
+
+/* ---------- Einstellungsfenster mit Reitern ---------- */
+function showSetTab(tab) {
+  const form = document.getElementById("codeForm");
+  state.setTab = tab;
+  form.querySelectorAll("[data-tab]").forEach((n) => n.classList.toggle("tab-off", !n.dataset.tab.split(" ").includes(tab)));
+  document.querySelectorAll("#setTabs [data-settab]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.settab === tab)));
+  if (tab === "design" && window.THEME) window.THEME.mountUi(document.getElementById("themeBox"));
+  form.scrollTop = 0;
 }
-buildThemeUi();
+document.querySelectorAll("#setTabs [data-settab]").forEach((b) => b.addEventListener("click", () => showSetTab(b.dataset.settab)));

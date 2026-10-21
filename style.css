@@ -961,12 +961,12 @@ html[data-theme="amber"] {
   --glow1: rgba(0,0,0,0); --glow2: rgba(0,0,0,0); --ok: #7ad66a; --info: #ffd37a;
   color-scheme: dark;
 }
-html[data-theme="tag"] .ls-note, html[data-theme="tag"] .set-hint { color: var(--muted); }
-html[data-theme="tag"] .dlg-lost, html[data-theme="tag"] .dlg-table td:nth-child(5) { color: #b91c1c; }
-html[data-theme="tag"] .dlg-add, html[data-theme="tag"] .dlg-table td:nth-child(4) { color: #15803d; }
-html[data-theme="tag"] .dlg-btn.danger { color: #7f1d1d; }
-html[data-theme="tag"] .chip.danger { color: #fff; }
-html[data-theme="tag"] .topbar > #menuToggle[aria-expanded="true"], html[data-theme="tag"] .topbar > #menuToggle[aria-pressed="true"] { color: var(--on-accent) !important; }
+html[data-light] .ls-note, html[data-light] .set-hint { color: var(--muted); }
+html[data-light] .dlg-lost, html[data-light] .dlg-table td:nth-child(5) { color: #b91c1c; }
+html[data-light] .dlg-add, html[data-light] .dlg-table td:nth-child(4) { color: #15803d; }
+html[data-light] .dlg-btn.danger { color: #7f1d1d; }
+html[data-light] .chip.danger { color: #fff; }
+html[data-light] .topbar > #menuToggle[aria-expanded="true"], html[data-light] .topbar > #menuToggle[aria-pressed="true"] { color: var(--on-accent) !important; }
 
 /* Themen-Auswahl */
 .theme-seg { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
@@ -979,3 +979,83 @@ html[data-theme="tag"] .topbar > #menuToggle[aria-expanded="true"], html[data-th
 .topbar > .top-actions #themeBtn:hover { opacity: 1; }
 /* sanfter Wechsel */
 html.theme-fade, html.theme-fade * { transition: background-color .25s ease, color .25s ease, border-color .25s ease !important; }
+
+html[data-theme="mitternacht"] {
+  --bg: #0c0a1f; --panel: #151232; --panel-2: #1f1b45; --line: rgba(190,180,255,0.14); --text: #eeeaff; --muted: #9b95c4;
+  --accent: #a78bfa; --accent-rgb: 167, 139, 250; --accent-2: #7dd3fc; --accent2-rgb: 125, 211, 252; --accent3: #f0abfc; --ink-rgb: 220, 214, 255;
+  --on-accent: #120a30; --on-accent-2: #06202e; --lyric-active: #e9d5ff; --sel-bg: #3b2f7a; --sel-text: #fff; --strong: #fff;
+  --bar-bg: rgba(12,10,31,0.97); --side-bg: rgba(21,18,50,0.97); --flyer-bg: rgba(10,8,26,0.98);
+  --glow1: rgba(167,139,250,0.14); --glow2: rgba(125,211,252,0.06); --ok: #6ee7a8; --info: #93c5fd;
+  color-scheme: dark;
+}
+html[data-theme="wald"] {
+  --bg: #0a1410; --panel: #12211a; --panel-2: #1b3126; --line: rgba(190,235,205,0.13); --text: #eaf5ec; --muted: #8fb09c;
+  --accent: #d9b44a; --accent-rgb: 217, 180, 74; --accent-2: #6fcf97; --accent2-rgb: 111, 207, 151; --accent3: #a7d8c0; --ink-rgb: 225, 245, 232;
+  --on-accent: #1d1602; --on-accent-2: #072314; --lyric-active: #f3d77a; --sel-bg: #1f5a3c; --sel-text: #fff; --strong: #fff;
+  --bar-bg: rgba(10,20,16,0.97); --side-bg: rgba(18,33,26,0.97); --flyer-bg: rgba(8,16,12,0.98);
+  --glow1: rgba(217,180,74,0.08); --glow2: rgba(111,207,151,0.07); --ok: #7be0a0; --info: #9bd1ff;
+  color-scheme: dark;
+}
+html[data-theme="sand"] {
+  --bg: #f3ead8; --panel: #fffaf0; --panel-2: #eadfc8; --line: rgba(60,40,15,0.18); --text: #2a2118; --muted: #6b5d4a;
+  --accent: #c2410c; --accent-rgb: 194, 65, 12; --accent-2: #0f766e; --accent2-rgb: 15, 118, 110; --accent3: #7c5cc4; --ink-rgb: 60, 40, 15;
+  --on-accent: #ffffff; --on-accent-2: #ffffff; --lyric-active: #9a3412; --sel-bg: #ffe2c2; --sel-text: #3b1a06; --strong: #2a2118;
+  --bar-bg: rgba(255,250,240,0.97); --side-bg: rgba(255,250,240,0.98); --flyer-bg: rgba(243,234,216,0.98);
+  --glow1: rgba(0,0,0,0); --glow2: rgba(0,0,0,0); --ok: #15803d; --info: #1d4ed8; --shadow: 0 10px 30px rgba(60,40,15,0.15);
+  color-scheme: light;
+}
+
+/* ===== Einstellungsfenster mit Reitern ===== */
+.set-tabs { display: none; flex-wrap: wrap; gap: 6px; }
+#codeForm.settings-mode .set-tabs { display: flex; }
+.set-tabs .seg-btn { border: 1px solid var(--line); border-radius: 12px; min-height: 40px; flex: 1 1 auto; }
+.set-tabs .seg-btn[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.tab-off { display: none !important; }
+.set-h { margin: 4px 0 0; font-size: 15px; }
+.backup-box { display: flex; flex-direction: column; gap: 10px; }
+.backup-box .chip { width: 100% !important; justify-content: center; min-height: 48px; }
+.theme-modes { display: flex; flex-direction: column; gap: 4px; }
+.theme-modes .set-row.check input { width: 20px; min-height: 20px; height: 20px; }
+.theme-seg { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 6px; margin-top: 6px; }
+.theme-opt { display: flex; align-items: center; gap: 8px; text-align: left; }
+.theme-sw { display: inline-flex; margin-right: 8px; border-radius: 6px; overflow: hidden; border: 1px solid var(--line); vertical-align: middle; }
+.theme-sw i { width: 12px; height: 18px; display: block; }
+.theme-opt .theme-sw { margin-right: 0; }
+.theme-tbl { width: 100%; border-collapse: collapse; font-size: 14px; }
+.theme-tbl th { text-align: center; color: var(--muted); font-size: 12px; padding: 4px; }
+.theme-tbl th:first-child { text-align: left; }
+.theme-tbl td { padding: 5px 4px; border-top: 1px solid var(--line); }
+.theme-tbl td.center { text-align: center; }
+.theme-tbl input[type="checkbox"] { width: 22px; height: 22px; min-height: 22px; }
+.theme-tbl .rec { display: block; font-size: 10px; color: var(--accent); }
+.sun-box { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel-2); }
+.sun-box .set-row input[type="number"] { width: 70px; }
+.sun-box select { min-height: 36px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel); color: var(--text); padding: 0 6px; }
+
+/* Auswahl / alle Lieder bei Wiedergabelisten: immer farbig gefüllt */
+#favoritesToggle.filled { background: var(--accent) !important; color: var(--on-accent) !important; border-color: var(--accent) !important; }
+
+/* Player-Symbol in den Farben des Designs */
+.player-icon, .player-icon[aria-pressed="false"] { background: var(--panel-2) !important; background-image: none !important; border: 1px solid rgba(var(--accent-rgb), 0.7) !important; position: relative; }
+.player-icon::before { content: ""; position: absolute; inset: 7px; background: var(--accent);
+  -webkit-mask: var(--pi) center/contain no-repeat; mask: var(--pi) center/contain no-repeat; }
+.player-icon { --pi: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 3v11.3A3.5 3.5 0 1 0 11 17.5V7.2l8-1.7v7.8A3.5 3.5 0 1 0 21 16.5V2z' fill='black'/%3E%3C/svg%3E"); }
+.player-icon[aria-pressed="false"] { --pi: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 3v11.3A3.5 3.5 0 1 0 11 17.5V7.2l8-1.7v7.8A3.5 3.5 0 1 0 21 16.5V2z' fill='black'/%3E%3Cpath d='M3 4.5 4.5 3 21 19.5 19.5 21z' fill='black' stroke='black' stroke-width='1'/%3E%3C/svg%3E"); opacity: 0.8; }
+
+/* Weitere Lieder (Instrumental / Video): Auswahl und Unterscheidung */
+.source-filter { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 6px 0; }
+.source-filter[hidden] { display: none !important; }
+.src-label { font-size: 12px; color: var(--muted); }
+.src-chip { min-height: 34px !important; padding: 0 10px !important; font-size: 13px !important; }
+.src-chip[aria-pressed="true"] { background: var(--accent) !important; color: var(--on-accent) !important; }
+.src-chip.src-meeting[aria-pressed="true"] { background: var(--accent3) !important; color: var(--on-accent-2) !important; }
+.src-chip.src-video[aria-pressed="true"] { background: var(--accent-2) !important; color: var(--on-accent-2) !important; }
+.song-btn { position: relative; }
+.src-tags { margin-left: auto; display: inline-flex; gap: 3px; align-self: center; flex: 0 0 auto; }
+.src-tags i { font-style: normal; font-size: 10px; font-weight: 800; min-width: 17px; height: 17px; border-radius: 5px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--line); color: var(--muted); }
+.src-tags i.t-k { color: var(--accent); border-color: rgba(var(--accent-rgb), 0.5); }
+.src-tags i.t-i { color: var(--accent3); border-color: var(--accent3); }
+.src-tags i.t-v { color: var(--accent-2); border-color: var(--accent-2); }
+.extra-song .song-btn.is-extra { border-left: 4px dashed var(--accent3) !important; background: rgba(var(--ink-rgb), 0.05); border-radius: 6px 12px 12px 6px; }
+.extra-song .song-btn.is-extra strong { color: var(--accent3); }
+.extra-song .song-btn.is-extra.active { background: var(--sel-bg) !important; }

@@ -5,15 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#070b14" />
   <meta name="color-scheme" content="dark light" />
-  <script>
-    (function () {
-      try {
-        var t = localStorage.getItem("theme") || "klassisch";
-        if (t === "auto") t = matchMedia("(prefers-color-scheme: light)").matches ? "tag" : "graphit";
-        if (t !== "klassisch") document.documentElement.setAttribute("data-theme", t);
-      } catch (e) {}
-    })();
-  </script>
+  <script src="theme.js"></script>
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="description" content="Karaoke für Smartphone, Tablet und Tesla-Browser. Liedliste, Player und LRC-Text." />
@@ -49,9 +41,7 @@
       <button id="splitRight" class="ghost" type="button" aria-label="Liste breiter">→</button>
     </div>
     <div id="favTools" class="fav-tools-main" hidden>
-      <button id="exportFav" class="chip" type="button">Favoriten exportieren</button>
-      <button id="importFav" class="chip" type="button">Favoriten importieren</button>
-      <button id="syncFav" class="chip" type="button">Synchronisieren</button>
+      <button id="syncFav" class="chip" type="button">Einstellungen</button>
     </div>
     <div class="top-actions">
       <button id="smallerBtn" class="ghost" type="button" aria-label="Schrift kleiner">A−</button>
@@ -126,6 +116,7 @@
         </select>
       </label>
       <div id="categoryList" class="cat-list" hidden></div>
+      <div id="sourceFilter" class="source-filter" hidden></div>
 
       <div class="filters">
         <button id="favoritesToggle" class="chip" type="button" aria-pressed="false">alle Lieder</button>
@@ -205,45 +196,59 @@
   </div>
   <div id="codeModal" class="login-gate" hidden>
     <form id="codeForm" class="login-card">
-      <p class="eyebrow">Favoriten</p>
-      <button id="metaToggle" class="ghost meta-i" type="button" hidden>i</button>
+      <p class="eyebrow" id="codeEyebrow">Favoriten</p>
+      <button id="metaToggle" data-tab="abgleich" class="ghost meta-i" type="button" hidden>i</button>
       <h2 id="codeTitle">Code</h2>
-      <div class="sync-choice">
+      <div id="setTabs" class="set-tabs" role="tablist">
+        <button class="seg-btn" type="button" data-settab="abgleich">Abgleich</button>
+        <button class="seg-btn" type="button" data-settab="sichern">Sichern</button>
+        <button class="seg-btn" type="button" data-settab="design">Design</button>
+        <button class="seg-btn" type="button" data-settab="allgemein">Allgemein</button>
+      </div>
+      <h3 class="set-h" data-tab="abgleich">Favoriten &amp; Listen abgleichen</h3>
+      <div class="sync-choice" data-tab="abgleich">
         <button id="syncLocal" class="chip" type="button">Lokal, eigenes Passwort</button>
         <button id="syncDevice" class="chip" type="button">Anderes Gerät</button>
       </div>
-      <input id="codeInput" type="text" minlength="4" placeholder="eigenes Passwort, mind. 4 Zeichen" autocomplete="off" />
-      <img id="syncQr" alt="" hidden />
-      <p id="syncLink" class="sync-link" hidden></p>
-      <button id="copyLink" class="chip" type="button" hidden>Kopieren</button>
-      <p id="syncMeta" class="login-error" hidden></p>
-      <button id="codeOk" class="chip" type="submit">QR-Code erzeugen</button>
+      <input id="codeInput" data-tab="abgleich" type="text" minlength="4" placeholder="eigenes Passwort, mind. 4 Zeichen" autocomplete="off" />
+      <img id="syncQr" data-tab="abgleich" alt="" hidden />
+      <p id="syncLink" data-tab="abgleich" class="sync-link" hidden></p>
+      <button id="copyLink" data-tab="abgleich" class="chip" type="button" hidden>Kopieren</button>
+      <p id="syncMeta" data-tab="abgleich" class="login-error" hidden></p>
+      <button id="codeOk" data-tab="abgleich" class="chip" type="submit">QR-Code erzeugen</button>
       <button id="codeCancel" class="ghost" type="button">Abbrechen</button>
-      <p id="codeMessage" class="login-error"></p>
-      <p id="syncInfo" class="login-error" hidden></p>
-      <div id="syncSettings" class="sync-settings" hidden>
+      <p id="codeMessage" data-tab="abgleich" class="login-error"></p>
+      <p id="syncInfo" data-tab="abgleich" class="login-error" hidden></p>
+      <div id="syncSettings" data-tab="abgleich" class="sync-settings" hidden>
         <label class="set-row">Automatisch abgleichen, auch wenn bis zu
           <input id="syncAutoMax" type="number" min="0" max="999" inputmode="numeric" value="0" />
           Lieder gelöscht wurden</label>
         <small class="set-hint">0 = bei jeder Löschung nachfragen</small>
       </div>
-      <button id="syncDelete" class="chip danger" type="button" hidden>Alles löschen</button>
-      <div id="autoPlayBox" class="autoplay-box" hidden>
-        <p class="ap-title">Einstellung für dieses Gerät (hat nichts mit dem Synchronisieren zu tun)</p>
+      <button id="syncDelete" data-tab="abgleich" class="chip danger" type="button" hidden>Alles löschen</button>
+      <div id="autoPlayBox" data-tab="allgemein" class="autoplay-box" hidden>
+        <p class="ap-title">Einstellung für dieses Gerät</p>
         <label class="set-row check"><input id="autoPlayOpt" type="checkbox" /> Beim Öffnen automatisch abspielen</label>
         <small class="set-hint">Praktisch im Auto: Die Seite startet das zuletzt gehörte Lied von selbst. Mit dem kleinen ⏵ oben rechts kannst du das jederzeit umschalten.</small>
       </div>
-      <div id="themeBox" class="autoplay-box" hidden>
-        <p class="ap-title">Design (für dieses Gerät)</p>
-        <div id="themeSeg" class="theme-seg"></div>
-        <small class="set-hint">„Auto“ folgt dem Hell/Dunkel-Modus von Tesla bzw. des Geräts. Schnell wechseln: kleines ◐ oben rechts.</small>
+      <div id="themeBox" data-tab="design" class="autoplay-box" hidden></div>
+      <div id="backupBox" data-tab="sichern" class="backup-box">
+        <p class="ap-title">Favoriten sichern und übertragen</p>
+        <button id="exportFav" class="chip" type="button">Favoriten exportieren</button>
+        <button id="importFav" class="chip" type="button">Favoriten importieren</button>
+        <small class="set-hint">Exportieren: Favoriten und Listen als Code/QR oder mit eigenem Passwort sichern. Importieren: auf einem anderen Gerät laden.</small>
       </div>
-      <div id="verBarBox" class="autoplay-box" hidden>
+      <div id="extraBox" data-tab="allgemein" class="autoplay-box" hidden>
+        <p class="ap-title">Weitere Lieder</p>
+        <label class="set-row check"><input id="extraSongsOpt" type="checkbox" /> Weitere Lieder aus den anderen Verzeichnissen (Instrumental, Video) in der Liste anzeigen</label>
+        <small class="set-hint">Dann erscheint bei aktiver Lupe eine Auswahl „Karaoke / Instrumental / Video“. Diese Lieder sind farblich abgesetzt und lassen sich ganz normal in Wiedergabelisten speichern.</small>
+      </div>
+      <div id="verBarBox" data-tab="allgemein" class="autoplay-box" hidden>
         <p class="ap-title">Einstellung für dieses Gerät</p>
         <label class="set-row check"><input id="verBarOpt" type="checkbox" /> Fassungs-Buttons (Karaoke / Instrumental / Video) anzeigen</label>
         <small class="set-hint">Im Handy-Querformat sind sie immer ausgeblendet.</small>
       </div>
-      <section id="ludwtSync" class="ludwt-sync" hidden></section>
+      <section id="ludwtSync" data-tab="abgleich" class="ludwt-sync" hidden></section>
     </form>
   </div>
 
