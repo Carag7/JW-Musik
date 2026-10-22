@@ -37,6 +37,7 @@ export default {
     }
     if (path === "/api/refresh") return handleRefresh(request, env);
     if (path === "/api/media-index") return handleIndex(request, env, url);
+    if (path === "/api/r2-fetch") return handleFetchToR2(request, env, url);
     if (path === "/api/r2-plan" || path === "/api/r2-run") return handleMigrate(request, env, url, path);
     if (path.startsWith("/sync/")) return handleSync(request, env, path);
 
@@ -140,6 +141,7 @@ export function classify(key) {
     return null;
   }
   const meeting = MEETING_DIR.test(top) || top === "meeting";
+  if (top === "meeting" && parts[1] === "sung" && AUDIO_EXT.includes(ext)) return { type: "meeting-sung", n: numberFromName(name) };
   if (VIDEO_EXT.includes(ext)) return { type: "meeting-video", n: numberFromName(name) };
   if (AUDIO_EXT.includes(ext)) return { type: meeting ? "meeting-audio" : "karaoke-audio", n: numberFromName(name) };
   if (ext === "lrc") return { type: meeting ? "meeting-lrc" : "karaoke-lrc", n: numberFromName(name) };
@@ -163,7 +165,7 @@ async function buildIndex(env) {
   const objects = await listAll(env);
   const idx = {
     karaoke: { audio: {}, lrc: {} },
-    meeting: { audio: {}, video: {}, lrc: {} }
+    meeting: { audio: {}, video: {}, lrc: {}, sung: {} }
   };
   const score = {};
   const put = (bucket, name, n, key) => {
@@ -178,6 +180,7 @@ async function buildIndex(env) {
     if (c.type === "karaoke-audio") put(idx.karaoke.audio, "ka", c.n, o.key);
     else if (c.type === "karaoke-lrc") put(idx.karaoke.lrc, "kl", c.n, o.key);
     else if (c.type === "meeting-audio") put(idx.meeting.audio, "ma", c.n, o.key);
+    else if (c.type === "meeting-sung") put(idx.meeting.sung, "ms", c.n, o.key);
     else if (c.type === "meeting-video") put(idx.meeting.video, "mv", c.n, o.key);
     else if (c.type === "meeting-lrc") put(idx.meeting.lrc, "ml", c.n, o.key);
   }
@@ -188,6 +191,7 @@ async function buildIndex(env) {
       karaoke_audio: Object.keys(idx.karaoke.audio).length,
       meeting_audio: Object.keys(idx.meeting.audio).length,
       meeting_video: Object.keys(idx.meeting.video).length,
+      meeting_sung: Object.keys(idx.meeting.sung).length,
       meeting_lrc: Object.keys(idx.meeting.lrc).length
     },
     ...idx
@@ -208,6 +212,57 @@ async function handleIndex(request, env, url) {
   }
 }
 
+/* ---------- Veröffentlichte Dateien von jw.org nach R2 laden ---------- */
+
+const FETCH_TARGETS = {
+  karaoke: (n, name) => `karaoke/audio/${name || `sjjc_E_${String(n).padStart(3, "0")}.mp3`}`,
+  instrumental: (n, name) => `meeting/audio/${name || `sjji_E_${String(n).padStart(3, "0")}.mp3`}`,
+  video: (n, name) => `meeting/video/${name || `sjjm_E_${String(n).padStart(3, "0")}_r720P.mp4`}`,
+  sung: (n, name) => `meeting/sung/${name || `sjjm_E_${String(n).padStart(3, "0")}.mp3`}`
+};
+const ALLOWED_HOST = /^https:\/\/([a-z0-9-]+\.)*(jw-cdn\.org|jw\.org)\//i;
+
+async function handleFetchToR2(request, env, url) {
+  const reply = (obj, status = 200) => json(obj, CORS, status);
+  if (request.method !== "POST") return reply({ ok: false, fehler: "Nur POST." }, 405);
+  if (!env.WRITE_KEY) return reply({ ok: false, fehler: "In Cloudflare fehlt das Secret WRITE_KEY (Timecode-Passwort im Klartext)." }, 403);
+  if (request.headers.get("x-write-key") !== env.WRITE_KEY) return reply({ ok: false, fehler: "Schlüssel falsch." }, 401);
+  const body = await request.json().catch(() => ({}));
+  const typ = String(body.typ || "");
+  const n = parseInt(body.nummer, 10);
+  if (!FETCH_TARGETS[typ] || !(n > 0 && n < 1000)) return reply({ ok: false, fehler: "Ungültige Anfrage." }, 400);
+  // Adresse kommt NUR aus der eigenen verfuegbar.json (nicht vom Browser)
+  let info = null;
+  try {
+    const res = await env.ASSETS.fetch(new Request(new URL("/verfuegbar.json", url)));
+    const data = await res.json();
+    info = data && data.lieder && data.lieder[String(n)] && data.lieder[String(n)][typ];
+  } catch { /* unten */ }
+  if (!info || !info.url) return reply({ ok: false, fehler: "Diese Datei ist (noch) nicht als veröffentlicht gelistet." }, 404);
+  if (!ALLOWED_HOST.test(info.url)) return reply({ ok: false, fehler: "Adresse nicht erlaubt." }, 400);
+  const name = String(info.url).split("?")[0].split("/").pop();
+  const key = FETCH_TARGETS[typ](n, /^[\w.\-]+$/.test(name) ? name : null);
+  const existing = await env.MUSIK.head(key);
+  if (existing && !body.force) return reply({ ok: true, schon: true, key, groesse: existing.size });
+  const res = await fetch(info.url, { headers: { "user-agent": "Mozilla/5.0 (compatible; JW-Musik)" }, redirect: "follow" });
+  if (!res.ok || !res.body) return reply({ ok: false, fehler: `jw.org antwortet mit ${res.status}.` }, 502);
+  const len = Number(res.headers.get("content-length")) || 0;
+  const ext = key.split(".").pop().toLowerCase();
+  const httpMetadata = { contentType: MIME[ext] || "application/octet-stream" };
+  let size = len;
+  if (len > 0 && typeof FixedLengthStream !== "undefined") {
+    const fls = new FixedLengthStream(len);
+    res.body.pipeTo(fls.writable);
+    await env.MUSIK.put(key, fls.readable, { httpMetadata });
+  } else {
+    const buf = await res.arrayBuffer();
+    size = buf.byteLength;
+    await env.MUSIK.put(key, buf, { httpMetadata });
+  }
+  indexCache = { t: 0, data: null };
+  return reply({ ok: true, key, groesse: size });
+}
+
 /* ---------- R2 aufräumen ---------- */
 
 export function planMoves(objects) {
@@ -225,7 +280,7 @@ export function planMoves(objects) {
     else if (top === "sync" && /^lrc-.+\.lrc$/.test(name)) to = `karaoke/lrc/${name.replace(/^lrc-/, "")}`;
     else if (top === "sync" && ext === "json") to = `favoriten/${name}`;
     else if (["karaoke", "favoriten"].includes(top)) to = null;
-    else if (top === "meeting" && ["audio", "video", "lrc"].includes(parts[1]) && parts.length > 2) to = null;
+    else if (top === "meeting" && ["audio", "video", "lrc", "sung"].includes(parts[1]) && parts.length > 2) to = null;
     else if (VIDEO_EXT.includes(ext)) to = `meeting/video/${name}`;
     else if (AUDIO_EXT.includes(ext) && (MEETING_DIR.test(top) && parts.length > 1)) to = `meeting/audio/${name}`;
     else if (ext === "lrc" && (MEETING_DIR.test(top) && parts.length > 1)) to = `meeting/lrc/${name}`;
