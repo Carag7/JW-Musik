@@ -1059,3 +1059,59 @@ html[data-theme="sand"] {
 .extra-song .song-btn.is-extra { border-left: 4px dashed var(--accent3) !important; background: rgba(var(--ink-rgb), 0.05); border-radius: 6px 12px 12px 6px; }
 .extra-song .song-btn.is-extra strong { color: var(--accent3); }
 .extra-song .song-btn.is-extra.active { background: var(--sel-bg) !important; }
+
+html[data-theme="rubin"] {
+  --bg: #14080a; --panel: #1f0d10; --panel-2: #2c1418; --line: rgba(255,170,170,0.14); --text: #f6e3e3; --muted: #ad8a8c;
+  --accent: #ff5a5f; --accent-rgb: 255, 90, 95; --accent-2: #ff9a8b; --accent2-rgb: 255, 154, 139; --accent3: #f2b8a2; --ink-rgb: 255, 225, 225;
+  --on-accent: #1a0507; --on-accent-2: #1a0507; --lyric-active: #ff8a8e; --sel-bg: #5a1f26; --sel-text: #fff; --strong: #fff0f0;
+  --bar-bg: rgba(20,8,10,0.98); --side-bg: rgba(31,13,16,0.98); --flyer-bg: rgba(16,6,8,0.98);
+  --glow1: rgba(255,90,95,0.10); --glow2: rgba(0,0,0,0); --ok: #7ad66a; --info: #ffb4a8;
+  color-scheme: dark;
+}
+html[data-theme="himmel"] {
+  --bg: #e6f0fa; --panel: #ffffff; --panel-2: #d6e5f4; --line: rgba(10,50,90,0.18); --text: #0e2238; --muted: #4a6078;
+  --accent: #0b7bbf; --accent-rgb: 11, 123, 191; --accent-2: #0a5d92; --accent2-rgb: 10, 93, 146; --accent3: #6b5fd0; --ink-rgb: 10, 50, 90;
+  --on-accent: #ffffff; --on-accent-2: #ffffff; --lyric-active: #08507f; --sel-bg: #cfe6f8; --sel-text: #072a44; --strong: #0e2238;
+  --bar-bg: rgba(255,255,255,0.97); --side-bg: rgba(255,255,255,0.98); --flyer-bg: rgba(230,240,250,0.98);
+  --glow1: rgba(0,0,0,0); --glow2: rgba(0,0,0,0); --ok: #15803d; --info: #0a5d92; --shadow: 0 10px 30px rgba(10,50,90,0.15);
+  color-scheme: light;
+}
+
+/* Zeitpunkt des Wechsels: je Einstellung eine Zeile */
+.sun-box .sun-row { display: flex; flex-wrap: nowrap; align-items: center; gap: 6px; font-size: 14px; white-space: nowrap; overflow-x: auto; scrollbar-width: none; }
+.sun-box .sun-row::-webkit-scrollbar { display: none; }
+.sun-box .sun-row .lbl { min-width: 96px; font-weight: 600; }
+.sun-box .sun-row input[type="number"] { width: 52px !important; min-height: 38px !important; padding: 0 4px !important; font-size: 15px !important; text-align: center; }
+.sun-box .sun-row select { min-height: 38px; font-size: 14px; padding: 0 4px; }
+.sun-box .sun-row .u { color: var(--muted); font-size: 13px; }
+
+/* Reiter-Leiste kompakter, 6 Reiter */
+.set-tabs .seg-btn { font-size: 14px; padding: 0 10px; min-height: 38px; }
+
+/* Fehlende Lieder */
+.fl-opts { display: flex; flex-direction: column; gap: 2px; }
+.fl-sum { display: flex; flex-wrap: wrap; gap: 6px; }
+.fl-pill { padding: 4px 10px; border: 1px solid var(--line); border-radius: 999px; font-size: 13px; background: var(--panel-2); }
+.fl-pill em { font-style: normal; color: var(--accent); }
+.fl-all { width: 100% !important; justify-content: center; min-height: 44px; }
+.fl-cat { border: 1px solid var(--line); border-radius: 12px; background: var(--panel-2); padding: 0 10px; }
+.fl-cat > summary { cursor: pointer; padding: 10px 0; font-weight: 700; font-size: 14px; }
+.fl-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; padding: 7px 0; border-top: 1px solid var(--line); }
+.fl-n { color: var(--accent-2); min-width: 34px; }
+.fl-t { flex: 1 1 140px; font-size: 14px; }
+.fl-chips { display: flex; flex-wrap: wrap; gap: 4px; flex: 1 1 100%; }
+.fl-ok, .fl-no { font-size: 12px; padding: 3px 8px; border-radius: 999px; border: 1px solid var(--line); }
+.fl-ok { color: var(--ok); border-color: currentColor; }
+.fl-no { color: var(--muted); }
+.fl-ok.lrc, .fl-no.lrc { border-style: dashed; }
+.fl-dl { min-height: 32px !important; padding: 0 10px !important; font-size: 13px !important; }
+.set-tabs { flex-wrap: nowrap !important; overflow-x: auto; scrollbar-width: none; gap: 4px; }
+.set-tabs::-webkit-scrollbar { display: none; }
+.set-tabs .seg-btn { flex: 1 1 auto !important; white-space: nowrap; padding: 0 8px !important; font-size: 13px !important; min-width: 0; }
+.fehlend-box, .backup-box, #themeBox { display: flex; flex-direction: column; gap: 10px; }
+#fehlendBox.tab-off, #backupBox.tab-off, #themeBox.tab-off { display: none !important; }
+.sun-box .sun-row input[type="number"] { width: 48px !important; }
+@media (max-width: 560px) {
+  .sun-box .sun-row { flex-wrap: wrap; white-space: normal; overflow: visible; }
+  .sun-box .sun-row .lbl { flex: 0 0 100%; }
+}

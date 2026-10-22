@@ -204,6 +204,8 @@
         <button class="seg-btn" type="button" data-settab="sichern">Sichern</button>
         <button class="seg-btn" type="button" data-settab="design">Design</button>
         <button class="seg-btn" type="button" data-settab="allgemein">Allgemein</button>
+        <button class="seg-btn" type="button" data-settab="fehlend">Fehlend</button>
+        <button class="seg-btn" type="button" data-settab="ludwt">LuD+WT</button>
       </div>
       <h3 class="set-h" data-tab="abgleich">Favoriten &amp; Listen abgleichen</h3>
       <div class="sync-choice" data-tab="abgleich">
@@ -232,6 +234,7 @@
         <small class="set-hint">Praktisch im Auto: Die Seite startet das zuletzt gehörte Lied von selbst. Mit dem kleinen ⏵ oben rechts kannst du das jederzeit umschalten.</small>
       </div>
       <div id="themeBox" data-tab="design" class="autoplay-box" hidden></div>
+      <div id="fehlendBox" data-tab="fehlend" class="fehlend-box"></div>
       <div id="backupBox" data-tab="sichern" class="backup-box">
         <p class="ap-title">Favoriten sichern und übertragen</p>
         <button id="exportFav" class="chip" type="button">Favoriten exportieren</button>
@@ -248,7 +251,7 @@
         <label class="set-row check"><input id="verBarOpt" type="checkbox" /> Fassungs-Buttons (Karaoke / Instrumental / Video) anzeigen</label>
         <small class="set-hint">Im Handy-Querformat sind sie immer ausgeblendet.</small>
       </div>
-      <section id="ludwtSync" data-tab="abgleich" class="ludwt-sync" hidden></section>
+      <section id="ludwtSync" data-tab="ludwt" class="ludwt-sync" hidden></section>
     </form>
   </div>
 
@@ -277,6 +280,7 @@
 
   <video id="audio" preload="none" playsinline webkit-playsinline></video>
   <script src="ludwt.js"></script>
+  <script src="fehlend.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

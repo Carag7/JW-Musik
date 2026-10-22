@@ -948,9 +948,9 @@ function mediaKey(type, number) {
   return table[String(number)] || null;
 }
 
-async function loadMedia() {
+async function loadMedia(fresh) {
   try {
-    const res = await fetch(`${SYNC_BASE}/api/media-index`);
+    const res = await fetch(`${SYNC_BASE}/api/media-index${fresh ? "?refresh=1" : ""}`);
     if (!res.ok) return;
     const data = await res.json();
     if (!data || !data.ok) return;
@@ -3088,6 +3088,7 @@ function showSetTab(tab) {
   form.querySelectorAll("[data-tab]").forEach((n) => n.classList.toggle("tab-off", !n.dataset.tab.split(" ").includes(tab)));
   document.querySelectorAll("#setTabs [data-settab]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.settab === tab)));
   if (tab === "design" && window.THEME) window.THEME.mountUi(document.getElementById("themeBox"));
+  if (tab === "fehlend" && window.FEHLEND) window.FEHLEND.mount(document.getElementById("fehlendBox"));
   form.scrollTop = 0;
 }
 document.querySelectorAll("#setTabs [data-settab]").forEach((b) => b.addEventListener("click", () => showSetTab(b.dataset.settab)));

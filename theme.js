@@ -8,6 +8,8 @@
     { id: "amber", name: "Amber", bar: "#000000", light: false, sw: ["#000000", "#17140f", "#ffb300"], hint: "Schwarz + Bernstein, blendet nachts wenig" },
     { id: "mitternacht", name: "Mitternacht", bar: "#0c0a1f", light: false, sw: ["#0c0a1f", "#1c1840", "#a78bfa"], hint: "tiefes Indigo mit Lavendel" },
     { id: "wald", name: "Wald", bar: "#0a1410", light: false, sw: ["#0a1410", "#16291f", "#d9b44a"], hint: "dunkles Grün mit Gold, ruhig" },
+    { id: "rubin", name: "Rubin", bar: "#14080a", light: false, sw: ["#14080a", "#2a1115", "#ff5a5f"], hint: "dunkles Rot, schont die Nachtsicht" },
+    { id: "himmel", name: "Himmel", bar: "#e6f0fa", light: true, sw: ["#e6f0fa", "#ffffff", "#0b7bbf"], hint: "helles Blau, frisch und klar" },
     { id: "sand", name: "Sand", bar: "#f3ead8", light: true, sw: ["#f3ead8", "#fffaf0", "#c2410c"], hint: "warmes Papier, augenschonend hell" }
   ];
   const REC = { day: ["tag"], night: ["amber"] };
@@ -180,8 +182,8 @@
       if (c.mode === "sun") {
         const box = h("div", "sun-box");
         const row = (label, key, ev, dirs) => {
-          const r = h("div", "set-row");
-          r.append(h("span", "", label + " "));
+          const r = h("div", "sun-row");
+          r.append(h("span", "lbl", label));
           const hh = document.createElement("input"); hh.type = "number"; hh.min = "0"; hh.max = "12"; hh.value = String(c[key].h);
           const mm = document.createElement("input"); mm.type = "number"; mm.min = "0"; mm.max = "59"; mm.value = String(c[key].m);
           const sel = document.createElement("select");
@@ -192,7 +194,7 @@
             put("themeShift", JSON.stringify(sh)); redraw();
           };
           hh.addEventListener("change", save); mm.addEventListener("change", save); sel.addEventListener("change", save);
-          r.append(hh, document.createTextNode(" Std "), mm, document.createTextNode(" Min "), sel, document.createTextNode(" " + ev));
+          r.append(hh, h("span", "u", "Std"), mm, h("span", "u", "Min"), sel, h("span", "", ev));
           return r;
         };
         box.append(h("p", "ap-title", "Zeitpunkt des Wechsels"));
