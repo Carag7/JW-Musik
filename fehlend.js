@@ -3,10 +3,12 @@
   "use strict";
   const TYPES = [
     { id: "karaoke", name: "Karaoke", pub: "sjjc" },
-    { id: "instrumental", name: "Instrumental", pub: "sjji" },
-    { id: "video", name: "Video", pub: "sjjm" },
-    { id: "sung", name: "Meeting-Audio", pub: "sjjm", optional: true }
+    { id: "instrumental", name: "Instrumental", pub: "sjjm" },
+    { id: "video", name: "Video", pub: "sjjm" }
   ];
+  const LIMIT = 10 * 1024 ** 3;   // kostenloser R2-Speicher
+  const fmtSize = (b) => b >= 1024 ** 3 ? `${(b / 1024 ** 3).toFixed(2)} GB` : b >= 1024 ** 2 ? `${Math.round(b / 1024 ** 2)} MB` : `${Math.max(1, Math.round(b / 1024))} KB`;
+  const sizeOf = (n, t) => (data.lieder[n] && data.lieder[n][t] && data.lieder[n][t].groesse) || 0;
   const h = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
   const opt = (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : v === "1"; } catch { return d; } };
   const setOpt = (k, v) => { try { localStorage.setItem(k, v ? "1" : "0"); } catch { /* egal */ } };
@@ -33,12 +35,12 @@
   function model() {
     const media = state.media || { karaoke: { audio: {}, lrc: {} }, meeting: { audio: {}, video: {}, lrc: {}, sung: {} } };
     const base = new Map(state.songs.filter((s) => !s.extra).map((s) => [s.number, s]));
-    const total = Math.max(data.gesamt || 0, ...base.keys(), ...Object.keys(data.lieder).map(Number));
+    const buch = Array.isArray(data.buch) && data.buch.length ? new Set(data.buch) : null;   // nur das aktuelle Liederbuch
+    const total = buch ? Math.max(...buch) : Math.max(data.gesamt || 0, ...base.keys(), ...Object.keys(data.lieder).map(Number));
     const has = {
       karaoke: (n) => base.has(n) || Boolean(media.karaoke.audio[n]),
       instrumental: (n) => Boolean(media.meeting.audio[n]),
-      video: (n) => Boolean(media.meeting.video[n]),
-      sung: (n) => Boolean(media.meeting.sung && media.meeting.sung[n])
+      video: (n) => Boolean(media.meeting.video[n])
     };
     const published = (n, t) => Boolean(data.lieder[n] && data.lieder[n][t] && data.lieder[n][t].url);
     const lrc = {
@@ -47,13 +49,14 @@
     };
     const rows = [];
     for (let n = 1; n <= total; n++) {
+      if (buch && !buch.has(n)) continue;
       const s = base.get(n);
       rows.push({
         n, title: (s && s.title) || (data.lieder[n] && data.lieder[n].titel) || `Lied ${n}`,
         category: (s && s.category) || "Weitere Lieder (nicht in der Liste)"
       });
     }
-    return { rows, has, published, lrc, total, media };
+    return { rows, has, published, lrc, total: rows.length, media };
   }
 
   async function ensureKey() {
@@ -95,11 +98,19 @@
   }
 
   async function manual(root) {
+    const sp = state.media && state.media.speicher;
+    const speicherLines = [];
+    if (sp) {
+      speicherLines.push(`Speicher in R2: ${fmtSize(sp.gesamt)} von ${fmtSize(LIMIT)} belegt (${Math.round(sp.gesamt / LIMIT * 100)} %), frei: ${fmtSize(Math.max(0, LIMIT - sp.gesamt))}`);
+      Object.entries(sp.ordner).sort((a, b) => b[1].bytes - a[1].bytes).forEach(([name, v]) => speicherLines.push(`${name}: ${fmtSize(v.bytes)} (${v.dateien} Dateien)`));
+    } else speicherLines.push("Speicher-Übersicht nicht verfügbar (Server nicht erreichbar).");
     const go = await uiDialog({
-      eyebrow: "Fehlende Lieder", title: "Jetzt manuell prüfen",
+      eyebrow: "Fehlende Lieder", title: "Speicher und Prüfung",
       lines: [
+        ...speicherLines,
+        "",
         "Fragt jetzt bei jw.org nach, welche Lieder (Karaoke, Instrumental, Meetings) schon veröffentlicht sind.",
-        "Sonst läuft diese Prüfung automatisch einmal pro Woche (montags). Das Ergebnis erscheint nach ca. 1–3 Minuten hier."
+        "Die Prüfung läuft sonst automatisch einmal pro Woche (montags). Das Ergebnis erscheint nach ca. 1–3 Minuten hier."
       ],
       buttons: [{ value: "ok", kind: "primary", label: "Jetzt prüfen" }, { value: null, kind: "cancel", label: "Abbrechen" }]
     });
@@ -145,6 +156,10 @@
 
   function render(root) {
     const m = model();
+    if (!state.media) {
+      root.replaceChildren(h("p", "ap-title", "Fehlende Lieder"), h("p", "set-hint bad", "Die Dateiliste aus R2 konnte nicht geladen werden (Server nicht erreichbar). Deshalb wird nichts als „fehlend“ angezeigt. Bitte die Seite über https://musik.carag.workers.dev öffnen und erneut versuchen."));
+      return;
+    }
     const withLrc = opt("fehlLrc", false);
     const showAll = opt("fehlAll", false);
     const types = TYPES.filter((t) => opt(`fehlT_${t.id}`, !t.optional));
@@ -179,19 +194,28 @@
     const sum = h("div", "fl-sum");
     let downloadable = [];
     types.forEach((t) => {
-      let have = 0, miss = 0, pub = 0;
-      m.rows.forEach((r) => { if (m.has[t.id](r.n)) have++; else { miss++; if (m.published(r.n, t.id)) { pub++; downloadable.push([r.n, t.id]); } } });
+      let have = 0, miss = 0, pub = 0, bytes = 0;
+      m.rows.forEach((r) => { if (m.has[t.id](r.n)) have++; else { miss++; if (m.published(r.n, t.id)) { pub++; bytes += sizeOf(r.n, t.id); downloadable.push([r.n, t.id]); } } });
       const b = h("span", "fl-pill");
       b.append(h("b", "", t.name), document.createTextNode(` ${have}/${m.total}`));
-      if (miss) b.append(h("em", "", ` · ${pub} laden möglich`));
+      if (miss) b.append(h("em", "", ` · ${pub} laden möglich${bytes ? ` (${fmtSize(bytes)})` : ""}`));
       sum.append(b);
     });
     root.append(sum);
 
     if (downloadable.length) {
-      const all = h("button", "chip fl-all", `Alle veröffentlichten laden (${downloadable.length} Dateien)`);
+      const totalBytes = downloadable.reduce((s, [n, t]) => s + sizeOf(n, t), 0);
+      const all = h("button", "chip fl-all", `Alle veröffentlichten laden (${downloadable.length} Dateien${totalBytes ? `, ${fmtSize(totalBytes)}` : ""})`);
       all.type = "button";
       all.addEventListener("click", async () => {
+        const used = (state.media.speicher && state.media.speicher.gesamt) || 0;
+        const after = used + totalBytes;
+        const okGo = await uiConfirm({
+          eyebrow: "R2-Speicher", title: `${downloadable.length} Dateien laden?`,
+          lines: [`Dazu kommen ca. ${fmtSize(totalBytes)}. Belegt wären danach ${fmtSize(after)} von ${fmtSize(LIMIT)}.`, after > LIMIT ? "ACHTUNG: Das überschreitet die kostenlose Grenze von 10 GB!" : "Das bleibt innerhalb der kostenlosen Grenze."],
+          ok: after > LIMIT ? "Trotzdem laden" : "Laden"
+        });
+        if (!okGo) return;
         all.disabled = true;
         let ok = 0, fail = 0, last = "";
         for (let i = 0; i < downloadable.length; i++) {
@@ -229,12 +253,14 @@
         types.forEach((t) => {
           if (m.has[t.id](r.n)) { chips.append(h("span", "fl-ok", `✓ ${t.name}`)); return; }
           if (m.published(r.n, t.id)) {
-            const b = h("button", "chip fl-dl", `⬇ ${t.name}`); b.type = "button";
+            const sz = sizeOf(r.n, t.id);
+            const label = `⬇ ${t.name}${sz ? ` (${fmtSize(sz)})` : ""}`;
+            const b = h("button", "chip fl-dl", label); b.type = "button";
             b.addEventListener("click", async () => {
               b.disabled = true; b.textContent = "lädt …";
               const res = await download(r.n, t.id);
-              if (res.abbruch) { b.disabled = false; b.textContent = `⬇ ${t.name}`; return; }
-              if (!res.ok) { b.disabled = false; b.textContent = `⬇ ${t.name}`; await uiAlert("Herunterladen fehlgeschlagen", res.fehler); return; }
+              if (res.abbruch) { b.disabled = false; b.textContent = label; return; }
+              if (!res.ok) { b.disabled = false; b.textContent = label; await uiAlert("Herunterladen fehlgeschlagen", res.fehler); return; }
               await loadMedia(true);
               render(root);
             });

@@ -3,11 +3,10 @@
 scrape_verfuegbar.py – prüft einmal pro Woche, welche Lieder von „Singt voller Freude“ auf jw.org veröffentlicht sind
 und schreibt verfuegbar.json (Liednummer -> Titel + Download-Adressen je Art).
 
-Arten (ohne Kinderlieder):
+Arten (ohne Kinderlieder), nur für das aktuelle Liederbuch „Sing Out Joyfully“ (Nummern aus der Meetings-Liste sjjm):
   karaoke       Vocals       (pub=sjjc, MP3)
-  instrumental  Instrumental (pub=sjji, MP3)
-  video         Meetings     (pub=sjjm, MP4, 720p)
-  sung          Meetings-Audio (pub=sjjm, MP3)
+  instrumental  Meetings-Audio = „Instrumental“ (pub=sjjm, MP3)
+  video         Meetings-Video (pub=sjjm, MP4, 720p)
 
 Quelle: die offene Medien-Schnittstelle von jw.org (dieselbe, die die Download-Seite
 https://www.jw.org/download/?pub=sjjc&... im Hintergrund verwendet). Die Liste aller Lieder (Nummern + Titel)
@@ -26,9 +25,8 @@ LIBRARY = "https://www.jw.org/en/library/music-songs/sing-out-joyfully/"
 LANG = "E"
 ARTEN = [
     ("karaoke", "sjjc", "MP3"),
-    ("instrumental", "sjji", "MP3"),
+    ("instrumental", "sjjm", "MP3"),
     ("video", "sjjm", "MP4"),
-    ("sung", "sjjm", "MP3"),
 ]
 OUT = Path(__file__).with_name("verfuegbar.json")
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; JW-Musik wöchentliche Prüfung)", "Accept-Language": "en"}
@@ -106,6 +104,13 @@ def main():
             if info["titel"] and not eintrag.get("titel"):
                 eintrag["titel"] = info["titel"]
     bib = hole_bibliothek(fehler)
+    # nur das aktuelle Liederbuch: Nummern aus der Meetings-Audio-Liste (sjjm MP3)
+    buch = sorted(int(n) for n, e in lieder.items() if "instrumental" in e)
+    if buch:
+        erlaubt = {str(n) for n in buch}
+        for n in [k for k in lieder if k not in erlaubt]:
+            del lieder[n]
+        bib = {n: t for n, t in bib.items() if str(n) in erlaubt}
     for n, titel in bib.items():
         eintrag = lieder.setdefault(str(n), {})
         if titel and not eintrag.get("titel"):
@@ -114,9 +119,11 @@ def main():
         print("Keine Daten erhalten – verfuegbar.json bleibt unverändert.", *fehler, sep="\n  ")
         sys.exit(1)
     gesamt = max([int(k) for k in lieder] + [max(bib) if bib else 0])
+    buch = buch or sorted(int(k) for k in lieder)
     result = {
         "stand": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "gesamt": gesamt,
+        "buch": buch,
         "gefunden": gefunden,
         "fehler": fehler,
         "lieder": dict(sorted(lieder.items(), key=lambda kv: int(kv[0]))),
