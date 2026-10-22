@@ -174,6 +174,14 @@ async function buildIndex(env) {
     const tag = `${name}:${id}`;
     if (score[tag] === undefined || s > score[tag]) { score[tag] = s; bucket[id] = key; }
   };
+  const speicher = {};
+  let gesamtBytes = 0;
+  for (const o of objects) {
+    const p = o.key.split("/");
+    const ordner = p.length >= 3 ? `${p[0]}/${p[1]}` : (p.length === 2 ? p[0] : "(Hauptordner)");
+    const e = (speicher[ordner] = speicher[ordner] || { bytes: 0, dateien: 0 });
+    e.bytes += o.size || 0; e.dateien += 1; gesamtBytes += o.size || 0;
+  }
   for (const o of objects) {
     const c = classify(o.key);
     if (!c || !c.n) continue;
@@ -187,6 +195,7 @@ async function buildIndex(env) {
   return {
     ok: true,
     generiert: new Date().toISOString(),
+    speicher: { gesamt: gesamtBytes, ordner: speicher },
     anzahl: {
       karaoke_audio: Object.keys(idx.karaoke.audio).length,
       meeting_audio: Object.keys(idx.meeting.audio).length,
