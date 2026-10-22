@@ -415,8 +415,9 @@ async function handleRefresh(request, env) {
     return reply({ ok: false, fehler: `Secret GITHUB_TOKEN fehlt in diesem Worker. Dieser Worker sieht nur diese Variablen: ${namen}.` }, 500);
   }
   const GH_TOKEN = env[tokenName];
+  const reqBody = await request.json().catch(() => ({}));
   if (env.REFRESH_PIN) {
-    const body = await request.json().catch(() => ({}));
+    const body = reqBody;
     if (String(body.pin || "") !== String(env.REFRESH_PIN)) {
       return reply({ ok: false, pin_erforderlich: true, fehler: "PIN falsch oder fehlt." }, 401);
     }
@@ -443,20 +444,23 @@ async function handleRefresh(request, env) {
   const ref = env.GITHUB_BRANCH || info.default_branch || "main";
 
   // 2. Welcher Workflow? (Name oder Datei können abweichen)
-  let target = env.GITHUB_WORKFLOW || "update.yml";
+  const wantFiles = reqBody.workflow === "verfuegbar";
+  let target = wantFiles ? "verfuegbar.yml" : (env.GITHUB_WORKFLOW || "update.yml");
   const listRes = await gh("/actions/workflows");
   let names = [];
   if (listRes.ok) {
     const list = (await listRes.json()).workflows || [];
     names = list.map((w) => `${w.name} (${w.path.split("/").pop()})`);
     const active = list.filter((w) => w.state === "active");
-    const wanted = env.GITHUB_WORKFLOW
+    const wanted = wantFiles
+      ? (active.find((w) => w.path.endsWith("/verfuegbar.yml")) || active.find((w) => /verf/i.test(w.name)))
+      : env.GITHUB_WORKFLOW
       ? active.find((w) => w.path.endsWith(`/${env.GITHUB_WORKFLOW}`) || w.name === env.GITHUB_WORKFLOW)
       : active.find((w) => w.path.endsWith("/update.yml"))
         || active.find((w) => /lieder/i.test(w.name))
         || (active.length === 1 ? active[0] : null);
     if (!wanted) {
-      return reply({ ok: false, fehler: `Im Repository gibt es keinen passenden Workflow. Gefunden: ${names.join(", ") || "keine"}. Datei .github/workflows/update.yml anlegen oder in Cloudflare die Variable GITHUB_WORKFLOW setzen.` }, 502);
+      return reply({ ok: false, fehler: `Im Repository gibt es keinen passenden Workflow. Gefunden: ${names.join(", ") || "keine"}. ${wantFiles ? "Datei .github/workflows/verfuegbar.yml ins Repository hochladen." : "Datei .github/workflows/update.yml anlegen oder in Cloudflare die Variable GITHUB_WORKFLOW setzen."}` }, 502);
     }
     target = wanted.id;
   }
