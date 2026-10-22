@@ -77,6 +77,65 @@
     }
   }
 
+  const say = (root, text, cls) => { const m = root.querySelector(".fl-msg"); if (m) { m.textContent = text; m.className = `fl-msg set-hint${cls ? " " + cls : ""}`; } };
+  let poll = null;
+
+  async function startCheck(pin) {
+    const res = await fetch(`${SYNC_BASE}/api/refresh`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ workflow: "verfuegbar", pin: pin || "" }) });
+    const body = await res.json().catch(() => ({}));
+    if (res.status === 401 && body.pin_erforderlich) {
+      const p = await uiPrompt({ eyebrow: "Fehlende Lieder", title: "PIN erforderlich", type: "password", placeholder: "PIN", ok: "Prüfen" });
+      if (!p) return { abgebrochen: true };
+      try { sessionStorage.setItem("ludwtPin", p); } catch { /* egal */ }
+      return startCheck(p);
+    }
+    if (res.status === 404 || res.status === 405) throw new Error("Die Server-Funktion /api/refresh wurde nicht gefunden (Seite über workers.dev öffnen, src/index.js aktualisieren).");
+    if (!res.ok || !body.ok) throw new Error(body.fehler || `Fehler ${res.status}`);
+    return body;
+  }
+
+  async function manual(root) {
+    const go = await uiDialog({
+      eyebrow: "Fehlende Lieder", title: "Jetzt manuell prüfen",
+      lines: [
+        "Fragt jetzt bei jw.org nach, welche Lieder (Karaoke, Instrumental, Meetings) schon veröffentlicht sind.",
+        "Sonst läuft diese Prüfung automatisch einmal pro Woche (montags). Das Ergebnis erscheint nach ca. 1–3 Minuten hier."
+      ],
+      buttons: [{ value: "ok", kind: "primary", label: "Jetzt prüfen" }, { value: null, kind: "cancel", label: "Abbrechen" }]
+    });
+    if (go !== "ok") return;
+    say(root, "Starte Prüfung …");
+    const before = data && data.stand;
+    let pin = "";
+    try { pin = sessionStorage.getItem("ludwtPin") || ""; } catch { /* egal */ }
+    try {
+      const r = await startCheck(pin);
+      if (r.abgebrochen) { say(root, "Abgebrochen."); return; }
+    } catch (err) {
+      const setup = /GITHUB_TOKEN/.test(err.message) ? " Einmalige Einrichtung nötig: Secret GITHUB_TOKEN in Cloudflare (siehe Anleitung)." : "";
+      say(root, `Prüfung konnte nicht gestartet werden: ${err.message}${setup}`, "bad");
+      return;
+    }
+    say(root, "Prüfung läuft bei GitHub, danach wird die Datei veröffentlicht (meist 1–3 Minuten) …");
+    const t0 = Date.now();
+    clearInterval(poll);
+    poll = setInterval(async () => {
+      try {
+        const res = await fetch(`verfuegbar.json?t=${Date.now()}`, { cache: "no-store" });
+        const d = res.ok ? await res.json() : null;
+        if (d && d.stand && d.stand !== before) {
+          clearInterval(poll); data = d;
+          const live = document.getElementById("fehlendBox");
+          if (live) { render(live); say(live, "Prüfung fertig.", "ok"); }
+        } else if (Date.now() - t0 > 8 * 60000) {
+          clearInterval(poll);
+          const live = document.getElementById("fehlendBox");
+          if (live) say(live, "Noch keine Rückmeldung nach 8 Minuten. Bitte später erneut öffnen oder bei GitHub unter Actions nachsehen.", "bad");
+        }
+      } catch { /* weiter warten */ }
+    }, 15000);
+  }
+
   async function mount(root) {
     root.replaceChildren(h("p", "set-hint", "Lade Übersicht …"));
     await loadData();
@@ -86,13 +145,19 @@
 
   function render(root) {
     const m = model();
-    const withSung = opt("fehlSung", false);
     const withLrc = opt("fehlLrc", false);
     const showAll = opt("fehlAll", false);
-    const types = TYPES.filter((t) => !t.optional || withSung);
+    const types = TYPES.filter((t) => opt(`fehlT_${t.id}`, !t.optional));
     root.replaceChildren();
 
-    root.append(h("p", "ap-title", "Fehlende Lieder"));
+    const head = h("div", "ls-top");
+    head.append(h("p", "ap-title", "Fehlende Lieder"));
+    const info = h("button", "ghost ls-i", "i"); info.type = "button";
+    info.setAttribute("aria-label", "Jetzt manuell prüfen"); info.title = "Jetzt manuell prüfen";
+    info.addEventListener("click", () => manual(root));
+    head.append(info);
+    root.append(head);
+    root.append(h("p", "fl-msg set-hint", ""));
     root.append(h("p", "set-hint", data.stand
       ? `Stand der Prüfung auf jw.org: ${new Intl.DateTimeFormat("de-AT", { dateStyle: "medium", timeStyle: "short" }).format(new Date(data.stand))} · nächste automatische Prüfung: ${nextCheck()}`
       : `Noch keine Prüfung gelaufen. Die automatische Prüfung läuft einmal pro Woche (nächste: ${nextCheck()}). Du kannst sie auch auf GitHub unter Actions → „Verfügbarkeit prüfen“ → Run workflow starten.`));
@@ -105,7 +170,9 @@
       lab.append(cb, document.createTextNode(" " + label));
       return lab;
     };
-    opts.append(check("LRC-Dateien (Texte) anzeigen", "fehlLrc", false), check("Meeting-Audio (MP3 der Meetings) mit einbeziehen", "fehlSung", false), check("auch vollständige Lieder zeigen", "fehlAll", false));
+    opts.append(h("small", "set-hint", "Welche Arten sollen geprüft und angezeigt werden?"));
+    TYPES.forEach((t) => opts.append(check(t.id === "sung" ? "Meeting-Audio (MP3 der Meetings)" : t.name, `fehlT_${t.id}`, !t.optional)));
+    opts.append(check("LRC-Dateien (Texte) anzeigen", "fehlLrc", false), check("auch vollständige Lieder zeigen", "fehlAll", false));
     root.append(opts);
 
     // Zusammenfassung

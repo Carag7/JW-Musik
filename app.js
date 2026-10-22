@@ -1034,8 +1034,9 @@ function updateSourceFilterUi() {
   if (box.hidden) return;
   const set = srcSet();
   box.replaceChildren();
-  const lab = document.createElement("span"); lab.className = "src-label"; lab.textContent = "Anzeigen:";
-  box.append(lab);
+  const lab = document.createElement("span"); lab.className = "src-label"; lab.textContent = "Anzeigen";
+  const chipRow = document.createElement("div"); chipRow.className = "src-chips";
+  box.append(lab, chipRow);
   SRC_TYPES.forEach(([id, name]) => {
     const b = document.createElement("button");
     b.type = "button"; b.className = `chip src-chip src-${id}`; b.textContent = name;
@@ -1047,7 +1048,7 @@ function updateSourceFilterUi() {
       try { localStorage.setItem("srcFilter", JSON.stringify([...cur])); } catch { /* egal */ }
       updateSourceFilterUi(); renderList();
     });
-    box.append(b);
+    chipRow.append(b);
   });
 }
 

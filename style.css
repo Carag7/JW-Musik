@@ -1115,3 +1115,10 @@ html[data-theme="himmel"] {
   .sun-box .sun-row { flex-wrap: wrap; white-space: normal; overflow: visible; }
   .sun-box .sun-row .lbl { flex: 0 0 100%; }
 }
+
+/* „Anzeigen“ über den Buttons */
+.source-filter { flex-direction: column !important; align-items: flex-start !important; gap: 4px !important; }
+.src-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.fl-msg:empty { display: none; }
+.fl-msg.ok { color: var(--ok); } .fl-msg.bad { color: #f87171; }
+.fehlend-box .ls-top { display: flex; align-items: center; justify-content: space-between; }
