@@ -1215,3 +1215,28 @@ body.fav-bottom-off #favoriteBtn2 { display: none !important; }
 .hold-guard { position: relative; overflow: hidden; }
 .hold-guard::after { content: ""; position: absolute; left: 0; bottom: 0; height: 3px; width: 0; background: var(--accent); }
 .hold-guard.holding::after { width: 100%; transition: width 0.7s linear; }
+
+/* Tasten mit Lang-Drücken: kein Kontextmenü/Scroll-Abbruch bei Touch */
+.hold-guard { touch-action: none; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
+#lyricSearchToggle svg { display: block; margin: auto; }
+.list-foot { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 300px; padding: 12px 0 240px; }
+.song-list { padding-bottom: 8px !important; }
+.adv-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.adv-btns .chip { flex: 1 1 200px; min-height: 44px; }
+#advBox .set-row input[type="number"] { width: 84px; }
+
+/* Tesla-Größen (ca. 800 px breit): Fortschrittsbalken bis zum Rand, Karaoke-Text umbrechen, Kopfzeile enger */
+@media (min-width: 641px) {
+  .timeline { max-width: none !important; }
+  body.bar-half:not(.bar-stack) .bar-row input { max-width: none !important; flex: 1 1 auto !important; width: 100% !important; }
+}
+@media (min-width: 700px) and (max-width: 900px) {
+  body:not(.edit-mode) .lyric-line { display: block; white-space: normal; min-width: 0; }
+  body:not(.edit-mode) .lyrics { overflow-x: hidden !important; }
+}
+@media (min-width: 700px) and (max-width: 1100px) and (max-height: 700px) {
+  .now { padding-top: 6px !important; }
+  .stage > .now { margin-top: -4px; }
+}
+#advBox .set-row input[type="number"] { background: var(--panel-2); color: var(--text); border: 1px solid var(--line); border-radius: 10px; min-height: 40px; text-align: center; font-size: 16px; }
+#advBox .set-row { justify-content: space-between; }

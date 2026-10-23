@@ -64,7 +64,7 @@
           <h1><button id="homeBtn" class="home-link" type="button">Karaoke</button></h1>
         </div>
         <button id="playerToggle" class="ghost player-icon" type="button" aria-label="Player" aria-pressed="true"></button>
-        <button id="lyricSearchToggle" class="ghost" type="button" aria-label="im Liedtext suchen">⌕</button>
+        <button id="lyricSearchToggle" class="ghost" type="button" aria-label="im Liedtext suchen"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="10" cy="10" r="6.5"/><path d="M15 15l6 6"/></svg></button>
       </header>
 
       <div id="playlistBar" class="playlist-bar" hidden>
@@ -126,6 +126,10 @@
       </div>
 
       <ul id="songList" class="song-list" aria-label="Lieder"></ul>
+      <div id="listFoot" class="list-foot">
+        <button id="footSettings" class="chip" type="button">Einstellungen</button>
+        <button id="footAdvanced" class="chip" type="button">Erweiterte Optionen</button>
+      </div>
     </aside>
     <button id="toTopBtn" class="to-top" type="button" aria-label="Nach oben">↑</button>
     <button id="panelShow" class="chip panel-show" type="button" hidden>Panel</button>
@@ -231,6 +235,23 @@
         <small class="set-hint">Design, Anzeige-Optionen, Sprungweite usw. werden mit den Favoriten auf alle Geräte mit demselben Speicher übertragen. Die Standort-Angabe und Passwörter bleiben nur auf dem Gerät.</small>
       </div>
       <button id="syncDelete" data-tab="abgleich" class="chip danger" type="button" hidden>Alles löschen</button>
+      <div id="advBox" data-tab="allgemein" class="autoplay-box" hidden>
+        <p class="ap-title">Anzeige und Werkzeuge</p>
+        <div class="adv-btns">
+          <button id="advAdvanced" class="chip" type="button">Erweiterte Optionen ein/aus</button>
+          <button id="advEdit" class="chip" type="button">Bearbeitungsmodus (Karaoke-Texte)</button>
+          <button id="advReload" class="chip" type="button">Seite neu laden</button>
+          <button id="advTesla" class="chip" type="button">Tesla-Voreinstellungen anwenden</button>
+        </div>
+        <small class="set-hint">Erweiterte Optionen sind die Funktionen der Lupe: Textsuche, Art-Buttons, Listen-Werkzeuge. Tesla-Voreinstellungen: Autostart an, Design nach Sonnenauf-/untergang, Art-Kennzeichen aus.</small>
+        <label class="set-row">Schriftgröße Auswahlfenster <input id="advListSize" type="number" min="10" max="48" inputmode="numeric" /></label>
+        <label class="set-row">Schriftgröße Karaoke-Text <input id="advScale" type="number" min="10" max="200" inputmode="numeric" /></label>
+        <label class="set-row">Breite Auswahlfenster (px) <input id="advSidebar" type="number" min="180" max="1200" inputmode="numeric" /></label>
+        <label class="set-row">Springen zurück (Sekunden) <input id="advBack" type="number" min="1" max="300" inputmode="numeric" /></label>
+        <label class="set-row">Springen vor (Sekunden) <input id="advFwd" type="number" min="1" max="300" inputmode="numeric" /></label>
+        <label class="set-row check"><input id="advHold" type="checkbox" /> Lupe und Player-Symbol nur nach langem Drücken (ca. 0,7 s)</label>
+        <small id="advInfo" class="set-hint"></small>
+      </div>
       <div id="autoPlayBox" data-tab="allgemein" class="autoplay-box" hidden>
         <p class="ap-title">Einstellung für dieses Gerät</p>
         <label class="set-row check"><input id="autoPlayOpt" type="checkbox" /> Beim Öffnen automatisch abspielen</label>
@@ -267,8 +288,8 @@
       </div>
       <div id="verBarBox" data-tab="allgemein" class="autoplay-box" hidden>
         <p class="ap-title">Einstellung für dieses Gerät</p>
-        <label class="set-row check"><input id="verBarOpt" type="checkbox" /> Art-Buttons (Karaoke / Instrumental / Video / Zusammenkünfte) anzeigen</label>
-        <small class="set-hint">Im Handy-Querformat sind sie immer ausgeblendet.</small>
+        <label class="set-row check"><input id="verBarOpt" type="checkbox" /> Art-Buttons (Karaoke / Instrumental / Video / Zusammenkünfte) immer anzeigen</label>
+        <small class="set-hint">Sonst erscheinen sie nur bei aktiven erweiterten Optionen (Lupe) und im Bearbeitungsmodus.</small>
       </div>
       <section id="ludwtSync" data-tab="ludwt" class="ludwt-sync" hidden></section>
       <button id="codeCancel" class="ghost" type="button">Abbrechen</button>

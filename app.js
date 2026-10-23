@@ -1090,8 +1090,9 @@ function updateVersionBar() {
   if (!bar) return;
   const m = state.media;
   const song = state.songs[state.index];
-  let on = true;
-  try { on = localStorage.getItem("verBar") !== "0"; } catch { /* egal */ }
+  let on = false;
+  try { on = localStorage.getItem("verBarAlways") === "1"; } catch { /* egal */ }
+  if (document.body.classList.contains("glass-open") || document.body.classList.contains("edit-mode")) on = true;
   document.body.classList.toggle("no-verbar", !on);
   bar.hidden = !song;
   if (bar.hidden) return;
@@ -1176,8 +1177,8 @@ async function resolveAudio(song) {
   return list[list.length - 1];
 }
 
-function setAudioSource(url) {
-  el.audio.pause();
+function setAudioSource(url, keepPlaying) {
+  if (!keepPlaying) el.audio.pause();
   el.audio.removeAttribute("crossorigin");
   el.audio.src = url;
   el.audio.load();
@@ -1244,7 +1245,19 @@ async function selectSong(index, autoplay) {
   }
   if (src.fallback) el.status.textContent = src.version === "meeting" ? "Karaoke-MP3 fehlt – Instrumental wird gespielt" : src.version === "sung" ? "Karaoke-MP3 fehlt – Zusammenkünfte-Fassung wird gespielt" : "Karaoke-MP3 fehlt – Video wird gespielt";
   state.currentAudio = url;
-  setAudioSource(url);
+  // Beim Weiterschalten nicht pausieren und sofort weiterspielen: sonst springt im Tesla kurz Apple Music ein
+  const keep = Boolean(autoplay) && !el.audio.paused;
+  setAudioSource(url, keep);
+  if (autoplay) {
+    try { if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "playing"; } catch { /* egal */ }
+    const pr = el.audio.play();
+    if (pr && pr.then) pr.then(() => {
+      if (token !== state.selectToken) return;
+      el.play.textContent = "❚❚";
+      setStatus("Spielt", "is-play");
+      requestWakeLock();
+    }).catch(() => { if (token === state.selectToken) el.status.textContent = "Wiedergabe blockiert. Tippe noch einmal auf Play."; });
+  }
   if (resume) el.audio.addEventListener("loadedmetadata", () => { try { el.audio.currentTime = Math.max(0, Math.min(resume, (el.audio.duration || resume + 1) - 0.5)); } catch { /* egal */ } }, { once: true });
   loadLyrics(song, src.version);  // läuft parallel zum Audio-Laden
   setMediaSession(song);
@@ -1676,30 +1689,62 @@ function alignWave() {
   row.style.setProperty("--wave-gap", `${Math.max(0, gap)}px`);
 }
 
-/* Taste reagiert erst nach längerem Drücken (gegen versehentliches Antippen während der Fahrt) */
+/* Lange-Drücken-Schutz (Lupe, Player-Symbol): löst schon WÄHREND des Haltens aus, nicht erst beim Loslassen
+   (nach langem Drücken schicken Touch-Browser oft kein Klick-Ereignis mehr). Einstellbar, Standard: aus. */
+const holdOn = () => { try { return localStorage.getItem("holdGuard") === "1"; } catch { return false; } };
 function guardHold(btn, ms = 700) {
-  let timer = 0, ok = false;
+  let timer = 0, fired = false, bypass = false;
   btn.classList.add("hold-guard");
+  btn._fire = () => { bypass = true; btn.click(); bypass = false; };
   const stop = () => { clearTimeout(timer); btn.classList.remove("holding"); };
   btn.addEventListener("pointerdown", () => {
-    ok = false; stop();
+    if (!holdOn()) return;
+    fired = false; stop();
     void btn.offsetWidth;
     btn.classList.add("holding");
-    timer = setTimeout(() => { ok = true; }, ms);
+    timer = setTimeout(() => {
+      fired = true;
+      btn.classList.remove("holding");
+      btn._fire();
+    }, ms);
   });
   ["pointerup", "pointerleave", "pointercancel"].forEach((t) => btn.addEventListener(t, stop));
-  btn.addEventListener("contextmenu", (e) => e.preventDefault());
+  btn.addEventListener("contextmenu", (e) => { if (holdOn()) e.preventDefault(); });
   btn.addEventListener("click", (e) => {
-    if (e.detail === 0) return;               // Tastatur
-    if (ok) { ok = false; return; }
+    if (!holdOn() || bypass || e.detail === 0) return;
     e.stopImmediatePropagation();
     e.preventDefault();
+    if (fired) { fired = false; return; }
     showToast("Länger drücken");
   }, true);
 }
+/* Erweiterte Optionen = Funktion der Lupe (ohne Schutz) */
+function toggleAdvanced() {
+  const b = el.lyricSearchToggle;
+  if (b._fire) b._fire(); else b.click();
+}
+
+/* Voreinstellungen für den Tesla-Browser (nur Werte, die noch nicht gesetzt sind; force = überschreiben) */
+function applyTeslaDefaults(force) {
+  const want = { autoStart: "1", themeMode: "sun", srcTags: "0", verBarAlways: "0", holdGuard: "0", favPlace: "both" };
+  for (const [k, v] of Object.entries(want)) {
+    try { if (force || localStorage.getItem(k) === null) localStorage.setItem(k, v); } catch { /* egal */ }
+  }
+  try { if (window.THEME) window.THEME.apply(true); } catch { /* egal */ }
+  try { updateAutoIcon(); updateVersionBar(); renderList(); applyFavPlace(); } catch { /* egal */ }
+}
+const isTesla = () => /Tesla/i.test(navigator.userAgent);
 
 function bind() {
   setupViewport();
+  try {
+    if (isTesla() && localStorage.getItem("teslaDefaults") === null) { applyTeslaDefaults(false); localStorage.setItem("teslaDefaults", "1"); }
+    const w = Number(localStorage.getItem("sidebarW"));
+    if (w >= 180) document.documentElement.style.setProperty("--sidebar", `${w}px`);
+  } catch { /* egal */ }
+  new MutationObserver(() => updateVersionBar()).observe(document.body, { attributes: true, attributeFilter: ["class"] });
+  document.getElementById("footSettings").addEventListener("click", () => syncFavorites("allgemein"));
+  document.getElementById("footAdvanced").addEventListener("click", toggleAdvanced);
   guardHold(document.getElementById("lyricSearchToggle"));
   guardHold(document.getElementById("playerToggle"));
   window.addEventListener("resize", alignWave);
@@ -1882,8 +1927,10 @@ function bind() {
     const next = Number.isFinite(px) ? px : current;
     const width = Math.max(180, Math.min(window.innerWidth - 160, next));
     document.documentElement.style.setProperty("--sidebar", `${width}px`);
+    if (Number.isFinite(px)) { try { localStorage.setItem("sidebarW", String(Math.round(width))); } catch { /* egal */ } }
     positionArrow();
   };
+  window.setSidebarWidth = setSidebarWidth;
   const positionArrow = () => {
     const sidebar = document.getElementById("sidebar");
     const arrow = document.getElementById("toTopBtn");
@@ -2359,7 +2406,7 @@ async function putSync(store, data) {
 }
 
 /* ---- Einstellungen mit abgleichen (optional, pro Schlüssel Drei-Wege-Abgleich) ---- */
-const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBar", "srcTags", "favPlace", "favSeek", "showExtra", "srcFilter", "sync-auto-max", "skipSec", "skipBack", "skipFwd", "fehlMode", "fehlAll", "fehlHelpSeen", STORAGE.scale, STORAGE.listSize];
+const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBarAlways", "holdGuard", "sidebarW", "srcTags", "favPlace", "favSeek", "showExtra", "srcFilter", "sync-auto-max", "skipSec", "skipBack", "skipFwd", "fehlMode", "fehlAll", "fehlHelpSeen", STORAGE.scale, STORAGE.listSize];
 const isSettingKey = (k) => SETTING_KEYS.includes(k) || /^fehl[TL]_/.test(k);
 const syncSettingsOn = () => { try { return localStorage.getItem("syncSettings") === "1"; } catch { return false; } };
 function collectSettings() {
@@ -2399,7 +2446,7 @@ function applySettings(obj) {
   }
   if (!changed) return;
   try { if (window.THEME) window.THEME.apply(true); } catch { /* egal */ }
-  try { state.scale = Number(localStorage.getItem(STORAGE.scale) || 42); applyScale(); } catch { /* egal */ }
+  try { state.scale = Number(localStorage.getItem(STORAGE.scale) || 42); applyScale(); state.listSize = Number(localStorage.getItem(STORAGE.listSize) || 16); applyListSize(); const sw = Number(localStorage.getItem("sidebarW")); if (sw >= 180) document.documentElement.style.setProperty("--sidebar", `${sw}px`); } catch { /* egal */ }
   try { updateSkipLabels(); updateAutoIcon(); updateVersionBar(); rebuildExtras(); } catch { /* egal */ }
 }
 async function runSync(code, silent) {
@@ -2652,6 +2699,7 @@ async function syncFavoritesCore() {
   ss.onchange = () => { try { localStorage.setItem("syncSettings", ss.checked ? "1" : "0"); } catch { /* egal */ } };
   document.getElementById("verBarBox").hidden = false;
   document.getElementById("tagsBox").hidden = false;
+  setupAdvBox();
   document.getElementById("favBox").hidden = false;
   document.querySelectorAll('input[name="favPlace"]').forEach((r) => {
     r.checked = r.value === favPlace();
@@ -2669,8 +2717,8 @@ async function syncFavoritesCore() {
   ex.onchange = () => { try { localStorage.setItem("showExtra", ex.checked ? "1" : "0"); } catch { /* egal */ } rebuildExtras(); };
   document.getElementById("themeBox").hidden = false;
   const vb = document.getElementById("verBarOpt");
-  vb.checked = localStorage.getItem("verBar") !== "0";
-  vb.onchange = () => { try { localStorage.setItem("verBar", vb.checked ? "1" : "0"); } catch { /* egal */ } updateVersionBar(); };
+  vb.checked = localStorage.getItem("verBarAlways") === "1";
+  vb.onchange = () => { try { localStorage.setItem("verBarAlways", vb.checked ? "1" : "0"); } catch { /* egal */ } updateVersionBar(); };
   const auto = document.getElementById("autoPlayOpt");
   auto.checked = localStorage.getItem("autoStart") === "1";
   auto.onchange = () => { try { localStorage.setItem("autoStart", auto.checked ? "1" : "0"); } catch { /* egal */ } updateAutoIcon(); };
@@ -3156,6 +3204,40 @@ function warnReplace() {
   });
 }
 
+/* Einstellungen: Anzeige und Werkzeuge (Allgemein) */
+function setupAdvBox() {
+  document.getElementById("advBox").hidden = false;
+  const closeSettings = () => { document.getElementById("codeModal").hidden = true; };
+  document.getElementById("advAdvanced").onclick = () => { closeSettings(); toggleAdvanced(); };
+  document.getElementById("advEdit").onclick = () => { closeSettings(); openTimecode(); };
+  document.getElementById("advReload").onclick = () => hardRefresh();
+  document.getElementById("advTesla").onclick = async () => {
+    if (await uiConfirm({ eyebrow: "Tesla", title: "Voreinstellungen anwenden?", lines: ["Autostart an, Design nach Sonnenauf- und -untergang, Art-Kennzeichen und Art-Buttons aus, kein Lang-Drücken-Schutz."], ok: "Anwenden" })) {
+      applyTeslaDefaults(true);
+      setupAdvBox();
+      showToast("Tesla-Voreinstellungen gesetzt");
+    }
+  };
+  const num = (id, get, set, min, max) => {
+    const inp = document.getElementById(id);
+    inp.value = String(get());
+    inp.onchange = () => {
+      const v = Math.max(min, Math.min(max, Math.round(Number(inp.value) || get())));
+      inp.value = String(v);
+      set(v);
+    };
+  };
+  num("advListSize", () => state.listSize, (v) => { state.listSize = v; localStorage.setItem(STORAGE.listSize, String(v)); applyListSize(); }, 10, 48);
+  num("advScale", () => state.scale, (v) => { state.scale = v; localStorage.setItem(STORAGE.scale, String(v)); applyScale(); }, 10, 200);
+  num("advSidebar", () => parseInt(getComputedStyle(document.documentElement).getPropertyValue("--sidebar"), 10) || 300, (v) => window.setSidebarWidth && window.setSidebarWidth(v), 180, 1200);
+  num("advBack", () => skipSec(-1), (v) => { localStorage.setItem("skipBack", String(v)); updateSkipLabels(); }, 1, 300);
+  num("advFwd", () => skipSec(1), (v) => { localStorage.setItem("skipFwd", String(v)); updateSkipLabels(); }, 1, 300);
+  const hold = document.getElementById("advHold");
+  hold.checked = holdOn();
+  hold.onchange = () => { try { localStorage.setItem("holdGuard", hold.checked ? "1" : "0"); } catch { /* egal */ } };
+  document.getElementById("advInfo").textContent = `Fensterbereich dieser Seite: ${window.innerWidth} × ${window.innerHeight} px · Bildschirm: ${screen.width} × ${screen.height} · Pixeldichte: ${window.devicePixelRatio}${isTesla() ? " · Tesla-Browser erkannt" : ""}`;
+}
+
 function openCode(title, onSubmit, kind) {
   const modal = document.getElementById("codeModal");
   const ludwtBox = document.getElementById("ludwtSync");
@@ -3187,6 +3269,7 @@ function openCode(title, onSubmit, kind) {
   document.getElementById("autoPlayBox").hidden = true;
   document.getElementById("verBarBox").hidden = true;
   document.getElementById("tagsBox").hidden = true;
+  document.getElementById("advBox").hidden = true;
   document.getElementById("favBox").hidden = true;
   document.getElementById("extraBox").hidden = true;
   document.getElementById("themeBox").hidden = true;
