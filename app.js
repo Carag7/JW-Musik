@@ -201,6 +201,14 @@ function uiDialog(opts) {
       input.hidden = true;
       input.value = "";
     }
+    const chRow = document.getElementById("dialogCheck");
+    const chBox = document.getElementById("dialogCheckBox");
+    chRow.hidden = !opts.check;
+    if (opts.check) {
+      document.getElementById("dialogCheckText").textContent = opts.check.label;
+      chBox.checked = Boolean(opts.check.value);
+      chBox.onchange = () => opts.check.onChange && opts.check.onChange(chBox.checked);
+    }
     const pwRow = document.getElementById("dialogShowPw");
     const pwBox = document.getElementById("dialogShowPwBox");
     const isPw = !!(opts.input && opts.input.type === "password");
@@ -982,6 +990,7 @@ async function loadMedia(fresh) {
     addMissingSongs();
     updateVersionBar();
     renderList();
+    if (!state.fehlChecked && window.FEHLEND && window.FEHLEND.checkNew) { state.fehlChecked = true; setTimeout(() => window.FEHLEND.checkNew(), 1500); }
   } catch { /* Worker nicht erreichbar: alles bleibt wie bisher */ }
 }
 
@@ -1743,6 +1752,12 @@ function bind() {
     if (w >= 180) document.documentElement.style.setProperty("--sidebar", `${w}px`);
   } catch { /* egal */ }
   new MutationObserver(() => updateVersionBar()).observe(document.body, { attributes: true, attributeFilter: ["class"] });
+  document.getElementById("footToggle").addEventListener("click", () => {
+    const box = document.getElementById("footBtns"), t = document.getElementById("footToggle");
+    box.hidden = !box.hidden;
+    t.setAttribute("aria-expanded", String(!box.hidden));
+    t.textContent = box.hidden ? "›" : "×";
+  });
   document.getElementById("footSettings").addEventListener("click", () => syncFavorites("allgemein"));
   document.getElementById("footAdvanced").addEventListener("click", toggleAdvanced);
   guardHold(document.getElementById("lyricSearchToggle"));
@@ -2406,7 +2421,7 @@ async function putSync(store, data) {
 }
 
 /* ---- Einstellungen mit abgleichen (optional, pro Schlüssel Drei-Wege-Abgleich) ---- */
-const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBarAlways", "holdGuard", "sidebarW", "srcTags", "favPlace", "favSeek", "showExtra", "srcFilter", "sync-auto-max", "skipSec", "skipBack", "skipFwd", "fehlMode", "fehlAll", "fehlHelpSeen", STORAGE.scale, STORAGE.listSize];
+const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBarAlways", "holdGuard", "sidebarW", "srcTags", "favPlace", "favSeek", "showExtra", "srcFilter", "sync-auto-max", "skipSec", "skipBack", "skipFwd", "fehlMode", "fehlNotify", "fehlAll", "fehlHelpSeen", STORAGE.scale, STORAGE.listSize];
 const isSettingKey = (k) => SETTING_KEYS.includes(k) || /^fehl[TL]_/.test(k);
 const syncSettingsOn = () => { try { return localStorage.getItem("syncSettings") === "1"; } catch { return false; } };
 function collectSettings() {

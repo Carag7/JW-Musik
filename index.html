@@ -127,8 +127,11 @@
 
       <ul id="songList" class="song-list" aria-label="Lieder"></ul>
       <div id="listFoot" class="list-foot">
-        <button id="footSettings" class="chip" type="button">Einstellungen</button>
-        <button id="footAdvanced" class="chip" type="button">Erweiterte Optionen</button>
+        <button id="footToggle" class="foot-toggle" type="button" aria-expanded="false" aria-label="Weitere Tasten ein-/ausblenden">›</button>
+        <div id="footBtns" class="foot-btns" hidden>
+          <button id="footSettings" class="chip" type="button">Einstellungen</button>
+          <button id="footAdvanced" class="chip" type="button">Erweiterte Optionen</button>
+        </div>
       </div>
     </aside>
     <button id="toTopBtn" class="to-top" type="button" aria-label="Nach oben">↑</button>
@@ -314,6 +317,7 @@
       <h2 id="dialogTitle"></h2>
       <div id="dialogBody" class="dlg-body"></div>
       <input id="dialogInput" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" hidden />
+      <label id="dialogCheck" class="remember" hidden><input id="dialogCheckBox" type="checkbox" /> <span id="dialogCheckText"></span></label>
       <label id="dialogShowPw" class="remember" hidden><input id="dialogShowPwBox" type="checkbox" /> Passwort anzeigen</label>
       <div id="dialogButtons" class="dlg-actions"></div>
     </form>

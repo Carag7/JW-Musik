@@ -1240,3 +1240,9 @@ body.fav-bottom-off #favoriteBtn2 { display: none !important; }
 }
 #advBox .set-row input[type="number"] { background: var(--panel-2); color: var(--text); border: 1px solid var(--line); border-radius: 10px; min-height: 40px; text-align: center; font-size: 16px; }
 #advBox .set-row { justify-content: space-between; }
+
+.list-foot { align-items: center; gap: 10px; }
+.foot-toggle { width: 34px; height: 34px; min-height: 0; padding: 0; border-radius: 10px; border: 1px solid var(--line); background: transparent; color: var(--muted); font-size: 18px; line-height: 1; cursor: pointer; opacity: .6; }
+.foot-toggle[aria-expanded="true"] { opacity: 1; }
+.foot-btns { display: flex; gap: 8px; flex-wrap: wrap; flex: 1 1 auto; }
+.foot-btns[hidden] { display: none !important; }

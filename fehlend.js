@@ -129,6 +129,7 @@
           "Die Prüfung läuft sonst automatisch einmal pro Woche (montags). Das Ergebnis erscheint nach ca. 1–3 Minuten hier."
         ], title: "Aktion: Prüfung starten", cls: "dlg-action" }
       ],
+      check: { label: "Hinweis zeigen, wenn die wöchentliche Prüfung etwas Neues findet", value: opt("fehlNotify", false), onChange: (v) => setOpt("fehlNotify", v) },
       buttons: [{ value: "ok", kind: "primary", label: "Jetzt prüfen" }, { value: null, kind: "cancel", label: "Abbrechen" }]
     });
     if (go !== "ok") return;
@@ -413,5 +414,29 @@
     if (sc) sc.scrollTop = top;
   }
 
-  window.FEHLEND = { mount };
+  /* Pop-up beim Öffnen der Seite: neue, auf jw.org veröffentlichte Dateien, die in R2 noch fehlen (nur wenn eingeschaltet) */
+  async function checkNew() {
+    try {
+      await loadData();
+      if (!data || !data.stand || !state.media) return;
+      const m = model();
+      const nowKeys = [];
+      m.rows.forEach((r) => TYPES.forEach((t) => { if (!m.has[t.id](r.n) && m.published(r.n, t.id)) nowKeys.push(`${r.n}:${t.id}`); }));
+      let seenStand = null, seen = null;
+      try { seenStand = localStorage.getItem("fehlStand"); seen = JSON.parse(localStorage.getItem("fehlSeen") || "null"); } catch { /* egal */ }
+      if (seenStand === data.stand) return;
+      const fresh = seen ? nowKeys.filter((k) => !seen.includes(k)) : [];
+      try { localStorage.setItem("fehlStand", data.stand); localStorage.setItem("fehlSeen", JSON.stringify(nowKeys)); } catch { /* egal */ }
+      if (!opt("fehlNotify", false) || !fresh.length) return;
+      const byType = {};
+      fresh.forEach((k) => { const t = k.split(":")[1]; byType[t] = (byType[t] || 0) + 1; });
+      const lines = [`Die wöchentliche Prüfung hat ${fresh.length} neue Datei${fresh.length === 1 ? "" : "en"} auf jw.org gefunden, die bei dir noch fehlen${fresh.length === 1 ? "" : "."}`];
+      TYPES.forEach((t) => { if (byType[t.id]) lines.push(`${t.name}: ${byType[t.id]}`); });
+      lines.push("Beispiele: " + fresh.slice(0, 5).map((k) => { const [n, t] = k.split(":"); return `${pad(+n)} ${TYPES.find((x) => x.id === t).name}`; }).join(", "));
+      const go = await uiDialog({ eyebrow: "Fehlende Lieder", title: "Neues gefunden", lines, buttons: [{ value: "go", kind: "primary", label: "Zu „Fehlend“" }, { value: null, kind: "cancel", label: "Später" }] });
+      if (go === "go" && window.syncFavorites) window.syncFavorites("fehlend");
+    } catch { /* still */ }
+  }
+
+  window.FEHLEND = { mount, checkNew };
 })();
