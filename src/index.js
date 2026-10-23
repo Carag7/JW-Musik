@@ -144,6 +144,7 @@ export function classify(key) {
     return null;
   }
   const meeting = MEETING_DIR.test(top) || top === "meeting";
+  if (top === "meeting" && parts[1] === "sung" && ext === "lrc") return { type: "meeting-sunglrc", n: numberFromName(name) };
   if (top === "meeting" && parts[1] === "sung" && AUDIO_EXT.includes(ext)) return { type: "meeting-sung", n: numberFromName(name) };
   if (VIDEO_EXT.includes(ext)) return { type: "meeting-video", n: numberFromName(name) };
   if (AUDIO_EXT.includes(ext)) return { type: meeting ? "meeting-audio" : "karaoke-audio", n: numberFromName(name) };
@@ -168,7 +169,7 @@ async function buildIndex(env) {
   const objects = await listAll(env);
   const idx = {
     karaoke: { audio: {}, lrc: {} },
-    meeting: { audio: {}, video: {}, lrc: {}, sung: {} }
+    meeting: { audio: {}, video: {}, lrc: {}, sung: {}, sungLrc: {} }
   };
   const score = {};
   const put = (bucket, name, n, key) => {
@@ -196,6 +197,7 @@ async function buildIndex(env) {
     else if (c.type === "meeting-sung") put(idx.meeting.sung, "ms", c.n, o.key);
     else if (c.type === "meeting-video") put(idx.meeting.video, "mv", c.n, o.key);
     else if (c.type === "meeting-lrc") put(idx.meeting.lrc, "ml", c.n, o.key);
+    else if (c.type === "meeting-sunglrc") put(idx.meeting.sungLrc, "sl", c.n, o.key);
   }
   return {
     ok: true,
@@ -207,7 +209,8 @@ async function buildIndex(env) {
       meeting_audio: Object.keys(idx.meeting.audio).length,
       meeting_video: Object.keys(idx.meeting.video).length,
       meeting_sung: Object.keys(idx.meeting.sung).length,
-      meeting_lrc: Object.keys(idx.meeting.lrc).length
+      meeting_lrc: Object.keys(idx.meeting.lrc).length,
+      meeting_sung_lrc: Object.keys(idx.meeting.sungLrc).length
     },
     ...idx
   };
@@ -364,11 +367,12 @@ async function handleMigrate(request, env, url, path) {
 
 /* ---------- Sync (Favoriten) und Liedtext-Zeiten ---------- */
 
-/* lrc-003 -> karaoke/lrc/003.lrc, lrcm-003 -> meeting/lrc/003.lrc, sonst favoriten/<name>.json (alte Orte werden mitgelesen) */
+/* lrc-003 -> karaoke/lrc/003.lrc, lrcm-003 -> meeting/lrc/003.lrc, lrcs-003 -> meeting/sung/lrc/003.lrc, sonst favoriten/<name>.json (alte Orte werden mitgelesen) */
 export function storeKeys(code) {
-  const m = code.match(/^lrc(m?)-([a-z0-9]+)$/);
+  const m = code.match(/^lrc([ms]?)-([a-z0-9]+)$/);
   if (m) {
     const n = m[2];
+    if (m[1] === "s") return { write: `meeting/sung/lrc/${n}.lrc`, read: [`meeting/sung/lrc/${n}.lrc`], lrc: true };
     return m[1]
       ? { write: `meeting/lrc/${n}.lrc`, read: [`meeting/lrc/${n}.lrc`], lrc: true }
       : { write: `karaoke/lrc/${n}.lrc`, read: [`karaoke/lrc/${n}.lrc`, `sync/lrc-${n}.lrc`], lrc: true };
