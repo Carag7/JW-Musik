@@ -3,9 +3,10 @@
 scrape_verfuegbar.py – prüft einmal pro Woche, welche Lieder von „Singt voller Freude“ auf jw.org veröffentlicht sind
 und schreibt verfuegbar.json (Liednummer -> Titel + Download-Adressen je Art).
 
-Arten (ohne Kinderlieder), nur für das aktuelle Liederbuch „Sing Out Joyfully“ (Nummern aus der Meetings-Liste sjjm):
+Arten (ohne Kinderlieder), nur für das aktuelle Liederbuch „Sing Out Joyfully“ (Nummern aus der Meetings-Audio-Liste sjjm):
   karaoke       Vocals       (pub=sjjc, MP3)
-  instrumental  Meetings-Audio = „Instrumental“ (pub=sjjm, MP3)
+  instrumental  Instrumental (pub=sjji, MP3)
+  sung          Zusammenkünfte = gesungene Meeting-MP3 (pub=sjjm, MP3)
   video         Meetings-Video (pub=sjjm, MP4, 720p)
 
 Quelle: die offene Medien-Schnittstelle von jw.org (dieselbe, die die Download-Seite
@@ -25,7 +26,8 @@ LIBRARY = "https://www.jw.org/en/library/music-songs/sing-out-joyfully/"
 LANG = "E"
 ARTEN = [
     ("karaoke", "sjjc", "MP3"),
-    ("instrumental", "sjjm", "MP3"),
+    ("instrumental", "sjji", "MP3"),
+    ("sung", "sjjm", "MP3"),
     ("video", "sjjm", "MP4"),
 ]
 OUT = Path(__file__).with_name("verfuegbar.json")
@@ -58,7 +60,7 @@ def hole_dateien(pub: str, fmt: str, fehler: list):
         n = nummer_aus_name(url)
         if n is None and isinstance(e.get("track"), int) and e["track"] > 0:
             n = e["track"]
-        if n is None:
+        if n is None or n >= 500:   # ab 500: Gebärdensprache/Blindenschrift – nicht gewünscht
             continue
         label = str(e.get("label") or "")
         # bei Videos mehrere Auflösungen: 720p bevorzugen, sonst die größte
@@ -105,7 +107,7 @@ def main():
                 eintrag["titel"] = info["titel"]
     bib = hole_bibliothek(fehler)
     # nur das aktuelle Liederbuch: Nummern aus der Meetings-Audio-Liste (sjjm MP3)
-    buch = sorted(int(n) for n, e in lieder.items() if "instrumental" in e)
+    buch = sorted(int(n) for n, e in lieder.items() if "sung" in e)
     if buch:
         erlaubt = {str(n) for n in buch}
         for n in [k for k in lieder if k not in erlaubt]:

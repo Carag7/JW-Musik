@@ -151,8 +151,21 @@ function uiDialog(opts) {
     eyebrow.hidden = !opts.eyebrow;
     document.getElementById("dialogTitle").textContent = opts.title || "";
     body.replaceChildren();
-    (opts.lines || []).forEach((line) => {
+    const addLine = (parent, line) => {
       const item = typeof line === "string" ? { text: line } : line;
+      if (item.group) {
+        const g = document.createElement("div");
+        g.className = `dlg-group${item.cls ? ` ${item.cls}` : ""}`;
+        if (item.title) {
+          const t = document.createElement("p");
+          t.className = "dlg-group-title";
+          t.textContent = item.title;
+          g.append(t);
+        }
+        item.group.forEach((sub) => addLine(g, sub));
+        parent.append(g);
+        return;
+      }
       if (item.table) {
         const wrap = document.createElement("div");
         wrap.className = "dlg-table-wrap";
@@ -160,22 +173,24 @@ function uiDialog(opts) {
         table.className = "dlg-table";
         item.table.forEach((row, r) => {
           const tr = document.createElement("tr");
-          row.forEach((cell) => {
+          row.forEach((cell, c) => {
             const td = document.createElement(r === 0 ? "th" : "td");
             td.textContent = String(cell);
+            if (c > 0 && item.right) td.className = "num";
             tr.append(td);
           });
           table.append(tr);
         });
         wrap.append(table);
-        body.append(wrap);
+        parent.append(wrap);
         return;
       }
       const p = document.createElement("p");
       p.textContent = item.text;
       if (item.cls) p.className = item.cls;
-      body.append(p);
-    });
+      parent.append(p);
+    };
+    (opts.lines || []).forEach((line) => addLine(body, line));
     if (opts.input) {
       input.hidden = false;
       input.type = opts.input.type || "text";
@@ -186,6 +201,12 @@ function uiDialog(opts) {
       input.hidden = true;
       input.value = "";
     }
+    const pwRow = document.getElementById("dialogShowPw");
+    const pwBox = document.getElementById("dialogShowPwBox");
+    const isPw = !!(opts.input && opts.input.type === "password");
+    pwRow.hidden = !isPw;
+    pwBox.checked = false;
+    pwBox.onchange = () => { input.type = pwBox.checked ? "text" : "password"; };
     box.replaceChildren();
     let primary = null;
     let onKey = null;
@@ -1172,8 +1193,8 @@ function setMediaSession(song) {
   const optional = (action, handler) => {
     try { navigator.mediaSession.setActionHandler(action, handler); } catch { /* nicht überall unterstützt */ }
   };
-  optional("seekbackward", () => skip(-15));
-  optional("seekforward", () => skip(15));
+  optional("seekbackward", () => skip(-skipSec()));
+  optional("seekforward", () => skip(skipSec()));
   optional("seekto", (details) => {
     if (details && Number.isFinite(details.seekTime)) el.audio.currentTime = details.seekTime;
   });
@@ -1359,6 +1380,42 @@ function step(delta) {
   selectSong(state.songs.indexOf(next), playing || delta !== 0);
 }
 
+function skipSec() {
+  const n = Number(localStorage.getItem("skipSec"));
+  return n >= 1 && n <= 300 ? Math.round(n) : 15;
+}
+function updateSkipLabels() {
+  const n = skipSec();
+  el.back15.textContent = `−${n}`;
+  el.fwd15.textContent = `+${n}`;
+  el.back15.setAttribute("aria-label", `${n} Sekunden zurück`);
+  el.fwd15.setAttribute("aria-label", `${n} Sekunden vor`);
+}
+/* Kurz tippen = springen, lang drücken = Sprungweite einstellen */
+function bindSkipButton(btn, dir) {
+  let timer = 0;
+  let longDone = false;
+  const clear = () => clearTimeout(timer);
+  btn.addEventListener("pointerdown", () => {
+    longDone = false;
+    clear();
+    timer = setTimeout(async () => {
+      longDone = true;
+      const v = await uiPrompt({ eyebrow: "Wiedergabe", title: "Sprungweite", text: "Sekunden pro Tipp auf −/+ (1 bis 300).", value: String(skipSec()), type: "number", inputMode: "numeric", ok: "Speichern" });
+      if (v === null) return;
+      const n = Math.round(Number(v));
+      if (!(n >= 1 && n <= 300)) { showToast("Bitte eine Zahl von 1 bis 300 eingeben."); return; }
+      localStorage.setItem("skipSec", String(n));
+      updateSkipLabels();
+    }, 700);
+  });
+  ["pointerup", "pointerleave", "pointercancel"].forEach((t) => btn.addEventListener(t, clear));
+  btn.addEventListener("contextmenu", (e) => e.preventDefault());
+  btn.addEventListener("click", (e) => {
+    if (longDone) { longDone = false; e.preventDefault(); return; }
+    skip(dir * skipSec());
+  });
+}
 function skip(seconds) {
   if (!el.audio.src && !el.audio.currentSrc) return;
   const duration = el.audio.duration || Number.MAX_SAFE_INTEGER;
@@ -1551,13 +1608,41 @@ function tryAutoStart() {
   }, 2500);
 }
 
+/* iPhone/iPad-Web-App: Leiste unter Statuszeile/Fenster-Knöpfen; Tastatur: sichtbare Höhe merken */
+function setupViewport() {
+  const root = document.documentElement;
+  const standalone = window.navigator.standalone === true || (window.matchMedia && matchMedia("(display-mode: standalone)").matches);
+  const ipad = /iPad/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  if (standalone && ipad) {
+    const probe = document.createElement("div");
+    probe.style.cssText = "position:fixed;top:0;height:env(safe-area-inset-top,0px);visibility:hidden;pointer-events:none";
+    document.body.append(probe);
+    const safe = probe.getBoundingClientRect().height;
+    probe.remove();
+    if (safe < 28) root.style.setProperty("--safe-top", "28px");
+  }
+  const vv = window.visualViewport;
+  const sync = () => {
+    if (!vv) return;
+    if (vv.scale <= 1.01 && window.innerHeight - vv.height > 100) root.style.setProperty("--vvh", `${Math.round(vv.height)}px`);
+    else root.style.removeProperty("--vvh");
+    const ae = document.activeElement;
+    if (ae && ae.matches && ae.matches("input, textarea") && ae.closest(".login-gate")) {
+      setTimeout(() => ae.scrollIntoView({ block: "center", behavior: "smooth" }), 50);
+    }
+  };
+  if (vv) { vv.addEventListener("resize", sync); sync(); }
+  document.addEventListener("focusin", (e) => {
+    const t = e.target;
+    if (t && t.matches && t.matches("input, textarea") && t.closest(".login-gate")) {
+      setTimeout(() => t.scrollIntoView({ block: "center", behavior: "smooth" }), 350);
+    }
+  });
+}
+
 function bind() {
+  setupViewport();
   bindChrome();
-  // Seite darf nie von selbst verrutschen (feste Leiste oben)
-  [document.body, window].forEach((n) => n.addEventListener("scroll", () => {
-    if (document.body.scrollTop) document.body.scrollTop = 0;
-    if (document.documentElement.scrollTop) document.documentElement.scrollTop = 0;
-  }, { passive: true }));
   window.addEventListener("resize", layoutVideo);
   const nowEl = document.querySelector(".stage > .now");
   if (nowEl && window.ResizeObserver) new ResizeObserver(layoutVideo).observe(nowEl);
@@ -1761,8 +1846,9 @@ function bind() {
   el.play.addEventListener("click", togglePlay);
   el.prev.addEventListener("click", () => step(-1));
   el.next.addEventListener("click", () => step(1));
-  el.back15.addEventListener("click", () => skip(-15));
-  el.fwd15.addEventListener("click", () => skip(15));
+  bindSkipButton(el.back15, -1);
+  bindSkipButton(el.fwd15, 1);
+  updateSkipLabels();
   el.progress.addEventListener("input", seek);
   el.progress.addEventListener("change", seek);
   el.shuffleBtn.addEventListener("click", () => {
@@ -2193,13 +2279,97 @@ function applySyncData(data) {
   renderList();
 }
 
+let outSettings = null;     // Einstellungen, die beim nächsten Hochladen mitgeschickt werden (oder die vom Server erhaltenen)
+let putHappened = false;
 async function putSync(store, data) {
+  const body = { favorites: data.favorites, playlists: data.playlists, saved: new Date().toISOString() };
+  if (outSettings) body.settings = outSettings;
   const res = await fetch(`${SYNC_BASE}/sync/${store}`, {
     method: "PUT",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ favorites: data.favorites, playlists: data.playlists, saved: new Date().toISOString() })
+    body: JSON.stringify(body)
   });
   if (!res.ok) throw new Error(`Server ${res.status}`);
+  putHappened = true;
+}
+
+/* ---- Einstellungen mit abgleichen (optional, pro Schlüssel Drei-Wege-Abgleich) ---- */
+const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBar", "showExtra", "srcFilter", "sync-auto-max", "skipSec", "fehlMode", "fehlAll", "fehlHelpSeen", STORAGE.scale, STORAGE.listSize];
+const isSettingKey = (k) => SETTING_KEYS.includes(k) || /^fehl[TL]_/.test(k);
+const syncSettingsOn = () => { try { return localStorage.getItem("syncSettings") === "1"; } catch { return false; } };
+function collectSettings() {
+  const out = {};
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (isSettingKey(k)) out[k] = localStorage.getItem(k);
+    }
+  } catch { /* egal */ }
+  return out;
+}
+function readSettingsBase(store) {
+  try { return JSON.parse(localStorage.getItem(`sync-settings-base:${store}`) || "{}") || {}; } catch { return {}; }
+}
+function writeSettingsBase(store, obj) {
+  try { localStorage.setItem(`sync-settings-base:${store}`, JSON.stringify(obj)); } catch { /* egal */ }
+}
+function mergeSettings(base, local, remote) {
+  const out = {};
+  for (const k of new Set([...Object.keys(base), ...Object.keys(local), ...Object.keys(remote)])) {
+    const b = base[k], l = local[k], r = remote[k];
+    let v;
+    if (l === r) v = l;
+    else if (l === b) v = r;           // nur der Server hat geändert
+    else v = l;                         // dieses Gerät hat geändert (oder beide: dieses Gerät gewinnt)
+    if (v !== undefined && v !== null) out[k] = String(v);
+  }
+  return out;
+}
+function applySettings(obj) {
+  const cur = collectSettings();
+  let changed = false;
+  for (const [k, v] of Object.entries(obj)) {
+    if (!isSettingKey(k) || cur[k] === v) continue;
+    try { localStorage.setItem(k, v); changed = true; } catch { /* egal */ }
+  }
+  if (!changed) return;
+  try { if (window.THEME) window.THEME.apply(true); } catch { /* egal */ }
+  try { state.scale = Number(localStorage.getItem(STORAGE.scale) || 42); applyScale(); } catch { /* egal */ }
+  try { updateSkipLabels(); updateAutoIcon(); updateVersionBar(); rebuildExtras(); } catch { /* egal */ }
+}
+async function runSync(code, silent) {
+  const store = code.toLowerCase().replace(/[^a-z0-9-]/g, "");
+  const on = syncSettingsOn();
+  let raw = null;
+  try {
+    const r0 = await fetch(`${SYNC_BASE}/sync/${store}`, { cache: "no-store" });
+    if (r0.ok) raw = await r0.json();
+  } catch { /* runSyncData meldet es */ }
+  const remoteSet = raw && raw.settings && typeof raw.settings === "object" ? raw.settings : null;
+  const merged = on ? mergeSettings(readSettingsBase(store), collectSettings(), remoteSet || {}) : null;
+  outSettings = on ? merged : remoteSet;   // ohne Haken bleiben die Einstellungen auf dem Server unverändert
+  putHappened = false;
+  let message;
+  try {
+    message = await runSyncData(code, silent);
+  } finally {
+    // outSettings bleibt bis unten stehen
+  }
+  if (on && raw !== null && !/^(Abgebrochen|Server nicht)/.test(message || "")) {
+    applySettings(merged);
+    if (!putHappened && JSON.stringify(merged) !== JSON.stringify(remoteSet || {})) {
+      try {
+        const fresh = await (await fetch(`${SYNC_BASE}/sync/${store}`, { cache: "no-store" })).json();
+        await putSync(store, normalizeSync(fresh));
+      } catch { /* nächstes Mal */ }
+    }
+    writeSettingsBase(store, merged);
+    if (!silent && message) message += " Einstellungen abgeglichen.";
+  } else if (on && raw === null && putHappened) {
+    writeSettingsBase(store, merged);
+  }
+  outSettings = null;
+  return message;
 }
 
 function stampSync(direction) {
@@ -2260,7 +2430,7 @@ function askSyncConflict(store, local, remote, lostLocal, lostRemote) {
   });
 }
 
-async function runSync(code, silent) {
+async function runSyncData(code, silent) {
   const store = code.toLowerCase().replace(/[^a-z0-9-]/g, "");
   let res;
   try {
@@ -2376,7 +2546,7 @@ async function showSyncCompare() {
 
 async function syncFavorites(tab) {
   await syncFavoritesCore();
-  showSetTab(tab || state.setTab || "abgleich");
+  showSetTab(tab || state.setTab || "allgemein");
 }
 
 async function syncFavoritesCore() {
@@ -2412,6 +2582,9 @@ async function syncFavoritesCore() {
     max.value = String(value);
     try { localStorage.setItem("sync-auto-max", String(value)); } catch { /* egal */ }
   };
+  const ss = document.getElementById("syncSettingsOpt");
+  ss.checked = syncSettingsOn();
+  ss.onchange = () => { try { localStorage.setItem("syncSettings", ss.checked ? "1" : "0"); } catch { /* egal */ } };
   document.getElementById("verBarBox").hidden = false;
   document.getElementById("extraBox").hidden = false;
   const ex = document.getElementById("extraSongsOpt");
@@ -2450,6 +2623,7 @@ async function syncFavoritesCore() {
     renderList();
     if (choice === "both" && store) {
       try {
+        outSettings = null;
         await putSync(store, { favorites: [], playlists: [] });
         writeSyncBase(store, { favorites: [], playlists: [] });
       } catch {
@@ -3023,6 +3197,8 @@ function checkLogin() {
     return;
   }
   gate.hidden = false;
+  const pwBox = document.getElementById("showPw");
+  if (pwBox) pwBox.addEventListener("change", () => { document.getElementById("loginPassword").type = pwBox.checked ? "text" : "password"; });
   document.getElementById("loginForm").addEventListener("submit", async (event) => {
     event.preventDefault();
     const value = document.getElementById("loginPassword").value;

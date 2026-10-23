@@ -153,6 +153,8 @@
     if (!m) return;
     m.textContent = text;
     m.className = `ls-msg${cls ? ` ${cls}` : ""}`;
+    const dot = root.querySelector(".ls-dot");
+    if (dot && (cls === "busy" || cls === "ok" || cls === "bad")) dot.className = `ls-dot ${cls}`;
   }
 
   async function startUpdate(pin) {
@@ -183,13 +185,13 @@
 
   function onRefresh(root, btn) {
     btn.disabled = true;
-    say(root, "Starte Update …");
+    say(root, "Starte Update …", "busy");
     const before = status && status.letzter_lauf;
     let savedPin = "";
     try { savedPin = sessionStorage.getItem("ludwtPin") || ""; } catch {}
     startUpdate(savedPin).then((r) => {
       if (r.abgebrochen) { say(root, "Abgebrochen."); btn.disabled = false; return; }
-      say(root, "Update läuft bei GitHub. Danach veröffentlicht Cloudflare die Daten (zusammen meist 1–3 Minuten) …");
+      say(root, "Update läuft bei GitHub. Danach veröffentlicht Cloudflare die Daten (zusammen meist 1–3 Minuten) …", "busy");
       const t0 = Date.now();
       clearInterval(pollTimer);
       pollTimer = setInterval(async () => {

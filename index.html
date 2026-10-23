@@ -21,6 +21,7 @@
     <form id="loginForm" class="login-card">
       <h2>Karaoke</h2>
       <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Passwort" required />
+      <label class="remember"><input id="showPw" type="checkbox" /> Passwort anzeigen</label>
       <label class="remember"><input id="rememberLogin" type="checkbox" checked /> Login im Browser speichern</label>
       <button class="chip" type="submit">Öffnen</button>
       <p id="loginError" class="login-error" hidden>Passwort stimmt nicht</p>
@@ -32,7 +33,7 @@
   </div>
   <header class="topbar">
     <button id="menuToggle" class="lieder-toggle" type="button" aria-expanded="true">Lieder</button>
-    <button id="eigeneToggle" class="lieder-toggle" type="button" aria-pressed="false">eigene</button>
+    <button id="eigeneToggle" class="lieder-toggle" type="button" aria-pressed="false">Listen</button>
     <button id="ludwtToggle" class="lieder-toggle" type="button" aria-pressed="false">LuD+WT</button>
     <div id="listTools" class="list-tools" hidden>
       <button id="listSmaller" class="ghost" type="button" aria-label="Liste kleiner">A−</button>
@@ -174,14 +175,13 @@
       <button id="fwd15" class="round" type="button" aria-label="15 Sekunden vor">+15</button>
     </div>
     <div class="timeline">
-      <p id="prevSong" class="nav-song">—</p>
+      <div class="nav-row"><p id="prevSong" class="nav-song">—</p><button id="waveToggle" class="chip wave-toggle" type="button" hidden>Welle</button></div>
       <div class="bar-row">
         <button id="currentTime" class="time-btn" type="button" title="Lied neu starten">0:00</button>
         <input id="progressBar" type="range" min="0" max="1000" value="0" aria-label="Position" />
         <span id="duration">0:00</span>
       </div>
       <canvas id="spectrum" class="spectrum" hidden></canvas>
-      <button id="waveToggle" class="chip wave-toggle" type="button" hidden>Welle</button>
       <p id="nextSong" class="nav-song">—</p>
     </div>
   </footer>
@@ -200,10 +200,10 @@
       <button id="metaToggle" data-tab="abgleich" class="ghost meta-i" type="button" hidden>i</button>
       <h2 id="codeTitle">Code</h2>
       <div id="setTabs" class="set-tabs" role="tablist">
+        <button class="seg-btn" type="button" data-settab="allgemein">Allgemein</button>
+        <button class="seg-btn" type="button" data-settab="design">Design</button>
         <button class="seg-btn" type="button" data-settab="abgleich">Abgleich</button>
         <button class="seg-btn" type="button" data-settab="sichern">Sichern</button>
-        <button class="seg-btn" type="button" data-settab="design">Design</button>
-        <button class="seg-btn" type="button" data-settab="allgemein">Allgemein</button>
         <button class="seg-btn" type="button" data-settab="fehlend">Fehlend</button>
         <button class="seg-btn" type="button" data-settab="ludwt">LuD+WT</button>
       </div>
@@ -218,7 +218,6 @@
       <button id="copyLink" data-tab="abgleich" class="chip" type="button" hidden>Kopieren</button>
       <p id="syncMeta" data-tab="abgleich" class="login-error" hidden></p>
       <button id="codeOk" data-tab="abgleich" class="chip" type="submit">QR-Code erzeugen</button>
-      <button id="codeCancel" class="ghost" type="button">Abbrechen</button>
       <p id="codeMessage" data-tab="abgleich" class="login-error"></p>
       <p id="syncInfo" data-tab="abgleich" class="login-error" hidden></p>
       <div id="syncSettings" data-tab="abgleich" class="sync-settings" hidden>
@@ -226,6 +225,8 @@
           <input id="syncAutoMax" type="number" min="0" max="999" inputmode="numeric" value="0" />
           Lieder gelöscht wurden</label>
         <small class="set-hint">0 = bei jeder Löschung nachfragen</small>
+        <label class="set-row check"><input id="syncSettingsOpt" type="checkbox" /> Auch alle anderen Einstellungen mit abgleichen</label>
+        <small class="set-hint">Design, Anzeige-Optionen, Sprungweite usw. werden mit den Favoriten auf alle Geräte mit demselben Speicher übertragen. Die Standort-Angabe und Passwörter bleiben nur auf dem Gerät.</small>
       </div>
       <button id="syncDelete" data-tab="abgleich" class="chip danger" type="button" hidden>Alles löschen</button>
       <div id="autoPlayBox" data-tab="allgemein" class="autoplay-box" hidden>
@@ -252,6 +253,7 @@
         <small class="set-hint">Im Handy-Querformat sind sie immer ausgeblendet.</small>
       </div>
       <section id="ludwtSync" data-tab="ludwt" class="ludwt-sync" hidden></section>
+      <button id="codeCancel" class="ghost" type="button">Abbrechen</button>
     </form>
   </div>
 
@@ -272,7 +274,8 @@
       <p id="dialogEyebrow" class="eyebrow" hidden></p>
       <h2 id="dialogTitle"></h2>
       <div id="dialogBody" class="dlg-body"></div>
-      <input id="dialogInput" type="text" autocomplete="off" hidden />
+      <input id="dialogInput" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" hidden />
+      <label id="dialogShowPw" class="remember" hidden><input id="dialogShowPwBox" type="checkbox" /> Passwort anzeigen</label>
       <div id="dialogButtons" class="dlg-actions"></div>
     </form>
   </div>
