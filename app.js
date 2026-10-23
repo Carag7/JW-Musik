@@ -1186,7 +1186,7 @@ function setAudioSource(url) {
 function setMediaSession(song) {
   if (!("mediaSession" in navigator) || !song) return;
   navigator.mediaSession.metadata = new MediaMetadata({
-    title: song.title,
+    title: `${state.favorites.has(song.id) ? "★ " : ""}${song.title}`,
     artist: "Sing Out Joyfully",
     album: song.category || "Karaoke"
   });
@@ -1197,8 +1197,8 @@ function setMediaSession(song) {
   const optional = (action, handler) => {
     try { navigator.mediaSession.setActionHandler(action, handler); } catch { /* nicht überall unterstützt */ }
   };
-  optional("seekbackward", () => skip(-skipSec(-1)));
-  optional("seekforward", () => skip(skipSec(1)));
+  optional("seekbackward", favSeek() === "back" ? toggleFavorite : () => skip(-skipSec(-1)));
+  optional("seekforward", favSeek() === "fwd" ? toggleFavorite : () => skip(skipSec(1)));
   optional("seekto", (details) => {
     if (details && Number.isFinite(details.seekTime)) el.audio.currentTime = details.seekTime;
   });
@@ -1428,7 +1428,15 @@ function skip(seconds) {
   el.audio.currentTime = Math.min(duration, Math.max(0, (el.audio.currentTime || 0) + seconds));
 }
 
+const favPlace = () => { try { const v = localStorage.getItem("favPlace"); return ["top", "bottom", "both"].includes(v) ? v : "both"; } catch { return "both"; } };
+const favSeek = () => { try { const v = localStorage.getItem("favSeek"); return ["back", "fwd"].includes(v) ? v : "off"; } catch { return "off"; } };
+function applyFavPlace() {
+  const p = favPlace();
+  document.body.classList.toggle("fav-top-off", p === "bottom");
+  document.body.classList.toggle("fav-bottom-off", p === "top");
+}
 function paintFav2() {
+  applyFavPlace();
   const b = document.getElementById("favoriteBtn2");
   if (!b) return;
   const song = state.songs[state.index];
@@ -1452,6 +1460,7 @@ function toggleFavorite() {
     el.favorite.textContent = song && state.favorites.has(song.id) ? "★" : "☆";
   }
   paintFav2();
+  setMediaSession(song);
 }
 
 async function toggleFullscreen() {
@@ -2326,7 +2335,7 @@ async function putSync(store, data) {
 }
 
 /* ---- Einstellungen mit abgleichen (optional, pro Schlüssel Drei-Wege-Abgleich) ---- */
-const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBar", "srcTags", "showExtra", "srcFilter", "sync-auto-max", "skipSec", "skipBack", "skipFwd", "fehlMode", "fehlAll", "fehlHelpSeen", STORAGE.scale, STORAGE.listSize];
+const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBar", "srcTags", "favPlace", "favSeek", "showExtra", "srcFilter", "sync-auto-max", "skipSec", "skipBack", "skipFwd", "fehlMode", "fehlAll", "fehlHelpSeen", STORAGE.scale, STORAGE.listSize];
 const isSettingKey = (k) => SETTING_KEYS.includes(k) || /^fehl[TL]_/.test(k);
 const syncSettingsOn = () => { try { return localStorage.getItem("syncSettings") === "1"; } catch { return false; } };
 function collectSettings() {
@@ -2619,6 +2628,14 @@ async function syncFavoritesCore() {
   ss.onchange = () => { try { localStorage.setItem("syncSettings", ss.checked ? "1" : "0"); } catch { /* egal */ } };
   document.getElementById("verBarBox").hidden = false;
   document.getElementById("tagsBox").hidden = false;
+  document.getElementById("favBox").hidden = false;
+  document.querySelectorAll('input[name="favPlace"]').forEach((r) => {
+    r.checked = r.value === favPlace();
+    r.onchange = () => { try { localStorage.setItem("favPlace", r.value); } catch { /* egal */ } applyFavPlace(); };
+  });
+  const fs = document.getElementById("favSeekOpt");
+  fs.value = favSeek();
+  fs.onchange = () => { try { localStorage.setItem("favSeek", fs.value); } catch { /* egal */ } setMediaSession(state.songs[state.index]); };
   const st = document.getElementById("srcTagsOpt");
   st.checked = srcTagsOn();
   st.onchange = () => { try { localStorage.setItem("srcTags", st.checked ? "1" : "0"); } catch { /* egal */ } renderList(); };
@@ -3146,6 +3163,7 @@ function openCode(title, onSubmit, kind) {
   document.getElementById("autoPlayBox").hidden = true;
   document.getElementById("verBarBox").hidden = true;
   document.getElementById("tagsBox").hidden = true;
+  document.getElementById("favBox").hidden = true;
   document.getElementById("extraBox").hidden = true;
   document.getElementById("themeBox").hidden = true;
   if (kind === "import") {

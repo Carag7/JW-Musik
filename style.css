@@ -1206,3 +1206,7 @@ body.edit-mode .edit-panel { bottom: calc(var(--flyer-h) + 40px); max-height: ca
 
 .fav2 { font-size: 22px; flex: 0 0 auto; }
 .fav2[aria-pressed="true"] { color: var(--accent); }
+
+body.fav-top-off #favoriteBtn { display: none !important; }
+body.fav-bottom-off #favoriteBtn2 { display: none !important; }
+#favSeekOpt { min-height: 40px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel-2); color: var(--text); font-size: 14px; padding: 0 8px; max-width: 100%; }

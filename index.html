@@ -254,6 +254,17 @@
         <label class="set-row check"><input id="srcTagsOpt" type="checkbox" /> Kleine Art-Kennzeichen (K, ♪, ▶, Z) unter den Liedern in der Auswahl anzeigen</label>
         <small class="set-hint">Sie zeigen, bei welchen Arten ein Lied vorhanden ist. Im Tesla kannst du sie ausschalten, wenn sie stören. Sie erscheinen nur, wenn „Weitere Lieder“ aktiv ist.</small>
       </div>
+      <div id="favBox" data-tab="allgemein" class="autoplay-box" hidden>
+        <p class="ap-title">Favoriten-Stern</p>
+        <div class="set-row">Anzeigen:
+          <label class="fl-mode"><input type="radio" name="favPlace" value="top" /> oben</label>
+          <label class="fl-mode"><input type="radio" name="favPlace" value="bottom" /> unten (Player)</label>
+          <label class="fl-mode"><input type="radio" name="favPlace" value="both" /> beide</label>
+        </div>
+        <label class="set-row">Tesla-Player (Mediensteuerung):
+          <select id="favSeekOpt"><option value="off">Keine Taste</option><option value="back">Zurückspringen-Taste = Favorit</option><option value="fwd">Vorspringen-Taste = Favorit</option></select></label>
+        <small class="set-hint">Der Tesla-eigene Player erlaubt keine eigenen Tasten. Ein ★ vor dem Titel zeigt dort den Favoriten an. Wenn der Tesla eine Springen-Taste anzeigt, kann sie hier als Favoriten-Taste dienen (dann springt sie nicht mehr).</small>
+      </div>
       <div id="verBarBox" data-tab="allgemein" class="autoplay-box" hidden>
         <p class="ap-title">Einstellung für dieses Gerät</p>
         <label class="set-row check"><input id="verBarOpt" type="checkbox" /> Art-Buttons (Karaoke / Instrumental / Video / Zusammenkünfte) anzeigen</label>
