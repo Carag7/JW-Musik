@@ -5,7 +5,7 @@
   const TYPES = [
     { id: "karaoke", name: "Karaoke", pub: "sjjc", lrc: "karaoke" },
     { id: "instrumental", name: "Instrumental", pub: "sjji", lrc: "meeting" },
-    { id: "sung", name: "Zusammenkünfte", short: "Zusammenk.", pub: "sjjm", lrc: "meeting" },
+    { id: "sung", name: "Zusammenkünfte", short: "Zusammenk.", pub: "sjjm", lrc: "sung" },
     { id: "video", name: "Video", pub: "sjjm", lrc: "meeting" }
   ];
   const LIMIT = 10 * 1024 ** 3;   // kostenloser R2-Speicher
@@ -51,7 +51,8 @@
     const published = (n, t) => Boolean(data.lieder[n] && data.lieder[n][t] && data.lieder[n][t].url);
     const lrc = {
       karaoke: (n) => Boolean(media.karaoke.lrc[n] || (base.get(n) && base.get(n).lyrics)),
-      meeting: (n) => Boolean(media.meeting.lrc[n])
+      meeting: (n) => Boolean(media.meeting.lrc[n]),
+      sung: (n) => Boolean(media.meeting.sungLrc && media.meeting.sungLrc[n])
     };
     const rows = [];
     for (let n = 1; n <= total; n++) {
@@ -240,7 +241,7 @@
     ["Die Tabelle zeigt pro Art, wie viele Lieder als Datei auf dem Server (R2) liegen, wie viele auf jw.org schon veröffentlicht sind und wie viele Text-Dateien (LRC) es gibt.",
       "Mit „Zeigen“ schaltest du eine Art in der Liste darunter ein oder aus, mit „LRC“ blendest du dort zusätzlich den Text-Status ein (nach dem Trennstrich │ in anderer Farbe).",
       "Die Liste zeigt je Kategorie, was fehlt. ⬇ lädt die Datei direkt von jw.org auf den Server. „noch nicht veröffentlicht“ heißt: jw.org hat sie noch nicht.",
-      "Karaoke hat eine eigene Text-Datei, Instrumental, Zusammenkünfte und Video teilen sich eine gemeinsame."
+      "Karaoke, Instrumental und Zusammenkünfte haben je eine eigene Text-Datei, Video nutzt die von Instrumental."
     ].forEach((t) => help.append(h("p", "set-hint", t)));
     help.addEventListener("toggle", () => { if (!help.open) setOpt("fehlHelpSeen", true); });
     root.append(help);
@@ -277,7 +278,7 @@
 
     // Anzeige-Modus
     const modes = h("div", "fl-modes");
-    [["missing", "Fehlende"], ["have", "Vorhandene"], ["both", "Beide"]].forEach(([v, label]) => {
+    [["missing", "Fehlende"], ["have", "Vorhandene"], ["both", "Beide"], ["lrc", "LRC fehlt"]].forEach(([v, label]) => {
       const lab = h("label", "fl-mode");
       const rb = document.createElement("input"); rb.type = "radio"; rb.name = "fehlMode"; rb.value = v;
       rb.checked = optS("fehlMode", opt("fehlAll", false) ? "both" : "missing") === v;
@@ -298,7 +299,7 @@
     const top = sc ? sc.scrollTop : 0;
     const mode = optS("fehlMode", opt("fehlAll", false) ? "both" : "missing");
     const types = TYPES.filter((t) => opt(`fehlT_${t.id}`, true));
-    const lrcOn = (t) => opt(`fehlL_${t.id}`, false);
+    const lrcOn = (t) => mode === "lrc" || opt(`fehlL_${t.id}`, false);
     dyn.replaceChildren();
     if (!types.length) { dyn.append(h("p", "set-hint", "Bitte oben mindestens eine Art auswählen.")); if (sc) sc.scrollTop = top; return; }
 
@@ -348,7 +349,8 @@
     m.rows.forEach((r) => {
       const missing = types.filter((t) => !m.has[t.id](r.n));
       const present = types.filter((t) => m.has[t.id](r.n));
-      const show = mode === "both" || (mode === "missing" && missing.length) || (mode === "have" && present.length);
+      const lrcMissing = types.filter((t) => !m.lrc[t.lrc](r.n));
+      const show = mode === "lrc" ? lrcMissing.length > 0 : mode === "both" || (mode === "missing" && missing.length) || (mode === "have" && present.length);
       if (!cats.has(r.category)) cats.set(r.category, { all: [], rows: [] });
       const c = cats.get(r.category);
       c.all.push(r);
@@ -380,7 +382,7 @@
         row.append(h("b", "fl-n", pad(r.n)), h("span", "fl-t", r.title));
         const chips = h("span", "fl-chips");
         types.forEach((t) => {
-          const pair = h("span", "fl-pair");
+          const pair = h("span", `fl-pair ${m.has[t.id](r.n) ? "has" : m.published(r.n, t.id) ? "dl" : "no"}`);
           if (m.has[t.id](r.n)) pair.append(h("span", "fl-ok", `✓ ${t.name}`));
           else if (m.published(r.n, t.id)) {
             const sz = sizeOf(r.n, t.id);

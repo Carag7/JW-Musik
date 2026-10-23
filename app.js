@@ -701,6 +701,7 @@ function renderList() {
       if (!song.extra) tags.append(Object.assign(document.createElement("i"), { className: "t-k", textContent: "K", title: "Karaoke" }));
       if (mediaKey("meeting", song.number)) tags.append(Object.assign(document.createElement("i"), { className: "t-i", textContent: "♪", title: "Instrumental" }));
       if (mediaKey("video", song.number)) tags.append(Object.assign(document.createElement("i"), { className: "t-v", textContent: "▶", title: "Video" }));
+      if (mediaKey("sung", song.number)) tags.append(Object.assign(document.createElement("i"), { className: "t-z", textContent: "Z", title: "Zusammenkünfte" }));
       button.append(tags);
     }
     button.addEventListener("click", () => selectSong(state.songs.indexOf(song), true));
@@ -861,9 +862,9 @@ async function fetchKaraokeLines(song, stale) {
 }
 
 /* Liedtext der Instrumental-Fassung (eigene Datei lrcm-<nr>) */
-async function fetchMeetingLines(song, stale) {
+async function fetchMeetingLines(song, stale, prefix = "lrcm") {
   try {
-    const res = await fetch(`${SYNC_BASE}/sync/lrcm-${song.id}`);
+    const res = await fetch(`${SYNC_BASE}/sync/${prefix}-${song.id}`);
     if (stale()) return [];
     if (res.ok) {
       const text = await res.text();
@@ -871,7 +872,7 @@ async function fetchMeetingLines(song, stale) {
       if (text.includes("[")) return parseLrc(text);
     }
   } catch {}
-  const saved = localStorage.getItem(`lrcm-${song.id}`);
+  const saved = localStorage.getItem(`${prefix}-${song.id}`);
   if (saved) {
     try { return JSON.parse(saved); } catch {}
   }
@@ -897,7 +898,7 @@ function renderPlain(song, kind) {
   title.textContent = song.title;
   const hint = document.createElement("p");
   hint.className = "plain-hint";
-  hint.textContent = kind === "video" ? "Video" : "Instrumental";
+  hint.textContent = kind === "video" ? "Video" : kind === "sung" ? "Zusammenkünfte" : "Instrumental";
   box.append(eyebrow, img, title, hint);
   el.lyrics.append(box);
 }
@@ -915,7 +916,7 @@ async function loadLyrics(song, kind) {
     renderLyrics(lines);
     return;
   }
-  const lines = (kind === "meeting" || kind === "video") ? await fetchMeetingLines(song, stale) : [];
+  const lines = (kind === "meeting" || kind === "video" || kind === "sung") ? await fetchMeetingLines(song, stale, kind === "sung" ? "lrcs" : "lrcm") : [];
   if (stale()) return;
   state.videoLines = kind === "video" ? lines : [];
   if (kind === "video") updateVersionBar();
@@ -965,7 +966,7 @@ const mediaUrl = (key) => `${SYNC_BASE}/media/${key.split("/").map(encodeURIComp
 function mediaKey(type, number) {
   const m = state.media;
   if (!m) return null;
-  const table = type === "karaoke" ? m.karaoke.audio : type === "meeting" ? m.meeting.audio : type === "video" ? m.meeting.video : m.meeting.lrc;
+  const table = type === "karaoke" ? m.karaoke.audio : type === "meeting" ? m.meeting.audio : type === "video" ? m.meeting.video : type === "sung" ? (m.meeting.sung || {}) : type === "lrcs" ? (m.meeting.sungLrc || {}) : m.meeting.lrc;
   return table[String(number)] || null;
 }
 
@@ -1008,11 +1009,11 @@ function addMissingSongs() {
     }
   }
   const m = state.media.meeting || {};
-  const numbers = [...Object.keys(m.audio || {}), ...Object.keys(m.video || {})].map(Number);
+  const numbers = [...Object.keys(m.audio || {}), ...Object.keys(m.video || {}), ...Object.keys(m.sung || {})].map(Number);
   for (const n of numbers) if (n > 0 && (showExtraSongs() || weekly.has(n))) wanted.add(n);
   let added = false;
   for (const n of wanted) {
-    if (have.has(n) || !(mediaKey("meeting", n) || mediaKey("video", n))) continue;
+    if (have.has(n) || !(mediaKey("meeting", n) || mediaKey("video", n) || mediaKey("sung", n))) continue;
     state.songs.push({ id: String(n).padStart(3, "0"), number: n, title: titles.get(n) || `Lied ${n}`, category: "", extra: true });
     have.add(n);
     added = true;
@@ -1035,7 +1036,7 @@ function rebuildExtras() {
 }
 
 /* Quellen-Auswahl (Karaoke / Instrumental / Video) in der Liste, nur bei aktivem Schalter + Lupe */
-const SRC_TYPES = [["karaoke", "Karaoke"], ["meeting", "Instrumental"], ["video", "Video"]];
+const SRC_TYPES = [["karaoke", "Karaoke"], ["meeting", "Instrumental"], ["video", "Video"], ["sung", "Zusammenkünfte"]];
 function srcSet() {
   try { const a = JSON.parse(localStorage.getItem("srcFilter") || "null"); if (Array.isArray(a) && a.length) return new Set(a); } catch { /* egal */ }
   return new Set(SRC_TYPES.map((t) => t[0]));
@@ -1094,7 +1095,7 @@ function updateVersionBar() {
   bar.hidden = !song;
   if (bar.hidden) return;
   const n = song.number;
-  const avail = { karaoke: !song.extra, meeting: Boolean(mediaKey("meeting", n)), video: Boolean(mediaKey("video", n)) };
+  const avail = { karaoke: !song.extra, meeting: Boolean(mediaKey("meeting", n)), video: Boolean(mediaKey("video", n)), sung: Boolean(mediaKey("sung", n)) };
   bar.querySelectorAll(".seg-btn[data-ver]").forEach((btn) => {
     const v = btn.dataset.ver;
     btn.disabled = !avail[v];
@@ -1109,7 +1110,7 @@ function updateVersionBar() {
   document.body.classList.toggle("video-text", (Boolean(state.videoText) || state.unsynced) && state.curVersion === "video");
   layoutVideo();
   const text = document.getElementById("verText");
-  const own = Boolean(mediaKey("lrc", n));
+  const own = Boolean(mediaKey(state.curVersion === "sung" ? "lrcs" : "lrc", n));
   text.hidden = state.curVersion === "karaoke" || own || Boolean(state.videoLines && state.videoLines.length);
   text.setAttribute("aria-pressed", String(state.unsynced));
   text.textContent = state.unsynced ? "Karaoketext ausblenden" : "Karaoketext anzeigen";
@@ -1117,7 +1118,8 @@ function updateVersionBar() {
 
 async function pickSource(song, want) {
   const n = song.number;
-  const video = mediaKey("video", n), meet = mediaKey("meeting", n);
+  const video = mediaKey("video", n), meet = mediaKey("meeting", n), sung = mediaKey("sung", n);
+  if (want === "sung" && sung) return { version: "sung", url: mediaUrl(sung) };
   if (want === "video" && video) return { version: "video", url: mediaUrl(video) };
   if ((want === "video" || want === "meeting") && meet) return { version: "meeting", url: mediaUrl(meet) };
   const kKey = mediaKey("karaoke", n);
@@ -1125,7 +1127,7 @@ async function pickSource(song, want) {
   if (!song.extra) {
     const url = await resolveAudio(song);
     const sameOrigin = !/^https?:/i.test(url) || url.startsWith(`${SYNC_BASE}/`);
-    if (sameOrigin || (!meet && !video)) return { version: "karaoke", url };
+    if (sameOrigin || (!meet && !video && !sung)) return { version: "karaoke", url };
     // Fremde Quelle: kurz prüfen, ob die Datei dort wirklich liegt, sonst Instrumental nehmen
     try {
       const ctl = new AbortController();
@@ -1136,6 +1138,7 @@ async function pickSource(song, want) {
     } catch { /* nicht erreichbar -> Ersatz */ }
   }
   if (meet) return { version: "meeting", url: mediaUrl(meet), fallback: true };
+  if (sung) return { version: "sung", url: mediaUrl(sung), fallback: true };
   if (video) return { version: "video", url: mediaUrl(video), fallback: true };
   return { version: "karaoke", url: song.extra ? "" : await resolveAudio(song) };
 }
@@ -1193,8 +1196,8 @@ function setMediaSession(song) {
   const optional = (action, handler) => {
     try { navigator.mediaSession.setActionHandler(action, handler); } catch { /* nicht überall unterstützt */ }
   };
-  optional("seekbackward", () => skip(-skipSec()));
-  optional("seekforward", () => skip(skipSec()));
+  optional("seekbackward", () => skip(-skipSec(-1)));
+  optional("seekforward", () => skip(skipSec(1)));
   optional("seekto", (details) => {
     if (details && Number.isFinite(details.seekTime)) el.audio.currentTime = details.seekTime;
   });
@@ -1237,7 +1240,7 @@ async function selectSong(index, autoplay) {
     el.status.textContent = "Für dieses Lied gibt es keine Datei.";
     return;
   }
-  if (src.fallback) el.status.textContent = src.version === "meeting" ? "Karaoke-MP3 fehlt – Instrumental wird gespielt" : "Karaoke-MP3 fehlt – Video wird gespielt";
+  if (src.fallback) el.status.textContent = src.version === "meeting" ? "Karaoke-MP3 fehlt – Instrumental wird gespielt" : src.version === "sung" ? "Karaoke-MP3 fehlt – Zusammenkünfte-Fassung wird gespielt" : "Karaoke-MP3 fehlt – Video wird gespielt";
   state.currentAudio = url;
   setAudioSource(url);
   if (resume) el.audio.addEventListener("loadedmetadata", () => { try { el.audio.currentTime = Math.max(0, Math.min(resume, (el.audio.duration || resume + 1) - 0.5)); } catch { /* egal */ } }, { once: true });
@@ -1380,18 +1383,18 @@ function step(delta) {
   selectSong(state.songs.indexOf(next), playing || delta !== 0);
 }
 
-function skipSec() {
-  const n = Number(localStorage.getItem("skipSec"));
-  return n >= 1 && n <= 300 ? Math.round(n) : 15;
+function skipSec(dir) {
+  const get = (k) => { const n = Number(localStorage.getItem(k)); return n >= 1 && n <= 300 ? Math.round(n) : 0; };
+  return get(dir < 0 ? "skipBack" : "skipFwd") || get("skipSec") || 15;
 }
 function updateSkipLabels() {
-  const n = skipSec();
-  el.back15.textContent = `−${n}`;
-  el.fwd15.textContent = `+${n}`;
-  el.back15.setAttribute("aria-label", `${n} Sekunden zurück`);
-  el.fwd15.setAttribute("aria-label", `${n} Sekunden vor`);
+  const b = skipSec(-1), f = skipSec(1);
+  el.back15.textContent = `−${b}`;
+  el.fwd15.textContent = `+${f}`;
+  el.back15.setAttribute("aria-label", `${b} Sekunden zurück`);
+  el.fwd15.setAttribute("aria-label", `${f} Sekunden vor`);
 }
-/* Kurz tippen = springen, lang drücken = Sprungweite einstellen */
+/* Kurz tippen = springen, lang drücken = Sprungweite (getrennt für zurück und vor) einstellen */
 function bindSkipButton(btn, dir) {
   let timer = 0;
   let longDone = false;
@@ -1401,11 +1404,11 @@ function bindSkipButton(btn, dir) {
     clear();
     timer = setTimeout(async () => {
       longDone = true;
-      const v = await uiPrompt({ eyebrow: "Wiedergabe", title: "Sprungweite", text: "Sekunden pro Tipp auf −/+ (1 bis 300).", value: String(skipSec()), type: "number", inputMode: "numeric", ok: "Speichern" });
+      const v = await uiPrompt({ eyebrow: "Wiedergabe", title: dir < 0 ? "Sprungweite zurück" : "Sprungweite vor", text: `Sekunden pro Tipp auf ${dir < 0 ? "−" : "+"} (1 bis 300).`, value: String(skipSec(dir)), type: "number", inputMode: "numeric", ok: "Speichern" });
       if (v === null) return;
       const n = Math.round(Number(v));
       if (!(n >= 1 && n <= 300)) { showToast("Bitte eine Zahl von 1 bis 300 eingeben."); return; }
-      localStorage.setItem("skipSec", String(n));
+      localStorage.setItem(dir < 0 ? "skipBack" : "skipFwd", String(n));
       updateSkipLabels();
     }, 700);
   });
@@ -1413,7 +1416,7 @@ function bindSkipButton(btn, dir) {
   btn.addEventListener("contextmenu", (e) => e.preventDefault());
   btn.addEventListener("click", (e) => {
     if (longDone) { longDone = false; e.preventDefault(); return; }
-    skip(dir * skipSec());
+    skip(dir * skipSec(dir));
   });
 }
 function skip(seconds) {
@@ -1640,8 +1643,22 @@ function setupViewport() {
   });
 }
 
+/* „Welle“-Button rechtsbündig genau über der Endzeit des Liedes */
+function alignWave() {
+  const row = document.querySelector(".nav-row");
+  const dur = document.getElementById("duration");
+  if (!row || !dur) return;
+  row.style.paddingRight = "0px";
+  const gap = Math.round(row.getBoundingClientRect().right - dur.getBoundingClientRect().right);
+  row.style.paddingRight = `${Math.max(0, gap)}px`;
+}
+
 function bind() {
   setupViewport();
+  window.addEventListener("resize", alignWave);
+  const tl = document.querySelector(".timeline");
+  if (tl && window.ResizeObserver) new ResizeObserver(alignWave).observe(tl);
+  setTimeout(alignWave, 300);
   bindChrome();
   window.addEventListener("resize", layoutVideo);
   const nowEl = document.querySelector(".stage > .now");
@@ -1997,7 +2014,7 @@ function bind() {
       const c = el.audio.error ? el.audio.error.code : 0;
       el.status.textContent = state.curVersion === "video"
         ? `Video lässt sich nicht abspielen (Fehler ${c}${c === 4 ? ": Datei nicht gefunden oder Format/Codec nicht unterstützt – bitte als MP4 mit H.264 + AAC ablegen" : ""}).`
-        : `Instrumental-Datei lässt sich nicht abspielen (Fehler ${c}).`;
+        : `${state.curVersion === "sung" ? "Zusammenkünfte-Datei" : "Instrumental-Datei"} lässt sich nicht abspielen (Fehler ${c}).`;
       return;
     }
     const list = song ? audioCandidates(song) : [];
@@ -2294,7 +2311,7 @@ async function putSync(store, data) {
 }
 
 /* ---- Einstellungen mit abgleichen (optional, pro Schlüssel Drei-Wege-Abgleich) ---- */
-const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBar", "showExtra", "srcFilter", "sync-auto-max", "skipSec", "fehlMode", "fehlAll", "fehlHelpSeen", STORAGE.scale, STORAGE.listSize];
+const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBar", "showExtra", "srcFilter", "sync-auto-max", "skipSec", "skipBack", "skipFwd", "fehlMode", "fehlAll", "fehlHelpSeen", STORAGE.scale, STORAGE.listSize];
 const isSettingKey = (k) => SETTING_KEYS.includes(k) || /^fehl[TL]_/.test(k);
 const syncSettingsOn = () => { try { return localStorage.getItem("syncSettings") === "1"; } catch { return false; } };
 function collectSettings() {
@@ -2734,7 +2751,7 @@ async function openTimecode() {
       return;
     }
     if (state.curVersion === "video") {
-      await uiAlert("Video", "Im Video-Modus kann nichts bearbeitet werden. Wähle „Instrumental“, um dafür einen Text abzustimmen.");
+      await uiAlert("Video", "Im Video-Modus kann nichts bearbeitet werden. Wähle „Instrumental“ oder „Zusammenkünfte“, um dafür einen Text abzustimmen.");
       return;
     }
     state.writeKey = pass;
@@ -2744,7 +2761,7 @@ async function openTimecode() {
     state.karaokeHold = true;
     // Instrumental ohne eigenen Text: Karaoke-Text als Vorlage (Kopie) nehmen
     const song = state.songs[state.index];
-    if (song && state.curVersion === "meeting" && !el.lyrics.querySelector(".lyric-line")) {
+    if (song && (state.curVersion === "meeting" || state.curVersion === "sung") && !el.lyrics.querySelector(".lyric-line")) {
       const template = await fetchKaraokeLines(song, () => false);
       if (template.length) {
         state.lyrics = template;
@@ -2976,13 +2993,14 @@ async function saveTimecode(skipConfirm) {
     const [m, rest] = t.split(":");
     return `[${m.padStart(2, "0")}:${rest}]${line.text}`;
   }).join("\n");
-  const kind = state.curVersion === "meeting" ? "lrcm" : "lrc";
+  const kind = state.curVersion === "meeting" ? "lrcm" : state.curVersion === "sung" ? "lrcs" : "lrc";
   localStorage.setItem(`${kind}-${song.id}`, JSON.stringify(lines));
   try {
     const res = await fetch(`${SYNC_BASE}/sync/${kind}-${song.id}`, { method: "PUT", headers: { "content-type": "text/plain", "x-write-key": state.writeKey || "" }, body: lrc });
     if (res.ok) {
       if (kind === "lrcm" && state.media) state.media.meeting.lrc[String(song.number)] = `meeting/lrc/${song.id}.lrc`;
-      await uiAlert("Gespeichert", kind === "lrcm" ? "Text für die Instrumental-Fassung gespeichert, auf allen Geräten verfügbar." : "Auf allen Geräten verfügbar.");
+      if (kind === "lrcs" && state.media) (state.media.meeting.sungLrc = state.media.meeting.sungLrc || {})[String(song.number)] = `meeting/sung/lrc/${song.id}.lrc`;
+      await uiAlert("Gespeichert", kind === "lrcm" ? "Text für die Instrumental-Fassung gespeichert, auf allen Geräten verfügbar." : kind === "lrcs" ? "Text für die Zusammenkünfte-Fassung gespeichert, auf allen Geräten verfügbar." : "Auf allen Geräten verfügbar.");
     }
     else await uiAlert("Nur lokal gespeichert", res.status === 401 ? "Der Server hat das Timecode-Passwort abgelehnt (WRITE_KEY in Cloudflare prüfen)." : "Der Server war nicht erreichbar.");
   } catch {

@@ -1138,7 +1138,8 @@ html[data-theme="himmel"] {
 .remember input[type=checkbox] { min-height: 0; width: auto; }
 .login-gate { height: var(--vvh, 100%); bottom: auto; }
 .login-card { scroll-padding-bottom: 40vh; }
-#codeForm #codeCancel { margin-top: 6px; position: sticky; bottom: 0; background: var(--panel, var(--bar-bg)); }
+#codeForm #codeCancel { margin-top: 6px; position: static; flex: 0 0 auto; order: 100; }
+#codeForm .ludwt-sync { margin-top: 8px; }
 @media (orientation: landscape) and (max-height: 480px) and (max-width: 1000px) {
   .flyer .nav-row .nav-song { display: none !important; }
 }
@@ -1171,3 +1172,25 @@ html[data-theme="himmel"] {
 .dlg-group-title { font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
 .dlg-group.dlg-action { border-color: rgba(var(--accent-rgb), 0.55); background: rgba(var(--accent-rgb), 0.08); }
 .dlg-table td.num, .dlg-table th:not(:first-child) { text-align: right; }
+
+.fl-pair { border: 1px solid var(--line); border-radius: 999px; padding: 0 8px 0 0; gap: 2px; }
+.fl-pair:not(:has(.fl-sep)) { padding-right: 0; }
+.fl-pair.has { border-color: var(--ok); }
+.fl-pair.dl { border-color: rgba(var(--accent-rgb), 0.6); }
+.fl-pair .fl-ok, .fl-pair .fl-no { border: 0; }
+.fl-pair .fl-dl { border: 0 !important; background: transparent !important; }
+.src-tags i.t-z { color: var(--ok); border-color: var(--ok); }
+.src-chip.src-sung[aria-pressed="true"] { background: var(--ok) !important; color: var(--on-accent-2) !important; }
+
+/* Handy: Einstellungs-Reiter als Raster statt abgeschnittener Zeile */
+@media (max-width: 600px) {
+  .set-tabs { display: grid !important; grid-template-columns: repeat(3, 1fr); gap: 6px !important; overflow: visible !important; }
+  #codeForm:not(.settings-mode) .set-tabs { display: none !important; }
+  .set-tabs .seg-btn { min-height: 42px; padding: 0 4px !important; font-size: 14px !important; white-space: normal; }
+  .version-bar .seg { max-width: 100%; }
+  .version-bar .seg-btn { padding: 0 8px !important; font-size: 12px !important; }
+}
+
+.edit-panel { max-height: calc(100vh - var(--topbar) - var(--flyer-h) - 24px); overflow-y: auto; }
+.nav-row { width: 100%; box-sizing: border-box; }
+.nav-row .wave-toggle { margin-left: auto; }
