@@ -695,7 +695,7 @@ function renderList() {
     const title = document.createElement("span");
     title.textContent = `${state.favorites.has(song.id) ? "★ " : ""}${song.title}`;
     button.append(number, title);
-    if (showExtraSongs() && state.media) {
+    if (showExtraSongs() && srcTagsOn() && state.media) {
       const tags = document.createElement("span");
       tags.className = "src-tags";
       if (!song.extra) tags.append(Object.assign(document.createElement("i"), { className: "t-k", textContent: "K", title: "Karaoke" }));
@@ -709,6 +709,7 @@ function renderList() {
     el.list.append(item);
   });
   applyListSize();
+  paintFav2();
 }
 
 function togglePlaylistSong(id, on) {
@@ -1221,6 +1222,7 @@ async function selectSong(index, autoplay) {
   document.getElementById("titleRow").hidden = false;
   el.favorite.setAttribute("aria-pressed", String(fav));
   el.favorite.textContent = fav ? "★" : "☆";
+  paintFav2();
   el.progress.value = "0";
   el.currentTime.textContent = "0:00";
   el.duration.textContent = "0:00";
@@ -1426,6 +1428,17 @@ function skip(seconds) {
   el.audio.currentTime = Math.min(duration, Math.max(0, (el.audio.currentTime || 0) + seconds));
 }
 
+function paintFav2() {
+  const b = document.getElementById("favoriteBtn2");
+  if (!b) return;
+  const song = state.songs[state.index];
+  const fav = Boolean(song && state.favorites.has(song.id));
+  b.setAttribute("aria-pressed", String(fav));
+  b.textContent = fav ? "★" : "☆";
+  b.disabled = !song;
+}
+const srcTagsOn = () => { try { return localStorage.getItem("srcTags") !== "0"; } catch { return true; } };
+
 function toggleFavorite() {
   const song = state.songs[state.index];
   if (!song) return;
@@ -1438,6 +1451,7 @@ function toggleFavorite() {
     el.favorite.setAttribute("aria-pressed", String(song && state.favorites.has(song.id)));
     el.favorite.textContent = song && state.favorites.has(song.id) ? "★" : "☆";
   }
+  paintFav2();
 }
 
 async function toggleFullscreen() {
@@ -1951,6 +1965,7 @@ function bind() {
   document.getElementById("importFav").addEventListener("click", () => { state.fromSettings = true; importFavorites(); });
   autoSync();
   el.favorite.addEventListener("click", toggleFavorite);
+  document.getElementById("favoriteBtn2").addEventListener("click", toggleFavorite);
   el.favoritesToggle.addEventListener("click", () => {
     if (state.mode === "playlists") {
       if (document.getElementById("lyricSearchWrap").hidden) {
@@ -2311,7 +2326,7 @@ async function putSync(store, data) {
 }
 
 /* ---- Einstellungen mit abgleichen (optional, pro Schlüssel Drei-Wege-Abgleich) ---- */
-const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBar", "showExtra", "srcFilter", "sync-auto-max", "skipSec", "skipBack", "skipFwd", "fehlMode", "fehlAll", "fehlHelpSeen", STORAGE.scale, STORAGE.listSize];
+const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBar", "srcTags", "showExtra", "srcFilter", "sync-auto-max", "skipSec", "skipBack", "skipFwd", "fehlMode", "fehlAll", "fehlHelpSeen", STORAGE.scale, STORAGE.listSize];
 const isSettingKey = (k) => SETTING_KEYS.includes(k) || /^fehl[TL]_/.test(k);
 const syncSettingsOn = () => { try { return localStorage.getItem("syncSettings") === "1"; } catch { return false; } };
 function collectSettings() {
@@ -2603,6 +2618,10 @@ async function syncFavoritesCore() {
   ss.checked = syncSettingsOn();
   ss.onchange = () => { try { localStorage.setItem("syncSettings", ss.checked ? "1" : "0"); } catch { /* egal */ } };
   document.getElementById("verBarBox").hidden = false;
+  document.getElementById("tagsBox").hidden = false;
+  const st = document.getElementById("srcTagsOpt");
+  st.checked = srcTagsOn();
+  st.onchange = () => { try { localStorage.setItem("srcTags", st.checked ? "1" : "0"); } catch { /* egal */ } renderList(); };
   document.getElementById("extraBox").hidden = false;
   const ex = document.getElementById("extraSongsOpt");
   ex.checked = showExtraSongs();
@@ -3126,6 +3145,7 @@ function openCode(title, onSubmit, kind) {
   document.getElementById("syncSettings").hidden = true;
   document.getElementById("autoPlayBox").hidden = true;
   document.getElementById("verBarBox").hidden = true;
+  document.getElementById("tagsBox").hidden = true;
   document.getElementById("extraBox").hidden = true;
   document.getElementById("themeBox").hidden = true;
   if (kind === "import") {
