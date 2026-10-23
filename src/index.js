@@ -37,6 +37,7 @@ export default {
     }
     if (path === "/api/refresh") return handleRefresh(request, env);
     if (path === "/api/media-index") return handleIndex(request, env, url);
+    if (path === "/api/r2-prune") return handlePrune(request, env, url);
     if (path === "/api/r2-fetch") return handleFetchToR2(request, env, url);
     if (path === "/api/r2-plan" || path === "/api/r2-run") return handleMigrate(request, env, url, path);
     if (path.startsWith("/sync/")) return handleSync(request, env, path);
@@ -58,6 +59,8 @@ export default {
 };
 
 /* ---------- Dateien aus R2 ausliefern ---------- */
+
+const HIGH_MIN = 500;
 
 const MIME = { mp3: "audio/mpeg", m4a: "audio/mp4", aac: "audio/aac", wav: "audio/wav", mp4: "video/mp4", m4v: "video/mp4", webm: "video/webm", mov: "video/quicktime", lrc: "text/plain; charset=utf-8" };
 
@@ -182,9 +185,11 @@ async function buildIndex(env) {
     const e = (speicher[ordner] = speicher[ordner] || { bytes: 0, dateien: 0 });
     e.bytes += o.size || 0; e.dateien += 1; gesamtBytes += o.size || 0;
   }
+  const hoch = { dateien: 0, bytes: 0 };   // Nummern ab 500 (Gebärdensprache/Blindenschrift): nicht anzeigen
   for (const o of objects) {
     const c = classify(o.key);
     if (!c || !c.n) continue;
+    if (c.n >= HIGH_MIN && o.key.split("/")[0] !== "sync") { hoch.dateien++; hoch.bytes += o.size || 0; continue; }
     if (c.type === "karaoke-audio") put(idx.karaoke.audio, "ka", c.n, o.key);
     else if (c.type === "karaoke-lrc") put(idx.karaoke.lrc, "kl", c.n, o.key);
     else if (c.type === "meeting-audio") put(idx.meeting.audio, "ma", c.n, o.key);
@@ -196,6 +201,7 @@ async function buildIndex(env) {
     ok: true,
     generiert: new Date().toISOString(),
     speicher: { gesamt: gesamtBytes, ordner: speicher },
+    hoch,
     anzahl: {
       karaoke_audio: Object.keys(idx.karaoke.audio).length,
       meeting_audio: Object.keys(idx.meeting.audio).length,
@@ -270,6 +276,26 @@ async function handleFetchToR2(request, env, url) {
   }
   indexCache = { t: 0, data: null };
   return reply({ ok: true, key, groesse: size });
+}
+
+/* ---------- Nummern ab 500 aus R2 löschen ---------- */
+
+async function handlePrune(request, env, url) {
+  const reply = (obj, status = 200) => json(obj, CORS, status);
+  if (!env.WRITE_KEY) return reply({ ok: false, fehler: "In Cloudflare fehlt das Secret WRITE_KEY (Timecode-Passwort im Klartext)." }, 403);
+  if (request.headers.get("x-write-key") !== env.WRITE_KEY) return reply({ ok: false, fehler: "Schlüssel falsch." }, 401);
+  const objects = await listAll(env);
+  const victims = objects.filter((o) => {
+    if (["favoriten", "sync"].includes(o.key.split("/")[0])) return false;
+    const c = classify(o.key);
+    return c && c.n >= HIGH_MIN;
+  });
+  const bytes = victims.reduce((s, o) => s + (o.size || 0), 0);
+  if (request.method !== "POST") return reply({ ok: true, anzahl: victims.length, bytes, beispiele: victims.slice(0, 8).map((o) => o.key) });
+  const batch = victims.slice(0, 50).map((o) => o.key);
+  if (batch.length) await env.MUSIK.delete(batch);
+  indexCache = { t: 0, data: null };
+  return reply({ ok: true, geloescht: batch.length, rest: victims.length - batch.length });
 }
 
 /* ---------- R2 aufräumen ---------- */
