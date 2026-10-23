@@ -1676,8 +1676,32 @@ function alignWave() {
   row.style.setProperty("--wave-gap", `${Math.max(0, gap)}px`);
 }
 
+/* Taste reagiert erst nach längerem Drücken (gegen versehentliches Antippen während der Fahrt) */
+function guardHold(btn, ms = 700) {
+  let timer = 0, ok = false;
+  btn.classList.add("hold-guard");
+  const stop = () => { clearTimeout(timer); btn.classList.remove("holding"); };
+  btn.addEventListener("pointerdown", () => {
+    ok = false; stop();
+    void btn.offsetWidth;
+    btn.classList.add("holding");
+    timer = setTimeout(() => { ok = true; }, ms);
+  });
+  ["pointerup", "pointerleave", "pointercancel"].forEach((t) => btn.addEventListener(t, stop));
+  btn.addEventListener("contextmenu", (e) => e.preventDefault());
+  btn.addEventListener("click", (e) => {
+    if (e.detail === 0) return;               // Tastatur
+    if (ok) { ok = false; return; }
+    e.stopImmediatePropagation();
+    e.preventDefault();
+    showToast("Länger drücken");
+  }, true);
+}
+
 function bind() {
   setupViewport();
+  guardHold(document.getElementById("lyricSearchToggle"));
+  guardHold(document.getElementById("playerToggle"));
   window.addEventListener("resize", alignWave);
   const tl = document.querySelector(".timeline");
   if (tl && window.ResizeObserver) new ResizeObserver(alignWave).observe(tl);

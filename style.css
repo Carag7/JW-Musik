@@ -532,7 +532,7 @@ body.edit-mode .lyric-line { display: flex; align-items: center; gap: 6px; flex-
 .spectrum { width: 100%; height: 80px; background: #1a1a1a; border-radius: 8px; margin-bottom: 6px; cursor: crosshair; }
 .meta-i { position: absolute; top: 8px; right: 8px; width: 22px; height: 22px; border-radius: 50%; font-size: 12px; padding: 0; }
 @media (max-width: 640px) {
-  .round.nav, .round.play { height: 28px; min-width: 56px; font-size: 14px; }
+  .round.nav, .round.play, .round.fav2 { height: 28px; min-width: 56px; font-size: 14px; }
   .flyer { min-height: 64px; }
   .brand { padding-right: 8px; }
   #lyricSearchToggle { margin-right: 4px; }
@@ -546,7 +546,7 @@ body.edit-mode .lyric-line { display: flex; align-items: center; gap: 8px; }
 body.bar-stack .time-btn, body.bar-stack #duration { display: inline-flex !important; }
 body.bar-half:not(.bar-stack) .bar-row input { max-width: 50% !important; flex: 0 1 50% !important; width: 50% !important; }
 @media (max-width: 640px) {
-  .round.nav, .round.play { height: 28px; min-width: 56px; font-size: 14px; }
+  .round.nav, .round.play, .round.fav2 { height: 28px; min-width: 56px; font-size: 14px; }
   .flyer { min-height: 64px; }
   .brand { padding-right: 8px; }
   #lyricSearchToggle { margin-right: 4px; }
@@ -756,7 +756,7 @@ body.edit-mode .time-edit { font-size: 12px !important; }
 @media (orientation: landscape) and (max-height: 380px) and (max-width: 1000px) {
   :root { --flyer-h: 56px; }
   .flyer .nav-song { display: none !important; }
-  .flyer .round, .flyer .round.nav, .flyer .round.play { height: 26px !important; min-height: 26px !important; min-width: 44px; font-size: 13px; padding: 0 8px; }
+  .flyer .round, .flyer .round.nav, .flyer .round.play, .flyer .round.fav2 { height: 26px !important; min-height: 26px !important; min-width: 44px; font-size: 13px; padding: 0 8px; }
   .flyer { min-height: 0 !important; padding-top: 4px !important; padding-bottom: calc(4px + var(--safe-bottom)) !important; }
   .time-btn, #duration { font-size: 12px; }
 }
@@ -1204,9 +1204,14 @@ body.edit-mode .edit-panel { bottom: calc(var(--flyer-h) + 40px); max-height: ca
 .fl-cc { border: 1px solid currentColor; border-radius: 999px; padding: 1px 8px; white-space: nowrap; }
 .fl-cc .fl-sep { color: inherit; opacity: .6; }
 
-.fav2 { font-size: 22px; flex: 0 0 auto; }
+.round.fav2 { width: 56px; height: 56px; font-size: 28px; border-radius: 16px; flex: 0 0 auto; }
 .fav2[aria-pressed="true"] { color: var(--accent); }
 
 body.fav-top-off #favoriteBtn { display: none !important; }
 body.fav-bottom-off #favoriteBtn2 { display: none !important; }
 #favSeekOpt { min-height: 40px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel-2); color: var(--text); font-size: 14px; padding: 0 8px; max-width: 100%; }
+
+/* Lange drücken nötig (Lupe, Player-Symbol): Fortschritt als Füllung */
+.hold-guard { position: relative; overflow: hidden; }
+.hold-guard::after { content: ""; position: absolute; left: 0; bottom: 0; height: 3px; width: 0; background: var(--accent); }
+.hold-guard.holding::after { width: 100%; transition: width 0.7s linear; }
