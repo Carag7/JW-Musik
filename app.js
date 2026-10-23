@@ -1403,6 +1403,7 @@ function bindSkipButton(btn, dir) {
     longDone = false;
     clear();
     timer = setTimeout(async () => {
+      if (el.lyricSearchWrap.hidden) return;   // Einstellen nur bei aktiver Lupe
       longDone = true;
       const v = await uiPrompt({ eyebrow: "Wiedergabe", title: dir < 0 ? "Sprungweite zurück" : "Sprungweite vor", text: `Sekunden pro Tipp auf ${dir < 0 ? "−" : "+"} (1 bis 300).`, value: String(skipSec(dir)), type: "number", inputMode: "numeric", ok: "Speichern" });
       if (v === null) return;
@@ -1648,9 +1649,8 @@ function alignWave() {
   const row = document.querySelector(".nav-row");
   const dur = document.getElementById("duration");
   if (!row || !dur) return;
-  row.style.paddingRight = "0px";
   const gap = Math.round(row.getBoundingClientRect().right - dur.getBoundingClientRect().right);
-  row.style.paddingRight = `${Math.max(0, gap)}px`;
+  row.style.setProperty("--wave-gap", `${Math.max(0, gap)}px`);
 }
 
 function bind() {
@@ -2889,14 +2889,6 @@ function buildEditPanel() {
   jump.title = "Einmalig zur aktuell gespielten Zeile springen";
   jump.addEventListener("click", jumpToActiveLine);
   panel.append(jump);
-  const toggle = document.createElement("button");
-  toggle.className = "chip";
-  toggle.textContent = "Panel";
-  toggle.addEventListener("click", () => {
-    panel.classList.add("hidden-panel");
-    document.getElementById("panelShow").hidden = false;
-  });
-  panel.append(toggle);
   [0.3, 0.5, 0.8, 1, 1.5, 2].forEach((rate) => {
     const btn = document.createElement("button");
     btn.className = "chip";

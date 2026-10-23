@@ -1194,3 +1194,12 @@ html[data-theme="himmel"] {
 .edit-panel { max-height: calc(100vh - var(--topbar) - var(--flyer-h) - 24px); overflow-y: auto; }
 .nav-row { width: 100%; box-sizing: border-box; }
 .nav-row .wave-toggle { margin-left: auto; }
+
+/* Titel des vorherigen Liedes mittig; Welle-Button rechts über der Endzeit, überlagert nichts */
+.nav-row { position: relative; justify-content: center; }
+.nav-row .nav-song { flex: 1 1 auto; text-align: center; }
+.nav-row .wave-toggle { position: absolute; right: var(--wave-gap, 0px); top: 50%; transform: translateY(-50%); margin: 0; z-index: 3; }
+body.edit-mode .panel-show { bottom: calc(var(--flyer-h) + 38px); }
+body.edit-mode .edit-panel { bottom: calc(var(--flyer-h) + 40px); max-height: calc(100vh - var(--topbar) - var(--flyer-h) - 52px); }
+.fl-cc { border: 1px solid currentColor; border-radius: 999px; padding: 1px 8px; white-space: nowrap; }
+.fl-cc .fl-sep { color: inherit; opacity: .6; }
