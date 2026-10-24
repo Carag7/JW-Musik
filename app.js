@@ -1641,6 +1641,7 @@ function bindChrome() {
 
 /* Beim Öffnen automatisch abspielen (letztes Lied, sonst Zufall). Blockiert der Browser das, startet es beim ersten Antippen. */
 function tryAutoStart() {
+  try { if (sessionStorage.getItem("openStart") === "1") { sessionStorage.removeItem("openStart"); return; } } catch { /* egal */ }
   if (localStorage.getItem("autoStart") !== "1") return;
   if (!document.getElementById("loginGate").hidden || !state.songs.length) return;
   const last = localStorage.getItem("lastSongId");
@@ -1736,12 +1737,7 @@ function toggleAdvanced() {
 
 /* Voreinstellungen für den Tesla-Browser (nur Werte, die noch nicht gesetzt sind; force = überschreiben) */
 function applyTeslaDefaults(force) {
-  const want = { autoStart: "1", themeMode: "sun", srcTags: "0", verBarAlways: "0", holdGuard: "0", favPlace: "both" };
-  for (const [k, v] of Object.entries(want)) {
-    try { if (force || localStorage.getItem(k) === null) localStorage.setItem(k, v); } catch { /* egal */ }
-  }
-  try { if (window.THEME) window.THEME.apply(true); } catch { /* egal */ }
-  try { updateAutoIcon(); updateVersionBar(); renderList(); applyFavPlace(); } catch { /* egal */ }
+  applyPresetMap(defaultPresetMap(), null, !force);
 }
 const isTesla = () => /Tesla/i.test(navigator.userAgent);
 
@@ -1754,13 +1750,32 @@ function bind() {
   } catch { /* egal */ }
   document.body.classList.toggle("hold-hint", holdHintOn());
   applyStartGif();
+  /* Tesla-Menü auf der Startseite (nur bei aktiver Lupe sichtbar) */
+  (() => {
+    const btn = document.getElementById("teslaBtn"), menu = document.getElementById("teslaMenu");
+    if (!btn || !menu) return;
+    const chk = document.getElementById("teslaChk"), msg = document.getElementById("teslaMsg");
+    chk.checked = lsv("teslaPreset", "0") === "1";
+    btn.onclick = () => { menu.hidden = !menu.hidden; };
+    document.getElementById("teslaGo").onclick = async () => {
+      lss("teslaPreset", chk.checked ? "1" : "0");
+      let text = "";
+      if (chk.checked) { applyPresetMap(defaultPresetMap()); text = "Tesla-Voreinstellung angewendet. "; }
+      const un = document.getElementById("teslaUser").value.trim();
+      if (un) {
+        let r = await userLogin(un, document.getElementById("teslaPass").value);
+        text += r.msg;
+      }
+      msg.textContent = text || "Nichts geändert.";
+    };
+  })();
   /* Überraschungen: Vollbild-Fenster mit Video (MP4) oder GIF, Endlosschleife, × zum Beenden */
   const eggM = document.getElementById("eggModal"), eggV = document.getElementById("eggVideo"), eggI = document.getElementById("eggImg");
   let eggResume = false, eggNum = 1, eggOpen = false, eggGifShown = false;
   const lsGet = (k, d) => { try { return localStorage.getItem(k) || d; } catch { return d; } };
   const eggMode = () => lsGet("eggMode", "auto");
   const eggFallback = () => lsGet("eggFall", "0") === "1";
-  const eggGifSrc = () => { const p = lsGet("eggGif", "match"); return p === "chor" ? "chor.gif" : `egg${p === "1" || p === "2" ? p : eggNum}.gif`; };
+  const eggGifSrc = () => { const p = lsGet("eggGif", "chor"); return p === "chor" ? "chor.gif" : `egg${p === "1" || p === "2" ? p : eggNum}.gif`; };
   const showGif = () => {
     eggGifShown = true;
     try { eggV.pause(); eggV.removeAttribute("src"); eggV.load(); } catch { /* egal */ }
@@ -2771,6 +2786,7 @@ async function syncFavoritesCore() {
   document.getElementById("verBarBox").hidden = false;
   document.getElementById("tagsBox").hidden = false;
   setupAdvBox();
+  setupPresetBox();
   document.getElementById("favBox").hidden = false;
   document.querySelectorAll('input[name="favPlace"]').forEach((r) => {
     r.checked = r.value === favPlace();
@@ -3288,12 +3304,14 @@ function applyStartGif() {
 
 function setupAdvBox() {
   document.getElementById("advBox").hidden = false;
-  document.getElementById("caragOpen").onclick = () => {
+  const caragToggle = () => {
     const box = document.getElementById("caragBox");
     box.hidden = !box.hidden;
     if (!box.hidden) box.scrollIntoView({ block: "center", behavior: "smooth" });
   };
-  [["eggMode", "auto"], ["eggGif", "match"]].forEach(([k, d]) => {
+  document.getElementById("caragOpen").onclick = caragToggle;
+  document.getElementById("caragOpen2").onclick = caragToggle;
+  [["eggMode", "auto"], ["eggGif", "chor"]].forEach(([k, d]) => {
     const s = document.getElementById(k);
     try { s.value = localStorage.getItem(k) || d; } catch { s.value = d; }
     s.onchange = () => { try { localStorage.setItem(k, s.value); } catch { /* egal */ } };
@@ -3308,13 +3326,7 @@ function setupAdvBox() {
   document.getElementById("advAdvanced").onclick = () => { closeSettings(); toggleAdvanced(); };
   document.getElementById("advEdit").onclick = () => { closeSettings(); openTimecode(); };
   document.getElementById("advReload").onclick = () => hardRefresh();
-  document.getElementById("advTesla").onclick = async () => {
-    if (await uiConfirm({ eyebrow: "Tesla", title: "Voreinstellungen anwenden?", lines: ["Autostart an, Design nach Sonnenauf- und -untergang, Art-Kennzeichen und Art-Buttons aus, kein Lang-Drücken-Schutz."], ok: "Anwenden" })) {
-      applyTeslaDefaults(true);
-      setupAdvBox();
-      showToast("Tesla-Voreinstellungen gesetzt");
-    }
-  };
+  document.getElementById("advStart").onclick = () => { try { sessionStorage.setItem("openStart", "1"); } catch { /* egal */ } location.reload(); };
   const num = (id, get, set, min, max) => {
     const inp = document.getElementById(id);
     inp.value = String(get());
@@ -3336,6 +3348,128 @@ function setupAdvBox() {
   hint.checked = holdHintOn();
   hint.onchange = () => { try { localStorage.setItem("holdHint", hint.checked ? "1" : "0"); } catch { /* egal */ } document.body.classList.toggle("hold-hint", hint.checked); };
   document.getElementById("advInfo").textContent = `Fensterbereich dieser Seite: ${window.innerWidth} × ${window.innerHeight} px · Bildschirm: ${screen.width} × ${screen.height} · Pixeldichte: ${window.devicePixelRatio}${isTesla() ? " · Tesla-Browser erkannt" : ""}`;
+}
+
+/* ---------- Benutzer und Voreinstellungen ---------- */
+const PRESETS = [
+  { id: "auto", label: "Beim Öffnen automatisch abspielen – ein", set: { autoStart: "1" } },
+  { id: "extra", label: "Weitere Lieder aus den anderen Verzeichnissen in der Liste – aus", set: { showExtra: "0" } },
+  { id: "tags", label: "Kleine Art-Kennzeichen (K, ♪, ▶, Z) unter den Liedern – aus", set: { srcTags: "0" } },
+  { id: "fav", label: "Favoriten-Stern oben und unten, Tesla-Player ohne Favoriten-Taste", set: { favPlace: "both", favSeek: "off" } },
+  { id: "verbar", label: "Art-Buttons immer anzeigen – aus", set: { verBarAlways: "0" } },
+  { id: "hold", label: "Lupe und Player-Symbol nur nach langem Drücken (ca. 0,7 s) – ein", set: { holdGuard: "1" } },
+  { id: "carag", label: "Carag: alles aus", set: { eggMode: "auto", eggFall: "0", eggGif: "chor", startGif: "0" } },
+  { id: "theme", label: "Design: Automatisch, wie Gerät / Tesla – ein", set: { themeMode: "device" } },
+  { id: "syncmax", label: "Automatisch abgleichen, auch wenn bis zu 2 Lieder gelöscht wurden", set: { "sync-auto-max": "2" } },
+  { id: "syncset", label: "Auch alle anderen Einstellungen mit abgleichen – aus", set: { syncSettings: "0" } }
+];
+const lsv = (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch { return d; } };
+const lss = (k, v) => { try { localStorage.setItem(k, v); } catch { /* egal */ } };
+const defaultPresetMap = () => Object.fromEntries(PRESETS.map((p) => [p.id, true]));
+const userName = () => lsv("userName", "");
+const userCleanName = (n) => String(n || "").trim().toLowerCase().replace(/[^a-z0-9äöüß._-]/g, "").slice(0, 40);
+const userMap = () => { try { return { ...defaultPresetMap(), ...(JSON.parse(lsv("userPresets", "{}")) || {}) }; } catch { return defaultPresetMap(); } };
+async function userHashOf(name, pass) { return pass ? sha256Hex(`user:${name}:${pass}`) : ""; }
+
+/* angehakte Voreinstellungen auf dieses Gerät anwenden (only = nur diese ids; keepSet = vorhandene Werte nicht überschreiben) */
+function applyPresetMap(map, only, keepSet) {
+  PRESETS.forEach((p) => {
+    if (only ? !only.includes(p.id) : map[p.id] === false) return;
+    for (const [k, v] of Object.entries(p.set)) {
+      if (keepSet) { try { if (localStorage.getItem(k) !== null) continue; } catch { /* egal */ } }
+      lss(k, v);
+    }
+  });
+  try { if (window.THEME) window.THEME.apply(true); } catch { /* egal */ }
+  try { updateAutoIcon(); updateVersionBar(); rebuildExtras(); applyStartGif(); applyFavPlace(); renderList(); } catch { /* egal */ }
+}
+
+/* Benutzer vom Server holen: {state: "ok"|"none"|"locked"|"error", presets} */
+async function fetchUser(name, hash) {
+  try {
+    const res = await fetch(`${SYNC_BASE}/user/${encodeURIComponent(name)}`, { cache: "no-store", headers: { "x-user-hash": hash || "" } });
+    if (res.status === 404) return { state: "none" };
+    if (res.status === 401) return { state: "locked" };
+    if (!res.ok) return { state: "error" };
+    const d = await res.json();
+    return { state: "ok", presets: d.presets || {} };
+  } catch { return { state: "error" }; }
+}
+async function putUser(name, hash, presets, newHash) {
+  const body = { presets };
+  if (newHash !== undefined) body.hash = newHash;
+  const res = await fetch(`${SYNC_BASE}/user/${encodeURIComponent(name)}`, { method: "PUT", headers: { "content-type": "application/json", "x-user-hash": hash || "" }, body: JSON.stringify(body) });
+  return res.ok;
+}
+
+/* Anmelden: vorhandener Benutzer wird übernommen, neuer mit den Standard-Haken angelegt. Rückgabe: Meldung (Text) und ok */
+async function userLogin(rawName, pass) {
+  const name = userCleanName(rawName);
+  if (name.length < 2) return { ok: false, msg: "Benutzername: mindestens 2 Zeichen." };
+  const hash = await userHashOf(name, pass);
+  const r = await fetchUser(name, hash);
+  if (r.state === "error") return { ok: false, msg: "Server nicht erreichbar." };
+  if (r.state === "locked") return { ok: false, msg: "Passwort stimmt nicht.", locked: true };
+  let map, created = false;
+  if (r.state === "none") {
+    map = defaultPresetMap();
+    if (!(await putUser(name, hash, map, hash))) return { ok: false, msg: "Anlegen fehlgeschlagen." };
+    created = true;
+  } else map = { ...defaultPresetMap(), ...r.presets };
+  lss("userName", name); lss("userHash", hash); lss("userPresets", JSON.stringify(map));
+  applyPresetMap(map);
+  return { ok: true, created, msg: created ? `Neuer Benutzer „${name}“ angelegt.` : `Angemeldet als „${name}“.` };
+}
+function userLogout() { ["userName", "userHash", "userPresets"].forEach((k) => { try { localStorage.removeItem(k); } catch { /* egal */ } }); }
+
+/* beim Start: gespeicherten Benutzer still laden und anwenden */
+async function userAutoLogin() {
+  const name = userName();
+  if (!name) return;
+  const r = await fetchUser(name, lsv("userHash", ""));
+  if (r.state !== "ok") return;
+  const map = { ...defaultPresetMap(), ...r.presets };
+  lss("userPresets", JSON.stringify(map));
+  applyPresetMap(map);
+}
+
+function renderPresetBox() {
+  const name = userName();
+  document.getElementById("userLine").textContent = name ? `Angemeldet: ${name}` : "";
+  document.getElementById("userOut").hidden = !name;
+  const rows = document.getElementById("presetRows");
+  rows.replaceChildren();
+  const map = userMap();
+  PRESETS.forEach((p) => {
+    const l = document.createElement("label");
+    l.className = "set-row check";
+    const c = document.createElement("input");
+    c.type = "checkbox"; c.checked = map[p.id] !== false;
+    c.onchange = async () => {
+      const m = userMap(); m[p.id] = c.checked; lss("userPresets", JSON.stringify(m));
+      if (c.checked) applyPresetMap(m, [p.id]);
+      const n = userName();
+      if (n) { try { await putUser(n, lsv("userHash", ""), m); } catch { /* egal */ } }
+    };
+    l.append(c, document.createTextNode(" " + p.label));
+    rows.append(l);
+  });
+}
+function setupPresetBox() {
+  document.getElementById("presetBox").hidden = false;
+  document.getElementById("subTabs").hidden = false;
+  const msg = document.getElementById("userMsg");
+  const nameIn = document.getElementById("userName"), passIn = document.getElementById("userPass");
+  nameIn.value = ""; passIn.value = "";
+  document.getElementById("userGo").onclick = async () => {
+    msg.textContent = "Bitte warten …";
+    const r = await userLogin(nameIn.value, passIn.value);
+    msg.textContent = r.msg;
+    if (r.ok) { passIn.value = ""; renderPresetBox(); }
+  };
+  document.getElementById("userOut").onclick = () => { userLogout(); msg.textContent = "Abgemeldet. Die Werte auf diesem Gerät bleiben bestehen."; renderPresetBox(); };
+  document.getElementById("presetApply").onclick = () => { applyPresetMap(userMap()); showToast("Voreinstellungen angewendet"); };
+  renderPresetBox();
 }
 
 function openCode(title, onSubmit, kind) {
@@ -3371,6 +3505,8 @@ function openCode(title, onSubmit, kind) {
   document.getElementById("tagsBox").hidden = true;
   document.getElementById("advBox").hidden = true;
   document.getElementById("caragBox").hidden = true;
+  document.getElementById("presetBox").hidden = true;
+  document.getElementById("subTabs").hidden = true;
   document.getElementById("favBox").hidden = true;
   document.getElementById("extraBox").hidden = true;
   document.getElementById("themeBox").hidden = true;
@@ -3462,6 +3598,15 @@ function checkLogin() {
       if (document.getElementById("rememberLogin").checked) localStorage.setItem(STORAGE.auth, "ok");
       else sessionStorage.setItem(STORAGE.auth, "ok");
       gate.hidden = true;
+      const un = document.getElementById("loginUser").value.trim();
+      if (un) {
+        let r = await userLogin(un, "");
+        if (r.locked) {
+          const pw = await uiPrompt({ eyebrow: "Benutzer", title: `Passwort für „${un}“`, type: "password", ok: "Anmelden" });
+          if (pw) r = await userLogin(un, pw);
+        }
+        showToast(r.msg);
+      }
     } else {
       document.getElementById("loginError").hidden = false;
     }
@@ -3472,6 +3617,7 @@ function init() {
   if (location.search.includes("r=")) history.replaceState(null, "", location.pathname);
   state.timeOffset = Number(localStorage.getItem("teslaKaraokeTimeOffset") || 0) || 0;
   checkLogin();
+  userAutoLogin();
   loadFavorites();
   loadPlaylists();
   applySyncFromUrl();
@@ -3518,10 +3664,13 @@ init();
 function showSetTab(tab) {
   const form = document.getElementById("codeForm");
   state.setTab = tab;
-  form.querySelectorAll("[data-tab]").forEach((n) => n.classList.toggle("tab-off", !n.dataset.tab.split(" ").includes(tab)));
+  const sub = state.sub || "einst";
+  form.querySelectorAll("[data-tab]").forEach((n) => n.classList.toggle("tab-off", !n.dataset.tab.split(" ").includes(tab) || (tab === "allgemein" && !!n.dataset.sub && n.id !== "subTabs" && !n.dataset.sub.split(" ").includes(sub))));
+  document.querySelectorAll("#subTabs [data-sub]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.sub === sub)));
   document.querySelectorAll("#setTabs [data-settab]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.settab === tab)));
   if (tab === "design" && window.THEME) window.THEME.mountUi(document.getElementById("themeBox"));
   if (tab === "fehlend" && window.FEHLEND) window.FEHLEND.mount(document.getElementById("fehlendBox"));
   form.scrollTop = 0;
 }
 document.querySelectorAll("#setTabs [data-settab]").forEach((b) => b.addEventListener("click", () => showSetTab(b.dataset.settab)));
+document.querySelectorAll("#subTabs [data-sub]").forEach((b) => b.addEventListener("click", () => { state.sub = b.dataset.sub; showSetTab("allgemein"); }));

@@ -1,4 +1,4 @@
-const CACHE = "tesla-karaoke-v76";
+const CACHE = "tesla-karaoke-v77";
 const SHELL = ["./", "./index.html", "./style.css", "./app.js", "./ludwt.js", "./fehlend.js", "./password.js", "./theme.js", "./manifest.json", "./icon.svg", "./songs.json"];
 const MAX_ENTRIES = 120;  // Obergrenze für zusätzlich gemerkte Dateien (Liedtexte, Bilder)
 
@@ -26,7 +26,7 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
   // Musik, Sync-Speicher, Server-Funktionen und Abfragen mit Zeitstempel (?t=...) nie zwischenspeichern
-  if (url.pathname.endsWith(".mp3") || url.pathname.startsWith("/sync/") || url.pathname.startsWith("/api/") || url.search) return;
+  if (url.pathname.endsWith(".mp3") || url.pathname.startsWith("/sync/") || url.pathname.startsWith("/user/") || url.pathname.startsWith("/api/") || url.search) return;
   if (request.headers.has("range")) return;
 
   event.respondWith(

@@ -21,6 +21,7 @@
     <form id="loginForm" class="login-card">
       <h2>Karaoke</h2>
       <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Passwort" required />
+      <input id="loginUser" type="text" autocomplete="off" autocapitalize="off" placeholder="Benutzername (optional)" />
       <label class="remember"><input id="showPw" type="checkbox" /> Passwort anzeigen</label>
       <label class="remember"><input id="rememberLogin" type="checkbox" checked /> Login im Browser speichern</label>
       <button class="chip" type="submit">Öffnen</button>
@@ -169,6 +170,16 @@
             <button id="playAllBtn" class="chip" type="button">alle Lieder</button>
             <button id="playFavBtn" class="chip" type="button">Favoriten</button>
           </div>
+          <button id="teslaBtn" class="tesla-btn" type="button" aria-label="Voreinstellung für Tesla"><img src="tesla-icon.png" alt="" width="22" height="22" /></button>
+          <div id="teslaMenu" class="tesla-menu" hidden>
+            <img src="tesla-icon.png" alt="" width="28" height="28" />
+            <label class="set-row check"><input id="teslaChk" type="checkbox" /> Voreinstellung für Tesla</label>
+            <small class="set-hint">Setzt: automatisch abspielen an, weitere Lieder/Art-Kennzeichen/Art-Buttons aus, Favoriten-Stern oben und unten, Lupe und Player nur nach langem Drücken, Carag aus, Design wie Gerät/Tesla, Abgleich bis 2 gelöschte Lieder, Einstellungen nicht abgleichen.</small>
+            <input id="teslaUser" type="text" autocomplete="off" autocapitalize="off" placeholder="Benutzername (optional)" />
+            <input id="teslaPass" type="password" autocomplete="off" placeholder="Passwort (nur wenn gesetzt)" />
+            <button id="teslaGo" class="chip" type="button">Übernehmen</button>
+            <small id="teslaMsg" class="set-hint"></small>
+          </div>
           <button id="egg1" class="egg egg-l" type="button" data-src="egg1.mp4" aria-label="Überraschung 1"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M3 2.5l5.2 4h7.6l5.2-4V12c0 5.2-4 9.5-9 9.5S3 17.200 3 12zM8.600 11.200a1.100 1.100 0 100 2.200 1.100 1.100 0 000-2.200zm6.800 0a1.100 1.100 0 100 2.200 1.100 1.100 0 000-2.200zM12 15l-1.400 1.200h2.800z"/></svg></button>
           <button id="egg2" class="egg egg-r" type="button" data-src="egg2.mp4" aria-label="Überraschung 2"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M3 2.5l5.2 4h7.6l5.2-4V12c0 5.2-4 9.5-9 9.5S3 17.200 3 12zM8.600 11.200a1.100 1.100 0 100 2.200 1.100 1.100 0 000-2.200zm6.800 0a1.100 1.100 0 100 2.200 1.100 1.100 0 000-2.200zM12 15l-1.400 1.200h2.800z"/></svg></button>
         </div>
@@ -240,36 +251,55 @@
         <small class="set-hint">Design, Anzeige-Optionen, Sprungweite usw. werden mit den Favoriten auf alle Geräte mit demselben Speicher übertragen. Die Standort-Angabe und Passwörter bleiben nur auf dem Gerät.</small>
       </div>
       <button id="syncDelete" data-tab="abgleich" class="chip danger" type="button" hidden>Alles löschen</button>
-      <div id="caragBox" data-tab="allgemein" class="carag-box" hidden>
+      <div id="subTabs" data-tab="allgemein" class="set-tabs sub-tabs" hidden>
+        <button class="seg-btn" type="button" data-sub="einst">Einstellungen</button>
+        <button class="seg-btn" type="button" data-sub="vor">Voreinstellungen</button>
+      </div>
+      <div id="presetBox" data-tab="allgemein" data-sub="vor" class="autoplay-box" hidden>
+        <button id="caragOpen2" class="carag-open" type="button" aria-label="Weitere Einstellungen"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M3 2.5l5.2 4h7.6l5.2-4V12c0 5.2-4 9.5-9 9.5S3 17.200 3 12zM8.600 11.200a1.100 1.100 0 100 2.200 1.100 1.100 0 000-2.200zm6.800 0a1.100 1.100 0 100 2.200 1.100 1.100 0 000-2.200zM12 15l-1.400 1.200h2.800z"/></svg></button>
+        <p class="ap-title">Benutzer und Voreinstellungen</p>
+        <p id="userLine" class="user-line"></p>
+        <div class="user-form">
+          <input id="userName" type="text" autocomplete="off" autocapitalize="off" placeholder="Benutzername" />
+          <input id="userPass" type="password" autocomplete="off" placeholder="Passwort (nur wenn gewünscht)" />
+          <button id="userGo" class="chip" type="button">Anmelden / neu anlegen</button>
+          <button id="userOut" class="chip" type="button" hidden>Abmelden</button>
+        </div>
+        <small id="userMsg" class="set-hint"></small>
+        <div id="presetRows" class="preset-rows"></div>
+        <button id="presetApply" class="chip" type="button">Haken jetzt anwenden</button>
+        <small class="set-hint">Die Haken werden je Benutzer auf dem Server gespeichert. Mit „Haken jetzt anwenden“ werden die angehakten Werte auf diesem Gerät gesetzt; angemeldet geschieht das auch bei jedem Start.</small>
+      </div>
+      <h3 class="set-h" data-tab="allgemein" data-sub="einst" id="einstHead">Einstellungen für dieses Gerät</h3>
+      <div id="caragBox" data-tab="allgemein" data-sub="einst vor" class="carag-box" hidden>
         <p class="ap-title">Carag</p>
         <label class="set-row">Wiedergabe
           <select id="eggMode"><option value="auto">Automatisch</option><option value="gif">Immer GIF</option><option value="mp4">Immer MP4</option></select></label>
         <label class="set-row check"><input id="eggFall" type="checkbox" /> Wenn das Video blockiert wird (Tesla in Fahrt), automatisch das GIF abspielen</label>
         <label class="set-row">Welches GIF
           <select id="eggGif"><option value="chor">Chor</option><option value="2">Carag vorwärts</option><option value="1">Carag rückwärts</option><option value="match">Passend zum Symbol</option></select></label>
-        <label class="set-row check"><input id="startGif" type="checkbox" /> Startseite: GIF „Chor“ statt des Bildes zeigen</label>
         <small class="set-hint">Die Funktion „GIF bei blockiertem Video“ ist standardmäßig aus. Der Tesla erlaubt kein Video während der Fahrt; ist sie an, spielt „Automatisch“ zuerst das Video und wechselt zum GIF, sobald es nicht läuft.</small>
       </div>
-      <div id="advBox" data-tab="allgemein" class="autoplay-box" hidden>
+      <div id="advBox" data-tab="allgemein" data-sub="einst" class="autoplay-box" hidden>
         <p class="ap-title">Anzeige und Werkzeuge</p>
         <div class="adv-btns">
           <button id="advAdvanced" class="chip" type="button">Erweiterte Optionen ein/aus</button>
           <button id="advEdit" class="chip" type="button">Bearbeitungsmodus (Karaoke-Texte)</button>
           <button id="advReload" class="chip" type="button">Seite neu laden</button>
-          <button id="advTesla" class="chip" type="button">Tesla-Voreinstellungen anwenden</button>
+          <button id="advStart" class="chip" type="button">Startmenü öffnen</button>
         </div>
-        <small class="set-hint">Erweiterte Optionen sind die Funktionen der Lupe: Textsuche, Art-Buttons, Listen-Werkzeuge. Tesla-Voreinstellungen: Autostart an, Design nach Sonnenauf-/untergang, Art-Kennzeichen aus.</small>
+        <small class="set-hint">Erweiterte Optionen sind die Funktionen der Lupe: Textsuche, Art-Buttons, Listen-Werkzeuge. Die Tesla-Voreinstellungen findest du unter „Voreinstellungen“.</small>
         <label class="set-row">Schriftgröße Auswahlfenster <input id="advListSize" type="number" min="10" max="48" inputmode="numeric" /></label>
         <label class="set-row">Schriftgröße Karaoke-Text <input id="advScale" type="number" min="10" max="200" inputmode="numeric" /></label>
         <label class="set-row">Breite Auswahlfenster (px) <input id="advSidebar" type="number" min="180" max="1200" inputmode="numeric" /></label>
         <label class="set-row">Springen zurück (Sekunden) <input id="advBack" type="number" min="1" max="300" inputmode="numeric" /></label>
         <label class="set-row">Springen vor (Sekunden) <input id="advFwd" type="number" min="1" max="300" inputmode="numeric" /></label>
+        <label class="set-row check"><input id="startGif" type="checkbox" /> Startseite: GIF „Chor“ statt des Bildes zeigen</label>
         <label class="set-row check"><input id="advHold" type="checkbox" /> Lupe und Player-Symbol nur nach langem Drücken (ca. 0,7 s)</label>
         <label class="set-row check"><input id="advHint" type="checkbox" /> Dabei Hinweis „Länger drücken“ und Fortschrittsbalken anzeigen</label>
         <small id="advInfo" class="set-hint"></small>
       </div>
-      <div id="autoPlayBox" data-tab="allgemein" class="autoplay-box" hidden>
-        <p class="ap-title">Einstellung für dieses Gerät</p>
+      <div id="autoPlayBox" data-tab="allgemein" data-sub="einst" class="autoplay-box" hidden>
         <label class="set-row check"><input id="autoPlayOpt" type="checkbox" /> Beim Öffnen automatisch abspielen</label>
         <small class="set-hint">Praktisch im Auto: Die Seite startet das zuletzt gehörte Lied von selbst. Mit dem kleinen ⏵ oben rechts kannst du das jederzeit umschalten.</small>
       </div>
@@ -281,17 +311,16 @@
         <button id="importFav" class="chip" type="button">Favoriten importieren</button>
         <small class="set-hint">Exportieren: Favoriten und Listen als Code/QR oder mit eigenem Passwort sichern. Importieren: auf einem anderen Gerät laden.</small>
       </div>
-      <div id="extraBox" data-tab="allgemein" class="autoplay-box" hidden>
+      <div id="extraBox" data-tab="allgemein" data-sub="einst" class="autoplay-box" hidden>
         <p class="ap-title">Weitere Lieder</p>
         <label class="set-row check"><input id="extraSongsOpt" type="checkbox" /> Weitere Lieder aus den anderen Verzeichnissen (Instrumental, Zusammenkünfte, Video) in der Liste anzeigen</label>
         <small class="set-hint">Dann erscheint bei aktiver Lupe eine Auswahl „Karaoke / Instrumental / Video / Zusammenkünfte“. Diese Lieder sind farblich abgesetzt und lassen sich ganz normal in Wiedergabelisten speichern.</small>
       </div>
-      <div id="tagsBox" data-tab="allgemein" class="autoplay-box" hidden>
-        <p class="ap-title">Einstellung für dieses Gerät</p>
+      <div id="tagsBox" data-tab="allgemein" data-sub="einst" class="autoplay-box" hidden>
         <label class="set-row check"><input id="srcTagsOpt" type="checkbox" /> Kleine Art-Kennzeichen (K, ♪, ▶, Z) unter den Liedern in der Auswahl anzeigen</label>
         <small class="set-hint">Sie zeigen, bei welchen Arten ein Lied vorhanden ist. Im Tesla kannst du sie ausschalten, wenn sie stören. Sie erscheinen nur, wenn „Weitere Lieder“ aktiv ist.</small>
       </div>
-      <div id="favBox" data-tab="allgemein" class="autoplay-box" hidden>
+      <div id="favBox" data-tab="allgemein" data-sub="einst" class="autoplay-box" hidden>
         <button id="caragOpen" class="carag-open" type="button" aria-label="Weitere Einstellungen"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M3 2.5l5.2 4h7.6l5.2-4V12c0 5.2-4 9.5-9 9.5S3 17.200 3 12zM8.600 11.200a1.100 1.100 0 100 2.200 1.100 1.100 0 000-2.200zm6.800 0a1.100 1.100 0 100 2.200 1.100 1.100 0 000-2.200zM12 15l-1.400 1.200h2.800z"/></svg></button>
         <p class="ap-title">Favoriten-Stern</p>
         <div class="set-row">Anzeigen:
@@ -303,8 +332,7 @@
           <select id="favSeekOpt"><option value="off">Keine Taste</option><option value="back">Zurückspringen-Taste = Favorit</option><option value="fwd">Vorspringen-Taste = Favorit</option></select></label>
         <small class="set-hint">Der Tesla-eigene Player erlaubt keine eigenen Tasten. Ein ★ vor dem Titel zeigt dort den Favoriten an. Wenn der Tesla eine Springen-Taste anzeigt, kann sie hier als Favoriten-Taste dienen (dann springt sie nicht mehr).</small>
       </div>
-      <div id="verBarBox" data-tab="allgemein" class="autoplay-box" hidden>
-        <p class="ap-title">Einstellung für dieses Gerät</p>
+      <div id="verBarBox" data-tab="allgemein" data-sub="einst" class="autoplay-box" hidden>
         <label class="set-row check"><input id="verBarOpt" type="checkbox" /> Art-Buttons (Karaoke / Instrumental / Video / Zusammenkünfte) immer anzeigen</label>
         <small class="set-hint">Sonst erscheinen sie nur bei aktiven erweiterten Optionen (Lupe) und im Bearbeitungsmodus.</small>
       </div>
