@@ -3277,7 +3277,11 @@ function warnReplace() {
 /* Einstellungen: Anzeige und Werkzeuge (Allgemein) */
 function setupAdvBox() {
   document.getElementById("advBox").hidden = false;
-  document.getElementById("caragBox").hidden = false;
+  document.getElementById("caragOpen").onclick = () => {
+    const box = document.getElementById("caragBox");
+    box.hidden = !box.hidden;
+    if (!box.hidden) box.scrollIntoView({ block: "center", behavior: "smooth" });
+  };
   [["eggMode", "auto"], ["eggGif", "match"]].forEach(([k, d]) => {
     const s = document.getElementById(k);
     try { s.value = localStorage.getItem(k) || d; } catch { s.value = d; }
