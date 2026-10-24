@@ -27,7 +27,7 @@
       <p id="loginError" class="login-error" hidden>Passwort stimmt nicht</p>
       <button id="loginMore" class="login-more" type="button" aria-expanded="false">▸ Weitere Optionen</button>
       <div id="loginExtra" class="login-extra" hidden>
-        <label class="set-row check"><input id="loginTesla" type="checkbox" /> <img src="tesla-icon.png" alt="" width="26" height="26" /> Voreinstellung für Tesla</label>
+        <label class="set-row check"><input id="loginTesla" type="checkbox" /> <img src="tesla-icon.png" alt="" width="26" height="26" /> <span>Voreinstellung für Tesla</span></label>
         <small class="set-hint">Setzt: automatisch abspielen an, weitere Lieder, Art-Kennzeichen und Art-Buttons aus, Favoriten-Stern oben und unten, Lupe und Player nur nach langem Drücken, Carag aus, Design wie Gerät/Tesla, Abgleich bis 2 gelöschte Lieder, Einstellungen nicht abgleichen. Dafür ist kein Benutzer nötig.</small>
         <label class="stack">Benutzername <small>(freiwillig)</small><input id="loginUser" type="text" autocomplete="off" autocapitalize="off" /></label>
         <label class="stack">Benutzer-Passwort <small>(freiwillig – nur wenn dein Benutzer eines hat)</small><input id="loginUserPass" type="password" autocomplete="off" /></label>
@@ -270,21 +270,12 @@
         <small id="userMsg" class="set-hint"></small>
         <div id="presetRows" class="preset-rows"></div>
         <div class="adv-btns">
-          <button id="presetApply" class="chip" type="button">Haken jetzt anwenden</button>
+          <button id="presetApply" class="chip" type="button">Gespeicherte Werte anwenden</button>
           <button id="teslaApply" class="chip" type="button">Tesla-Voreinstellung anwenden</button>
           <button id="teslaSave" class="chip" type="button">Haken als Tesla-Voreinstellung speichern</button>
         </div>
         <small class="set-hint">Die Tesla-Voreinstellung gilt für alle und kann nur mit dem Schlüssel (WRITE_KEY) geändert werden. Der Benutzername ist zugleich der Name deines Abgleich-Speichers, sofern dort noch keiner eingetragen ist.</small>
-        <small class="set-hint">Die Haken werden je Benutzer auf dem Server gespeichert. Mit „Haken jetzt anwenden“ werden die angehakten Werte auf diesem Gerät gesetzt; angemeldet geschieht das auch bei jedem Start.</small>
-      </div>
-      <div id="caragBox" data-tab="allgemein" data-sub="einst vor" class="carag-box" hidden>
-        <p class="ap-title">Carag</p>
-        <label class="set-row">Wiedergabe
-          <select id="eggMode"><option value="auto">Automatisch</option><option value="gif">Immer GIF</option><option value="mp4">Immer MP4</option></select></label>
-        <label class="set-row check"><input id="eggFall" type="checkbox" /> Wenn das Video blockiert wird (Tesla in Fahrt), automatisch das GIF abspielen</label>
-        <label class="set-row">Welches GIF
-          <select id="eggGif"><option value="chor">Chor</option><option value="2">Carag vorwärts</option><option value="1">Carag rückwärts</option><option value="match">Bitte auswählen</option></select></label>
-        <small class="set-hint">Die Funktion „GIF bei blockiertem Video“ ist standardmäßig aus. Der Tesla erlaubt kein Video während der Fahrt; ist sie an, spielt „Automatisch“ zuerst das Video und wechselt zum GIF, sobald es nicht läuft.</small>
+        <small class="set-hint">Ein Haken bedeutet: Diese Einstellung gehört zum Benutzer. Ihr aktueller Wert wird beim Schließen der Einstellungen auf dem Server gespeichert und beim Anmelden und bei jedem Start wieder gesetzt. Vorher zeigt ein aufklappbares Fenster, was sich ändert.</small>
       </div>
       <div id="advBox" data-tab="allgemein" data-sub="einst" class="autoplay-box" hidden>
         <p class="ap-title">Anzeige und Werkzeuge</p>
@@ -344,6 +335,15 @@
         <p class="ap-title">Art-Buttons</p>
         <label class="set-row check"><input id="verBarOpt" type="checkbox" /> Art-Buttons (Karaoke / Instrumental / Video / Zusammenkünfte) immer anzeigen</label>
         <small class="set-hint">Sonst erscheinen sie nur bei aktiven erweiterten Optionen (Lupe) und im Bearbeitungsmodus.</small>
+      </div>
+      <div id="caragBox" data-tab="allgemein" data-sub="einst vor" class="carag-box" hidden>
+        <p class="ap-title">Carag</p>
+        <label class="set-row">Wiedergabe
+          <select id="eggMode"><option value="auto">Automatisch</option><option value="gif">Immer GIF</option><option value="mp4">Immer MP4</option></select></label>
+        <label class="set-row check"><input id="eggFall" type="checkbox" /> Wenn das Video blockiert wird (Tesla in Fahrt), automatisch das GIF abspielen</label>
+        <label class="set-row">Welches GIF
+          <select id="eggGif"><option value="chor">Chor</option><option value="2">Carag vorwärts</option><option value="1">Carag rückwärts</option><option value="match">Bitte auswählen</option></select></label>
+        <small class="set-hint">Die Funktion „GIF bei blockiertem Video“ ist standardmäßig aus. Der Tesla erlaubt kein Video während der Fahrt; ist sie an, spielt „Automatisch“ zuerst das Video und wechselt zum GIF, sobald es nicht läuft.</small>
       </div>
       <section id="ludwtSync" data-tab="ludwt" class="ludwt-sync" hidden></section>
       <button id="codeCancel" class="ghost" type="button">Abbrechen</button>

@@ -166,6 +166,16 @@ function uiDialog(opts) {
         parent.append(g);
         return;
       }
+      if (item.details) {
+        const d = document.createElement("details");
+        d.className = "dlg-details";
+        const sm = document.createElement("summary");
+        sm.textContent = item.details.title;
+        d.append(sm);
+        item.details.lines.forEach((sub) => addLine(d, sub));
+        parent.append(d);
+        return;
+      }
       if (item.table) {
         const wrap = document.createElement("div");
         wrap.className = "dlg-table-wrap";
@@ -1736,7 +1746,8 @@ function toggleAdvanced() {
 
 /* Voreinstellungen für den Tesla-Browser (nur Werte, die noch nicht gesetzt sind; force = überschreiben) */
 function applyTeslaDefaults(force) {
-  applyPresetMap(defaultPresetMap(), null, !force);
+  const t = presetTarget(normPresets({}), "tesla").filter((x) => force || localStorage.getItem(x.key) === null);
+  applyTarget(t);
 }
 const isTesla = () => /Tesla/i.test(navigator.userAgent);
 
@@ -2727,32 +2738,8 @@ async function syncFavorites(tab) {
   showSetTab(tab || state.setTab || "allgemein");
 }
 
-async function syncFavoritesCore() {
-  const saved = localStorage.getItem("sync-code") || "";
-  openCode("Einstellungen", async (code) => {
-    localStorage.setItem("sync-code", code);
-    try {
-      const message = await runSync(code, false);
-      refreshSyncInfo();
-      return message;
-    } catch {
-      return "Synchronisieren fehlgeschlagen. Bitte später noch einmal versuchen.";
-    }
-  }, "sync");
-  const input = document.getElementById("codeInput");
-  input.value = saved;
-  input.placeholder = "Name des Speichers, am besten lang und schwer zu erraten";
-  document.getElementById("codeOk").textContent = "Synchronisieren";
-  document.querySelector(".sync-choice").hidden = true;
-  document.getElementById("codeMessage").textContent = "Mit diesem Speicher-Namen gleichst du alle deine Geräte ab. Hinzugefügtes wird automatisch zusammengeführt.";
-  refreshSyncInfo();
-  const metaBtn = document.getElementById("metaToggle");
-  metaBtn.hidden = false;
-  metaBtn.title = "Gerät und Server vergleichen";
-  metaBtn.onclick = showSyncCompare;
-  const settings = document.getElementById("syncSettings");
-  settings.hidden = false;
-  document.getElementById("autoPlayBox").hidden = false;
+/* Alle Felder des Einstellungsfensters mit den aktuellen Werten füllen (auch nach dem Anwenden von Voreinstellungen) */
+function fillSettingsFields() {
   const max = document.getElementById("syncAutoMax");
   max.value = String(autoMax());
   max.onchange = () => {
@@ -2789,6 +2776,36 @@ async function syncFavoritesCore() {
   const auto = document.getElementById("autoPlayOpt");
   auto.checked = localStorage.getItem("autoStart") === "1";
   auto.onchange = () => { try { localStorage.setItem("autoStart", auto.checked ? "1" : "0"); } catch { /* egal */ } updateAutoIcon(); };
+  if (window.THEME && state.setTab === "design") window.THEME.mountUi(document.getElementById("themeBox"));
+}
+
+async function syncFavoritesCore() {
+  const saved = localStorage.getItem("sync-code") || "";
+  openCode("Einstellungen", async (code) => {
+    localStorage.setItem("sync-code", code);
+    try {
+      const message = await runSync(code, false);
+      refreshSyncInfo();
+      return message;
+    } catch {
+      return "Synchronisieren fehlgeschlagen. Bitte später noch einmal versuchen.";
+    }
+  }, "sync");
+  const input = document.getElementById("codeInput");
+  input.value = saved;
+  input.placeholder = "Name des Speichers, am besten lang und schwer zu erraten";
+  document.getElementById("codeOk").textContent = "Synchronisieren";
+  document.querySelector(".sync-choice").hidden = true;
+  document.getElementById("codeMessage").textContent = "Mit diesem Speicher-Namen gleichst du alle deine Geräte ab. Hinzugefügtes wird automatisch zusammengeführt.";
+  refreshSyncInfo();
+  const metaBtn = document.getElementById("metaToggle");
+  metaBtn.hidden = false;
+  metaBtn.title = "Gerät und Server vergleichen";
+  metaBtn.onclick = showSyncCompare;
+  const settings = document.getElementById("syncSettings");
+  settings.hidden = false;
+  document.getElementById("autoPlayBox").hidden = false;
+  fillSettingsFields();
   if (window.LUDWT) LUDWT.mountSync();
   const del = document.getElementById("syncDelete");
   del.hidden = false;
@@ -3289,8 +3306,17 @@ function setupAdvBox() {
     box.hidden = !box.hidden;
     if (!box.hidden) box.scrollIntoView({ block: "center", behavior: "smooth" });
   };
-  document.getElementById("caragOpen").onclick = caragToggle;
-  document.getElementById("caragOpen2").onclick = caragToggle;
+  /* Puma-Symbol: ca. 1 Sekunde gedrückt halten (kein Klick nötig, funktioniert auch ohne Klick-Ereignis) */
+  const holdBind = (btn, fn, ms) => {
+    let t = 0;
+    const clear = () => { clearTimeout(t); t = 0; btn.classList.remove("holding"); };
+    btn.onpointerdown = () => { clear(); btn.classList.add("holding"); t = setTimeout(() => { t = 0; btn.classList.remove("holding"); fn(); }, ms); };
+    ["onpointerup", "onpointerleave", "onpointercancel"].forEach((ev) => { btn[ev] = clear; });
+    btn.oncontextmenu = (e) => e.preventDefault();
+    btn.onclick = (e) => e.preventDefault();
+  };
+  holdBind(document.getElementById("caragOpen"), caragToggle, 1000);
+  holdBind(document.getElementById("caragOpen2"), caragToggle, 1000);
   [["eggMode", "auto"], ["eggGif", "chor"]].forEach(([k, d]) => {
     const s = document.getElementById(k);
     try { s.value = localStorage.getItem(k) || d; } catch { s.value = d; }
@@ -3331,39 +3357,89 @@ function setupAdvBox() {
 }
 
 /* ---------- Benutzer und Voreinstellungen ---------- */
+/* Jede Zeile = eine Einstellung (oder Gruppe). def = Tesla-Standardwerte, keys = alle zugehörigen Speicherwerte */
 const PRESETS = [
-  { id: "auto", label: "Beim Öffnen automatisch abspielen – ein", set: { autoStart: "1" } },
-  { id: "extra", label: "Weitere Lieder aus den anderen Verzeichnissen in der Liste – aus", set: { showExtra: "0" } },
-  { id: "tags", label: "Kleine Art-Kennzeichen (K, ♪, ▶, Z) unter den Liedern – aus", set: { srcTags: "0" } },
-  { id: "fav", label: "Favoriten-Stern oben und unten, Tesla-Player ohne Favoriten-Taste", set: { favPlace: "both", favSeek: "off" } },
-  { id: "verbar", label: "Art-Buttons immer anzeigen – aus", set: { verBarAlways: "0" } },
-  { id: "hold", label: "Lupe und Player-Symbol nur nach langem Drücken (ca. 0,7 s) – ein", set: { holdGuard: "1" } },
-  { id: "carag", label: "Carag: alles aus", set: { eggMode: "auto", eggFall: "0", eggGif: "chor", startGif: "0" } },
-  { id: "theme", label: "Design: Automatisch, wie Gerät / Tesla – ein", set: { themeMode: "device" } },
-  { id: "syncmax", label: "Automatisch abgleichen, auch wenn bis zu 2 Lieder gelöscht wurden", set: { "sync-auto-max": "2" } },
-  { id: "syncset", label: "Auch alle anderen Einstellungen mit abgleichen – aus", set: { syncSettings: "0" } }
+  { id: "auto", label: "Beim Öffnen automatisch abspielen", keys: ["autoStart"], def: { autoStart: "1" } },
+  { id: "extra", label: "Weitere Lieder aus anderen Verzeichnissen in der Liste", keys: ["showExtra"], def: { showExtra: "0" } },
+  { id: "tags", label: "Kleine Art-Kennzeichen (K, ♪, ▶, Z) unter den Liedern", keys: ["srcTags"], def: { srcTags: "0" } },
+  { id: "fav", label: "Favoriten-Stern (Ort) und Tesla-Player-Taste", keys: ["favPlace", "favSeek"], def: { favPlace: "both", favSeek: "off" } },
+  { id: "verbar", label: "Art-Buttons immer anzeigen", keys: ["verBarAlways"], def: { verBarAlways: "0" } },
+  { id: "srcfilter", label: "Gewählte Art (Karaoke / Instrumental / Video / Zusammenkünfte)", keys: ["srcFilter"] },
+  { id: "hold", label: "Lupe und Player-Symbol nur nach langem Drücken (Hinweis, Balken)", keys: ["holdGuard", "holdHint"], def: { holdGuard: "1" } },
+  { id: "theme", label: "Design (fest, wie Gerät / Tesla oder Sonnenaufgang, Zeiten)", keys: ["themeMode", "theme", "themeDay", "themeNight", "themeShift"], def: { themeMode: "device" } },
+  { id: "fontkar", label: "Schriftgröße Karaoke-Text", keys: [STORAGE.scale] },
+  { id: "fontlist", label: "Schriftgröße Auswahlfenster", keys: [STORAGE.listSize] },
+  { id: "sidebar", label: "Breite des Auswahlfensters", keys: ["sidebarW"] },
+  { id: "skip", label: "Springen zurück / vor (Sekunden)", keys: ["skipSec", "skipBack", "skipFwd"] },
+  { id: "fehl", label: "Fehlend: Prüfung, Hinweis und Anzeige", keys: ["fehlMode", "fehlNotify", "fehlAll"], rx: /^fehl[TL]_/ },
+  { id: "syncmax", label: "Automatisch abgleichen, auch wenn bis zu 2 Lieder gelöscht wurden", keys: ["sync-auto-max"], def: { "sync-auto-max": "2" } },
+  { id: "syncset", label: "Auch alle anderen Einstellungen mit abgleichen", keys: ["syncSettings"], def: { syncSettings: "0" } }
 ];
+const TESLA_EXTRA = { eggMode: "auto", eggFall: "0", eggGif: "chor", startGif: "0" };
 const lsv = (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch { return d; } };
 const lss = (k, v) => { try { localStorage.setItem(k, v); } catch { /* egal */ } };
-const defaultPresetMap = () => Object.fromEntries(PRESETS.map((p) => [p.id, true]));
+const defaultOn = () => Object.fromEntries(PRESETS.map((p) => [p.id, true]));
+const normPresets = (p) => { p = p || {}; return p.on && typeof p.on === "object" ? { on: { ...defaultOn(), ...p.on }, vals: p.vals && typeof p.vals === "object" ? p.vals : {} } : { on: { ...defaultOn(), ...p }, vals: {} }; };
 const userName = () => lsv("userName", "");
 const userCleanName = (n) => String(n || "").trim().toLowerCase().replace(/[^a-z0-9äöüß._-]/g, "").slice(0, 40);
-const userMap = () => { try { return { ...defaultPresetMap(), ...(JSON.parse(lsv("userPresets", "{}")) || {}) }; } catch { return defaultPresetMap(); } };
+const userData = () => { try { return normPresets(JSON.parse(lsv("userPresets", "{}"))); } catch { return normPresets({}); } };
+const userSaveLocal = (d) => lss("userPresets", JSON.stringify(d));
 const userKnown = () => { try { const a = JSON.parse(lsv("userList", "[]")); return Array.isArray(a) ? a : []; } catch { return []; } };
 const userKnownAdd = (names) => { const set = new Set([...userKnown(), ...names.filter((n) => n && !n.startsWith("_"))]); lss("userList", JSON.stringify([...set].sort())); };
 async function userHashOf(name, pass) { return pass ? sha256Hex(`user:${name}:${pass}`) : ""; }
 
-/* angehakte Voreinstellungen auf dieses Gerät anwenden (only = nur diese ids; keepSet = vorhandene Werte nicht überschreiben) */
-function applyPresetMap(map, only, keepSet) {
+/* alle Speicherschlüssel einer Zeile (feste + nach Muster) */
+function presetKeys(p) {
+  const out = new Set(p.keys);
+  if (p.rx) { try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (p.rx.test(k)) out.add(k); } } catch { /* egal */ } }
+  return [...out];
+}
+/* Ziel-Werte: mode "tesla" = Standardwerte; "user" = gespeicherte Werte des Benutzers (sonst Standardwerte) */
+function presetTarget(data, mode) {
+  const t = [];
   PRESETS.forEach((p) => {
-    if (only ? !only.includes(p.id) : map[p.id] === false) return;
-    for (const [k, v] of Object.entries(p.set)) {
-      if (keepSet) { try { if (localStorage.getItem(k) !== null) continue; } catch { /* egal */ } }
-      lss(k, v);
-    }
+    if (data.on[p.id] === false) return;
+    const src = mode === "tesla" ? (p.def || {}) : { ...(p.def || {}), ...data.vals };
+    presetKeys(p).forEach((k) => { if (src[k] !== undefined) t.push({ key: k, label: p.label, val: String(src[k]) }); });
   });
+  if (mode === "tesla") Object.entries(TESLA_EXTRA).forEach(([k, v]) => t.push({ key: k, label: "Carag", val: v }));
+  return t;
+}
+function presetCapture(data, only) {
+  PRESETS.forEach((p) => {
+    if (only && !only.includes(p.id)) return;
+    if (data.on[p.id] === false) return;
+    presetKeys(p).forEach((k) => { const v = lsv(k, null); if (v !== null) data.vals[k] = v; });
+  });
+  return data;
+}
+const niceVal = (v) => (v === null || v === undefined ? "–" : v === "1" ? "ein" : v === "0" ? "aus" : v);
+const presetDiff = (target) => target.filter((t) => lsv(t.key, null) !== t.val).map((t) => ({ ...t, old: lsv(t.key, null) }));
+function applyTarget(target) {
+  target.forEach((t) => lss(t.key, t.val));
   try { if (window.THEME) window.THEME.apply(true); } catch { /* egal */ }
-  try { updateAutoIcon(); updateVersionBar(); rebuildExtras(); applyStartGif(); applyFavPlace(); renderList(); } catch { /* egal */ }
+  try {
+    state.scale = Number(lsv(STORAGE.scale, 42)); applyScale(); state.listSize = Number(lsv(STORAGE.listSize, 16)); applyListSize();
+    const sw = Number(lsv("sidebarW", 0)); if (sw >= 180) document.documentElement.style.setProperty("--sidebar", `${sw}px`);
+  } catch { /* egal */ }
+  try { updateSkipLabels(); updateAutoIcon(); updateVersionBar(); rebuildExtras(); applyStartGif(); applyFavPlace(); renderList(); } catch { /* egal */ }
+  try { if (!document.getElementById("codeModal").hidden) fillSettingsFields(); } catch { /* egal */ }
+}
+/* Änderungen zuerst anzeigen (aufklappbar), dann übernehmen. silent = ohne Rückfrage. Rückgabe: true = angewendet */
+async function applyWithPreview(target, title, silent) {
+  const diff = presetDiff(target);
+  if (!diff.length) return true;
+  if (!silent) {
+    const yes = await uiDialog({
+      eyebrow: "Einstellungen", title, cancelValue: false,
+      lines: [`${diff.length} Einstellung${diff.length === 1 ? "" : "en"} auf diesem Gerät ${diff.length === 1 ? "wird" : "werden"} geändert.`,
+        { details: { title: "Änderungen anzeigen", lines: [{ table: [["Einstellung", "Jetzt", "Neu"], ...diff.map((d) => [d.key === d.label ? d.key : `${d.label} (${d.key})`, niceVal(d.old), niceVal(d.val)])] }] } }],
+      buttons: [{ value: true, kind: "primary", label: "Übernehmen" }, { value: false, kind: "cancel", label: "Nicht ändern" }]
+    });
+    if (!yes) return false;
+  }
+  applyTarget(target);
+  return true;
 }
 
 /* Benutzer vom Server holen: {state: "ok"|"none"|"locked"|"error", presets, links} */
@@ -3386,11 +3462,16 @@ async function putUser(name, authHash, fields, extra) {
 }
 
 /* Tesla-Voreinstellung: gemeinsam für alle (Server), sonst alle Haken */
-async function teslaMap() {
+async function teslaData() {
   const r = await fetchUser("_tesla", "");
-  return r.state === "ok" && Object.keys(r.presets).length ? { ...defaultPresetMap(), ...r.presets } : defaultPresetMap();
+  return r.state === "ok" ? normPresets(r.presets) : normPresets({});
 }
-async function applyTeslaPreset() { applyPresetMap(await teslaMap()); lss("teslaPreset", "1"); }
+/* Tesla-Voreinstellung anwenden (mit Vorschau der Änderungen, sofern nicht silent) */
+async function applyTeslaPreset(silent) {
+  const ok = await applyWithPreview(presetTarget(await teslaData(), "tesla"), "Tesla-Voreinstellung anwenden?", silent);
+  if (ok) lss("teslaPreset", "1");
+  return ok;
+}
 
 /* Anmelden: zuerst wird geprüft, ob der Benutzer existiert. Neue Namen werden erst nach Rückfrage angelegt (Tippfehler!). */
 async function userLogin(rawName, pass) {
@@ -3407,19 +3488,19 @@ async function userLogin(rawName, pass) {
     }
     return { ok: false, msg: "Passwort stimmt nicht.", locked: true };
   }
-  let map, created = false, links = [];
+  let data, created = false, links = [];
   if (r.state === "none") {
     const yes = await uiConfirm({ eyebrow: "Benutzer", title: `„${name}“ gibt es noch nicht`, lines: ["Neuen Benutzer mit diesem Namen anlegen? Prüfe vorher auf Tippfehler."], ok: "Neu anlegen", cancel: "Zurück" });
     if (!yes) return { ok: false, msg: "Nicht angelegt." };
-    map = defaultPresetMap();
-    if (!(await putUser(name, hash, { presets: map, hash, links: [] }))) return { ok: false, msg: "Anlegen fehlgeschlagen." };
+    data = normPresets({});
+    if (!(await putUser(name, hash, { presets: data, hash, links: [] }))) return { ok: false, msg: "Anlegen fehlgeschlagen." };
     created = true;
-  } else { map = { ...defaultPresetMap(), ...r.presets }; links = r.links; }
-  lss("userName", name); lss("userHash", hash); lss("userPresets", JSON.stringify(map));
+  } else { data = normPresets(r.presets); links = r.links; }
+  lss("userName", name); lss("userHash", hash); userSaveLocal(data);
   userKnownAdd([name, ...links]);
   if (!lsv("sync-code", "")) lss("sync-code", name);
-  applyPresetMap(map);
-  return { ok: true, created, msg: created ? `Neuer Benutzer „${name}“ angelegt.` : `Angemeldet als „${name}“.` };
+  const applied = await applyWithPreview(presetTarget(data, "user"), `Einstellungen von „${name}“ übernehmen?`);
+  return { ok: true, created, applied, msg: created ? `Neuer Benutzer „${name}“ angelegt.` : `Angemeldet als „${name}“.` };
 }
 function userLogout() { ["userName", "userHash", "userPresets"].forEach((k) => { try { localStorage.removeItem(k); } catch { /* egal */ } }); }
 
@@ -3429,10 +3510,10 @@ async function userAutoLogin() {
   if (!name) return;
   const r = await fetchUser(name, lsv("userHash", ""));
   if (r.state !== "ok") return;
-  const map = { ...defaultPresetMap(), ...r.presets };
-  lss("userPresets", JSON.stringify(map));
+  const data = normPresets(r.presets);
+  userSaveLocal(data);
   userKnownAdd([name, ...r.links]);
-  applyPresetMap(map);
+  await applyWithPreview(presetTarget(data, "user"), "", true);
 }
 
 async function askKey(title) {
@@ -3455,21 +3536,33 @@ function renderPresetBox() {
   sel.value = name && userKnown().includes(name) ? name : "";
   const rows = document.getElementById("presetRows");
   rows.replaceChildren();
-  const map = userMap();
+  const data = userData();
   PRESETS.forEach((p) => {
     const l = document.createElement("label");
     l.className = "set-row check";
     const c = document.createElement("input");
-    c.type = "checkbox"; c.checked = map[p.id] !== false;
+    c.type = "checkbox"; c.checked = data.on[p.id] !== false;
     c.onchange = async () => {
-      const m = userMap(); m[p.id] = c.checked; lss("userPresets", JSON.stringify(m));
-      if (c.checked) applyPresetMap(m, [p.id]);
+      const d = userData(); d.on[p.id] = c.checked;
+      if (c.checked) presetCapture(d, [p.id]);
+      userSaveLocal(d);
       const n = userName();
-      if (n) await putUser(n, lsv("userHash", ""), { presets: m });
+      if (n) await putUser(n, lsv("userHash", ""), { presets: d });
     };
-    l.append(c, document.createTextNode(" " + p.label));
+    const sp = document.createElement("span");
+    sp.textContent = p.label;
+    l.append(c, sp);
     rows.append(l);
   });
+}
+/* beim Schließen der Einstellungen: aktuelle Werte der angehakten Zeilen im Benutzer speichern */
+async function userSaveSettings() {
+  const n = userName();
+  if (!n) return;
+  const d = presetCapture(userData());
+  const before = lsv("userPresets", "");
+  userSaveLocal(d);
+  if (lsv("userPresets", "") !== before) await putUser(n, lsv("userHash", ""), { presets: d });
 }
 function setupPresetBox() {
   document.getElementById("presetBox").hidden = false;
@@ -3493,12 +3586,12 @@ function setupPresetBox() {
   };
   document.getElementById("userGo").onclick = () => run(nameIn.value, passIn.value);
   document.getElementById("userOut").onclick = () => { userLogout(); msg.textContent = "Abgemeldet. Die Werte auf diesem Gerät bleiben bestehen."; renderPresetBox(); };
-  document.getElementById("presetApply").onclick = () => { applyPresetMap(userMap()); showToast("Voreinstellungen angewendet"); };
-  document.getElementById("teslaApply").onclick = async () => { await applyTeslaPreset(); showToast("Tesla-Voreinstellung angewendet"); };
+  document.getElementById("presetApply").onclick = async () => { if (await applyWithPreview(presetTarget(userData(), "user"), "Gespeicherte Werte anwenden?")) showToast("Voreinstellungen angewendet"); };
+  document.getElementById("teslaApply").onclick = async () => { if (await applyTeslaPreset()) showToast("Tesla-Voreinstellung angewendet"); };
   document.getElementById("teslaSave").onclick = async () => {
     const key = await askKey("Tesla-Voreinstellung speichern");
     if (!key) return;
-    const ok = await putUser("_tesla", "", { presets: userMap() }, { "x-write-key": key });
+    const ok = await putUser("_tesla", "", { presets: { on: userData().on } }, { "x-write-key": key });
     msg.textContent = ok ? "Tesla-Voreinstellung gespeichert (aktuelle Haken)." : "Nicht gespeichert: Schlüssel falsch oder Server nicht erreichbar.";
   };
   document.getElementById("userLink").onclick = async () => {
@@ -3619,6 +3712,7 @@ function openCode(title, onSubmit, kind) {
     if (mode === "device" && kind !== "import") ok.hidden = true;
   };
   document.getElementById("codeCancel").onclick = () => {
+    if (kind === "sync") userSaveSettings();
     if (kind !== "sync" && state.fromSettings) { state.fromSettings = false; syncFavorites("sichern"); return; }
     state.fromSettings = false;
     modal.hidden = true;
@@ -3684,7 +3778,7 @@ function checkLogin() {
     const tesla = document.getElementById("loginTesla").checked;
     const un = document.getElementById("loginUser").value.trim();
     const up = document.getElementById("loginUserPass").value;
-    if (tesla) { await applyTeslaPreset(); showToast("Tesla-Voreinstellung angewendet"); }
+    if (tesla) { if (await applyTeslaPreset()) showToast("Tesla-Voreinstellung angewendet"); }
     else if (!authed) lss("teslaPreset", "0");
     if (un) {
       const r = await userLogin(un, up);

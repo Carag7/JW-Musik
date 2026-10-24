@@ -1293,3 +1293,13 @@ body.glass-open .egg { display: block; }
 .login-card .stack input, #presetBox .stack input, #presetBox .stack select { width: 100%; box-sizing: border-box; min-height: 44px; }
 .user-new { display: grid; gap: 8px; margin: 6px 0; }
 .login-extra input, #presetBox .stack input, #presetBox .stack select, #presetBox .user-new input { background: var(--panel-2) !important; color: var(--text) !important; border: 1px solid var(--line); border-radius: 12px; padding: 0 12px; }
+
+#codeForm .set-row.check { flex-wrap: nowrap !important; align-items: flex-start; }
+#codeForm .set-row.check > span, #codeForm .set-row.check > img { flex: 1 1 auto; min-width: 0; }
+#codeForm .set-row.check > input[type=checkbox] { margin-top: 2px; }
+.login-card .set-row.check { flex-wrap: nowrap; align-items: center; }
+.carag-open.holding { opacity: 1 !important; transform: scale(1.35); transition: transform 1s linear; }
+.dlg-details { margin: 6px 0; text-align: left; }
+.dlg-details summary { cursor: pointer; font-weight: 700; padding: 6px 0; }
+.dlg-details .dlg-table-wrap { max-height: 40vh; overflow: auto; }
+.dlg-details .dlg-table td, .dlg-details .dlg-table th { white-space: normal !important; overflow: visible !important; text-overflow: clip !important; max-width: none !important; }
