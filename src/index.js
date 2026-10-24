@@ -24,7 +24,7 @@
 const CORS = {
   "access-control-allow-origin": "*",
   "access-control-allow-methods": "GET,PUT,POST,OPTIONS",
-  "access-control-allow-headers": "content-type,x-write-key"
+  "access-control-allow-headers": "content-type,x-write-key,x-user-hash"
 };
 
 export default {
@@ -41,6 +41,7 @@ export default {
     if (path === "/api/r2-fetch") return handleFetchToR2(request, env, url);
     if (path === "/api/r2-plan" || path === "/api/r2-run") return handleMigrate(request, env, url, path);
     if (path.startsWith("/sync/")) return handleSync(request, env, path);
+    if (path.startsWith("/user/")) return handleUser(request, env, path);
 
     if (path.startsWith("/media/")) {
       const key = decodeURIComponent(path.slice(7));
@@ -378,6 +379,36 @@ export function storeKeys(code) {
       : { write: `karaoke/lrc/${n}.lrc`, read: [`karaoke/lrc/${n}.lrc`, `sync/lrc-${n}.lrc`], lrc: true };
   }
   return { write: `favoriten/${code}.json`, read: [`favoriten/${code}.json`, `sync/${code}.json`], lrc: false };
+}
+
+/* Benutzer mit Voreinstellungen: /user/<name>. Passwort wird nie im Klartext gespeichert (nur der vom Browser gebildete Hash).
+   GET: Header x-user-hash (leer, wenn der Benutzer kein Passwort hat). 404 = Benutzer existiert nicht.
+   PUT: {hash?, presets} legt an oder ändert (bei bestehendem Passwort nur mit passendem x-user-hash). Die Benutzerliste wird nie ausgegeben. */
+async function handleUser(request, env, path) {
+  if (request.method === "OPTIONS") return new Response(null, { headers: CORS });
+  const name = path.slice(6).toLowerCase().replace(/[^a-z0-9äöüß._-]/g, "").slice(0, 40);
+  if (name.length < 2) return new Response("bad name", { status: 400, headers: CORS });
+  const key = `benutzer/${name}.json`;
+  const sent = request.headers.get("x-user-hash") || "";
+  const obj = await env.MUSIK.get(key);
+  let rec = null;
+  if (obj) { try { rec = await obj.json(); } catch { rec = null; } }
+  if (request.method === "GET") {
+    if (!rec) return new Response("not found", { status: 404, headers: CORS });
+    if (rec.hash && rec.hash !== sent) return json({ ok: false, locked: true }, CORS, 401);
+    return json({ ok: true, locked: !!rec.hash, presets: rec.presets || {} }, CORS);
+  }
+  if (request.method === "PUT" || request.method === "POST") {
+    if (rec && rec.hash && rec.hash !== sent) return json({ ok: false, locked: true }, CORS, 401);
+    const text = await request.text();
+    if (text.length > 20000) return new Response("too large", { status: 413, headers: CORS });
+    let body = {};
+    try { body = JSON.parse(text); } catch { return new Response("bad json", { status: 400, headers: CORS }); }
+    const next = { hash: rec ? (typeof body.hash === "string" ? body.hash.slice(0, 128) : rec.hash || "") : (typeof body.hash === "string" ? body.hash.slice(0, 128) : ""), presets: body.presets && typeof body.presets === "object" ? body.presets : (rec ? rec.presets : {}), updated: new Date().toISOString() };
+    await env.MUSIK.put(key, JSON.stringify(next), { httpMetadata: { contentType: "application/json" } });
+    return json({ ok: true, created: !rec }, CORS);
+  }
+  return new Response("method", { status: 405, headers: CORS });
 }
 
 async function handleSync(request, env, path) {
