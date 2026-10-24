@@ -169,6 +169,8 @@
             <button id="playAllBtn" class="chip" type="button">alle Lieder</button>
             <button id="playFavBtn" class="chip" type="button">Favoriten</button>
           </div>
+          <button id="egg1" class="egg egg-l" type="button" data-src="egg1.mp4" aria-label="Überraschung 1"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M3 2.5l5.2 4h7.6l5.2-4V12c0 5.2-4 9.5-9 9.5S3 17.200 3 12zM8.600 11.200a1.100 1.100 0 100 2.200 1.100 1.100 0 000-2.200zm6.800 0a1.100 1.100 0 100 2.200 1.100 1.100 0 000-2.200zM12 15l-1.400 1.200h2.800z"/></svg></button>
+          <button id="egg2" class="egg egg-r" type="button" data-src="egg2.mp4" aria-label="Überraschung 2"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M3 2.5l5.2 4h7.6l5.2-4V12c0 5.2-4 9.5-9 9.5S3 17.200 3 12zM8.600 11.200a1.100 1.100 0 100 2.200 1.100 1.100 0 000-2.200zm6.800 0a1.100 1.100 0 100 2.200 1.100 1.100 0 000-2.200zM12 15l-1.400 1.200h2.800z"/></svg></button>
         </div>
       </section>
     </main>
@@ -253,6 +255,7 @@
         <label class="set-row">Springen zurück (Sekunden) <input id="advBack" type="number" min="1" max="300" inputmode="numeric" /></label>
         <label class="set-row">Springen vor (Sekunden) <input id="advFwd" type="number" min="1" max="300" inputmode="numeric" /></label>
         <label class="set-row check"><input id="advHold" type="checkbox" /> Lupe und Player-Symbol nur nach langem Drücken (ca. 0,7 s)</label>
+        <label class="set-row check"><input id="advHint" type="checkbox" /> Dabei Hinweis „Länger drücken“ und Fortschrittsbalken anzeigen</label>
         <small id="advInfo" class="set-hint"></small>
       </div>
       <div id="autoPlayBox" data-tab="allgemein" class="autoplay-box" hidden>
@@ -297,6 +300,11 @@
       <section id="ludwtSync" data-tab="ludwt" class="ludwt-sync" hidden></section>
       <button id="codeCancel" class="ghost" type="button">Abbrechen</button>
     </form>
+  </div>
+
+  <div id="eggModal" class="egg-modal" hidden>
+    <video id="eggVideo" loop playsinline></video>
+    <button id="eggClose" class="egg-close" type="button" aria-label="Schließen">×</button>
   </div>
 
   <div id="ludwtPopup" class="login-gate" hidden>

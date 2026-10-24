@@ -1700,6 +1700,7 @@ function alignWave() {
 
 /* Lange-Drücken-Schutz (Lupe, Player-Symbol): löst schon WÄHREND des Haltens aus, nicht erst beim Loslassen
    (nach langem Drücken schicken Touch-Browser oft kein Klick-Ereignis mehr). Einstellbar, Standard: aus. */
+const holdHintOn = () => { try { return localStorage.getItem("holdHint") === "1"; } catch { return false; } };
 const holdOn = () => { try { return localStorage.getItem("holdGuard") === "1"; } catch { return false; } };
 function guardHold(btn, ms = 700) {
   let timer = 0, fired = false, bypass = false;
@@ -1724,7 +1725,7 @@ function guardHold(btn, ms = 700) {
     e.stopImmediatePropagation();
     e.preventDefault();
     if (fired) { fired = false; return; }
-    showToast("Länger drücken");
+    if (holdHintOn()) showToast("Länger drücken");
   }, true);
 }
 /* Erweiterte Optionen = Funktion der Lupe (ohne Schutz) */
@@ -1751,6 +1752,24 @@ function bind() {
     const w = Number(localStorage.getItem("sidebarW"));
     if (w >= 180) document.documentElement.style.setProperty("--sidebar", `${w}px`);
   } catch { /* egal */ }
+  document.body.classList.toggle("hold-hint", holdHintOn());
+  /* Überraschungen: Video im Vollbild-Fenster, Endlosschleife, × zum Beenden */
+  const eggM = document.getElementById("eggModal"), eggV = document.getElementById("eggVideo");
+  let eggResume = false;
+  const eggClose = () => {
+    eggV.pause(); eggV.removeAttribute("src"); eggV.load();
+    eggM.hidden = true;
+    if (eggResume) { eggResume = false; el.audio.play().catch(() => {}); }
+  };
+  document.querySelectorAll(".egg").forEach((b) => b.addEventListener("click", () => {
+    eggResume = !el.audio.paused;
+    if (eggResume) el.audio.pause();
+    eggV.src = b.dataset.src; eggV.loop = true; eggV.muted = false;
+    eggM.hidden = false;
+    eggV.play().catch(() => { eggV.muted = true; eggV.play().catch(() => {}); });
+  }));
+  document.getElementById("eggClose").addEventListener("click", eggClose);
+  eggM.addEventListener("click", (e) => { if (e.target === eggM) eggClose(); });
   new MutationObserver(() => updateVersionBar()).observe(document.body, { attributes: true, attributeFilter: ["class"] });
   document.getElementById("footToggle").addEventListener("click", () => {
     const box = document.getElementById("footBtns"), t = document.getElementById("footToggle");
@@ -2421,7 +2440,7 @@ async function putSync(store, data) {
 }
 
 /* ---- Einstellungen mit abgleichen (optional, pro Schlüssel Drei-Wege-Abgleich) ---- */
-const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBarAlways", "holdGuard", "sidebarW", "srcTags", "favPlace", "favSeek", "showExtra", "srcFilter", "sync-auto-max", "skipSec", "skipBack", "skipFwd", "fehlMode", "fehlNotify", "fehlAll", "fehlHelpSeen", STORAGE.scale, STORAGE.listSize];
+const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBarAlways", "holdGuard", "holdHint", "sidebarW", "srcTags", "favPlace", "favSeek", "showExtra", "srcFilter", "sync-auto-max", "skipSec", "skipBack", "skipFwd", "fehlMode", "fehlNotify", "fehlAll", "fehlHelpSeen", STORAGE.scale, STORAGE.listSize];
 const isSettingKey = (k) => SETTING_KEYS.includes(k) || /^fehl[TL]_/.test(k);
 const syncSettingsOn = () => { try { return localStorage.getItem("syncSettings") === "1"; } catch { return false; } };
 function collectSettings() {
@@ -3250,6 +3269,9 @@ function setupAdvBox() {
   const hold = document.getElementById("advHold");
   hold.checked = holdOn();
   hold.onchange = () => { try { localStorage.setItem("holdGuard", hold.checked ? "1" : "0"); } catch { /* egal */ } };
+  const hint = document.getElementById("advHint");
+  hint.checked = holdHintOn();
+  hint.onchange = () => { try { localStorage.setItem("holdHint", hint.checked ? "1" : "0"); } catch { /* egal */ } document.body.classList.toggle("hold-hint", hint.checked); };
   document.getElementById("advInfo").textContent = `Fensterbereich dieser Seite: ${window.innerWidth} × ${window.innerHeight} px · Bildschirm: ${screen.width} × ${screen.height} · Pixeldichte: ${window.devicePixelRatio}${isTesla() ? " · Tesla-Browser erkannt" : ""}`;
 }
 
