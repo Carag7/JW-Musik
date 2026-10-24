@@ -1753,13 +1753,14 @@ function bind() {
     if (w >= 180) document.documentElement.style.setProperty("--sidebar", `${w}px`);
   } catch { /* egal */ }
   document.body.classList.toggle("hold-hint", holdHintOn());
+  applyStartGif();
   /* Überraschungen: Vollbild-Fenster mit Video (MP4) oder GIF, Endlosschleife, × zum Beenden */
   const eggM = document.getElementById("eggModal"), eggV = document.getElementById("eggVideo"), eggI = document.getElementById("eggImg");
   let eggResume = false, eggNum = 1, eggOpen = false, eggGifShown = false;
   const lsGet = (k, d) => { try { return localStorage.getItem(k) || d; } catch { return d; } };
   const eggMode = () => lsGet("eggMode", "auto");
-  const eggFallback = () => lsGet("eggFall", "1") !== "0";
-  const eggGifSrc = () => { const p = lsGet("eggGif", "match"); return `egg${p === "1" || p === "2" ? p : eggNum}.gif`; };
+  const eggFallback = () => lsGet("eggFall", "0") === "1";
+  const eggGifSrc = () => { const p = lsGet("eggGif", "match"); return p === "chor" ? "chor.gif" : `egg${p === "1" || p === "2" ? p : eggNum}.gif`; };
   const showGif = () => {
     eggGifShown = true;
     try { eggV.pause(); eggV.removeAttribute("src"); eggV.load(); } catch { /* egal */ }
@@ -2476,7 +2477,7 @@ async function putSync(store, data) {
 }
 
 /* ---- Einstellungen mit abgleichen (optional, pro Schlüssel Drei-Wege-Abgleich) ---- */
-const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBarAlways", "holdGuard", "holdHint", "eggMode", "eggFall", "eggGif", "sidebarW", "srcTags", "favPlace", "favSeek", "showExtra", "srcFilter", "sync-auto-max", "skipSec", "skipBack", "skipFwd", "fehlMode", "fehlNotify", "fehlAll", "fehlHelpSeen", STORAGE.scale, STORAGE.listSize];
+const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBarAlways", "holdGuard", "holdHint", "eggMode", "eggFall", "eggGif", "startGif", "sidebarW", "srcTags", "favPlace", "favSeek", "showExtra", "srcFilter", "sync-auto-max", "skipSec", "skipBack", "skipFwd", "fehlMode", "fehlNotify", "fehlAll", "fehlHelpSeen", STORAGE.scale, STORAGE.listSize];
 const isSettingKey = (k) => SETTING_KEYS.includes(k) || /^fehl[TL]_/.test(k);
 const syncSettingsOn = () => { try { return localStorage.getItem("syncSettings") === "1"; } catch { return false; } };
 function collectSettings() {
@@ -2517,7 +2518,7 @@ function applySettings(obj) {
   if (!changed) return;
   try { if (window.THEME) window.THEME.apply(true); } catch { /* egal */ }
   try { state.scale = Number(localStorage.getItem(STORAGE.scale) || 42); applyScale(); state.listSize = Number(localStorage.getItem(STORAGE.listSize) || 16); applyListSize(); const sw = Number(localStorage.getItem("sidebarW")); if (sw >= 180) document.documentElement.style.setProperty("--sidebar", `${sw}px`); } catch { /* egal */ }
-  try { updateSkipLabels(); updateAutoIcon(); updateVersionBar(); rebuildExtras(); } catch { /* egal */ }
+  try { updateSkipLabels(); updateAutoIcon(); updateVersionBar(); rebuildExtras(); applyStartGif(); } catch { /* egal */ }
 }
 async function runSync(code, silent) {
   const store = code.toLowerCase().replace(/[^a-z0-9-]/g, "");
@@ -3275,6 +3276,16 @@ function warnReplace() {
 }
 
 /* Einstellungen: Anzeige und Werkzeuge (Allgemein) */
+/* Startseite: Bild oder GIF „Chor“ */
+function applyStartGif() {
+  const img = document.querySelector(".start-image");
+  if (!img) return;
+  let on = false;
+  try { on = localStorage.getItem("startGif") === "1"; } catch { /* egal */ }
+  const want = on ? "chor.gif" : "start-bg.png";
+  if (!img.getAttribute("src").startsWith(want)) img.src = want;
+}
+
 function setupAdvBox() {
   document.getElementById("advBox").hidden = false;
   document.getElementById("caragOpen").onclick = () => {
@@ -3287,8 +3298,11 @@ function setupAdvBox() {
     try { s.value = localStorage.getItem(k) || d; } catch { s.value = d; }
     s.onchange = () => { try { localStorage.setItem(k, s.value); } catch { /* egal */ } };
   });
+  const sg = document.getElementById("startGif");
+  try { sg.checked = localStorage.getItem("startGif") === "1"; } catch { sg.checked = false; }
+  sg.onchange = () => { try { localStorage.setItem("startGif", sg.checked ? "1" : "0"); } catch { /* egal */ } applyStartGif(); };
   const ef = document.getElementById("eggFall");
-  try { ef.checked = localStorage.getItem("eggFall") !== "0"; } catch { ef.checked = true; }
+  try { ef.checked = localStorage.getItem("eggFall") === "1"; } catch { ef.checked = false; }
   ef.onchange = () => { try { localStorage.setItem("eggFall", ef.checked ? "1" : "0"); } catch { /* egal */ } };
   const closeSettings = () => { document.getElementById("codeModal").hidden = true; };
   document.getElementById("advAdvanced").onclick = () => { closeSettings(); toggleAdvanced(); };
