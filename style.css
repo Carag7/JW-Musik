@@ -1281,12 +1281,15 @@ body.glass-open .egg { display: block; }
 .user-form input { flex: 1 1 140px; min-width: 0; }
 .preset-rows { display: grid; gap: 2px; margin: 6px 0; }
 #einstHead { margin: 4px 0 2px; }
-.tesla-btn { display: none; position: fixed; bottom: calc(var(--flyer-h) + 6px); left: calc(var(--sidebar) + (100vw - var(--sidebar)) / 2); transform: translateX(-50%); z-index: 20; width: 26px; height: 26px; padding: 0; border: 0; background: transparent; opacity: .35; cursor: pointer; }
-.tesla-btn img { display: block; width: 22px; height: 22px; margin: auto; border-radius: 5px; }
-body.glass-open .tesla-btn { display: block; }
-.tesla-menu { position: fixed; left: calc(var(--sidebar) + (100vw - var(--sidebar)) / 2); bottom: calc(var(--flyer-h) + 40px); transform: translateX(-50%); z-index: 21; width: min(420px, calc(100vw - var(--sidebar) - 20px)); max-height: 70vh; overflow: auto; display: grid; gap: 8px; padding: 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel, var(--bg)); color: var(--text, inherit); box-shadow: 0 8px 30px rgba(0,0,0,.35); }
-.tesla-menu[hidden] { display: none !important; }
-.tesla-menu > img { width: 28px; height: 28px; border-radius: 6px; }
-.tesla-menu input[type=text], .tesla-menu input[type=password] { min-width: 0; }
 #codeForm .set-row.check { justify-content: flex-start !important; text-align: left; gap: 10px; }
 #codeForm .set-row.check input[type=checkbox] { flex: 0 0 auto; }
+
+.login-more { align-self: flex-start; border: 0; background: transparent; color: var(--muted); font: inherit; font-size: .9em; padding: 4px 0; cursor: pointer; }
+.login-extra { display: grid; gap: 8px; padding: 10px; border: 1px dashed var(--line); border-radius: 12px; }
+.login-extra[hidden] { display: none !important; }
+.login-extra img { border-radius: 6px; vertical-align: middle; }
+.login-card .stack, #presetBox .stack { display: grid; gap: 4px; font-size: .92em; text-align: left; }
+.login-card .stack small, #presetBox .stack small { color: var(--muted); font-size: .85em; line-height: 1.3; }
+.login-card .stack input, #presetBox .stack input, #presetBox .stack select { width: 100%; box-sizing: border-box; min-height: 44px; }
+.user-new { display: grid; gap: 8px; margin: 6px 0; }
+.login-extra input, #presetBox .stack input, #presetBox .stack select, #presetBox .user-new input { background: var(--panel-2) !important; color: var(--text) !important; border: 1px solid var(--line); border-radius: 12px; padding: 0 12px; }

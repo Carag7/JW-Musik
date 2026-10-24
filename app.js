@@ -1641,7 +1641,6 @@ function bindChrome() {
 
 /* Beim Öffnen automatisch abspielen (letztes Lied, sonst Zufall). Blockiert der Browser das, startet es beim ersten Antippen. */
 function tryAutoStart() {
-  try { if (sessionStorage.getItem("openStart") === "1") { sessionStorage.removeItem("openStart"); return; } } catch { /* egal */ }
   if (localStorage.getItem("autoStart") !== "1") return;
   if (!document.getElementById("loginGate").hidden || !state.songs.length) return;
   const last = localStorage.getItem("lastSongId");
@@ -1750,25 +1749,6 @@ function bind() {
   } catch { /* egal */ }
   document.body.classList.toggle("hold-hint", holdHintOn());
   applyStartGif();
-  /* Tesla-Menü auf der Startseite (nur bei aktiver Lupe sichtbar) */
-  (() => {
-    const btn = document.getElementById("teslaBtn"), menu = document.getElementById("teslaMenu");
-    if (!btn || !menu) return;
-    const chk = document.getElementById("teslaChk"), msg = document.getElementById("teslaMsg");
-    chk.checked = lsv("teslaPreset", "0") === "1";
-    btn.onclick = () => { menu.hidden = !menu.hidden; };
-    document.getElementById("teslaGo").onclick = async () => {
-      lss("teslaPreset", chk.checked ? "1" : "0");
-      let text = "";
-      if (chk.checked) { applyPresetMap(defaultPresetMap()); text = "Tesla-Voreinstellung angewendet. "; }
-      const un = document.getElementById("teslaUser").value.trim();
-      if (un) {
-        let r = await userLogin(un, document.getElementById("teslaPass").value);
-        text += r.msg;
-      }
-      msg.textContent = text || "Nichts geändert.";
-    };
-  })();
   /* Überraschungen: Vollbild-Fenster mit Video (MP4) oder GIF, Endlosschleife, × zum Beenden */
   const eggM = document.getElementById("eggModal"), eggV = document.getElementById("eggVideo"), eggI = document.getElementById("eggImg");
   let eggResume = false, eggNum = 1, eggOpen = false, eggGifShown = false;
@@ -3326,7 +3306,7 @@ function setupAdvBox() {
   document.getElementById("advAdvanced").onclick = () => { closeSettings(); toggleAdvanced(); };
   document.getElementById("advEdit").onclick = () => { closeSettings(); openTimecode(); };
   document.getElementById("advReload").onclick = () => hardRefresh();
-  document.getElementById("advStart").onclick = () => { try { sessionStorage.setItem("openStart", "1"); } catch { /* egal */ } location.reload(); };
+  document.getElementById("advStart").onclick = () => { closeSettings(); showLogin(); };
   const num = (id, get, set, min, max) => {
     const inp = document.getElementById(id);
     inp.value = String(get());
@@ -3369,6 +3349,8 @@ const defaultPresetMap = () => Object.fromEntries(PRESETS.map((p) => [p.id, true
 const userName = () => lsv("userName", "");
 const userCleanName = (n) => String(n || "").trim().toLowerCase().replace(/[^a-z0-9äöüß._-]/g, "").slice(0, 40);
 const userMap = () => { try { return { ...defaultPresetMap(), ...(JSON.parse(lsv("userPresets", "{}")) || {}) }; } catch { return defaultPresetMap(); } };
+const userKnown = () => { try { const a = JSON.parse(lsv("userList", "[]")); return Array.isArray(a) ? a : []; } catch { return []; } };
+const userKnownAdd = (names) => { const set = new Set([...userKnown(), ...names.filter((n) => n && !n.startsWith("_"))]); lss("userList", JSON.stringify([...set].sort())); };
 async function userHashOf(name, pass) { return pass ? sha256Hex(`user:${name}:${pass}`) : ""; }
 
 /* angehakte Voreinstellungen auf dieses Gerät anwenden (only = nur diese ids; keepSet = vorhandene Werte nicht überschreiben) */
@@ -3384,7 +3366,7 @@ function applyPresetMap(map, only, keepSet) {
   try { updateAutoIcon(); updateVersionBar(); rebuildExtras(); applyStartGif(); applyFavPlace(); renderList(); } catch { /* egal */ }
 }
 
-/* Benutzer vom Server holen: {state: "ok"|"none"|"locked"|"error", presets} */
+/* Benutzer vom Server holen: {state: "ok"|"none"|"locked"|"error", presets, links} */
 async function fetchUser(name, hash) {
   try {
     const res = await fetch(`${SYNC_BASE}/user/${encodeURIComponent(name)}`, { cache: "no-store", headers: { "x-user-hash": hash || "" } });
@@ -3392,31 +3374,50 @@ async function fetchUser(name, hash) {
     if (res.status === 401) return { state: "locked" };
     if (!res.ok) return { state: "error" };
     const d = await res.json();
-    return { state: "ok", presets: d.presets || {} };
+    return { state: "ok", presets: d.presets || {}, links: Array.isArray(d.links) ? d.links : [] };
   } catch { return { state: "error" }; }
 }
-async function putUser(name, hash, presets, newHash) {
-  const body = { presets };
-  if (newHash !== undefined) body.hash = newHash;
-  const res = await fetch(`${SYNC_BASE}/user/${encodeURIComponent(name)}`, { method: "PUT", headers: { "content-type": "application/json", "x-user-hash": hash || "" }, body: JSON.stringify(body) });
-  return res.ok;
+/* fields: {presets?, links?, hash?}; authHash = bisheriges Passwort-Hash des Benutzers; extra = zusätzliche Header (z. B. x-write-key) */
+async function putUser(name, authHash, fields, extra) {
+  try {
+    const res = await fetch(`${SYNC_BASE}/user/${encodeURIComponent(name)}`, { method: "PUT", headers: { "content-type": "application/json", "x-user-hash": authHash || "", ...(extra || {}) }, body: JSON.stringify(fields) });
+    return res.ok;
+  } catch { return false; }
 }
 
-/* Anmelden: vorhandener Benutzer wird übernommen, neuer mit den Standard-Haken angelegt. Rückgabe: Meldung (Text) und ok */
+/* Tesla-Voreinstellung: gemeinsam für alle (Server), sonst alle Haken */
+async function teslaMap() {
+  const r = await fetchUser("_tesla", "");
+  return r.state === "ok" && Object.keys(r.presets).length ? { ...defaultPresetMap(), ...r.presets } : defaultPresetMap();
+}
+async function applyTeslaPreset() { applyPresetMap(await teslaMap()); lss("teslaPreset", "1"); }
+
+/* Anmelden: zuerst wird geprüft, ob der Benutzer existiert. Neue Namen werden erst nach Rückfrage angelegt (Tippfehler!). */
 async function userLogin(rawName, pass) {
   const name = userCleanName(rawName);
-  if (name.length < 2) return { ok: false, msg: "Benutzername: mindestens 2 Zeichen." };
+  if (name.length < 2 || name.startsWith("_")) return { ok: false, msg: "Benutzername: mindestens 2 Zeichen, nicht mit _ beginnen." };
   const hash = await userHashOf(name, pass);
   const r = await fetchUser(name, hash);
   if (r.state === "error") return { ok: false, msg: "Server nicht erreichbar." };
-  if (r.state === "locked") return { ok: false, msg: "Passwort stimmt nicht.", locked: true };
-  let map, created = false;
+  if (r.state === "locked") {
+    if (!pass) {
+      const pw = await uiPrompt({ eyebrow: "Benutzer", title: `Passwort für „${name}“`, type: "password", ok: "Anmelden" });
+      if (!pw) return { ok: false, msg: "Abgebrochen." };
+      return userLogin(name, pw);
+    }
+    return { ok: false, msg: "Passwort stimmt nicht.", locked: true };
+  }
+  let map, created = false, links = [];
   if (r.state === "none") {
+    const yes = await uiConfirm({ eyebrow: "Benutzer", title: `„${name}“ gibt es noch nicht`, lines: ["Neuen Benutzer mit diesem Namen anlegen? Prüfe vorher auf Tippfehler."], ok: "Neu anlegen", cancel: "Zurück" });
+    if (!yes) return { ok: false, msg: "Nicht angelegt." };
     map = defaultPresetMap();
-    if (!(await putUser(name, hash, map, hash))) return { ok: false, msg: "Anlegen fehlgeschlagen." };
+    if (!(await putUser(name, hash, { presets: map, hash, links: [] }))) return { ok: false, msg: "Anlegen fehlgeschlagen." };
     created = true;
-  } else map = { ...defaultPresetMap(), ...r.presets };
+  } else { map = { ...defaultPresetMap(), ...r.presets }; links = r.links; }
   lss("userName", name); lss("userHash", hash); lss("userPresets", JSON.stringify(map));
+  userKnownAdd([name, ...links]);
+  if (!lsv("sync-code", "")) lss("sync-code", name);
   applyPresetMap(map);
   return { ok: true, created, msg: created ? `Neuer Benutzer „${name}“ angelegt.` : `Angemeldet als „${name}“.` };
 }
@@ -3430,13 +3431,28 @@ async function userAutoLogin() {
   if (r.state !== "ok") return;
   const map = { ...defaultPresetMap(), ...r.presets };
   lss("userPresets", JSON.stringify(map));
+  userKnownAdd([name, ...r.links]);
   applyPresetMap(map);
+}
+
+async function askKey(title) {
+  const k = await uiPrompt({ eyebrow: "Schlüssel", title, text: "Dafür ist das Schreib-Passwort (WRITE_KEY) nötig.", type: "password", ok: "OK" });
+  return k || "";
 }
 
 function renderPresetBox() {
   const name = userName();
-  document.getElementById("userLine").textContent = name ? `Angemeldet: ${name}` : "";
+  const code = lsv("sync-code", "");
+  document.getElementById("userLine").textContent = name ? `Angemeldet: ${name}` : (code ? `Abgleich-Speicher: ${code} (kein Benutzer angemeldet)` : "Kein Benutzer angemeldet");
   document.getElementById("userOut").hidden = !name;
+  document.getElementById("userLink").hidden = !name;
+  const sel = document.getElementById("userSel");
+  sel.replaceChildren();
+  const add = (v, t) => { const o = document.createElement("option"); o.value = v; o.textContent = t; sel.append(o); };
+  add("", "– kein Benutzer –");
+  userKnown().forEach((n) => add(n, n));
+  add("__new", "＋ Neuer Benutzer …");
+  sel.value = name && userKnown().includes(name) ? name : "";
   const rows = document.getElementById("presetRows");
   rows.replaceChildren();
   const map = userMap();
@@ -3449,7 +3465,7 @@ function renderPresetBox() {
       const m = userMap(); m[p.id] = c.checked; lss("userPresets", JSON.stringify(m));
       if (c.checked) applyPresetMap(m, [p.id]);
       const n = userName();
-      if (n) { try { await putUser(n, lsv("userHash", ""), m); } catch { /* egal */ } }
+      if (n) await putUser(n, lsv("userHash", ""), { presets: m });
     };
     l.append(c, document.createTextNode(" " + p.label));
     rows.append(l);
@@ -3460,15 +3476,67 @@ function setupPresetBox() {
   document.getElementById("subTabs").hidden = false;
   const msg = document.getElementById("userMsg");
   const nameIn = document.getElementById("userName"), passIn = document.getElementById("userPass");
-  nameIn.value = ""; passIn.value = "";
-  document.getElementById("userGo").onclick = async () => {
+  const box = document.getElementById("userNew"), sel = document.getElementById("userSel");
+  nameIn.value = ""; passIn.value = ""; box.hidden = true;
+  const run = async (n, p) => {
     msg.textContent = "Bitte warten …";
-    const r = await userLogin(nameIn.value, passIn.value);
+    const r = await userLogin(n, p);
     msg.textContent = r.msg;
-    if (r.ok) { passIn.value = ""; renderPresetBox(); }
+    if (r.ok) { passIn.value = ""; nameIn.value = ""; box.hidden = true; }
+    renderPresetBox();
   };
+  sel.onchange = () => {
+    if (sel.value === "__new") { box.hidden = false; nameIn.focus(); return; }
+    box.hidden = true;
+    if (sel.value === "") { userLogout(); msg.textContent = "Abgemeldet. Die Werte auf diesem Gerät bleiben bestehen."; renderPresetBox(); return; }
+    run(sel.value, "");
+  };
+  document.getElementById("userGo").onclick = () => run(nameIn.value, passIn.value);
   document.getElementById("userOut").onclick = () => { userLogout(); msg.textContent = "Abgemeldet. Die Werte auf diesem Gerät bleiben bestehen."; renderPresetBox(); };
   document.getElementById("presetApply").onclick = () => { applyPresetMap(userMap()); showToast("Voreinstellungen angewendet"); };
+  document.getElementById("teslaApply").onclick = async () => { await applyTeslaPreset(); showToast("Tesla-Voreinstellung angewendet"); };
+  document.getElementById("teslaSave").onclick = async () => {
+    const key = await askKey("Tesla-Voreinstellung speichern");
+    if (!key) return;
+    const ok = await putUser("_tesla", "", { presets: userMap() }, { "x-write-key": key });
+    msg.textContent = ok ? "Tesla-Voreinstellung gespeichert (aktuelle Haken)." : "Nicht gespeichert: Schlüssel falsch oder Server nicht erreichbar.";
+  };
+  document.getElementById("userLink").onclick = async () => {
+    const me = userName();
+    if (!me) return;
+    const other = userCleanName(await uiPrompt({ eyebrow: "Benutzer", title: "Verknüpfen mit …", text: "Name des anderen Benutzers (zum Beispiel vom Tesla oder vom Heimcomputer).", ok: "Weiter" }));
+    if (other.length < 2 || other === me) return;
+    let oh = "", o = await fetchUser(other, "");
+    if (o.state === "locked") {
+      const pw = await uiPrompt({ eyebrow: "Benutzer", title: `Passwort für „${other}“`, type: "password", ok: "Weiter" });
+      if (!pw) return;
+      oh = await userHashOf(other, pw); o = await fetchUser(other, oh);
+    }
+    if (o.state !== "ok") { msg.textContent = o.state === "none" ? `„${other}“ gibt es nicht.` : o.state === "locked" ? "Passwort stimmt nicht." : "Server nicht erreichbar."; return; }
+    const mine = await fetchUser(me, lsv("userHash", ""));
+    if (mine.state !== "ok") { msg.textContent = "Server nicht erreichbar."; return; }
+    const all = [...new Set([me, other, ...mine.links, ...o.links])];
+    const a = await putUser(me, lsv("userHash", ""), { links: all.filter((n) => n !== me) });
+    const b = await putUser(other, oh, { links: all.filter((n) => n !== other) });
+    userKnownAdd(all);
+    msg.textContent = a && b ? `„${me}“ und „${other}“ sind verknüpft.` : "Verknüpfen fehlgeschlagen.";
+    renderPresetBox();
+  };
+  document.getElementById("userDel").onclick = async () => {
+    const target = userCleanName(sel.value && sel.value !== "__new" ? sel.value : nameIn.value) || userName();
+    if (!target) { msg.textContent = "Benutzer zuerst auswählen."; return; }
+    if (!(await uiConfirm({ eyebrow: "Benutzer", title: `„${target}“ löschen?`, lines: ["Der Benutzer und seine Voreinstellungen werden auf dem Server gelöscht."], ok: "Löschen", danger: true }))) return;
+    const key = await askKey("Benutzer löschen");
+    if (!key) return;
+    try {
+      const res = await fetch(`${SYNC_BASE}/user/${encodeURIComponent(target)}`, { method: "DELETE", headers: { "x-write-key": key } });
+      if (!res.ok) { msg.textContent = res.status === 401 ? "Schlüssel falsch." : "Löschen fehlgeschlagen."; return; }
+    } catch { msg.textContent = "Server nicht erreichbar."; return; }
+    lss("userList", JSON.stringify(userKnown().filter((n) => n !== target)));
+    if (userName() === target) userLogout();
+    msg.textContent = `„${target}“ gelöscht.`;
+    renderPresetBox();
+  };
   renderPresetBox();
 }
 
@@ -3582,34 +3650,48 @@ async function passwordOk(input, plain, hash) {
   return plain !== undefined && input === plain;
 }
 
+function showLogin() {
+  const gate = document.getElementById("loginGate");
+  document.getElementById("loginPassword").value = "";
+  document.getElementById("loginBack").hidden = false;
+  document.getElementById("loginBack").onclick = () => { gate.hidden = true; };
+  gate.hidden = false;
+}
 function checkLogin() {
   const gate = document.getElementById("loginGate");
-  if (localStorage.getItem(STORAGE.auth) === "ok" || sessionStorage.getItem(STORAGE.auth) === "ok") {
-    gate.hidden = true;
-    return;
-  }
-  gate.hidden = false;
+  const authed = localStorage.getItem(STORAGE.auth) === "ok" || sessionStorage.getItem(STORAGE.auth) === "ok";
   const pwBox = document.getElementById("showPw");
   if (pwBox) pwBox.addEventListener("change", () => { document.getElementById("loginPassword").type = pwBox.checked ? "text" : "password"; });
+  const more = document.getElementById("loginMore"), extra = document.getElementById("loginExtra");
+  const toggleMore = (open) => { extra.hidden = !open; more.setAttribute("aria-expanded", String(open)); more.textContent = (open ? "▾" : "▸") + " Weitere Optionen"; };
+  more.addEventListener("click", () => toggleMore(extra.hidden));
+  /* im Tesla beim allerersten Öffnen gleich aufgeklappt */
+  if (isTesla() && lsv("teslaPreset", "") === "") toggleMore(true);
+  document.getElementById("loginTesla").checked = lsv("teslaPreset", "0") === "1";
+  gate.hidden = authed;
   document.getElementById("loginForm").addEventListener("submit", async (event) => {
     event.preventDefault();
     const value = document.getElementById("loginPassword").value;
-    if (await passwordOk(value, window.APP_PASSWORD, window.APP_PASSWORD_HASH)) {
-      if (document.getElementById("rememberLogin").checked) localStorage.setItem(STORAGE.auth, "ok");
-      else sessionStorage.setItem(STORAGE.auth, "ok");
-      gate.hidden = true;
-      const un = document.getElementById("loginUser").value.trim();
-      if (un) {
-        let r = await userLogin(un, "");
-        if (r.locked) {
-          const pw = await uiPrompt({ eyebrow: "Benutzer", title: `Passwort für „${un}“`, type: "password", ok: "Anmelden" });
-          if (pw) r = await userLogin(un, pw);
-        }
-        showToast(r.msg);
-      }
-    } else {
+    if (!(await passwordOk(value, window.APP_PASSWORD, window.APP_PASSWORD_HASH))) {
       document.getElementById("loginError").hidden = false;
+      return;
     }
+    document.getElementById("loginError").hidden = true;
+    if (document.getElementById("rememberLogin").checked) localStorage.setItem(STORAGE.auth, "ok");
+    else sessionStorage.setItem(STORAGE.auth, "ok");
+    gate.hidden = true;
+    document.getElementById("loginBack").hidden = true;
+    const tesla = document.getElementById("loginTesla").checked;
+    const un = document.getElementById("loginUser").value.trim();
+    const up = document.getElementById("loginUserPass").value;
+    if (tesla) { await applyTeslaPreset(); showToast("Tesla-Voreinstellung angewendet"); }
+    else if (!authed) lss("teslaPreset", "0");
+    if (un) {
+      const r = await userLogin(un, up);
+      showToast(r.msg);
+    }
+    document.getElementById("loginUserPass").value = "";
+    if (typeof tryAutoStart === "function" && !authed) tryAutoStart();
   });
 }
 
