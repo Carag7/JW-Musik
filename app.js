@@ -1753,23 +1753,59 @@ function bind() {
     if (w >= 180) document.documentElement.style.setProperty("--sidebar", `${w}px`);
   } catch { /* egal */ }
   document.body.classList.toggle("hold-hint", holdHintOn());
-  /* Überraschungen: Video im Vollbild-Fenster, Endlosschleife, × zum Beenden */
-  const eggM = document.getElementById("eggModal"), eggV = document.getElementById("eggVideo");
-  let eggResume = false;
+  /* Überraschungen: Vollbild-Fenster mit Video (MP4) oder GIF, Endlosschleife, × zum Beenden */
+  const eggM = document.getElementById("eggModal"), eggV = document.getElementById("eggVideo"), eggI = document.getElementById("eggImg");
+  let eggResume = false, eggNum = 1, eggOpen = false, eggGifShown = false;
+  const lsGet = (k, d) => { try { return localStorage.getItem(k) || d; } catch { return d; } };
+  const eggMode = () => lsGet("eggMode", "auto");
+  const eggFallback = () => lsGet("eggFall", "1") !== "0";
+  const eggGifSrc = () => { const p = lsGet("eggGif", "match"); return `egg${p === "1" || p === "2" ? p : eggNum}.gif`; };
+  const showGif = () => {
+    eggGifShown = true;
+    try { eggV.pause(); eggV.removeAttribute("src"); eggV.load(); } catch { /* egal */ }
+    eggV.hidden = true;
+    eggI.hidden = false;
+    eggI.src = `${eggGifSrc()}?t=${Date.now()}`;
+  };
+  const showVideo = () => {
+    eggGifShown = false;
+    eggI.hidden = true; eggI.removeAttribute("src");
+    eggV.hidden = false;
+    eggV.src = `egg${eggNum}.mp4`; eggV.loop = true; eggV.muted = false;
+    const auto = eggMode() === "auto" && eggFallback();
+    let started = false;
+    const toGif = () => { if (eggOpen && !eggGifShown && auto) showGif(); };
+    eggV.onplaying = () => { started = true; };
+    eggV.onerror = toGif;
+    eggV.onpause = () => { if (started) toGif(); };    // Tesla stoppt Videos in Fahrt
+    const tryPlay = (muted) => {
+      eggV.muted = muted;
+      const p = eggV.play();
+      if (p && p.catch) p.catch(() => { if (!muted) tryPlay(true); else toGif(); });
+    };
+    tryPlay(false);
+    if (auto) setTimeout(() => { if (eggOpen && !started) toGif(); }, 2500);
+  };
   const eggClose = () => {
-    eggV.pause(); eggV.removeAttribute("src"); eggV.load();
+    eggOpen = false;
+    eggV.onpause = null; eggV.onerror = null;
+    try { eggV.pause(); eggV.removeAttribute("src"); eggV.load(); } catch { /* egal */ }
+    eggI.removeAttribute("src");
     eggM.hidden = true;
+    try { if (document.fullscreenElement === eggM) document.exitFullscreen(); } catch { /* egal */ }
     if (eggResume) { eggResume = false; el.audio.play().catch(() => {}); }
   };
   document.querySelectorAll(".egg").forEach((b) => b.addEventListener("click", () => {
+    eggNum = b.dataset.src.includes("2") ? 2 : 1;
     eggResume = !el.audio.paused;
     if (eggResume) el.audio.pause();
-    eggV.src = b.dataset.src; eggV.loop = true; eggV.muted = false;
+    eggOpen = true;
     eggM.hidden = false;
-    eggV.play().catch(() => { eggV.muted = true; eggV.play().catch(() => {}); });
+    try { if (eggM.requestFullscreen) eggM.requestFullscreen().catch(() => {}); } catch { /* egal */ }
+    if (eggMode() === "gif") showGif(); else showVideo();
   }));
   document.getElementById("eggClose").addEventListener("click", eggClose);
-  eggM.addEventListener("click", (e) => { if (e.target === eggM) eggClose(); });
+  eggM.addEventListener("click", (e) => { if (e.target === eggM || e.target === eggV || e.target === eggI) eggClose(); });
   new MutationObserver(() => updateVersionBar()).observe(document.body, { attributes: true, attributeFilter: ["class"] });
   document.getElementById("footToggle").addEventListener("click", () => {
     const box = document.getElementById("footBtns"), t = document.getElementById("footToggle");
@@ -2440,7 +2476,7 @@ async function putSync(store, data) {
 }
 
 /* ---- Einstellungen mit abgleichen (optional, pro Schlüssel Drei-Wege-Abgleich) ---- */
-const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBarAlways", "holdGuard", "holdHint", "sidebarW", "srcTags", "favPlace", "favSeek", "showExtra", "srcFilter", "sync-auto-max", "skipSec", "skipBack", "skipFwd", "fehlMode", "fehlNotify", "fehlAll", "fehlHelpSeen", STORAGE.scale, STORAGE.listSize];
+const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBarAlways", "holdGuard", "holdHint", "eggMode", "eggFall", "eggGif", "sidebarW", "srcTags", "favPlace", "favSeek", "showExtra", "srcFilter", "sync-auto-max", "skipSec", "skipBack", "skipFwd", "fehlMode", "fehlNotify", "fehlAll", "fehlHelpSeen", STORAGE.scale, STORAGE.listSize];
 const isSettingKey = (k) => SETTING_KEYS.includes(k) || /^fehl[TL]_/.test(k);
 const syncSettingsOn = () => { try { return localStorage.getItem("syncSettings") === "1"; } catch { return false; } };
 function collectSettings() {
@@ -3241,6 +3277,15 @@ function warnReplace() {
 /* Einstellungen: Anzeige und Werkzeuge (Allgemein) */
 function setupAdvBox() {
   document.getElementById("advBox").hidden = false;
+  document.getElementById("caragBox").hidden = false;
+  [["eggMode", "auto"], ["eggGif", "match"]].forEach(([k, d]) => {
+    const s = document.getElementById(k);
+    try { s.value = localStorage.getItem(k) || d; } catch { s.value = d; }
+    s.onchange = () => { try { localStorage.setItem(k, s.value); } catch { /* egal */ } };
+  });
+  const ef = document.getElementById("eggFall");
+  try { ef.checked = localStorage.getItem("eggFall") !== "0"; } catch { ef.checked = true; }
+  ef.onchange = () => { try { localStorage.setItem("eggFall", ef.checked ? "1" : "0"); } catch { /* egal */ } };
   const closeSettings = () => { document.getElementById("codeModal").hidden = true; };
   document.getElementById("advAdvanced").onclick = () => { closeSettings(); toggleAdvanced(); };
   document.getElementById("advEdit").onclick = () => { closeSettings(); openTimecode(); };
@@ -3307,6 +3352,7 @@ function openCode(title, onSubmit, kind) {
   document.getElementById("verBarBox").hidden = true;
   document.getElementById("tagsBox").hidden = true;
   document.getElementById("advBox").hidden = true;
+  document.getElementById("caragBox").hidden = true;
   document.getElementById("favBox").hidden = true;
   document.getElementById("extraBox").hidden = true;
   document.getElementById("themeBox").hidden = true;

@@ -240,6 +240,16 @@
         <small class="set-hint">Design, Anzeige-Optionen, Sprungweite usw. werden mit den Favoriten auf alle Geräte mit demselben Speicher übertragen. Die Standort-Angabe und Passwörter bleiben nur auf dem Gerät.</small>
       </div>
       <button id="syncDelete" data-tab="abgleich" class="chip danger" type="button" hidden>Alles löschen</button>
+      <details id="caragBox" data-tab="allgemein" class="carag-box" hidden>
+        <summary class="carag-sum" aria-label="Weitere Einstellungen">·</summary>
+        <p class="ap-title">Carag</p>
+        <label class="set-row">Wiedergabe
+          <select id="eggMode"><option value="auto">Automatisch</option><option value="gif">Immer GIF</option><option value="mp4">Immer MP4</option></select></label>
+        <label class="set-row check"><input id="eggFall" type="checkbox" /> Wenn das Video blockiert wird (Tesla in Fahrt), automatisch das GIF abspielen</label>
+        <label class="set-row">Welches GIF
+          <select id="eggGif"><option value="match">Passend zum Symbol</option><option value="1">GIF 1</option><option value="2">GIF 2</option></select></label>
+        <small class="set-hint">Der Tesla erlaubt kein Video während der Fahrt. „Automatisch“ spielt zuerst das Video und wechselt zum GIF, sobald es nicht läuft.</small>
+      </details>
       <div id="advBox" data-tab="allgemein" class="autoplay-box" hidden>
         <p class="ap-title">Anzeige und Werkzeuge</p>
         <div class="adv-btns">
@@ -304,6 +314,7 @@
 
   <div id="eggModal" class="egg-modal" hidden>
     <video id="eggVideo" loop playsinline></video>
+    <img id="eggImg" alt="" hidden />
     <button id="eggClose" class="egg-close" type="button" aria-label="Schließen">×</button>
   </div>
 
