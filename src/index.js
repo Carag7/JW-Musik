@@ -23,7 +23,7 @@
 
 const CORS = {
   "access-control-allow-origin": "*",
-  "access-control-allow-methods": "GET,PUT,POST,OPTIONS",
+  "access-control-allow-methods": "GET,PUT,POST,DELETE,OPTIONS",
   "access-control-allow-headers": "content-type,x-write-key,x-user-hash"
 };
 
@@ -383,28 +383,46 @@ export function storeKeys(code) {
 
 /* Benutzer mit Voreinstellungen: /user/<name>. Passwort wird nie im Klartext gespeichert (nur der vom Browser gebildete Hash).
    GET: Header x-user-hash (leer, wenn der Benutzer kein Passwort hat). 404 = Benutzer existiert nicht.
-   PUT: {hash?, presets} legt an oder ändert (bei bestehendem Passwort nur mit passendem x-user-hash). Die Benutzerliste wird nie ausgegeben. */
+   PUT: {hash?, presets?, links?} legt an oder ändert (bei bestehendem Passwort nur mit passendem x-user-hash).
+   DELETE: nur mit x-write-key (Secret WRITE_KEY). /user/_tesla = gemeinsame Tesla-Voreinstellung: lesen frei, ändern nur mit WRITE_KEY.
+   Eine Benutzerliste wird nie ausgegeben. */
 async function handleUser(request, env, path) {
   if (request.method === "OPTIONS") return new Response(null, { headers: CORS });
   const name = path.slice(6).toLowerCase().replace(/[^a-z0-9äöüß._-]/g, "").slice(0, 40);
   if (name.length < 2) return new Response("bad name", { status: 400, headers: CORS });
+  const tesla = name === "_tesla";
+  if (!tesla && name.startsWith("_")) return new Response("bad name", { status: 400, headers: CORS });
   const key = `benutzer/${name}.json`;
   const sent = request.headers.get("x-user-hash") || "";
+  const keyOk = !!env.WRITE_KEY && request.headers.get("x-write-key") === env.WRITE_KEY;
   const obj = await env.MUSIK.get(key);
   let rec = null;
   if (obj) { try { rec = await obj.json(); } catch { rec = null; } }
   if (request.method === "GET") {
     if (!rec) return new Response("not found", { status: 404, headers: CORS });
-    if (rec.hash && rec.hash !== sent) return json({ ok: false, locked: true }, CORS, 401);
-    return json({ ok: true, locked: !!rec.hash, presets: rec.presets || {} }, CORS);
+    if (!tesla && rec.hash && rec.hash !== sent) return json({ ok: false, locked: true }, CORS, 401);
+    return json({ ok: true, locked: !!rec.hash, presets: rec.presets || {}, links: tesla ? [] : (rec.links || []) }, CORS);
+  }
+  if (request.method === "DELETE") {
+    if (!env.WRITE_KEY) return json({ ok: false, fehler: "In Cloudflare fehlt das Secret WRITE_KEY." }, CORS, 403);
+    if (!keyOk) return json({ ok: false, fehler: "Schlüssel falsch." }, CORS, 401);
+    if (rec) await env.MUSIK.delete(key);
+    return json({ ok: true, deleted: !!rec }, CORS);
   }
   if (request.method === "PUT" || request.method === "POST") {
-    if (rec && rec.hash && rec.hash !== sent) return json({ ok: false, locked: true }, CORS, 401);
+    if (tesla) { if (!keyOk) return json({ ok: false, fehler: "Schlüssel falsch." }, CORS, 401); }
+    else if (rec && rec.hash && rec.hash !== sent) return json({ ok: false, locked: true }, CORS, 401);
     const text = await request.text();
     if (text.length > 20000) return new Response("too large", { status: 413, headers: CORS });
     let body = {};
     try { body = JSON.parse(text); } catch { return new Response("bad json", { status: 400, headers: CORS }); }
-    const next = { hash: rec ? (typeof body.hash === "string" ? body.hash.slice(0, 128) : rec.hash || "") : (typeof body.hash === "string" ? body.hash.slice(0, 128) : ""), presets: body.presets && typeof body.presets === "object" ? body.presets : (rec ? rec.presets : {}), updated: new Date().toISOString() };
+    const cleanName = (n) => String(n || "").toLowerCase().replace(/[^a-z0-9äöüß._-]/g, "").slice(0, 40);
+    const next = {
+      hash: tesla ? "" : (typeof body.hash === "string" ? body.hash.slice(0, 128) : (rec ? rec.hash || "" : "")),
+      presets: body.presets && typeof body.presets === "object" ? body.presets : (rec ? rec.presets : {}),
+      links: Array.isArray(body.links) ? [...new Set(body.links.map(cleanName).filter((n) => n.length >= 2 && n !== name && !n.startsWith("_")))].slice(0, 30) : (rec ? rec.links || [] : []),
+      updated: new Date().toISOString()
+    };
     await env.MUSIK.put(key, JSON.stringify(next), { httpMetadata: { contentType: "application/json" } });
     return json({ ok: true, created: !rec }, CORS);
   }
