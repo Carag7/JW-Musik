@@ -342,6 +342,14 @@ function loadFavorites() {
 
 function saveFavorites() {
   localStorage.setItem(STORAGE.favorites, JSON.stringify([...state.favorites]));
+  scheduleSync();
+}
+/* Änderungen an Favoriten/Listen werden ca. 8 Sekunden nach der letzten Änderung abgeglichen (wenn ein Speicher eingetragen ist) */
+let syncTimer = 0;
+function scheduleSync() {
+  if (!localStorage.getItem("sync-code")) return;
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => { if (typeof autoSync === "function") autoSync(); }, 8000);
 }
 
 function applyScale() {
@@ -523,6 +531,7 @@ function loadPlaylists() {
 
 function savePlaylists() {
   localStorage.setItem(STORAGE.playlists, JSON.stringify(state.playlists));
+  scheduleSync();
 }
 
 function fillPlaylists() {
@@ -1651,6 +1660,9 @@ function bindChrome() {
 
 /* Beim Öffnen automatisch abspielen (letztes Lied, sonst Zufall). Blockiert der Browser das, startet es beim ersten Antippen. */
 function tryAutoStart() {
+  Promise.race([state.userReady || Promise.resolve(), new Promise((r) => setTimeout(r, 2500))]).then(tryAutoStartNow);
+}
+function tryAutoStartNow() {
   if (localStorage.getItem("autoStart") !== "1") return;
   if (!document.getElementById("loginGate").hidden || !state.songs.length) return;
   const last = localStorage.getItem("lastSongId");
@@ -1745,16 +1757,11 @@ function toggleAdvanced() {
 }
 
 /* Voreinstellungen für den Tesla-Browser (nur Werte, die noch nicht gesetzt sind; force = überschreiben) */
-function applyTeslaDefaults(force) {
-  const t = presetTarget(normPresets({}), "tesla").filter((x) => force || localStorage.getItem(x.key) === null);
-  applyTarget(t);
-}
 const isTesla = () => /Tesla/i.test(navigator.userAgent);
 
 function bind() {
   setupViewport();
   try {
-    if (isTesla() && localStorage.getItem("teslaDefaults") === null) { applyTeslaDefaults(false); localStorage.setItem("teslaDefaults", "1"); }
     const w = Number(localStorage.getItem("sidebarW"));
     if (w >= 180) document.documentElement.style.setProperty("--sidebar", `${w}px`);
   } catch { /* egal */ }
@@ -2545,6 +2552,11 @@ async function runSync(code, silent) {
     // outSettings bleibt bis unten stehen
   }
   if (on && raw !== null && !/^(Abgebrochen|Server nicht)/.test(message || "")) {
+    const sd = Object.entries(merged).filter(([k, v]) => lsv(k, null) !== String(v) && isSettingKey(k)).map(([k, v]) => [k, niceVal(lsv(k, null)), niceVal(String(v))]);
+    if (sd.length) {
+      const extraLines = [{ text: "Einstellungen", cls: "dlg-h" }, { table: [["Einstellung", "Jetzt", "Neu"], ...sd] }];
+      state.lastSync = { t: Date.now(), lines: [...(state.lastSync && Date.now() - state.lastSync.t < 60000 ? state.lastSync.lines : []), ...extraLines] };
+    }
     applySettings(merged);
     if (!putHappened && JSON.stringify(merged) !== JSON.stringify(remoteSet || {})) {
       try {
@@ -2554,6 +2566,7 @@ async function runSync(code, silent) {
     }
     writeSettingsBase(store, merged);
     if (!silent && message) message += " Einstellungen abgeglichen.";
+    if (silent && sd.length) message = `${message ? message + "; " : ""}${sd.length} Einstellungen`;
   } else if (on && raw === null && putHappened) {
     writeSettingsBase(store, merged);
   }
@@ -2577,13 +2590,18 @@ function refreshSyncInfo() {
   info.textContent = `Auf diesem Gerät: ${totalsText(syncSnapshot())}\n` + (last
     ? `Letzter Abgleich: ${new Date(last).toLocaleString("de-AT", { dateStyle: "medium", timeStyle: "short" })} (${dir})`
     : "Noch nie synchronisiert.");
+  const ui = document.getElementById("syncUserInfo");
+  if (ui) ui.textContent = userName() ? `Einstellungen-Benutzer: ${userName()}${sameNameOn() ? " (gleicher Name wie der Speicher)" : ""}` : "Einstellungen-Benutzer: keiner angemeldet";
+  const lb = document.getElementById("syncLast");
+  if (lb) { lb.hidden = !state.lastSync; lb.onclick = () => uiDialog({ eyebrow: "Synchronisieren", title: "Letzte Änderungen", lines: state.lastSync ? state.lastSync.lines : [], buttons: [{ value: true, kind: "primary", label: "Schließen" }] }); }
+  document.querySelectorAll(".same-name-chk").forEach((c) => { c.checked = sameNameOn(); c.onchange = () => { lss("sameName", c.checked ? "1" : "0"); document.querySelectorAll(".same-name-chk").forEach((o) => { o.checked = c.checked; }); refreshSyncInfo(); }; });
 }
 
 const autoMax = () => Math.max(0, Number(localStorage.getItem("sync-auto-max") || 0) || 0);
 
 /* Ergebnis eines Abgleichs: für jede geänderte Seite eine Tabelle, am Ende der gespeicherte Gesamtstand */
-function syncReport(store, device, server, final) {
-  const lines = [{ text: `Speicher: „${store}“`, cls: "dlg-store" }];
+function syncReportLines(store, device, server, final) {
+  const lines = [];
   if (device) {
     lines.push({ text: "Dieses Gerät", cls: "dlg-h" });
     lines.push({ table: changeTable(device[0], device[1]) });
@@ -2594,6 +2612,11 @@ function syncReport(store, device, server, final) {
   }
   lines.push({ text: "Jetzt gespeichert", cls: "dlg-h" });
   lines.push({ text: totalsText(final), cls: "dlg-total" });
+  return lines;
+}
+function syncReport(store, device, server, final) {
+  const lines = [{ text: `Speicher: „${store}“`, cls: "dlg-store" }, { text: `Jetzt gespeichert: ${totalsText(final)}`, cls: "dlg-total" },
+    { details: { title: "Änderungen anzeigen", lines: syncReportLines(store, device, server, final) } }];
   return uiDialog({ eyebrow: "Synchronisieren", title: "Abgleich abgeschlossen", lines, buttons: [{ value: true, kind: "primary", label: "OK" }] });
 }
 
@@ -2667,6 +2690,7 @@ async function runSyncData(code, silent) {
     writeSyncBase(store, merged);
     if (!changeLocal && !changeRemote) return `Bereits gleich. ${totalsText(merged)}`;
     stampSync(changeLocal && changeRemote ? "abgeglichen" : changeRemote ? "gesendet" : "empfangen");
+    state.lastSync = { t: Date.now(), lines: [{ text: `Speicher: „${store}“`, cls: "dlg-store" }, ...syncReportLines(store, changeLocal ? [local, merged] : null, changeRemote ? [remote, merged] : null, merged)] };
     const dDev = diffData(local, merged), dSrv = diffData(remote, merged);
     if (silent) {
       const parts = [];
@@ -2785,6 +2809,7 @@ async function syncFavoritesCore() {
     localStorage.setItem("sync-code", code);
     try {
       const message = await runSync(code, false);
+      if (sameNameOn() && !SYS[code.toLowerCase()] && userName() !== code.toLowerCase() && !/^(Abgebrochen|Server nicht)/.test(message || "")) { await userLogin(code, ""); renderPresetBox(); }
       refreshSyncInfo();
       return message;
     } catch {
@@ -3358,29 +3383,46 @@ function setupAdvBox() {
 
 /* ---------- Benutzer und Voreinstellungen ---------- */
 /* Jede Zeile = eine Einstellung (oder Gruppe). def = Tesla-Standardwerte, keys = alle zugehörigen Speicherwerte */
+const BOOL = [["1", "ein"], ["0", "aus"]];
 const PRESETS = [
-  { id: "auto", label: "Beim Öffnen automatisch abspielen", keys: ["autoStart"], def: { autoStart: "1" } },
-  { id: "extra", label: "Weitere Lieder aus anderen Verzeichnissen in der Liste", keys: ["showExtra"], def: { showExtra: "0" } },
-  { id: "tags", label: "Kleine Art-Kennzeichen (K, ♪, ▶, Z) unter den Liedern", keys: ["srcTags"], def: { srcTags: "0" } },
-  { id: "fav", label: "Favoriten-Stern (Ort) und Tesla-Player-Taste", keys: ["favPlace", "favSeek"], def: { favPlace: "both", favSeek: "off" } },
-  { id: "verbar", label: "Art-Buttons immer anzeigen", keys: ["verBarAlways"], def: { verBarAlways: "0" } },
+  { id: "auto", label: "Beim Öffnen automatisch abspielen", keys: ["autoStart"], def: { autoStart: "1" }, fields: [{ key: "autoStart", o: BOOL, dv: "0" }] },
+  { id: "extra", label: "Weitere Lieder aus anderen Verzeichnissen in der Liste", keys: ["showExtra"], def: { showExtra: "0" }, fields: [{ key: "showExtra", o: BOOL, dv: "0" }] },
+  { id: "tags", label: "Kleine Art-Kennzeichen (K, ♪, ▶, Z) unter den Liedern", keys: ["srcTags"], def: { srcTags: "0" }, fields: [{ key: "srcTags", o: BOOL, dv: "1" }] },
+  { id: "fav", label: "Favoriten-Stern (Ort) und Tesla-Player-Taste", keys: ["favPlace", "favSeek"], def: { favPlace: "both", favSeek: "off" },
+    fields: [{ key: "favPlace", t: "Ort", o: [["top", "oben"], ["bottom", "unten"], ["both", "beide"]], dv: "both" }, { key: "favSeek", t: "Taste", o: [["off", "keine"], ["back", "zurück"], ["fwd", "vor"]], dv: "off" }] },
+  { id: "verbar", label: "Art-Buttons immer anzeigen", keys: ["verBarAlways"], def: { verBarAlways: "0" }, fields: [{ key: "verBarAlways", o: BOOL, dv: "0" }] },
   { id: "srcfilter", label: "Gewählte Art (Karaoke / Instrumental / Video / Zusammenkünfte)", keys: ["srcFilter"] },
-  { id: "hold", label: "Lupe und Player-Symbol nur nach langem Drücken (Hinweis, Balken)", keys: ["holdGuard", "holdHint"], def: { holdGuard: "1" } },
-  { id: "theme", label: "Design (fest, wie Gerät / Tesla oder Sonnenaufgang, Zeiten)", keys: ["themeMode", "theme", "themeDay", "themeNight", "themeShift"], def: { themeMode: "device" } },
-  { id: "fontkar", label: "Schriftgröße Karaoke-Text", keys: [STORAGE.scale] },
-  { id: "fontlist", label: "Schriftgröße Auswahlfenster", keys: [STORAGE.listSize] },
-  { id: "sidebar", label: "Breite des Auswahlfensters", keys: ["sidebarW"] },
-  { id: "skip", label: "Springen zurück / vor (Sekunden)", keys: ["skipSec", "skipBack", "skipFwd"] },
-  { id: "fehl", label: "Fehlend: Prüfung, Hinweis und Anzeige", keys: ["fehlMode", "fehlNotify", "fehlAll"], rx: /^fehl[TL]_/ },
-  { id: "syncmax", label: "Automatisch abgleichen, auch wenn bis zu 2 Lieder gelöscht wurden", keys: ["sync-auto-max"], def: { "sync-auto-max": "2" } },
-  { id: "syncset", label: "Auch alle anderen Einstellungen mit abgleichen", keys: ["syncSettings"], def: { syncSettings: "0" } }
+  { id: "hold", label: "Lupe und Player-Symbol nur nach langem Drücken", keys: ["holdGuard", "holdHint"], def: { holdGuard: "1" },
+    fields: [{ key: "holdGuard", t: "Schutz", o: BOOL, dv: "0" }, { key: "holdHint", t: "Hinweis", o: BOOL, dv: "0" }] },
+  { id: "theme", label: "Design (fest, wie Gerät / Tesla oder Sonnenaufgang, Zeiten)", keys: ["themeMode", "theme", "themeDay", "themeNight", "themeShift"], def: { themeMode: "device" },
+    fields: [{ key: "themeMode", o: [["manual", "fest"], ["device", "wie Gerät / Tesla"], ["sun", "Sonnenaufgang"]], dv: "manual" }] },
+  { id: "fontkar", label: "Schriftgröße Karaoke-Text", keys: [STORAGE.scale], fields: [{ key: STORAGE.scale, n: [10, 200], dv: "42" }] },
+  { id: "fontlist", label: "Schriftgröße Auswahlfenster", keys: [STORAGE.listSize], fields: [{ key: STORAGE.listSize, n: [10, 48], dv: "16" }] },
+  { id: "sidebar", label: "Breite des Auswahlfensters (px)", keys: ["sidebarW"], fields: [{ key: "sidebarW", n: [180, 1200], dv: "300" }] },
+  { id: "skip", label: "Springen zurück / vor (Sekunden)", keys: ["skipSec", "skipBack", "skipFwd"],
+    fields: [{ key: "skipBack", t: "zurück", n: [1, 300], dv: "15" }, { key: "skipFwd", t: "vor", n: [1, 300], dv: "15" }] },
+  { id: "fehl", label: "Fehlend: Prüfung, Hinweis und Anzeige", keys: ["fehlMode", "fehlNotify", "fehlAll"], rx: /^fehl[TL]_/, fields: [{ key: "fehlNotify", t: "Hinweis", o: BOOL, dv: "0" }] },
+  { id: "syncmax", label: "Automatisch abgleichen, auch wenn bis zu … Lieder gelöscht wurden", keys: ["sync-auto-max"], def: { "sync-auto-max": "2" }, fields: [{ key: "sync-auto-max", n: [0, 999], dv: "0" }] },
+  { id: "syncset", label: "Auch alle anderen Einstellungen mit abgleichen", keys: ["syncSettings"], def: { syncSettings: "0" }, fields: [{ key: "syncSettings", o: BOOL, dv: "0" }] }
 ];
+/* Standard für neue Benutzer (beste Werte am Desktop); über den Namen „standard“ mit dem Schreib-Passwort änderbar */
+const STD_VALS = { autoStart: "0", showExtra: "1", srcTags: "1", favPlace: "both", favSeek: "off", verBarAlways: "1", holdGuard: "0", holdHint: "0", themeMode: "device", [STORAGE.scale]: "42", [STORAGE.listSize]: "16", sidebarW: "300", skipBack: "15", skipFwd: "15", "sync-auto-max": "2", syncSettings: "0" };
+const SYS = { tesla: "_tesla", standard: "_standard" };
 const TESLA_EXTRA = { eggMode: "auto", eggFall: "0", eggGif: "chor", startGif: "0" };
 const lsv = (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch { return d; } };
 const lss = (k, v) => { try { localStorage.setItem(k, v); } catch { /* egal */ } };
 const defaultOn = () => Object.fromEntries(PRESETS.map((p) => [p.id, true]));
 const normPresets = (p) => { p = p || {}; return p.on && typeof p.on === "object" ? { on: { ...defaultOn(), ...p.on }, vals: p.vals && typeof p.vals === "object" ? p.vals : {} } : { on: { ...defaultOn(), ...p }, vals: {} }; };
+const sysDefault = (n) => {
+  const vals = {};
+  if (n === "tesla") PRESETS.forEach((p) => Object.assign(vals, p.def || {}));
+  else Object.assign(vals, STD_VALS);
+  return { on: defaultOn(), vals };
+};
+const sameNameOn = () => lsv("sameName", "1") === "1";
 const userName = () => lsv("userName", "");
+const srvName = (n) => SYS[n] || n;
+const sysKey = () => { try { return sessionStorage.getItem("sysKey") || ""; } catch { return ""; } };
 const userCleanName = (n) => String(n || "").trim().toLowerCase().replace(/[^a-z0-9äöüß._-]/g, "").slice(0, 40);
 const userData = () => { try { return normPresets(JSON.parse(lsv("userPresets", "{}"))); } catch { return normPresets({}); } };
 const userSaveLocal = (d) => lss("userPresets", JSON.stringify(d));
@@ -3399,7 +3441,7 @@ function presetTarget(data, mode) {
   const t = [];
   PRESETS.forEach((p) => {
     if (data.on[p.id] === false) return;
-    const src = mode === "tesla" ? (p.def || {}) : { ...(p.def || {}), ...data.vals };
+    const src = mode === "tesla" ? { ...(p.def || {}), ...data.vals } : data.vals;
     presetKeys(p).forEach((k) => { if (src[k] !== undefined) t.push({ key: k, label: p.label, val: String(src[k]) }); });
   });
   if (mode === "tesla") Object.entries(TESLA_EXTRA).forEach(([k, v]) => t.push({ key: k, label: "Carag", val: v }));
@@ -3415,7 +3457,7 @@ function presetCapture(data, only) {
 }
 const niceVal = (v) => (v === null || v === undefined ? "–" : v === "1" ? "ein" : v === "0" ? "aus" : v);
 const presetDiff = (target) => target.filter((t) => lsv(t.key, null) !== t.val).map((t) => ({ ...t, old: lsv(t.key, null) }));
-function applyTarget(target) {
+function applyTarget(target, noFill) {
   target.forEach((t) => lss(t.key, t.val));
   try { if (window.THEME) window.THEME.apply(true); } catch { /* egal */ }
   try {
@@ -3423,7 +3465,7 @@ function applyTarget(target) {
     const sw = Number(lsv("sidebarW", 0)); if (sw >= 180) document.documentElement.style.setProperty("--sidebar", `${sw}px`);
   } catch { /* egal */ }
   try { updateSkipLabels(); updateAutoIcon(); updateVersionBar(); rebuildExtras(); applyStartGif(); applyFavPlace(); renderList(); } catch { /* egal */ }
-  try { if (!document.getElementById("codeModal").hidden) fillSettingsFields(); } catch { /* egal */ }
+  try { if (!noFill && !document.getElementById("codeModal").hidden) fillSettingsFields(); } catch { /* egal */ }
 }
 /* Änderungen zuerst anzeigen (aufklappbar), dann übernehmen. silent = ohne Rückfrage. Rückgabe: true = angewendet */
 async function applyWithPreview(target, title, silent) {
@@ -3461,22 +3503,30 @@ async function putUser(name, authHash, fields, extra) {
   } catch { return false; }
 }
 
-/* Tesla-Voreinstellung: gemeinsam für alle (Server), sonst alle Haken */
-async function teslaData() {
-  const r = await fetchUser("_tesla", "");
-  return r.state === "ok" ? normPresets(r.presets) : normPresets({});
+/* Tesla-Voreinstellung und Standard (gemeinsam für alle, Server; sonst eingebaute Werte) */
+async function sysData(n) {
+  const r = await fetchUser(SYS[n], "");
+  return r.state === "ok" && Object.keys(r.presets).length ? normPresets(r.presets) : sysDefault(n);
 }
+const teslaData = () => sysData("tesla");
 /* Tesla-Voreinstellung anwenden (mit Vorschau der Änderungen, sofern nicht silent) */
 async function applyTeslaPreset(silent) {
   const ok = await applyWithPreview(presetTarget(await teslaData(), "tesla"), "Tesla-Voreinstellung anwenden?", silent);
   if (ok) lss("teslaPreset", "1");
   return ok;
 }
+/* Speichern auf dem Server: normale Benutzer mit ihrem Passwort-Hash, „tesla“/„standard“ mit dem Schreib-Passwort */
+async function putProfile(n, fields) {
+  if (SYS[n]) return putUser(SYS[n], "", fields, { "x-write-key": sysKey() });
+  return putUser(n, lsv("userHash", ""), fields);
+}
+let userSyncOk = false;   // erst nach erfolgreichem Laden vom Server wird zurückgeschrieben
 
 /* Anmelden: zuerst wird geprüft, ob der Benutzer existiert. Neue Namen werden erst nach Rückfrage angelegt (Tippfehler!). */
 async function userLogin(rawName, pass) {
   const name = userCleanName(rawName);
   if (name.length < 2 || name.startsWith("_")) return { ok: false, msg: "Benutzername: mindestens 2 Zeichen, nicht mit _ beginnen." };
+  if (SYS[name]) return sysLogin(name, pass);
   const hash = await userHashOf(name, pass);
   const r = await fetchUser(name, hash);
   if (r.state === "error") return { ok: false, msg: "Server nicht erreichbar." };
@@ -3492,15 +3542,29 @@ async function userLogin(rawName, pass) {
   if (r.state === "none") {
     const yes = await uiConfirm({ eyebrow: "Benutzer", title: `„${name}“ gibt es noch nicht`, lines: ["Neuen Benutzer mit diesem Namen anlegen? Prüfe vorher auf Tippfehler."], ok: "Neu anlegen", cancel: "Zurück" });
     if (!yes) return { ok: false, msg: "Nicht angelegt." };
-    data = normPresets({});
+    data = await sysData("standard");
     if (!(await putUser(name, hash, { presets: data, hash, links: [] }))) return { ok: false, msg: "Anlegen fehlgeschlagen." };
     created = true;
   } else { data = normPresets(r.presets); links = r.links; }
   lss("userName", name); lss("userHash", hash); userSaveLocal(data);
   userKnownAdd([name, ...links]);
-  if (!lsv("sync-code", "")) lss("sync-code", name);
+  if (sameNameOn() || !lsv("sync-code", "")) lss("sync-code", name);
+  userSyncOk = true;
   const applied = await applyWithPreview(presetTarget(data, "user"), `Einstellungen von „${name}“ übernehmen?`);
   return { ok: true, created, applied, msg: created ? `Neuer Benutzer „${name}“ angelegt.` : `Angemeldet als „${name}“.` };
+}
+/* „tesla“ und „standard“ sind keine Benutzer, sondern gemeinsame Voreinstellungen: Ändern nur mit dem Schreib-Passwort (WRITE_KEY) */
+async function sysLogin(name, pass) {
+  const key = pass || await askKey(name === "tesla" ? "Tesla-Voreinstellung ändern" : "Standard-Voreinstellung ändern");
+  if (!key) return { ok: false, msg: "Abgebrochen." };
+  const data = await sysData(name);
+  if (!(await putUser(SYS[name], "", { presets: data }, { "x-write-key": key }))) return { ok: false, msg: "Schreib-Passwort falsch oder Server nicht erreichbar." };
+  try { sessionStorage.setItem("sysKey", key); } catch { /* egal */ }
+  lss("userName", name); lss("userHash", ""); userSaveLocal(data);
+  userKnownAdd([name]);
+  userSyncOk = true;
+  await applyWithPreview(presetTarget(data, name === "tesla" ? "tesla" : "user"), `Werte von „${name}“ übernehmen?`);
+  return { ok: true, msg: `Du bearbeitest jetzt die ${name === "tesla" ? "Tesla-Voreinstellung" : "Standard-Voreinstellung für neue Benutzer"}. Änderungen gelten für alle.` };
 }
 function userLogout() { ["userName", "userHash", "userPresets"].forEach((k) => { try { localStorage.removeItem(k); } catch { /* egal */ } }); }
 
@@ -3508,12 +3572,15 @@ function userLogout() { ["userName", "userHash", "userPresets"].forEach((k) => {
 async function userAutoLogin() {
   const name = userName();
   if (!name) return;
-  const r = await fetchUser(name, lsv("userHash", ""));
+  /* zuerst sofort mit dem gespeicherten Stand (auch offline), dann mit dem Server abgleichen */
+  await applyWithPreview(presetTarget(userData(), SYS[name] === "_tesla" ? "tesla" : "user"), "", true);
+  const r = SYS[name] ? await fetchUser(SYS[name], "") : await fetchUser(name, lsv("userHash", ""));
   if (r.state !== "ok") return;
+  userSyncOk = true;
   const data = normPresets(r.presets);
   userSaveLocal(data);
   userKnownAdd([name, ...r.links]);
-  await applyWithPreview(presetTarget(data, "user"), "", true);
+  await applyWithPreview(presetTarget(data, SYS[name] === "_tesla" ? "tesla" : "user"), "", true);
 }
 
 async function askKey(title) {
@@ -3526,6 +3593,7 @@ function renderPresetBox() {
   const code = lsv("sync-code", "");
   document.getElementById("userLine").textContent = name ? `Angemeldet: ${name}` : (code ? `Abgleich-Speicher: ${code} (kein Benutzer angemeldet)` : "Kein Benutzer angemeldet");
   document.getElementById("userOut").hidden = !name;
+  try { refreshSyncInfo(); const ci = document.getElementById("codeInput"); if (ci && name && !SYS[name] && sameNameOn()) ci.value = lsv("sync-code", ""); } catch { /* egal */ }
   document.getElementById("userLink").hidden = !name;
   const sel = document.getElementById("userSel");
   sel.replaceChildren();
@@ -3538,32 +3606,78 @@ function renderPresetBox() {
   rows.replaceChildren();
   const data = userData();
   PRESETS.forEach((p) => {
+    const wrap = document.createElement("div");
+    wrap.className = "preset-row";
     const l = document.createElement("label");
     l.className = "set-row check";
     const c = document.createElement("input");
     c.type = "checkbox"; c.checked = data.on[p.id] !== false;
+    const sp = document.createElement("span");
+    sp.textContent = p.label;
+    l.append(c, sp);
+    wrap.append(l);
+    const fb = document.createElement("div");
+    fb.className = "preset-fields";
+    fb.hidden = !c.checked;
+    (p.fields || []).forEach((f) => {
+      const lab = document.createElement("label");
+      lab.className = "preset-field";
+      if (f.t) lab.append(document.createTextNode(f.t + " "));
+      let inp;
+      if (f.o) {
+        inp = document.createElement("select");
+        f.o.forEach(([v, t]) => { const o = document.createElement("option"); o.value = v; o.textContent = t; inp.append(o); });
+        inp.value = lsv(f.key, f.dv);
+      } else {
+        inp = document.createElement("input");
+        inp.type = "number"; inp.min = f.n[0]; inp.max = f.n[1]; inp.inputMode = "numeric";
+        inp.value = lsv(f.key, f.dv);
+      }
+      inp.onchange = async () => {
+        let v = inp.value;
+        if (f.n) { v = String(Math.max(f.n[0], Math.min(f.n[1], Math.round(Number(v) || Number(f.dv))))); inp.value = v; }
+        applyTarget([{ key: f.key, val: v }], true);
+        const d = userData(); d.vals[f.key] = v; userSaveLocal(d);
+        const n = userName();
+        if (n) await putProfile(n, { presets: d });
+      };
+      lab.append(inp);
+      fb.append(lab);
+    });
     c.onchange = async () => {
       const d = userData(); d.on[p.id] = c.checked;
       if (c.checked) presetCapture(d, [p.id]);
       userSaveLocal(d);
+      fb.hidden = !c.checked;
       const n = userName();
-      if (n) await putUser(n, lsv("userHash", ""), { presets: d });
+      if (n) await putProfile(n, { presets: d });
     };
-    const sp = document.createElement("span");
-    sp.textContent = p.label;
-    l.append(c, sp);
-    rows.append(l);
+    if ((p.fields || []).length) wrap.append(fb);
+    rows.append(wrap);
   });
 }
 /* beim Schließen der Einstellungen: aktuelle Werte der angehakten Zeilen im Benutzer speichern */
 async function userSaveSettings() {
   const n = userName();
-  if (!n) return;
+  if (!n || !userSyncOk) return;
   const d = presetCapture(userData());
   const before = lsv("userPresets", "");
   userSaveLocal(d);
-  if (lsv("userPresets", "") !== before) await putUser(n, lsv("userHash", ""), { presets: d });
+  if (lsv("userPresets", "") !== before) await putProfile(n, { presets: d });
 }
+/* Änderungen an Einstellungen (auch außerhalb des Einstellungsfensters, z. B. A+/A−) werden nach kurzer Pause im Benutzer gespeichert */
+(() => {
+  const orig = Storage.prototype.setItem;
+  let t = 0;
+  Storage.prototype.setItem = function (k, v) {
+    orig.call(this, k, v);
+    if (this !== localStorage) return;
+    try {
+      if (userName() && PRESETS.some((p) => p.keys.includes(k) || (p.rx && p.rx.test(k)))) { clearTimeout(t); t = setTimeout(userSaveSettings, 2500); }
+    } catch { /* egal */ }
+  };
+  window.addEventListener("pagehide", () => { try { userSaveSettings(); } catch { /* egal */ } });
+})();
 function setupPresetBox() {
   document.getElementById("presetBox").hidden = false;
   document.getElementById("subTabs").hidden = false;
@@ -3588,12 +3702,8 @@ function setupPresetBox() {
   document.getElementById("userOut").onclick = () => { userLogout(); msg.textContent = "Abgemeldet. Die Werte auf diesem Gerät bleiben bestehen."; renderPresetBox(); };
   document.getElementById("presetApply").onclick = async () => { if (await applyWithPreview(presetTarget(userData(), "user"), "Gespeicherte Werte anwenden?")) showToast("Voreinstellungen angewendet"); };
   document.getElementById("teslaApply").onclick = async () => { if (await applyTeslaPreset()) showToast("Tesla-Voreinstellung angewendet"); };
-  document.getElementById("teslaSave").onclick = async () => {
-    const key = await askKey("Tesla-Voreinstellung speichern");
-    if (!key) return;
-    const ok = await putUser("_tesla", "", { presets: { on: userData().on } }, { "x-write-key": key });
-    msg.textContent = ok ? "Tesla-Voreinstellung gespeichert (aktuelle Haken)." : "Nicht gespeichert: Schlüssel falsch oder Server nicht erreichbar.";
-  };
+  document.getElementById("teslaEdit").onclick = () => run("tesla", "");
+  document.getElementById("stdEdit").onclick = () => run("standard", "");
   document.getElementById("userLink").onclick = async () => {
     const me = userName();
     if (!me) return;
@@ -3748,8 +3858,27 @@ function showLogin() {
   const gate = document.getElementById("loginGate");
   document.getElementById("loginPassword").value = "";
   document.getElementById("loginBack").hidden = false;
-  document.getElementById("loginBack").onclick = () => { gate.hidden = true; };
+  document.getElementById("loginApply").hidden = false;
+  document.getElementById("loginBack").onclick = () => { gate.hidden = true; document.getElementById("loginApply").hidden = true; document.getElementById("loginBack").hidden = true; };
+  document.getElementById("loginApply").onclick = async () => {
+    await loginExtras();
+    document.getElementById("loginBack").onclick();
+  };
+  if (document.getElementById("loginExtra").hidden) document.getElementById("loginMore").click();
+  try { refreshSyncInfo(); } catch { /* egal */ }
   gate.hidden = false;
+}
+/* Tesla-Haken und Benutzer aus dem Anmeldefenster anwenden (wie beim Einloggen, nur ohne Login-Passwort) */
+async function loginExtras() {
+  const tesla = document.getElementById("loginTesla").checked;
+  const un = document.getElementById("loginUser").value.trim();
+  const up = document.getElementById("loginUserPass").value;
+  if (tesla) { if (await applyTeslaPreset()) showToast("Tesla-Voreinstellung angewendet"); }
+  if (un) {
+    const r = await userLogin(un, up);
+    showToast(r.msg);
+  }
+  document.getElementById("loginUserPass").value = "";
 }
 function checkLogin() {
   const gate = document.getElementById("loginGate");
@@ -3759,9 +3888,12 @@ function checkLogin() {
   const more = document.getElementById("loginMore"), extra = document.getElementById("loginExtra");
   const toggleMore = (open) => { extra.hidden = !open; more.setAttribute("aria-expanded", String(open)); more.textContent = (open ? "▾" : "▸") + " Weitere Optionen"; };
   more.addEventListener("click", () => toggleMore(extra.hidden));
+  const ti = document.getElementById("loginTeslaInfo"), tt = document.getElementById("loginTeslaText");
+  ti.addEventListener("click", () => { tt.hidden = !tt.hidden; ti.textContent = tt.hidden ? "▾" : "▴"; ti.setAttribute("aria-expanded", String(!tt.hidden)); });
   /* im Tesla beim allerersten Öffnen gleich aufgeklappt */
   if (isTesla() && lsv("teslaPreset", "") === "") toggleMore(true);
-  document.getElementById("loginTesla").checked = lsv("teslaPreset", "0") === "1";
+  document.getElementById("loginTesla").checked = false;
+  document.querySelectorAll(".same-name-chk").forEach((c) => { c.checked = sameNameOn(); c.onchange = () => { lss("sameName", c.checked ? "1" : "0"); document.querySelectorAll(".same-name-chk").forEach((o) => { o.checked = c.checked; }); }; });
   gate.hidden = authed;
   document.getElementById("loginForm").addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -3775,16 +3907,8 @@ function checkLogin() {
     else sessionStorage.setItem(STORAGE.auth, "ok");
     gate.hidden = true;
     document.getElementById("loginBack").hidden = true;
-    const tesla = document.getElementById("loginTesla").checked;
-    const un = document.getElementById("loginUser").value.trim();
-    const up = document.getElementById("loginUserPass").value;
-    if (tesla) { if (await applyTeslaPreset()) showToast("Tesla-Voreinstellung angewendet"); }
-    else if (!authed) lss("teslaPreset", "0");
-    if (un) {
-      const r = await userLogin(un, up);
-      showToast(r.msg);
-    }
-    document.getElementById("loginUserPass").value = "";
+    document.getElementById("loginApply").hidden = true;
+    await loginExtras();
     if (typeof tryAutoStart === "function" && !authed) tryAutoStart();
   });
 }
@@ -3793,7 +3917,7 @@ function init() {
   if (location.search.includes("r=")) history.replaceState(null, "", location.pathname);
   state.timeOffset = Number(localStorage.getItem("teslaKaraokeTimeOffset") || 0) || 0;
   checkLogin();
-  userAutoLogin();
+  state.userReady = userAutoLogin().catch(() => {});
   loadFavorites();
   loadPlaylists();
   applySyncFromUrl();

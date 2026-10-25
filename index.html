@@ -27,8 +27,13 @@
       <p id="loginError" class="login-error" hidden>Passwort stimmt nicht</p>
       <button id="loginMore" class="login-more" type="button" aria-expanded="false">▸ Weitere Optionen</button>
       <div id="loginExtra" class="login-extra" hidden>
-        <label class="set-row check"><input id="loginTesla" type="checkbox" /> <img src="tesla-icon.png" alt="" width="26" height="26" /> <span>Voreinstellung für Tesla</span></label>
-        <small class="set-hint">Setzt: automatisch abspielen an, weitere Lieder, Art-Kennzeichen und Art-Buttons aus, Favoriten-Stern oben und unten, Lupe und Player nur nach langem Drücken, Carag aus, Design wie Gerät/Tesla, Abgleich bis 2 gelöschte Lieder, Einstellungen nicht abgleichen. Dafür ist kein Benutzer nötig.</small>
+        <div class="tesla-row">
+          <label class="set-row check"><input id="loginTesla" type="checkbox" /> <img src="tesla-icon.png" alt="" width="26" height="26" /> <span>Voreinstellung für Tesla</span></label>
+          <button id="loginApply" class="chip" type="button" hidden>Übernehmen</button>
+          <button id="loginTeslaInfo" class="meta-i-small" type="button" aria-expanded="false" aria-label="Erklärung">▾</button>
+        </div>
+        <small id="loginTeslaText" class="set-hint" hidden>Setzt: automatisch abspielen an, weitere Lieder, Art-Kennzeichen und Art-Buttons aus, Favoriten-Stern oben und unten, Lupe und Player nur nach langem Drücken, Carag aus, Design wie Gerät/Tesla, Abgleich bis 2 gelöschte Lieder, Einstellungen nicht abgleichen. Dafür ist kein Benutzer nötig.</small>
+        <label class="set-row check"><input class="same-name-chk" type="checkbox" /> <span>Favoriten und Listen unter demselben Namen speichern</span></label>
         <label class="stack">Benutzername <small>(freiwillig)</small><input id="loginUser" type="text" autocomplete="off" autocapitalize="off" /></label>
         <label class="stack">Benutzer-Passwort <small>(freiwillig – nur wenn dein Benutzer eines hat)</small><input id="loginUserPass" type="password" autocomplete="off" /></label>
       </div>
@@ -239,6 +244,9 @@
       <button id="codeOk" data-tab="abgleich" class="chip" type="submit">QR-Code erzeugen</button>
       <p id="codeMessage" data-tab="abgleich" class="login-error"></p>
       <p id="syncInfo" data-tab="abgleich" class="login-error" hidden></p>
+      <p id="syncUserInfo" data-tab="abgleich" class="set-hint"></p>
+      <label class="set-row check" data-tab="abgleich"><input class="same-name-chk" type="checkbox" /> <span>Gleicher Name für Favoriten/Listen und Einstellungen (Benutzer)</span></label>
+      <button id="syncLast" data-tab="abgleich" class="chip" type="button" hidden>Letzte Änderungen ansehen</button>
       <div id="syncSettings" data-tab="abgleich" class="sync-settings" hidden>
         <label class="set-row">Automatisch abgleichen, auch wenn bis zu
           <input id="syncAutoMax" type="number" min="0" max="999" inputmode="numeric" value="0" />
@@ -268,13 +276,15 @@
           <button id="userDel" class="chip danger" type="button">Benutzer löschen</button>
         </div>
         <small id="userMsg" class="set-hint"></small>
+        <label class="set-row check"><input class="same-name-chk" type="checkbox" /> <span>Favoriten und Wiedergabelisten (Abgleich) unter demselben Namen speichern wie die Einstellungen</span></label>
         <div id="presetRows" class="preset-rows"></div>
         <div class="adv-btns">
           <button id="presetApply" class="chip" type="button">Gespeicherte Werte anwenden</button>
           <button id="teslaApply" class="chip" type="button">Tesla-Voreinstellung anwenden</button>
-          <button id="teslaSave" class="chip" type="button">Haken als Tesla-Voreinstellung speichern</button>
+          <button id="teslaEdit" class="chip" type="button">Tesla-Voreinstellung ändern</button>
+          <button id="stdEdit" class="chip" type="button">Standard für neue Benutzer ändern</button>
         </div>
-        <small class="set-hint">Die Tesla-Voreinstellung gilt für alle und kann nur mit dem Schlüssel (WRITE_KEY) geändert werden. Der Benutzername ist zugleich der Name deines Abgleich-Speichers, sofern dort noch keiner eingetragen ist.</small>
+        <small class="set-hint">Tesla-Voreinstellung und Standard gelten für alle und lassen sich nur mit dem Schreib-Passwort (WRITE_KEY) ändern, auch durch Eingabe des Namens „tesla“ oder „standard“. Neue Benutzer starten mit dem Standard. Die Tesla-Werte gelten nur, wenn im Anmeldefenster der Tesla-Haken gesetzt wird.</small>
         <small class="set-hint">Ein Haken bedeutet: Diese Einstellung gehört zum Benutzer. Ihr aktueller Wert wird beim Schließen der Einstellungen auf dem Server gespeichert und beim Anmelden und bei jedem Start wieder gesetzt. Vorher zeigt ein aufklappbares Fenster, was sich ändert.</small>
       </div>
       <div id="advBox" data-tab="allgemein" data-sub="einst" class="autoplay-box" hidden>

@@ -1303,3 +1303,15 @@ body.glass-open .egg { display: block; }
 .dlg-details summary { cursor: pointer; font-weight: 700; padding: 6px 0; }
 .dlg-details .dlg-table-wrap { max-height: 40vh; overflow: auto; }
 .dlg-details .dlg-table td, .dlg-details .dlg-table th { white-space: normal !important; overflow: visible !important; text-overflow: clip !important; max-width: none !important; }
+
+.tesla-row { display: flex; align-items: center; gap: 4px; }
+.tesla-row .set-row { flex: 1 1 auto; }
+.meta-i-small { flex: 0 0 auto; width: 22px; height: 22px; min-height: 22px !important; padding: 0 !important; border: 1px solid var(--line); border-radius: 50%; background: transparent; color: var(--muted); font-size: 12px; line-height: 1; cursor: pointer; }
+.preset-row { display: block; }
+.preset-fields { display: flex; flex-wrap: wrap; gap: 8px; margin: 2px 0 6px 30px; }
+.preset-fields[hidden] { display: none !important; }
+.preset-field { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
+.preset-field input[type=number] { width: 76px; min-height: 36px; text-align: center; padding: 0 6px; background: var(--panel-2); color: var(--text); border: 1px solid var(--line); border-radius: 10px; font-size: 15px; }
+.preset-field select { min-height: 36px; padding: 0 8px; background: var(--panel-2); color: var(--text); border: 1px solid var(--line); border-radius: 10px; font-size: 14px; }
+.meta-i-small { width: 34px !important; height: 34px !important; min-height: 0 !important; border-radius: 10px !important; font-size: 18px !important; opacity: .6; }
+.meta-i-small[aria-expanded="true"] { opacity: 1; }
