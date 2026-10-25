@@ -63,6 +63,7 @@
     <div id="favTools" class="fav-tools-main" hidden>
       <button id="syncFav" class="chip" type="button">Einstellungen</button>
     </div>
+    <div id="whoBadge" class="who-badge" aria-label="Angemeldet"></div>
     <div class="top-actions">
       <button id="smallerBtn" class="ghost" type="button" aria-label="Schrift kleiner">A−</button>
       <button id="largerBtn" class="ghost" type="button" aria-label="Schrift größer">A+</button>
@@ -94,7 +95,6 @@
           </select>
         </label>
         <div id="playlistButtons" class="playlist-list"></div>
-        <button id="listRepeat" class="chip lupe-opt" type="button" aria-pressed="true" title="Wiedergabeliste nach dem Ende wieder von vorn beginnen (auch im Zufallsmodus)">↻ Liste wiederholen</button>
         <div id="playlistCreateBox" class="playlist-create" hidden>
           <input id="playlistName" type="text" placeholder="Name der Liste" autocomplete="off" />
           <button id="playlistCreate" class="chip" type="button">Erstellen</button>
@@ -113,7 +113,6 @@
           <select id="ludwtWeek" aria-label="Woche wählen"></select>
         </label>
         <button id="ludwtPlay" class="chip" type="button">▶ Woche abspielen</button>
-        <button id="ludwtSingle" class="chip lupe-opt" type="button" aria-pressed="false" title="Aus: nächstes Lied startet automatisch. Ein: nach jedem Lied wird gestoppt.">■ Lieder einzeln</button>
         <div class="ludwt-nav">
           <button id="ludwtPrev" class="chip" type="button" aria-label="Woche davor"><span class="nv-t">◀ Woche zurück</span><small class="nv-d"></small></button>
           <button id="ludwtNext" class="chip" type="button" aria-label="Woche danach"><span class="nv-t">Woche vor ▶</span><small class="nv-d"></small></button>
@@ -181,6 +180,8 @@
           <button class="seg-btn" type="button" data-ver="video" aria-pressed="false">Video</button>
           <button class="seg-btn" type="button" data-ver="sung" aria-pressed="false">Zusammenkünfte</button>
         </div>
+        <button id="ludwtSingle" class="mode-ico" type="button" aria-pressed="false" aria-label="Lieder einzeln abspielen (danach stoppen)" title="Lieder einzeln: nach jedem Lied stoppen. Aus: alle der Reihe nach.">■</button>
+        <button id="listRepeat" class="mode-ico" type="button" aria-pressed="true" aria-label="Liste wiederholen" title="Liste nach dem Ende wiederholen (auch im Zufallsmodus)">↻</button>
         <button id="verText" class="seg-btn text-opt" type="button" aria-pressed="false" hidden>Karaoketext anzeigen</button>
         <button id="verView" class="seg-btn text-opt" type="button" aria-pressed="false" hidden>Text statt Video</button>
       </div>

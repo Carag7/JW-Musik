@@ -456,6 +456,7 @@ function renderLudwtList() {
   const rows = ludwtRows();
   el.count.textContent = String(rows.length);
   el.list.innerHTML = "";
+  el.list.classList.toggle("single", ludwtSingleOn());
   if (!rows.length) {
     const empty = document.createElement("li");
     empty.className = "empty";
@@ -479,14 +480,16 @@ function renderLudwtList() {
     text.append(title, LUDWT.whenEl(row));
     button.append(number, text);
     if (row.song && row.song.extra) {
-      button.classList.add("no-karaoke");
-      button.title = "Nicht bei Karaoke – Quelle: " + ["meeting:Instrumental", "video:Video", "sung:Zusammenkünfte"].filter((x) => mediaKey(x.split(":")[0], row.song.number)).map((x) => x.split(":")[1]).join(", ");
-      const tags = document.createElement("span");
-      tags.className = "src-tags";
-      if (mediaKey("meeting", row.song.number)) tags.append(Object.assign(document.createElement("i"), { className: "t-i", textContent: "♪", title: "Instrumental" }));
-      if (mediaKey("video", row.song.number)) tags.append(Object.assign(document.createElement("i"), { className: "t-v", textContent: "▶", title: "Video" }));
-      if (mediaKey("sung", row.song.number)) tags.append(Object.assign(document.createElement("i"), { className: "t-z", textContent: "Z", title: "Zusammenkünfte" }));
-      button.append(tags);
+      item.classList.add("no-karaoke");
+      const n = row.song.number, w = state.version;
+      const used = (w === "sung" && mediaKey("sung", n)) ? "sung" : (w === "video" && mediaKey("video", n)) ? "video" : mediaKey("meeting", n) ? "meeting" : mediaKey("sung", n) ? "sung" : mediaKey("video", n) ? "video" : "";
+      const def = { meeting: ["t-i", "♪", "Instrumental"], sung: ["t-z", "Z", "Zusammenkünfte"], video: ["t-v", "▶", "Video"] }[used];
+      if (def) {
+        const tags = document.createElement("span");
+        tags.className = "src-tags";
+        tags.append(Object.assign(document.createElement("i"), { className: def[0], textContent: def[1], title: "Nicht bei Karaoke – genommen aus: " + def[2] }));
+        button.append(tags);
+      }
     }
     if (row.song) {
       if (state.songs[state.index] === row.song) button.classList.add("active");
@@ -699,6 +702,9 @@ function sortPlaylist(how) {
   renderList();
 }
 function renderList() {
+  document.body.dataset.mode = state.mode;
+  if (state.mode !== "ludwt") el.list.classList.remove("single");
+  try { updateVersionBar(); } catch { /* egal */ }
   updateSortBox();
   syncSelectBtn();
   if (state.mode === "ludwt") { renderLudwtList(); return; }
@@ -1165,8 +1171,10 @@ function updateVersionBar() {
   try { on = localStorage.getItem("verBarAlways") === "1"; } catch { /* egal */ }
   if (document.body.classList.contains("glass-open") || document.body.classList.contains("edit-mode")) on = true;
   document.body.classList.toggle("no-verbar", !on);
-  bar.hidden = !song;
-  if (bar.hidden) return;
+  const needIco = document.body.classList.contains("glass-open") && (state.mode === "ludwt" || state.mode === "playlists");
+  bar.hidden = !song && !needIco;
+  bar.classList.toggle("only-ico", !song);
+  if (!song) return;
   const n = song.number;
   const avail = { karaoke: !song.extra, meeting: Boolean(mediaKey("meeting", n)), video: Boolean(mediaKey("video", n)), sung: Boolean(mediaKey("sung", n)) };
   bar.querySelectorAll(".seg-btn[data-ver]").forEach((btn) => {
@@ -1452,6 +1460,22 @@ function playPool() {
 const lupeOpt = (k, def) => { try { const v = localStorage.getItem(k); return v === null ? def : v === "1"; } catch { return def; } };
 const ludwtSingleOn = () => lupeOpt("ludwtSingle", false);
 const listRepeatOn = () => lupeOpt("listRepeat", true);
+function updateWho() {
+  const box = document.getElementById("whoBadge");
+  if (!box) return;
+  let u = "", c = "";
+  try { u = localStorage.getItem("userName") || ""; c = localStorage.getItem("sync-code") || ""; } catch { /* egal */ }
+  const key = u + "\u0001" + c;
+  if (box.dataset.k === key) return;
+  box.dataset.k = key;
+  box.replaceChildren();
+  const line = (label, v) => { const sp = document.createElement("span"); sp.append(label + ": "); const b = document.createElement("b"); b.textContent = v || "–"; sp.append(b); sp.title = label + ": " + (v || "keiner"); box.append(sp); };
+  line("Benutzer", u);
+  line("Abgleich", c);
+}
+setInterval(updateWho, 1500);
+document.addEventListener("DOMContentLoaded", updateWho);
+
 function bindLupeOpts() {
   [["ludwtSingle", ludwtSingleOn], ["listRepeat", listRepeatOn]].forEach(([id, get]) => {
     const b = document.getElementById(id);
@@ -1462,6 +1486,7 @@ function bindLupeOpts() {
       try { localStorage.setItem(id, on ? "1" : "0"); } catch { /* egal */ }
       b.setAttribute("aria-pressed", String(on));
       state.shufPlayed = new Set();
+      if (state.mode === "ludwt") renderList();
     });
   });
 }
@@ -2021,6 +2046,7 @@ function bind() {
     updateLudwtNav();
   });
   bindLupeOpts();
+  updateWho();
   document.getElementById("ludwtPlay").addEventListener("click", () => {
     const pool = ludwtSongs();
     if (!pool.length) {
