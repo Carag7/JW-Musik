@@ -399,9 +399,9 @@ async function handleUser(request, env, path) {
   let rec = null;
   if (obj) { try { rec = await obj.json(); } catch { rec = null; } }
   if (request.method === "GET") {
-    if (!rec) return new Response("not found", { status: 404, headers: CORS });
+    if (!rec) return tesla ? json({ ok: true, none: true, presets: {}, links: [], updated: "", keyOk }, CORS) : new Response("not found", { status: 404, headers: CORS });
     if (!tesla && rec.hash && rec.hash !== sent) return json({ ok: false, locked: true }, CORS, 401);
-    return json({ ok: true, locked: !!rec.hash, presets: rec.presets || {}, links: tesla ? [] : (rec.links || []) }, CORS);
+    return json({ ok: true, locked: !!rec.hash, presets: rec.presets || {}, links: tesla ? [] : (rec.links || []), updated: rec.updated || "", keyOk: keyOk }, CORS);
   }
   if (request.method === "DELETE") {
     if (!env.WRITE_KEY) return json({ ok: false, fehler: "In Cloudflare fehlt das Secret WRITE_KEY." }, CORS, 403);
