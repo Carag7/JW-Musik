@@ -390,7 +390,7 @@ async function handleUser(request, env, path) {
   if (request.method === "OPTIONS") return new Response(null, { headers: CORS });
   const name = path.slice(6).toLowerCase().replace(/[^a-z0-9äöüß._-]/g, "").slice(0, 40);
   if (name.length < 2) return new Response("bad name", { status: 400, headers: CORS });
-  const tesla = name === "_tesla";
+  const tesla = name === "_tesla" || name === "_standard";
   if (!tesla && name.startsWith("_")) return new Response("bad name", { status: 400, headers: CORS });
   const key = `benutzer/${name}.json`;
   const sent = request.headers.get("x-user-hash") || "";
