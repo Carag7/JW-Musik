@@ -231,7 +231,40 @@
     }, () => { if (btn) btn.textContent = "Nicht möglich"; }, { timeout: 8000, maximumAge: 86400000 });
   }
 
-  const api = { THEMES, REC, resolve, apply, cycle, mountUi, sunTimes, cfg, onChange: null };
+  /* Auswahl aller Designs als Fenster (bei aktiver Lupe: Design-Taste ca. 1 s gedrückt halten) */
+  function openPicker() {
+    let box = document.getElementById("themePicker");
+    if (box) box.remove();
+    box = h("div", "theme-picker"); box.id = "themePicker";
+    const card = h("div", "theme-picker-card");
+    card.append(h("p", "theme-picker-title", "Design wählen"));
+    const wide = window.innerWidth >= 560;
+    const cur = (cfg().mode === "manual" ? cfg().theme : "");
+    THEMES.forEach((th) => {
+      const b = h("button", "theme-pick");
+      b.type = "button";
+      if (th.id === cur) b.setAttribute("aria-pressed", "true");
+      const prev = h("span", "theme-prev");
+      prev.style.background = th.sw[0]; prev.style.borderColor = th.sw[2];
+      const card2 = h("i", "theme-prev-card"); card2.style.background = th.sw[1];
+      const dot = h("i", "theme-prev-dot"); dot.style.background = th.sw[2];
+      const txt = h("b", "theme-prev-txt", "Aa"); txt.style.color = th.light ? "#10141c" : "#f4f4f4";
+      prev.append(card2, dot, txt);
+      const name = h("span", "theme-pick-name", th.name);
+      b.append(prev, name);
+      if (wide) b.append(h("small", "theme-pick-hint", th.hint));
+      b.addEventListener("click", () => { put("themeMode", "manual"); put("theme", th.id); apply(true); box.remove(); });
+      card.append(b);
+    });
+    const x = h("button", "theme-pick-close", "Schließen"); x.type = "button";
+    x.addEventListener("click", () => box.remove());
+    card.append(x);
+    box.append(card);
+    box.addEventListener("click", (e) => { if (e.target === box) box.remove(); });
+    document.body.append(box);
+  }
+
+  const api = { THEMES, REC, resolve, apply, cycle, mountUi, sunTimes, cfg, openPicker, onChange: null };
   window.THEME = api;
 
   apply(false);

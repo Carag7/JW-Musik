@@ -658,7 +658,26 @@ function syncSelectBtn() {
   b.setAttribute("aria-pressed", "true");
 }
 
+/* Sortier-Auswahl ganz unten: nur bei aktiver Lupe und in einer geöffneten Liste (Listen) */
+function updateSortBox() {
+  const w = document.getElementById("sortWrap");
+  if (w) w.hidden = !(state.mode === "playlists" && currentPlaylist());
+}
+function sortPlaylist(how) {
+  const playlist = currentPlaylist();
+  if (!playlist || !how) return;
+  const info = (id) => state.songs.find((s) => s.id === id) || { number: 9999, title: id, category: "" };
+  playlist.songs.sort((x, y) => {
+    const a = info(x), b = info(y);
+    if (how === "name") return String(a.title).localeCompare(String(b.title), "de") || a.number - b.number;
+    if (how === "cat") return String(a.category || "~").localeCompare(String(b.category || "~"), "de") || a.number - b.number;
+    return a.number - b.number;
+  });
+  savePlaylists();
+  renderList();
+}
 function renderList() {
+  updateSortBox();
   syncSelectBtn();
   if (state.mode === "ludwt") { renderLudwtList(); return; }
   const songs = visibleSongs();
@@ -1925,6 +1944,16 @@ function bind() {
       fillLudwtWeeks();
       renderList();
     }
+    /* Ist das laufende Lied nicht in dieser Liste, soll das ganze Fenster von oben zu sehen sein (nicht nach oben weggeschoben) */
+    setTimeout(() => {
+      if (state.mode !== "ludwt") return;
+      if (!document.querySelector("#songList .song-btn.active")) {
+        const sb = document.getElementById("sidebar");
+        if (sb) sb.scrollTop = 0;
+        if (el.list) el.list.scrollTop = 0;
+        [document.body, document.documentElement].forEach((n) => { if (n.scrollTop) n.scrollTop = 0; });
+      }
+    }, 120);
   });
   document.getElementById("ludwtWeek").addEventListener("change", (event) => {
     state.ludwtWeek = event.target.value;
@@ -2126,6 +2155,7 @@ function bind() {
     sessionStorage.removeItem(STORAGE.auth);
     location.reload();
   });
+  document.getElementById("sortSel").addEventListener("change", (event) => { sortPlaylist(event.target.value); event.target.value = ""; });
   document.getElementById("exportFav").addEventListener("click", () => { state.fromSettings = true; exportFavorites(); });
   document.getElementById("syncFav").addEventListener("click", () => syncFavorites());
   document.getElementById("importFav").addEventListener("click", () => { state.fromSettings = true; importFavorites(); });
@@ -2592,11 +2622,33 @@ function refreshSyncInfo() {
   info.textContent = `Auf diesem Gerät: ${totalsText(syncSnapshot())}\n` + (last
     ? `Letzter Abgleich: ${new Date(last).toLocaleString("de-AT", { dateStyle: "medium", timeStyle: "short" })} (${dir})`
     : "Noch nie synchronisiert.");
-  const sb = document.getElementById("syncUserBox");
-  if (sb) { sb.hidden = sameNameOn(); const si = document.getElementById("syncUser"); if (!sb.hidden && si && !si.value && userName() && !SYS[userName()]) si.value = userName(); }
+
   const lb = document.getElementById("syncLast");
   if (lb) { lb.hidden = !state.lastSync; lb.onclick = () => uiDialog({ eyebrow: "Synchronisieren", title: "Letzte Änderungen", lines: state.lastSync ? state.lastSync.lines : [], buttons: [{ value: true, kind: "primary", label: "Schließen" }] }); }
-  document.querySelectorAll(".same-name-chk").forEach((c) => { c.checked = sameNameOn(); c.onchange = () => { lss("sameName", c.checked ? "1" : "0"); document.querySelectorAll(".same-name-chk").forEach((o) => { o.checked = c.checked; }); refreshSyncInfo(); }; });
+  bindSameName();
+}
+/* alle „gleicher Name“-Haken (Anmeldefenster, Voreinstellungen, Abgleich) hängen zusammen */
+function applySameNameUi() {
+  const on = sameNameOn();
+  document.querySelectorAll(".same-name-chk").forEach((o) => { o.checked = on; });
+  const sr = document.getElementById("loginSyncRow"), sm = document.getElementById("loginSameRow");
+  if (sr && sm) sr.hidden = on || sm.hidden;
+  const sb = document.getElementById("syncUserBox");
+  if (sb) { sb.hidden = on; const si = document.getElementById("syncUser"); if (!on && si && !si.value && userName() && !SYS[userName()]) si.value = userName(); }
+}
+document.addEventListener("click", (e) => {
+  const b = e.target.closest && e.target.closest(".pw-toggle");
+  if (!b) return;
+  const map = { loginPwToggle: "loginPwRow", adminToggle: "adminBox" };
+  const row = document.getElementById(b.dataset.pw || map[b.id]);
+  if (!row) return;
+  row.hidden = !row.hidden;
+  b.setAttribute("aria-expanded", String(!row.hidden));
+  b.textContent = (row.hidden ? "▸" : "▾") + b.textContent.slice(1);
+});
+function bindSameName() {
+  document.querySelectorAll(".same-name-chk").forEach((c) => { c.onchange = () => { lss("sameName", c.checked ? "1" : "0"); applySameNameUi(); }; });
+  applySameNameUi();
 }
 
 const autoMax = () => Math.max(0, Number(localStorage.getItem("sync-auto-max") || 0) || 0);
@@ -2808,9 +2860,19 @@ async function syncFavoritesCore() {
     localStorage.setItem("sync-code", code);
     try {
       const message = await runSync(code, false);
-      if (sameNameOn() && !SYS[code.toLowerCase()] && userName() !== code.toLowerCase() && !/^(Abgebrochen|Server nicht)/.test(message || "")) { await userLogin(code, ""); renderPresetBox(); }
+      let extra = "";
+      if (!/^(Abgebrochen|Server nicht)/.test(message || "")) {
+        const un = sameNameOn() ? code.toLowerCase() : document.getElementById("syncUser").value.trim();
+        const pw = sameNameOn() ? "" : document.getElementById("syncUserPass").value;
+        if (un && userCleanName(un) !== userName() && !(sameNameOn() && SYS[un])) {
+          const r = await userLogin(un, pw);
+          if (r.sys) { await syncFavorites("allgemein"); state.sub = "vor"; showSetTab("allgemein"); await openSysEditor(r.sys); }
+          else extra = ` ${r.msg}`;
+          renderPresetBox();
+        }
+      }
       refreshSyncInfo();
-      return message;
+      return (message || "") + extra;
     } catch {
       return "Synchronisieren fehlgeschlagen. Bitte später noch einmal versuchen.";
     }
@@ -3352,7 +3414,7 @@ function setupAdvBox() {
   const ef = document.getElementById("eggFall");
   try { ef.checked = localStorage.getItem("eggFall") === "1"; } catch { ef.checked = false; }
   ef.onchange = () => { try { localStorage.setItem("eggFall", ef.checked ? "1" : "0"); } catch { /* egal */ } };
-  const closeSettings = () => { document.getElementById("codeModal").hidden = true; };
+  const closeSettings = () => { sysKeyMem = ""; document.getElementById("codeModal").hidden = true; };
   document.getElementById("advAdvanced").onclick = () => { closeSettings(); toggleAdvanced(); };
   document.getElementById("advEdit").onclick = () => { closeSettings(); openTimecode(); };
   document.getElementById("advReload").onclick = () => hardRefresh();
@@ -3420,7 +3482,9 @@ const sysDefault = (n) => {
 const sameNameOn = () => lsv("sameName", "1") === "1";
 const userName = () => lsv("userName", "");
 const srvName = (n) => SYS[n] || n;
-const sysKey = () => { try { return sessionStorage.getItem("sysKey") || ""; } catch { return ""; } };
+let sysKeyMem = "";   // Schreib-Passwort nur im Speicher: gilt, solange das Einstellungsfenster offen ist
+const sysKey = () => sysKeyMem;
+try { sessionStorage.removeItem("sysKey"); } catch { /* egal */ }
 const userCleanName = (n) => String(n || "").trim().toLowerCase().replace(/[^a-z0-9äöüß._-]/g, "").slice(0, 40);
 const userData = () => { try { return normPresets(JSON.parse(lsv("userPresets", "{}"))); } catch { return normPresets({}); } };
 const userSaveLocal = (d) => lss("userPresets", JSON.stringify(d));
@@ -3653,6 +3717,28 @@ function buildPresetRows(rows, o) {
   });
 }
 
+/* Alles auf Standard bzw. Tesla zurücksetzen (aktueller Benutzer und dieses Gerät), mit Sicherheitsabfrage */
+async function resetToProfile(name) {
+  const data = await sysData(name);
+  const all = { on: defaultOn(), vals: data.vals };
+  const target = presetTarget(all, name === "tesla" ? "tesla" : "user");
+  const diff = presetDiff(target);
+  const label = name === "tesla" ? "Tesla" : "Standard";
+  const yes = await uiDialog({
+    eyebrow: "Zurücksetzen", title: `Wirklich alles auf „${label}“ zurücksetzen?`, cancelValue: false,
+    lines: [`Alle Einstellungen${userName() ? ` von „${userName()}“` : ""} und dieses Geräts werden auf die Werte von „${label}“ gesetzt.${diff.length ? ` ${diff.length} Werte ändern sich.` : " Es ändert sich nichts."}`,
+      ...(diff.length ? [{ details: { title: "Änderungen anzeigen", lines: [{ table: [["Einstellung", "Jetzt", "Neu"], ...diff.map((d) => [d.key === d.label ? d.key : `${d.label} (${d.key})`, niceVal(d.old), niceVal(d.val)])] }] } }] : [])],
+    buttons: [{ value: true, kind: "danger", label: "Ja, zurücksetzen" }, { value: false, kind: "cancel", label: "Abbrechen" }]
+  });
+  if (!yes) return;
+  applyTarget(target);
+  const d = userData(); d.on = defaultOn(); target.forEach((x) => { d.vals[x.key] = x.val; }); userSaveLocal(d);
+  const n = userName();
+  if (n && userSyncOk) await putProfile(n, { presets: d });
+  renderPresetBox();
+  document.getElementById("userMsg").textContent = `Auf „${label}“ zurückgesetzt.`;
+}
+
 /* Editor für „Standard“ und „Tesla“: zeigt die gespeicherten Werte, mit Speichern / Abbrechen */
 async function verifyKey(name, key) {
   const r = await fetchUser(SYS[name], "", { "x-write-key": key });
@@ -3665,7 +3751,7 @@ async function openSysEditor(name) {
     key = await askKey(name === "tesla" ? "Tesla Voreinstellungen ändern" : "Standard Voreinstellungen ändern");
     if (!key) return;
     if (!(await verifyKey(name, key))) { msg.textContent = "Schreib-Passwort falsch oder Server nicht erreichbar."; return; }
-    try { sessionStorage.setItem("sysKey", key); } catch { /* egal */ }
+    sysKeyMem = key;
   }
   const r = await fetchUser(SYS[name], "");
   let draft = r.state === "ok" && !r.none && Object.keys(r.presets).length ? normPresets(r.presets) : sysDefault(name);
@@ -3679,6 +3765,11 @@ async function openSysEditor(name) {
   buildPresetRows(document.getElementById("sysRows"), { live: false, name, get: () => draft, save: (d) => { draft = d; } });
   ed.hidden = false; area.hidden = true;
   document.getElementById("sysCancel").onclick = () => { close(); msg.textContent = "Nicht gespeichert."; };
+  document.getElementById("sysFactory").onclick = async () => {
+    if (!(await uiConfirm({ eyebrow: "Werkseinstellung", title: "Werkseinstellung wiederherstellen?", lines: ["Die Felder werden auf die fest eingebauten Werte zurückgesetzt. Gespeichert wird erst mit „Speichern“."], ok: "Wiederherstellen" }))) return;
+    draft = sysDefault(name);
+    buildPresetRows(document.getElementById("sysRows"), { live: false, name, get: () => draft, save: (d) => { draft = d; } });
+  };
   document.getElementById("sysSave").onclick = async () => {
     em.textContent = "Bitte warten …";
     const ok = await putUser(SYS[name], "", { presets: draft }, { "x-write-key": key });
@@ -3715,15 +3806,8 @@ async function userSaveSettings() {
 })();
 /* Abgleich-Reiter: Benutzer für die Einstellungen (wie in Allgemein), wenn nicht der gleiche Name genutzt wird */
 function setupSyncUser() {
-  const msg = document.getElementById("syncUserMsg"), nameIn = document.getElementById("syncUser"), passIn = document.getElementById("syncUserPass");
+  const nameIn = document.getElementById("syncUser"), passIn = document.getElementById("syncUserPass");
   nameIn.value = userName() && !SYS[userName()] ? userName() : ""; passIn.value = "";
-  document.getElementById("syncUserGo").onclick = async () => {
-    msg.textContent = "Bitte warten …";
-    const r = await userLogin(nameIn.value, passIn.value);
-    if (r.sys) { msg.textContent = ""; await syncFavorites("allgemein"); state.sub = "vor"; showSetTab("allgemein"); await openSysEditor(r.sys); return; }
-    msg.textContent = r.msg;
-    if (r.ok) { passIn.value = ""; renderPresetBox(); }
-  };
   refreshSyncInfo();
 }
 function setupPresetBox() {
@@ -3753,8 +3837,8 @@ function setupPresetBox() {
   document.getElementById("userOut").onclick = () => { userLogout(); msg.textContent = "Abgemeldet. Die Werte auf diesem Gerät bleiben bestehen."; renderPresetBox(); };
   document.getElementById("presetApply").onclick = async () => { if (await applyWithPreview(presetTarget(userData(), "user"), "Gespeicherte Werte anwenden?")) showToast("Voreinstellungen angewendet"); };
   document.getElementById("teslaApply").onclick = async () => { if (await applyTeslaPreset()) showToast("Tesla-Voreinstellung angewendet"); };
-  document.getElementById("teslaEdit").onclick = () => openSysEditor("tesla");
-  document.getElementById("stdEdit").onclick = () => openSysEditor("standard");
+  document.getElementById("stdReset").onclick = () => resetToProfile("standard");
+  document.getElementById("teslaReset").onclick = () => resetToProfile("tesla");
   document.getElementById("userLink").onclick = async () => {
     const me = userName();
     if (!me) return;
@@ -3795,6 +3879,7 @@ function setupPresetBox() {
 }
 
 function openCode(title, onSubmit, kind) {
+  sysKeyMem = "";
   const modal = document.getElementById("codeModal");
   const ludwtBox = document.getElementById("ludwtSync");
   if (ludwtBox) ludwtBox.hidden = kind !== "sync";
@@ -3873,6 +3958,7 @@ function openCode(title, onSubmit, kind) {
     if (mode === "device" && kind !== "import") ok.hidden = true;
   };
   document.getElementById("codeCancel").onclick = () => {
+    sysKeyMem = "";
     if (kind === "sync") userSaveSettings();
     if (kind !== "sync" && state.fromSettings) { state.fromSettings = false; syncFavorites("sichern"); return; }
     state.fromSettings = false;
@@ -3956,7 +4042,7 @@ function checkLogin() {
   /* im Tesla beim allerersten Öffnen gleich aufgeklappt */
   if (isTesla() && lsv("teslaPreset", "") === "") toggleMore(true);
   document.getElementById("loginTesla").checked = false;
-  document.querySelectorAll(".same-name-chk").forEach((c) => { c.checked = sameNameOn(); c.onchange = () => { lss("sameName", c.checked ? "1" : "0"); document.querySelectorAll(".same-name-chk").forEach((o) => { o.checked = c.checked; }); document.getElementById("loginSyncRow").hidden = c.checked || document.getElementById("loginSameRow").hidden; try { refreshSyncInfo(); } catch { /* egal */ } }; });
+  bindSameName();
   gate.hidden = authed;
   document.getElementById("loginForm").addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -4018,6 +4104,19 @@ init();
 /* ---------- Designs (Themes): Logik in theme.js ---------- */
 (function bindTheme() {
   const btn = document.getElementById("themeBtn");
+  /* bei aktiver Lupe: ca. 1 Sekunde gedrückt halten öffnet die Auswahl aller Designs */
+  if (btn) {
+    let timer = 0, fired = false;
+    const clear = () => { clearTimeout(timer); timer = 0; };
+    btn.addEventListener("pointerdown", () => {
+      fired = false; clear();
+      if (!document.body.classList.contains("glass-open")) return;
+      timer = setTimeout(() => { timer = 0; fired = true; if (window.THEME && THEME.openPicker) THEME.openPicker(); }, 1000);
+    });
+    ["pointerup", "pointerleave", "pointercancel"].forEach((ev) => btn.addEventListener(ev, clear));
+    btn.addEventListener("contextmenu", (e) => { if (document.body.classList.contains("glass-open")) e.preventDefault(); });
+    btn.addEventListener("click", (e) => { if (fired) { fired = false; e.stopImmediatePropagation(); e.preventDefault(); } }, true);
+  }
   if (btn) btn.addEventListener("click", () => {
     const r = window.THEME.cycle();
     showToast(`Design: ${r.name}${r.wasAuto ? " (Automatik aus)" : ""}`);

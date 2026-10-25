@@ -1322,3 +1322,36 @@ body.glass-open .egg { display: block; }
 #presetBox .stack select { min-height: 36px; padding: 0 8px; }
 #syncUserBox input, #syncUserBox select, #codeInput { background: var(--panel-2) !important; color: var(--text) !important; border: 1px solid var(--line); border-radius: 12px; padding: 0 12px; box-sizing: border-box; min-height: 44px; width: 100%; font-size: 15px; }
 #dialogInput { -webkit-user-select: text; user-select: text; pointer-events: auto; }
+
+/* ---- v82: Lesbarkeit, Abstände, Auswahlfenster ---- */
+.login-card input, #dialogForm input, #dialogInput, .login-card input[type=password], .login-card input[type=text] { background: var(--panel-2) !important; color: var(--text) !important; border: 1px solid var(--line) !important; caret-color: var(--text); }
+.login-card input::placeholder, #dialogInput::placeholder { color: var(--muted); }
+.pw-toggle { align-self: flex-start; border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 13px; padding: 4px 0; cursor: pointer; text-align: left; }
+.admin-box { display: grid; gap: 10px; padding: 10px; border: 1px dashed var(--line); border-radius: 12px; }
+.admin-box[hidden] { display: none !important; }
+#userSel { min-height: 40px !important; font-size: 16px !important; padding: 0 10px; }
+/* größere Abstände in Allgemein (Haken-Zeilen der Voreinstellungen bleiben eng) */
+#codeForm .autoplay-box { gap: 14px; }
+#codeForm .autoplay-box .set-row:not(.check) { margin: 4px 0; }
+#codeForm .set-hint { line-height: 1.5; margin: 4px 0 8px; display: block; }
+#codeForm .autoplay-box .adv-btns { margin: 6px 0; }
+#presetRows .set-row.check, #presetRows .preset-row { margin: 0; }
+#presetBox .user-line { margin-bottom: 6px; }
+#toolsBox { order: 99; }
+/* Sortieren ganz unten, nur bei aktiver Lupe */
+.sort-wrap { display: none; margin: 10px 0 4px; }
+body.glass-open .sort-wrap:not([hidden]) { display: block; }
+/* Auswahl der Designs */
+.theme-picker { position: fixed; inset: 0; z-index: 400; display: grid; place-items: center; background: rgba(0,0,0,.55); }
+.theme-picker-card { width: min(92vw, 520px); max-height: 86vh; overflow: auto; display: grid; gap: 8px; padding: 14px; border-radius: 16px; background: var(--panel); border: 1px solid var(--line); color: var(--text); }
+.theme-picker-title { margin: 0 0 4px; font-weight: 800; }
+.theme-pick { display: flex; align-items: center; gap: 12px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel-2); color: var(--text); font: inherit; text-align: left; cursor: pointer; min-height: 48px; }
+.theme-pick[aria-pressed="true"] { border-color: var(--accent); outline: 2px solid var(--accent); }
+.theme-prev { position: relative; flex: 0 0 64px; height: 38px; border-radius: 8px; border: 2px solid; overflow: hidden; display: block; }
+.theme-prev-card { position: absolute; left: 6px; right: 26px; top: 6px; bottom: 6px; border-radius: 4px; }
+.theme-prev-dot { position: absolute; right: 6px; top: 6px; width: 14px; height: 14px; border-radius: 50%; }
+.theme-prev-txt { position: absolute; left: 12px; top: 8px; font-size: 14px; font-style: normal; }
+.theme-pick-name { font-weight: 700; flex: 0 0 auto; }
+.theme-pick-hint { color: var(--muted); flex: 1 1 auto; text-align: right; font-size: 12px; }
+.theme-pick-close { margin-top: 4px; min-height: 44px; border: 1px solid var(--line); border-radius: 12px; background: transparent; color: var(--text); font: inherit; cursor: pointer; }
+#caragBox { order: 97; }

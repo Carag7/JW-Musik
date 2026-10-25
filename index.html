@@ -36,7 +36,8 @@
         <label id="loginSameRow" class="set-row check" hidden><input class="same-name-chk" type="checkbox" /> <span>Favoriten und Listen unter demselben Namen speichern</span></label>
         <label id="loginSyncRow" class="stack" hidden>Name für den Favoriten-Abgleich <small>(freiwillig)</small><input id="loginSyncName" type="text" autocomplete="off" autocapitalize="off" /></label>
         <label class="stack">Benutzername <small>(freiwillig)</small><input id="loginUser" type="text" autocomplete="off" autocapitalize="off" /></label>
-        <label class="stack">Benutzer-Passwort <small>(freiwillig – nur wenn dein Benutzer eines hat)</small><input id="loginUserPass" type="password" autocomplete="off" /></label>
+        <button id="loginPwToggle" class="pw-toggle" type="button" aria-expanded="false">▸ Passwort für den Benutzer (freiwillig)</button>
+        <label id="loginPwRow" class="stack" hidden><small>Nur nötig, wenn dein Benutzer ein Passwort hat oder du ihm eines geben möchtest.</small><input id="loginUserPass" type="password" autocomplete="new-password" /></label>
       </div>
       <button id="loginBack" class="ghost" type="button" hidden>Zurück</button>
     </form>
@@ -62,10 +63,10 @@
       <button id="smallerBtn" class="ghost" type="button" aria-label="Schrift kleiner">A−</button>
       <button id="largerBtn" class="ghost" type="button" aria-label="Schrift größer">A+</button>
       <button id="fullscreenBtn" class="ghost" type="button">Vollbild</button>
-      <a id="lyricsLink" class="ghost text-link" href="https://www.jw.org/en/library/music-songs/sing-out-joyfully/" target="_blank" rel="noopener">Text</a>
       <button id="themeBtn" class="ghost" type="button" aria-label="Design wechseln" title="Design wechseln">◐</button>
       <button id="autoStartBtn" class="ghost auto-ico" type="button" aria-pressed="false" aria-label="Autoplay beim Öffnen">⏵</button>
       <button id="refreshBtn" class="ghost" type="button" hidden>Neu laden</button>
+      <a id="lyricsLink" class="ghost text-link" href="https://www.jw.org/en/library/music-songs/sing-out-joyfully/" target="_blank" rel="noopener">Text</a>
       <button id="closeSidebar" class="ghost x-ico" type="button" aria-label="Auswahlliste ausblenden" title="Auswahlliste ausblenden">×</button>
       <button id="logoutBtn" class="ghost" type="button" hidden>Logout</button>
     </div>
@@ -140,6 +141,10 @@
       </div>
 
       <ul id="songList" class="song-list" aria-label="Lieder"></ul>
+      <label id="sortWrap" class="search-wrap sort-wrap" hidden>
+        <span class="sr-only">Sortieren</span>
+        <select id="sortSel"><option value="">Sortieren nach …</option><option value="num">Lied-Nummer</option><option value="name">Name des Liedes</option><option value="cat">Kategorie</option></select>
+      </label>
       <div id="listFoot" class="list-foot">
         <button id="footToggle" class="foot-toggle" type="button" aria-expanded="false" aria-label="Weitere Tasten ein-/ausblenden">›</button>
         <div id="footBtns" class="foot-btns" hidden>
@@ -192,12 +197,12 @@
 
   <footer class="flyer" aria-label="Wiedergabe">
     <div class="transport">
-      <button id="favoriteBtn2" class="round fav2" type="button" aria-pressed="false" aria-label="Favorit">☆</button>
       <button id="back15" class="round" type="button" aria-label="15 Sekunden zurück">−15</button>
       <button id="prevBtn" class="round nav" type="button" aria-label="Vorheriges Lied">◀</button>
       <button id="playBtn" class="round play" type="button" aria-label="Play">▶</button>
       <button id="nextBtn" class="round nav" type="button" aria-label="Nächstes Lied">▶</button>
       <button id="fwd15" class="round" type="button" aria-label="15 Sekunden vor">+15</button>
+      <button id="favoriteBtn2" class="round fav2" type="button" aria-pressed="false" aria-label="Favorit">☆</button>
     </div>
     <div class="timeline">
       <div class="nav-row"><p id="prevSong" class="nav-song">—</p><button id="waveToggle" class="chip wave-toggle" type="button" hidden>Welle</button></div>
@@ -241,9 +246,9 @@
       <label class="set-row check" data-tab="abgleich"><input class="same-name-chk" type="checkbox" /> <span>Gleicher Name für Favoriten-Abgleich und Einstellungen</span></label>
       <div id="syncUserBox" data-tab="abgleich" class="user-new" hidden>
         <label class="stack">Benutzer für die Einstellungen <input id="syncUser" type="text" autocomplete="off" autocapitalize="off" placeholder="z. B. anna" /></label>
-        <label class="stack">Passwort <small>(freiwillig – nur wenn du den Benutzer schützen möchtest, sonst leer lassen)</small><input id="syncUserPass" type="password" autocomplete="new-password" /></label>
-        <button id="syncUserGo" class="chip" type="button">Benutzer übernehmen</button>
-        <small id="syncUserMsg" class="set-hint"></small>
+        <button class="pw-toggle" type="button" data-pw="syncPassRow" aria-expanded="false">▸ Passwort (freiwillig)</button>
+        <label id="syncPassRow" class="stack" hidden><small>Nur nötig, wenn du den Benutzer schützen möchtest. Sonst leer lassen.</small><input id="syncUserPass" type="password" autocomplete="new-password" /></label>
+        <small class="set-hint">Mit „Synchronisieren“ werden Favoriten und Listen abgeglichen und der Benutzer für die Einstellungen angemeldet.</small>
       </div>
       <img id="syncQr" data-tab="abgleich" alt="" hidden />
       <p id="syncLink" data-tab="abgleich" class="sync-link" hidden></p>
@@ -272,6 +277,7 @@
           <div id="sysRows" class="preset-rows"></div>
           <div class="adv-btns">
             <button id="sysSave" class="chip primary-chip" type="button">Speichern</button>
+            <button id="sysFactory" class="chip" type="button">Werkseinstellung wiederherstellen</button>
             <button id="sysCancel" class="chip" type="button">Abbrechen</button>
           </div>
           <small id="sysMsg" class="set-hint"></small>
@@ -282,39 +288,38 @@
         <label class="stack">Benutzer <select id="userSel"></select></label>
         <div id="userNew" class="user-new" hidden>
           <label class="stack">Benutzername <input id="userName" type="text" autocomplete="off" autocapitalize="off" placeholder="z. B. anna" /></label>
-          <label class="stack">Passwort <small>(freiwillig – nur wenn du den Benutzer schützen möchtest, sonst leer lassen)</small><input id="userPass" type="password" autocomplete="new-password" /></label>
+          <button class="pw-toggle" type="button" data-pw="userPassRow" aria-expanded="false">▸ Passwort (freiwillig)</button>
+          <label id="userPassRow" class="stack" hidden><small>Nur nötig, wenn du den Benutzer schützen möchtest. Sonst leer lassen.</small><input id="userPass" type="password" autocomplete="new-password" /></label>
           <button id="userGo" class="chip" type="button">Weiter</button>
         </div>
         <div class="adv-btns">
           <button id="userOut" class="chip" type="button">Abmelden</button>
           <button id="userLink" class="chip" type="button">Mit anderem Benutzer verknüpfen</button>
-          <button id="userDel" class="chip danger" type="button">Benutzer löschen</button>
         </div>
         <small id="userMsg" class="set-hint"></small>
         <label class="set-row check"><input class="same-name-chk" type="checkbox" /> <span>Gleicher Name für Favoriten-Abgleich und Einstellungen</span></label>
         <div id="presetRows" class="preset-rows"></div>
         <div class="adv-btns">
-          <button id="presetApply" class="chip" type="button">Gespeicherte Werte anwenden</button>
-          <button id="teslaApply" class="chip" type="button">Tesla-Voreinstellung anwenden</button>
+          <button id="presetApply" class="chip" type="button">Meine gespeicherten Werte anwenden</button>
+          <button id="teslaApply" class="chip" type="button">Tesla-Voreinstellung auf dieses Gerät anwenden</button>
         </div>
-        <p class="ap-title">Voreinstellungen für alle</p>
-        <div class="adv-btns">
-          <button id="stdEdit" class="chip" type="button">Standard Voreinstellungen</button>
-          <button id="teslaEdit" class="chip" type="button">Tesla Voreinstellungen</button>
+        <button id="adminToggle" class="pw-toggle" type="button" aria-expanded="false">▸ Verwaltung und Zurücksetzen</button>
+        <div id="adminBox" class="admin-box" hidden>
+          <p class="ap-title">Alles zurücksetzen</p>
+          <small class="set-hint">Setzt alle Einstellungen des angemeldeten Benutzers (und dieses Geräts) auf die Werte von „Standard“ oder „Tesla“ zurück. Vorher kommt eine Sicherheitsabfrage.</small>
+          <div class="adv-btns">
+            <button id="stdReset" class="chip" type="button">Standard Voreinstellungen</button>
+            <button id="teslaReset" class="chip" type="button">Tesla Voreinstellungen</button>
+          </div>
+          <p class="ap-title">Benutzer</p>
+          <div class="adv-btns"><button id="userDel" class="chip danger" type="button">Benutzer löschen</button></div>
+          <small class="set-hint">Standard und Tesla ändern: oben im Feld „Neuer Benutzer“ den Namen „standard“ oder „tesla“ eingeben und das Schreib-Passwort (WRITE_KEY) eingeben.</small>
         </div>
-        <small class="set-hint">„Standard“ bekommen alle neuen Benutzer. „Tesla“ gilt nur, wenn im Anmeldefenster der Tesla-Haken gesetzt wird. Ändern geht nur mit dem Schreib-Passwort (WRITE_KEY); es wird bis zum Verlassen der Seite gemerkt.</small>
         <small class="set-hint">Ein Haken bedeutet: Diese Einstellung gehört zum Benutzer. Ihr aktueller Wert wird automatisch auf dem Server gespeichert und beim Anmelden und bei jedem Start wieder gesetzt. Vorher zeigt ein aufklappbares Fenster, was sich ändert.</small>
         </div>
       </div>
       <div id="advBox" data-tab="allgemein" data-sub="einst" class="autoplay-box" hidden>
         <p class="ap-title">Anzeige und Werkzeuge</p>
-        <div class="adv-btns">
-          <button id="advAdvanced" class="chip" type="button">Erweiterte Optionen ein/aus</button>
-          <button id="advEdit" class="chip" type="button">Bearbeitungsmodus (Karaoke-Texte)</button>
-          <button id="advReload" class="chip" type="button">Seite neu laden</button>
-          <button id="advStart" class="chip" type="button">Anmeldefenster öffnen</button>
-        </div>
-        <small class="set-hint">Erweiterte Optionen sind die Funktionen der Lupe: Textsuche, Art-Buttons, Listen-Werkzeuge. Die Tesla-Voreinstellungen findest du unter „Voreinstellungen“.</small>
         <label class="set-row">Schriftgröße Auswahlfenster <input id="advListSize" type="number" min="10" max="48" inputmode="numeric" /></label>
         <label class="set-row">Schriftgröße Karaoke-Text <input id="advScale" type="number" min="10" max="200" inputmode="numeric" /></label>
         <label class="set-row">Breite Auswahlfenster (px) <input id="advSidebar" type="number" min="180" max="1200" inputmode="numeric" /></label>
@@ -373,6 +378,16 @@
         <label class="set-row">Welches GIF
           <select id="eggGif"><option value="chor">Chor</option><option value="2">Carag vorwärts</option><option value="1">Carag rückwärts</option><option value="match">Bitte auswählen</option></select></label>
         <small class="set-hint">Die Funktion „GIF bei blockiertem Video“ ist standardmäßig aus. Der Tesla erlaubt kein Video während der Fahrt; ist sie an, spielt „Automatisch“ zuerst das Video und wechselt zum GIF, sobald es nicht läuft.</small>
+      </div>
+      <div id="toolsBox" data-tab="allgemein" data-sub="einst" class="autoplay-box tools-box">
+        <p class="ap-title">Werkzeuge</p>
+        <div class="adv-btns">
+          <button id="advAdvanced" class="chip" type="button">Erweiterte Optionen ein/aus</button>
+          <button id="advEdit" class="chip" type="button">Bearbeitungsmodus (Karaoke-Texte)</button>
+          <button id="advReload" class="chip" type="button">Seite neu laden</button>
+          <button id="advStart" class="chip" type="button">Anmeldefenster öffnen</button>
+        </div>
+        <small class="set-hint">Erweiterte Optionen sind die Funktionen der Lupe: Textsuche, Art-Buttons, Listen-Werkzeuge. Die Tesla-Voreinstellungen findest du unter „Voreinstellungen“.</small>
       </div>
       <section id="ludwtSync" data-tab="ludwt" class="ludwt-sync" hidden></section>
       <button id="codeCancel" class="ghost" type="button">Abbrechen</button>
