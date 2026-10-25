@@ -2331,9 +2331,18 @@ function bind() {
     if (!i) return;
     let end = 0;
     try { for (let k = 0; k < b.length; k++) if (b.start(k) <= el.audio.currentTime + 0.5) end = Math.max(end, b.end(k)); } catch { /* egal */ }
-    i.style.width = d && isFinite(d) ? `${Math.min(100, (end / d) * 100)}%` : "0%";
+    const pct = d && isFinite(d) ? Math.min(100, (end / d) * 100) : 0;
+    i.style.width = `${pct}%`;
+    const bar = document.getElementById("bufBar");
+    const filling = Boolean(el.audio.currentSrc) && (!d || !isFinite(d) || end < d - 0.5);
+    bar.classList.toggle("on", filling);
+    if (filling) {
+      const tr = bar.parentElement.getBoundingClientRect(), a = el.back15.getBoundingClientRect(), z = el.fwd15.getBoundingClientRect();
+      bar.style.left = `${a.left - tr.left}px`;
+      bar.style.width = `${z.right - a.left}px`;
+    }
   };
-  ["progress", "timeupdate", "loadedmetadata", "durationchange", "emptied"].forEach((n) => el.audio.addEventListener(n, paintBuf));
+  ["progress", "timeupdate", "loadedmetadata", "durationchange", "emptied", "loadstart", "canplay"].forEach((n) => el.audio.addEventListener(n, paintBuf));
   el.audio.addEventListener("timeupdate", updateProgress);
   el.audio.addEventListener("loadedmetadata", updateProgress);
   el.audio.addEventListener("ended", () => {

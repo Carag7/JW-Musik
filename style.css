@@ -1383,3 +1383,7 @@ body.no-song #favoriteBtn2, body.no-song #favoriteBtn { display: none !important
 .buf-bar i { display: block; height: 100%; width: 0; background: var(--accent-2, #6cc); transition: width .3s linear; }
 @keyframes playPulse { 0%, 100% { filter: brightness(1); box-shadow: 0 0 0 0 rgba(255, 159, 46, .7); } 50% { filter: brightness(1.35); box-shadow: 0 0 0 8px rgba(255, 159, 46, 0); } }
 .round.play.buffering { animation: playPulse 1s ease-in-out infinite; }
+
+.transport { position: relative; }
+.buf-bar { position: absolute; top: calc(100% + 6px); left: 0; width: 100px; margin: 0; display: none; }
+.buf-bar.on { display: block; }

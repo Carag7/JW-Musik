@@ -207,6 +207,7 @@
       <button id="nextBtn" class="round nav" type="button" aria-label="Nächstes Lied">▶</button>
       <button id="fwd15" class="round" type="button" aria-label="15 Sekunden vor">+15</button>
       <button id="favoriteBtn2" class="round fav2" type="button" aria-pressed="false" aria-label="Favorit">☆</button>
+      <div id="bufBar" class="buf-bar" aria-hidden="true"><i></i></div>
     </div>
     <div class="timeline">
       <div class="nav-row"><p id="prevSong" class="nav-song">—</p><button id="waveToggle" class="chip wave-toggle" type="button" hidden>Welle</button></div>
@@ -215,7 +216,6 @@
         <input id="progressBar" type="range" min="0" max="1000" value="0" aria-label="Position" />
         <span id="duration">0:00</span>
       </div>
-      <div id="bufBar" class="buf-bar" aria-hidden="true"><i></i></div>
       <canvas id="spectrum" class="spectrum" hidden></canvas>
       <p id="nextSong" class="nav-song">—</p>
     </div>
