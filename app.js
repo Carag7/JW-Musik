@@ -400,7 +400,7 @@ function visibleSongs() {
   }
   const extraOn = showExtraSongs();
   const srcs = extraOn ? srcSet() : null;
-  return songs.filter((song) => {
+  const out = songs.filter((song) => {
     if (state.mode !== "ludwt" && !extraOn && song.extra) {
       const inList = playlist && state.mode === "playlists" && playlist.songs.includes(song.id);
       if (!inList) return false;
@@ -416,6 +416,15 @@ function visibleSongs() {
       if (!text.includes(state.lyricQuery)) return false;
     }
     return song.title.toLowerCase().includes(q) || String(song.number).includes(q) || song.id.includes(q);
+  });
+  if (state.mode === "songs" && state.sortBy) return sortedSongs(out, state.sortBy);
+  return out;
+}
+function sortedSongs(list, how) {
+  return [...list].sort((a, b) => {
+    if (how === "name") return String(a.title).localeCompare(String(b.title), "de") || a.number - b.number;
+    if (how === "cat") return String(a.category || "~").localeCompare(String(b.category || "~"), "de") || a.number - b.number;
+    return a.number - b.number;
   });
 }
 
@@ -661,7 +670,10 @@ function syncSelectBtn() {
 /* Sortier-Auswahl ganz unten: nur bei aktiver Lupe und in einer geöffneten Liste (Listen) */
 function updateSortBox() {
   const w = document.getElementById("sortWrap");
-  if (w) w.hidden = !(state.mode === "playlists" && currentPlaylist());
+  if (!w) return;
+  w.hidden = !((state.mode === "playlists" && currentPlaylist()) || state.mode === "songs");
+  const sel = document.getElementById("sortSel");
+  if (sel && state.mode === "songs") sel.value = state.sortBy || "";
 }
 function sortPlaylist(how) {
   const playlist = currentPlaylist();
@@ -2155,7 +2167,10 @@ function bind() {
     sessionStorage.removeItem(STORAGE.auth);
     location.reload();
   });
-  document.getElementById("sortSel").addEventListener("change", (event) => { sortPlaylist(event.target.value); event.target.value = ""; });
+  document.getElementById("sortSel").addEventListener("change", (event) => {
+    if (state.mode === "playlists") { sortPlaylist(event.target.value); event.target.value = ""; }
+    else { state.sortBy = event.target.value; renderList(); }
+  });
   document.getElementById("exportFav").addEventListener("click", () => { state.fromSettings = true; exportFavorites(); });
   document.getElementById("syncFav").addEventListener("click", () => syncFavorites());
   document.getElementById("importFav").addEventListener("click", () => { state.fromSettings = true; importFavorites(); });
