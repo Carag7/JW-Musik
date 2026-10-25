@@ -1315,3 +1315,10 @@ body.glass-open .egg { display: block; }
 .preset-field select { min-height: 36px; padding: 0 8px; background: var(--panel-2); color: var(--text); border: 1px solid var(--line); border-radius: 10px; font-size: 14px; }
 .meta-i-small { width: 34px !important; height: 34px !important; min-height: 0 !important; border-radius: 10px !important; font-size: 18px !important; opacity: .6; }
 .meta-i-small[aria-expanded="true"] { opacity: 1; }
+
+[hidden] { display: none !important; }
+.primary-chip { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+#presetBox .stack select, #presetBox .stack input { font-size: 14px; }
+#presetBox .stack select { min-height: 36px; padding: 0 8px; }
+#syncUserBox input, #syncUserBox select, #codeInput { background: var(--panel-2) !important; color: var(--text) !important; border: 1px solid var(--line); border-radius: 12px; padding: 0 12px; box-sizing: border-box; min-height: 44px; width: 100%; font-size: 15px; }
+#dialogInput { -webkit-user-select: text; user-select: text; pointer-events: auto; }

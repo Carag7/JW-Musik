@@ -32,8 +32,9 @@
           <button id="loginApply" class="chip" type="button" hidden>Übernehmen</button>
           <button id="loginTeslaInfo" class="meta-i-small" type="button" aria-expanded="false" aria-label="Erklärung">▾</button>
         </div>
-        <small id="loginTeslaText" class="set-hint" hidden>Setzt: automatisch abspielen an, weitere Lieder, Art-Kennzeichen und Art-Buttons aus, Favoriten-Stern oben und unten, Lupe und Player nur nach langem Drücken, Carag aus, Design wie Gerät/Tesla, Abgleich bis 2 gelöschte Lieder, Einstellungen nicht abgleichen. Dafür ist kein Benutzer nötig.</small>
-        <label class="set-row check"><input class="same-name-chk" type="checkbox" /> <span>Favoriten und Listen unter demselben Namen speichern</span></label>
+        <small id="loginTeslaText" class="set-hint" hidden>Setzt: automatisch abspielen an, weitere Lieder, Art-Kennzeichen und Art-Buttons aus, Favoriten-Stern oben und unten, Lupe und Player nur nach langem Drücken, Carag aus, Design wie Gerät/Tesla, Abgleich bis 2 gelöschte Lieder. Dafür ist kein Benutzer nötig.</small>
+        <label id="loginSameRow" class="set-row check" hidden><input class="same-name-chk" type="checkbox" /> <span>Favoriten und Listen unter demselben Namen speichern</span></label>
+        <label id="loginSyncRow" class="stack" hidden>Name für den Favoriten-Abgleich <small>(freiwillig)</small><input id="loginSyncName" type="text" autocomplete="off" autocapitalize="off" /></label>
         <label class="stack">Benutzername <small>(freiwillig)</small><input id="loginUser" type="text" autocomplete="off" autocapitalize="off" /></label>
         <label class="stack">Benutzer-Passwort <small>(freiwillig – nur wenn dein Benutzer eines hat)</small><input id="loginUserPass" type="password" autocomplete="off" /></label>
       </div>
@@ -237,6 +238,13 @@
         <button id="syncDevice" class="chip" type="button">Anderes Gerät</button>
       </div>
       <input id="codeInput" data-tab="abgleich" type="text" minlength="4" placeholder="eigenes Passwort, mind. 4 Zeichen" autocomplete="off" />
+      <label class="set-row check" data-tab="abgleich"><input class="same-name-chk" type="checkbox" /> <span>Gleicher Name für Favoriten-Abgleich und Einstellungen</span></label>
+      <div id="syncUserBox" data-tab="abgleich" class="user-new" hidden>
+        <label class="stack">Benutzer für die Einstellungen <input id="syncUser" type="text" autocomplete="off" autocapitalize="off" placeholder="z. B. anna" /></label>
+        <label class="stack">Passwort <small>(freiwillig – nur wenn du den Benutzer schützen möchtest, sonst leer lassen)</small><input id="syncUserPass" type="password" autocomplete="new-password" /></label>
+        <button id="syncUserGo" class="chip" type="button">Benutzer übernehmen</button>
+        <small id="syncUserMsg" class="set-hint"></small>
+      </div>
       <img id="syncQr" data-tab="abgleich" alt="" hidden />
       <p id="syncLink" data-tab="abgleich" class="sync-link" hidden></p>
       <button id="copyLink" data-tab="abgleich" class="chip" type="button" hidden>Kopieren</button>
@@ -244,16 +252,12 @@
       <button id="codeOk" data-tab="abgleich" class="chip" type="submit">QR-Code erzeugen</button>
       <p id="codeMessage" data-tab="abgleich" class="login-error"></p>
       <p id="syncInfo" data-tab="abgleich" class="login-error" hidden></p>
-      <p id="syncUserInfo" data-tab="abgleich" class="set-hint"></p>
-      <label class="set-row check" data-tab="abgleich"><input class="same-name-chk" type="checkbox" /> <span>Gleicher Name für Favoriten/Listen und Einstellungen (Benutzer)</span></label>
       <button id="syncLast" data-tab="abgleich" class="chip" type="button" hidden>Letzte Änderungen ansehen</button>
       <div id="syncSettings" data-tab="abgleich" class="sync-settings" hidden>
         <label class="set-row">Automatisch abgleichen, auch wenn bis zu
           <input id="syncAutoMax" type="number" min="0" max="999" inputmode="numeric" value="0" />
           Lieder gelöscht wurden</label>
         <small class="set-hint">0 = bei jeder Löschung nachfragen</small>
-        <label class="set-row check"><input id="syncSettingsOpt" type="checkbox" /> Auch alle anderen Einstellungen mit abgleichen</label>
-        <small class="set-hint">Design, Anzeige-Optionen, Sprungweite usw. werden mit den Favoriten auf alle Geräte mit demselben Speicher übertragen. Die Standort-Angabe und Passwörter bleiben nur auf dem Gerät.</small>
       </div>
       <button id="syncDelete" data-tab="abgleich" class="chip danger" type="button" hidden>Alles löschen</button>
       <div id="subTabs" data-tab="allgemein" class="set-tabs sub-tabs" hidden>
@@ -262,12 +266,23 @@
       </div>
       <div id="presetBox" data-tab="allgemein" data-sub="vor" class="autoplay-box" hidden>
         <button id="caragOpen2" class="carag-open" type="button" aria-label="Weitere Einstellungen"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M3 2.5l5.2 4h7.6l5.2-4V12c0 5.2-4 9.5-9 9.5S3 17.200 3 12zM8.600 11.200a1.100 1.100 0 100 2.200 1.100 1.100 0 000-2.200zm6.800 0a1.100 1.100 0 100 2.200 1.100 1.100 0 000-2.200zM12 15l-1.400 1.200h2.800z"/></svg></button>
+        <div id="sysEditor" hidden>
+          <p id="sysTitle" class="ap-title"></p>
+          <small id="sysWhen" class="set-hint"></small>
+          <div id="sysRows" class="preset-rows"></div>
+          <div class="adv-btns">
+            <button id="sysSave" class="chip primary-chip" type="button">Speichern</button>
+            <button id="sysCancel" class="chip" type="button">Abbrechen</button>
+          </div>
+          <small id="sysMsg" class="set-hint"></small>
+        </div>
+        <div id="userArea">
         <p class="ap-title">Benutzer und Voreinstellungen</p>
         <p id="userLine" class="user-line"></p>
         <label class="stack">Benutzer <select id="userSel"></select></label>
         <div id="userNew" class="user-new" hidden>
           <label class="stack">Benutzername <input id="userName" type="text" autocomplete="off" autocapitalize="off" placeholder="z. B. anna" /></label>
-          <label class="stack">Passwort <small>(freiwillig – nur wenn du den Benutzer schützen möchtest, sonst leer lassen)</small><input id="userPass" type="password" autocomplete="off" /></label>
+          <label class="stack">Passwort <small>(freiwillig – nur wenn du den Benutzer schützen möchtest, sonst leer lassen)</small><input id="userPass" type="password" autocomplete="new-password" /></label>
           <button id="userGo" class="chip" type="button">Weiter</button>
         </div>
         <div class="adv-btns">
@@ -276,16 +291,20 @@
           <button id="userDel" class="chip danger" type="button">Benutzer löschen</button>
         </div>
         <small id="userMsg" class="set-hint"></small>
-        <label class="set-row check"><input class="same-name-chk" type="checkbox" /> <span>Favoriten und Wiedergabelisten (Abgleich) unter demselben Namen speichern wie die Einstellungen</span></label>
+        <label class="set-row check"><input class="same-name-chk" type="checkbox" /> <span>Gleicher Name für Favoriten-Abgleich und Einstellungen</span></label>
         <div id="presetRows" class="preset-rows"></div>
         <div class="adv-btns">
           <button id="presetApply" class="chip" type="button">Gespeicherte Werte anwenden</button>
           <button id="teslaApply" class="chip" type="button">Tesla-Voreinstellung anwenden</button>
-          <button id="teslaEdit" class="chip" type="button">Tesla-Voreinstellung ändern</button>
-          <button id="stdEdit" class="chip" type="button">Standard für neue Benutzer ändern</button>
         </div>
-        <small class="set-hint">Tesla-Voreinstellung und Standard gelten für alle und lassen sich nur mit dem Schreib-Passwort (WRITE_KEY) ändern, auch durch Eingabe des Namens „tesla“ oder „standard“. Neue Benutzer starten mit dem Standard. Die Tesla-Werte gelten nur, wenn im Anmeldefenster der Tesla-Haken gesetzt wird.</small>
-        <small class="set-hint">Ein Haken bedeutet: Diese Einstellung gehört zum Benutzer. Ihr aktueller Wert wird beim Schließen der Einstellungen auf dem Server gespeichert und beim Anmelden und bei jedem Start wieder gesetzt. Vorher zeigt ein aufklappbares Fenster, was sich ändert.</small>
+        <p class="ap-title">Voreinstellungen für alle</p>
+        <div class="adv-btns">
+          <button id="stdEdit" class="chip" type="button">Standard Voreinstellungen</button>
+          <button id="teslaEdit" class="chip" type="button">Tesla Voreinstellungen</button>
+        </div>
+        <small class="set-hint">„Standard“ bekommen alle neuen Benutzer. „Tesla“ gilt nur, wenn im Anmeldefenster der Tesla-Haken gesetzt wird. Ändern geht nur mit dem Schreib-Passwort (WRITE_KEY); es wird bis zum Verlassen der Seite gemerkt.</small>
+        <small class="set-hint">Ein Haken bedeutet: Diese Einstellung gehört zum Benutzer. Ihr aktueller Wert wird automatisch auf dem Server gespeichert und beim Anmelden und bei jedem Start wieder gesetzt. Vorher zeigt ein aufklappbares Fenster, was sich ändert.</small>
+        </div>
       </div>
       <div id="advBox" data-tab="allgemein" data-sub="einst" class="autoplay-box" hidden>
         <p class="ap-title">Anzeige und Werkzeuge</p>
@@ -383,7 +402,7 @@
       <p id="dialogEyebrow" class="eyebrow" hidden></p>
       <h2 id="dialogTitle"></h2>
       <div id="dialogBody" class="dlg-body"></div>
-      <input id="dialogInput" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" hidden />
+      <input id="dialogInput" type="text" name="dialog-eingabe" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" hidden />
       <label id="dialogCheck" class="remember" hidden><input id="dialogCheckBox" type="checkbox" /> <span id="dialogCheckText"></span></label>
       <label id="dialogShowPw" class="remember" hidden><input id="dialogShowPwBox" type="checkbox" /> Passwort anzeigen</label>
       <div id="dialogButtons" class="dlg-actions"></div>
