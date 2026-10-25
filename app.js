@@ -351,7 +351,8 @@ let syncTimer = 0;
 function scheduleSync() {
   if (!localStorage.getItem("sync-code")) return;
   clearTimeout(syncTimer);
-  syncTimer = setTimeout(() => { if (typeof autoSync === "function") autoSync(); }, 8000);
+  state.favPending = true;
+  syncTimer = setTimeout(async () => { state.favPending = false; if (typeof autoSync === "function") await autoSync(); }, 8000);
 }
 
 function applyScale() {
@@ -1465,15 +1466,25 @@ function updateWho() {
   if (!box) return;
   let u = "", c = "";
   try { u = localStorage.getItem("userName") || ""; c = localStorage.getItem("sync-code") || ""; } catch { /* egal */ }
-  const key = u + "\u0001" + c;
+  const uPend = Boolean(u) && (!userSyncOk || state.setPending);
+  const cPend = Boolean(c) && (Boolean(state.favPending) || (state.syncRun || 0) > 0);
+  const key = [u, c, uPend, cPend].join("\u0001");
   if (box.dataset.k === key) return;
   box.dataset.k = key;
   box.replaceChildren();
-  const line = (label, v) => { const sp = document.createElement("span"); sp.append(label + ": "); const b = document.createElement("b"); b.textContent = v || "–"; sp.append(b); sp.title = label + ": " + (v || "keiner"); box.append(sp); };
-  line("Benutzer", u);
-  line("Abgleich", c);
+  const t = document.createElement("div"); t.className = "wt"; t.textContent = "Sync"; box.append(t);
+  const line = (label, v, pend) => {
+    const sp = document.createElement("span");
+    sp.className = "w " + (v ? (pend ? "pend" : "ok") : "");
+    sp.append(label + ": ");
+    const b = document.createElement("b"); b.textContent = v || "–"; sp.append(b);
+    sp.title = v ? (pend ? "wird noch abgeglichen …" : "abgeglichen") : "nicht eingestellt";
+    box.append(sp);
+  };
+  line("Benutzer", u, uPend);
+  line("Favoriten", c, cPend);
 }
-setInterval(updateWho, 1500);
+setInterval(updateWho, 600);
 document.addEventListener("DOMContentLoaded", updateWho);
 
 function bindLupeOpts() {
@@ -3067,6 +3078,9 @@ async function syncFavoritesCore() {
   };
 }
 
+const _runSync0 = runSync;
+runSync = async function (...a) { state.syncRun = (state.syncRun || 0) + 1; try { return await _runSync0.apply(this, a); } finally { state.syncRun--; } };
+
 async function autoSync() {
   const code = localStorage.getItem("sync-code");
   if (!code) return;
@@ -3933,11 +3947,12 @@ async function userSaveSettings() {
 (() => {
   const orig = Storage.prototype.setItem;
   let t = 0;
+  const flush = async () => { try { await userSaveSettings(); } finally { state.setPending = false; } };
   Storage.prototype.setItem = function (k, v) {
     orig.call(this, k, v);
     if (this !== localStorage) return;
     try {
-      if (userName() && PRESETS.some((p) => p.keys.includes(k) || (p.rx && p.rx.test(k)))) { clearTimeout(t); t = setTimeout(userSaveSettings, 2500); }
+      if (userName() && PRESETS.some((p) => p.keys.includes(k) || (p.rx && p.rx.test(k)))) { clearTimeout(t); state.setPending = true; t = setTimeout(flush, 2500); }
     } catch { /* egal */ }
   };
   window.addEventListener("pagehide", () => { try { userSaveSettings(); } catch { /* egal */ } });

@@ -63,7 +63,6 @@
     <div id="favTools" class="fav-tools-main" hidden>
       <button id="syncFav" class="chip" type="button">Einstellungen</button>
     </div>
-    <div id="whoBadge" class="who-badge" aria-label="Angemeldet"></div>
     <div class="top-actions">
       <button id="smallerBtn" class="ghost" type="button" aria-label="Schrift kleiner">A−</button>
       <button id="largerBtn" class="ghost" type="button" aria-label="Schrift größer">A+</button>
@@ -81,7 +80,7 @@
       <header class="brand">
         <div>
           <p class="eyebrow">Sing Out Joyfully</p>
-          <h1><button id="homeBtn" class="home-link" type="button">Karaoke</button></h1>
+          <h1><button id="homeBtn" class="home-link" type="button">Karaoke</button><button id="ludwtSingle" class="mode-ico" type="button" aria-pressed="false" aria-label="Lieder einzeln abspielen (danach stoppen)" title="Lieder einzeln: nach jedem Lied stoppen. Aus: alle der Reihe nach.">■</button><button id="listRepeat" class="mode-ico" type="button" aria-pressed="true" aria-label="Liste wiederholen" title="Liste nach dem Ende wiederholen (auch im Zufallsmodus)">↻</button></h1>
         </div>
         <button id="playerToggle" class="ghost player-icon" type="button" aria-label="Player" aria-pressed="true"></button>
         <button id="lyricSearchToggle" class="ghost" type="button" aria-label="im Liedtext suchen"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="10" cy="10" r="6.5"/><path d="M15 15l6 6"/></svg></button>
@@ -180,8 +179,6 @@
           <button class="seg-btn" type="button" data-ver="video" aria-pressed="false">Video</button>
           <button class="seg-btn" type="button" data-ver="sung" aria-pressed="false">Zusammenkünfte</button>
         </div>
-        <button id="ludwtSingle" class="mode-ico" type="button" aria-pressed="false" aria-label="Lieder einzeln abspielen (danach stoppen)" title="Lieder einzeln: nach jedem Lied stoppen. Aus: alle der Reihe nach.">■</button>
-        <button id="listRepeat" class="mode-ico" type="button" aria-pressed="true" aria-label="Liste wiederholen" title="Liste nach dem Ende wiederholen (auch im Zufallsmodus)">↻</button>
         <button id="verText" class="seg-btn text-opt" type="button" aria-pressed="false" hidden>Karaoketext anzeigen</button>
         <button id="verView" class="seg-btn text-opt" type="button" aria-pressed="false" hidden>Text statt Video</button>
       </div>
@@ -233,6 +230,7 @@
   </div>
   <div id="codeModal" class="login-gate" hidden>
     <form id="codeForm" class="login-card">
+      <div id="whoBadge" class="who-badge" aria-label="Sync-Status"></div>
       <p class="eyebrow" id="codeEyebrow">Favoriten</p>
       <button id="metaToggle" data-tab="abgleich" class="ghost meta-i" type="button" hidden>i</button>
       <h2 id="codeTitle">Code</h2>
