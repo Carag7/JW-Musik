@@ -24,7 +24,7 @@
 const CORS = {
   "access-control-allow-origin": "*",
   "access-control-allow-methods": "GET,PUT,POST,DELETE,OPTIONS",
-  "access-control-allow-headers": "content-type,x-write-key,x-user-hash"
+  "access-control-allow-headers": "content-type,x-write-key,x-user-hash,x-store-hash,x-store-set"
 };
 
 export default {
@@ -441,6 +441,21 @@ async function handleSync(request, env, path) {
   const code = path.slice(6).toLowerCase().replace(/[^a-z0-9-]/g, "");
   if (!code || code.length < 3) return new Response("bad code", { status: 400, headers: CORS });
   const keys = storeKeys(code);
+
+  /* Freiwilliges Passwort für Favoriten-Speicher (nur der Hash wird gespeichert, nie das Passwort) */
+  const lockKey = `favoriten/${code}.pw`;
+  let lock = "";
+  if (!keys.lrc) {
+    const lo = await env.MUSIK.get(lockKey);
+    if (lo) lock = (await lo.text()).trim();
+    if (lock && (request.headers.get("x-store-hash") || "") !== lock) return json({ ok: false, locked: true }, CORS, 401);
+    if ((request.method === "PUT" || request.method === "POST") && new URL(request.url).searchParams.get("pw")) {
+      const next = (request.headers.get("x-store-set") || "").slice(0, 128);
+      if (next === "-" || !next) await env.MUSIK.delete(lockKey);
+      else await env.MUSIK.put(lockKey, next, { httpMetadata: { contentType: "text/plain" } });
+      return json({ ok: true, locked: !!next && next !== "-" }, CORS);
+    }
+  }
 
   if (request.method === "PUT" || request.method === "POST") {
     // Liedtext-Zeiten nur mit Schreib-Schlüssel, wenn in Cloudflare das Secret WRITE_KEY gesetzt ist
