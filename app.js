@@ -478,6 +478,16 @@ function renderLudwtList() {
     title.textContent = row.song ? `${state.favorites.has(row.song.id) ? "★ " : ""}${row.song.title}` : "nicht in der Liederliste";
     text.append(title, LUDWT.whenEl(row));
     button.append(number, text);
+    if (row.song && row.song.extra) {
+      button.classList.add("no-karaoke");
+      button.title = "Nicht bei Karaoke – Quelle: " + ["meeting:Instrumental", "video:Video", "sung:Zusammenkünfte"].filter((x) => mediaKey(x.split(":")[0], row.song.number)).map((x) => x.split(":")[1]).join(", ");
+      const tags = document.createElement("span");
+      tags.className = "src-tags";
+      if (mediaKey("meeting", row.song.number)) tags.append(Object.assign(document.createElement("i"), { className: "t-i", textContent: "♪", title: "Instrumental" }));
+      if (mediaKey("video", row.song.number)) tags.append(Object.assign(document.createElement("i"), { className: "t-v", textContent: "▶", title: "Video" }));
+      if (mediaKey("sung", row.song.number)) tags.append(Object.assign(document.createElement("i"), { className: "t-z", textContent: "Z", title: "Zusammenkünfte" }));
+      button.append(tags);
+    }
     if (row.song) {
       if (state.songs[state.index] === row.song) button.classList.add("active");
       button.addEventListener("click", () => selectSong(state.songs.indexOf(row.song), true));
@@ -1439,6 +1449,37 @@ function playPool() {
     : state.songs;
 }
 
+const lupeOpt = (k, def) => { try { const v = localStorage.getItem(k); return v === null ? def : v === "1"; } catch { return def; } };
+const ludwtSingleOn = () => lupeOpt("ludwtSingle", false);
+const listRepeatOn = () => lupeOpt("listRepeat", true);
+function bindLupeOpts() {
+  [["ludwtSingle", ludwtSingleOn], ["listRepeat", listRepeatOn]].forEach(([id, get]) => {
+    const b = document.getElementById(id);
+    if (!b) return;
+    b.setAttribute("aria-pressed", String(get()));
+    b.addEventListener("click", () => {
+      const on = !get();
+      try { localStorage.setItem(id, on ? "1" : "0"); } catch { /* egal */ }
+      b.setAttribute("aria-pressed", String(on));
+      state.shufPlayed = new Set();
+    });
+  });
+}
+/* Ende eines Liedes: true = stoppen, false = weiter */
+function stopAfterSong() {
+  const cur = state.songs[state.index];
+  if (state.mode === "ludwt") return ludwtSingleOn();
+  if (state.mode === "playlists" && !listRepeatOn() && cur) {
+    const pool = playPool();
+    if (state.shuffle) {
+      state.shufPlayed = state.shufPlayed || new Set();
+      state.shufPlayed.add(cur.id);
+      if (pool.every((s) => state.shufPlayed.has(s.id))) { state.shufPlayed = new Set(); return true; }
+    } else if (pool.indexOf(cur) === pool.length - 1) return true;
+  }
+  return false;
+}
+
 function step(delta) {
   const pool = playPool();
   if (!pool.length) {
@@ -1447,7 +1488,12 @@ function step(delta) {
   }
   const playing = !el.audio.paused;
   if (state.shuffle && state.mode !== "ludwt") {
-    const choices = pool.filter((song) => song !== state.songs[state.index]);
+    let choices = pool.filter((song) => song !== state.songs[state.index]);
+    if (state.mode === "playlists" && !listRepeatOn()) {
+      const done = state.shufPlayed || (state.shufPlayed = new Set());
+      const fresh = choices.filter((song) => !done.has(song.id));
+      if (fresh.length) choices = fresh; else state.shufPlayed = new Set();
+    }
     const pick = (choices.length ? choices : pool)[Math.floor(Math.random() * (choices.length || pool.length))];
     selectSong(state.songs.indexOf(pick), true);
     return;
@@ -1514,6 +1560,7 @@ function paintFav2() {
   const b = document.getElementById("favoriteBtn2");
   if (!b) return;
   const song = state.songs[state.index];
+  document.body.classList.toggle("no-song", !song);
   const fav = Boolean(song && state.favorites.has(song.id));
   b.setAttribute("aria-pressed", String(fav));
   b.textContent = fav ? "★" : "☆";
@@ -1973,6 +2020,7 @@ function bind() {
     updateNeighbors();
     updateLudwtNav();
   });
+  bindLupeOpts();
   document.getElementById("ludwtPlay").addEventListener("click", () => {
     const pool = ludwtSongs();
     if (!pool.length) {
@@ -2232,6 +2280,7 @@ function bind() {
   el.audio.addEventListener("ended", () => {
     el.play.textContent = "▶";
     el.status.textContent = "Ende";
+    if (stopAfterSong()) { el.status.textContent = state.mode === "ludwt" ? "Ende (einzeln)" : "Liste beendet"; return; }
     step(1);
   });
   el.audio.addEventListener("error", () => {
@@ -2522,6 +2571,27 @@ function applySyncData(data) {
   renderList();
 }
 
+/* Freiwilliges Passwort des Favoriten-Abgleichs: nur der Hash (gebunden an den Namen) wird gespeichert */
+const storeHeaders = (store) => ({ "x-store-hash": lsv("sync-pass-for", "") === store ? lsv("sync-pass-hash", "") : "" });
+async function storeHashOf(store, pass) { return pass ? sha256Hex(`store:${store}:${pass}`) : ""; }
+function storeRemember(store, hash) { lss("sync-pass-for", store); lss("sync-pass-hash", hash); }
+async function setStoreLock(store, hash) {
+  try {
+    const res = await fetch(`${SYNC_BASE}/sync/${store}?pw=1`, { method: "PUT", headers: { ...storeHeaders(store), "x-store-set": hash || "-" }, body: "{}" });
+    return res.ok;
+  } catch { return false; }
+}
+/* Namen + freiwilliges Passwort setzen und abgleichen (Anmeldefenster, Voreinstellungen) */
+async function syncWithPass(code, pass) {
+  const store = code.toLowerCase().replace(/[^a-z0-9-]/g, "");
+  if (store.length < 3) return "";
+  lss("sync-code", store);
+  let hash = "";
+  if (pass) { hash = await storeHashOf(store, pass); storeRemember(store, hash); }
+  const msg = await runSync(store, true, !!pass);
+  if (pass && !/^(Abgebrochen|Server nicht|Passwort)/.test(msg || "")) await setStoreLock(store, hash);
+  return msg;
+}
 let outSettings = null;     // Einstellungen, die beim nächsten Hochladen mitgeschickt werden (oder die vom Server erhaltenen)
 let putHappened = false;
 async function putSync(store, data) {
@@ -2529,7 +2599,7 @@ async function putSync(store, data) {
   if (outSettings) body.settings = outSettings;
   const res = await fetch(`${SYNC_BASE}/sync/${store}`, {
     method: "PUT",
-    headers: { "content-type": "application/json" },
+    headers: { "content-type": "application/json", ...storeHeaders(store) },
     body: JSON.stringify(body)
   });
   if (!res.ok) throw new Error(`Server ${res.status}`);
@@ -2580,12 +2650,20 @@ function applySettings(obj) {
   try { state.scale = Number(localStorage.getItem(STORAGE.scale) || 42); applyScale(); state.listSize = Number(localStorage.getItem(STORAGE.listSize) || 16); applyListSize(); const sw = Number(localStorage.getItem("sidebarW")); if (sw >= 180) document.documentElement.style.setProperty("--sidebar", `${sw}px`); } catch { /* egal */ }
   try { updateSkipLabels(); updateAutoIcon(); updateVersionBar(); rebuildExtras(); applyStartGif(); } catch { /* egal */ }
 }
-async function runSync(code, silent) {
+async function runSync(code, silent, typedPass) {
   const store = code.toLowerCase().replace(/[^a-z0-9-]/g, "");
   const on = syncSettingsOn();
   let raw = null;
   try {
-    const r0 = await fetch(`${SYNC_BASE}/sync/${store}`, { cache: "no-store" });
+    let r0 = await fetch(`${SYNC_BASE}/sync/${store}`, { cache: "no-store", headers: storeHeaders(store) });
+    if (r0.status === 401) {
+      if (silent || typedPass) return silent ? "Passwort für den Favoriten-Abgleich fehlt (Einstellungen → Abgleich)." : "Passwort stimmt nicht.";
+      const pw = await uiPrompt({ eyebrow: "Favoriten-Abgleich", title: `Passwort für „${store}“`, type: "password", ok: "Weiter" });
+      if (!pw) return "Abgebrochen.";
+      storeRemember(store, await storeHashOf(store, pw));
+      r0 = await fetch(`${SYNC_BASE}/sync/${store}`, { cache: "no-store", headers: storeHeaders(store) });
+      if (r0.status === 401) { lss("sync-pass-hash", ""); return "Passwort stimmt nicht."; }
+    }
     if (r0.ok) raw = await r0.json();
   } catch { /* runSyncData meldet es */ }
   const remoteSet = raw && raw.settings && typeof raw.settings === "object" ? raw.settings : null;
@@ -2607,7 +2685,7 @@ async function runSync(code, silent) {
     applySettings(merged);
     if (!putHappened && JSON.stringify(merged) !== JSON.stringify(remoteSet || {})) {
       try {
-        const fresh = await (await fetch(`${SYNC_BASE}/sync/${store}`, { cache: "no-store" })).json();
+        const fresh = await (await fetch(`${SYNC_BASE}/sync/${store}`, { cache: "no-store", headers: storeHeaders(store) })).json();
         await putSync(store, normalizeSync(fresh));
       } catch { /* nächstes Mal */ }
     }
@@ -2640,6 +2718,17 @@ function refreshSyncInfo() {
 
   const lb = document.getElementById("syncLast");
   if (lb) { lb.hidden = !state.lastSync; lb.onclick = () => uiDialog({ eyebrow: "Synchronisieren", title: "Letzte Änderungen", lines: state.lastSync ? state.lastSync.lines : [], buttons: [{ value: true, kind: "primary", label: "Schließen" }] }); }
+  const clr = document.getElementById("syncPassClear");
+  if (clr) {
+    const locked = !!lsv("sync-pass-hash", "") && lsv("sync-pass-for", "") === lsv("sync-code", "");
+    clr.hidden = !locked;
+    clr.onclick = async () => {
+      const store = lsv("sync-code", "");
+      if (!(await uiConfirm({ eyebrow: "Favoriten-Abgleich", title: "Passwort entfernen?", lines: [`Der Abgleich „${store}“ ist danach wieder ohne Passwort zugänglich.`], ok: "Entfernen" }))) return;
+      if (await setStoreLock(store, "")) { storeRemember(store, ""); showToast("Passwort entfernt"); } else showToast("Nicht möglich (Server nicht erreichbar).");
+      refreshSyncInfo();
+    };
+  }
   bindSameName();
 }
 /* alle „gleicher Name“-Haken (Anmeldefenster, Voreinstellungen, Abgleich) hängen zusammen */
@@ -2715,11 +2804,12 @@ async function runSyncData(code, silent) {
   const store = code.toLowerCase().replace(/[^a-z0-9-]/g, "");
   let res;
   try {
-    res = await fetch(`${SYNC_BASE}/sync/${store}`, { cache: "no-store" });
+    res = await fetch(`${SYNC_BASE}/sync/${store}`, { cache: "no-store", headers: storeHeaders(store) });
   } catch {
     return silent ? "" : "Server nicht erreichbar.";
   }
   const local = syncSnapshot();
+  if (res.status === 401) return "Passwort stimmt nicht.";
   if (!res.ok) {
     if (silent) return "";
     const answer = await uiDialog({
@@ -2808,8 +2898,9 @@ async function showSyncCompare() {
   let remote = null;
   let problem = "";
   try {
-    const res = await fetch(`${SYNC_BASE}/sync/${store}`, { cache: "no-store" });
-    if (res.ok) remote = normalizeSync(await res.json());
+    const res = await fetch(`${SYNC_BASE}/sync/${store}`, { cache: "no-store", headers: storeHeaders(store) });
+    if (res.status === 401) problem = "Passwort nötig (Einstellungen → Abgleich → Passwort).";
+    else if (res.ok) remote = normalizeSync(await res.json());
     else problem = `Den Speicher „${store}“ gibt es auf dem Server noch nicht.`;
   } catch {
     problem = "Server nicht erreichbar.";
@@ -2874,11 +2965,17 @@ async function syncFavoritesCore() {
   openCode("Einstellungen", async (code) => {
     localStorage.setItem("sync-code", code);
     try {
-      const message = await runSync(code, false);
+      const store = code.toLowerCase().replace(/[^a-z0-9-]/g, "");
+      const typed = document.getElementById("syncPass").value;
+      state.syncTypedPass = typed;
+      const pHash = await storeHashOf(store, typed);
+      if (typed) storeRemember(store, pHash);
+      const message = await runSync(code, false, !!typed);
+      if (typed && !/^(Abgebrochen|Server nicht|Passwort)/.test(message || "")) { await setStoreLock(store, pHash); document.getElementById("syncPass").value = ""; }
       let extra = "";
       if (!/^(Abgebrochen|Server nicht)/.test(message || "")) {
         const un = sameNameOn() ? code.toLowerCase() : document.getElementById("syncUser").value.trim();
-        const pw = sameNameOn() ? "" : document.getElementById("syncUserPass").value;
+        const pw = sameNameOn() ? (state.syncTypedPass || "") : document.getElementById("syncUserPass").value;
         if (un && userCleanName(un) !== userName() && !(sameNameOn() && SYS[un])) {
           const r = await userLogin(un, pw);
           if (r.sys) { await syncFavorites("allgemein"); state.sub = "vor"; showSetTab("allgemein"); await openSysEditor(r.sys); }
@@ -3839,7 +3936,10 @@ function setupPresetBox() {
     const r = await userLogin(n, p);
     msg.textContent = r.msg;
     if (r.sys) { msg.textContent = ""; box.hidden = true; nameIn.value = ""; await openSysEditor(r.sys); renderPresetBox(); return; }
-    if (r.ok) { passIn.value = ""; nameIn.value = ""; box.hidden = true; }
+    if (r.ok) {
+      if (sameNameOn() && !SYS[userCleanName(n)]) { try { await syncWithPass(userCleanName(n), p); } catch { /* egal */ } }
+      passIn.value = ""; nameIn.value = ""; box.hidden = true;
+    }
     renderPresetBox();
   };
   sel.onchange = () => {
@@ -4032,12 +4132,15 @@ async function loginExtras() {
   let created = false;
   if (reopened && !sameNameOn()) {
     const sn = document.getElementById("loginSyncName").value.trim().toLowerCase().replace(/[^a-z0-9-]/g, "");
-    if (sn.length >= 3) { lss("sync-code", sn); try { await autoSync(); } catch { /* egal */ } }
+    if (sn.length >= 3) { try { const m = await syncWithPass(sn, document.getElementById("loginSyncPass").value); if (m) showToast(`Favoriten-Abgleich: ${m}`); } catch { /* egal */ } document.getElementById("loginSyncPass").value = ""; }
   }
   if (un) {
     const r = await userLogin(un, up);
     if (r.sys) { await syncFavorites("allgemein"); state.sub = "vor"; showSetTab("allgemein"); await openSysEditor(r.sys); }
-    else showToast(r.msg);
+    else {
+      showToast(r.msg);
+      if (r.ok && sameNameOn()) { try { const m = await syncWithPass(userCleanName(un), up); if (m) showToast(`Favoriten-Abgleich: ${m}`); } catch { /* egal */ } }
+    }
     created = !!r.created;
   }
   /* neue Benutzer bekommen die Werte ohne Rückfrage, sonst werden Änderungen vorher gezeigt */

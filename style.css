@@ -1355,3 +1355,12 @@ body.glass-open .sort-wrap:not([hidden]) { display: block; }
 .theme-pick-hint { color: var(--muted); flex: 1 1 auto; text-align: right; font-size: 12px; }
 .theme-pick-close { margin-top: 4px; min-height: 44px; border: 1px solid var(--line); border-radius: 12px; background: transparent; color: var(--text); font: inherit; cursor: pointer; }
 #caragBox { order: 97; }
+
+/* Lupe-Optionen (nur bei aktiver Lupe) */
+.lupe-opt { display: none; }
+body.glass-open .lupe-opt { display: inline-flex; }
+/* Favoriten-Tasten nur, wenn ein Lied ausgewählt ist */
+body.no-song #favoriteBtn2, body.no-song #favoriteBtn { display: none !important; }
+/* LuD+WT: Lieder, die es nicht als Karaoke gibt */
+.song-btn.no-karaoke { background: rgba(255, 190, 60, 0.20); border-color: rgba(255, 190, 60, 0.55); }
+.song-btn.no-karaoke.active { background: rgba(255, 190, 60, 0.34); }

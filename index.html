@@ -34,7 +34,11 @@
         </div>
         <small id="loginTeslaText" class="set-hint" hidden>Setzt: automatisch abspielen an, weitere Lieder, Art-Kennzeichen und Art-Buttons aus, Favoriten-Stern oben und unten, Lupe und Player nur nach langem Drücken, Carag aus, Design wie Gerät/Tesla, Abgleich bis 2 gelöschte Lieder. Dafür ist kein Benutzer nötig.</small>
         <label id="loginSameRow" class="set-row check" hidden><input class="same-name-chk" type="checkbox" /> <span>Favoriten und Listen unter demselben Namen speichern</span></label>
-        <label id="loginSyncRow" class="stack" hidden>Name für den Favoriten-Abgleich <small>(freiwillig)</small><input id="loginSyncName" type="text" autocomplete="off" autocapitalize="off" /></label>
+        <div id="loginSyncRow" hidden>
+          <label class="stack">Name für den Favoriten-Abgleich <small>(freiwillig)</small><input id="loginSyncName" type="text" autocomplete="off" autocapitalize="off" /></label>
+          <button class="pw-toggle" type="button" data-pw="loginSyncPassRow" aria-expanded="false">▸ Passwort für den Favoriten-Abgleich (freiwillig)</button>
+          <label id="loginSyncPassRow" class="stack" hidden><small>Nur nötig, wenn dieser Abgleich ein Passwort hat oder du ihm eines geben möchtest.</small><input id="loginSyncPass" type="password" autocomplete="new-password" /></label>
+        </div>
         <label class="stack">Benutzername <small>(freiwillig)</small><input id="loginUser" type="text" autocomplete="off" autocapitalize="off" /></label>
         <button id="loginPwToggle" class="pw-toggle" type="button" aria-expanded="false">▸ Passwort für den Benutzer (freiwillig)</button>
         <label id="loginPwRow" class="stack" hidden><small>Nur nötig, wenn dein Benutzer ein Passwort hat oder du ihm eines geben möchtest.</small><input id="loginUserPass" type="password" autocomplete="new-password" /></label>
@@ -90,6 +94,7 @@
           </select>
         </label>
         <div id="playlistButtons" class="playlist-list"></div>
+        <button id="listRepeat" class="chip lupe-opt" type="button" aria-pressed="true" title="Wiedergabeliste nach dem Ende wieder von vorn beginnen (auch im Zufallsmodus)">↻ Liste wiederholen</button>
         <div id="playlistCreateBox" class="playlist-create" hidden>
           <input id="playlistName" type="text" placeholder="Name der Liste" autocomplete="off" />
           <button id="playlistCreate" class="chip" type="button">Erstellen</button>
@@ -108,6 +113,7 @@
           <select id="ludwtWeek" aria-label="Woche wählen"></select>
         </label>
         <button id="ludwtPlay" class="chip" type="button">▶ Woche abspielen</button>
+        <button id="ludwtSingle" class="chip lupe-opt" type="button" aria-pressed="false" title="Aus: nächstes Lied startet automatisch. Ein: nach jedem Lied wird gestoppt.">■ Lieder einzeln</button>
         <div class="ludwt-nav">
           <button id="ludwtPrev" class="chip" type="button" aria-label="Woche davor"><span class="nv-t">◀ Woche zurück</span><small class="nv-d"></small></button>
           <button id="ludwtNext" class="chip" type="button" aria-label="Woche danach"><span class="nv-t">Woche vor ▶</span><small class="nv-d"></small></button>
@@ -243,6 +249,12 @@
         <button id="syncDevice" class="chip" type="button">Anderes Gerät</button>
       </div>
       <input id="codeInput" data-tab="abgleich" type="text" minlength="4" placeholder="eigenes Passwort, mind. 4 Zeichen" autocomplete="off" />
+      <button id="syncPassToggle" class="pw-toggle" data-tab="abgleich" data-pw="syncPassStoreRow" type="button" aria-expanded="false">▸ Passwort für den Favoriten-Abgleich (freiwillig)</button>
+      <div id="syncPassStoreRow" data-tab="abgleich" class="user-new" hidden>
+        <small class="set-hint">Nur nötig, wenn du Favoriten und Listen schützen möchtest. Gilt dann für alle deine Geräte mit diesem Namen. Sonst leer lassen.</small>
+        <input id="syncPass" type="password" autocomplete="new-password" />
+        <button id="syncPassClear" class="chip" type="button" hidden>Passwort entfernen</button>
+      </div>
       <label class="set-row check" data-tab="abgleich"><input class="same-name-chk" type="checkbox" /> <span>Gleicher Name für Favoriten-Abgleich und Einstellungen</span></label>
       <div id="syncUserBox" data-tab="abgleich" class="user-new" hidden>
         <label class="stack">Benutzer für die Einstellungen <input id="syncUser" type="text" autocomplete="off" autocapitalize="off" placeholder="z. B. anna" /></label>
