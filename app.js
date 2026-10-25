@@ -872,6 +872,7 @@ function showTitleIntro(song) {
 }
 
 function hideTitleIntro() {
+  state.endIntro = false;
   const intro = document.getElementById("titleIntro");
   if (intro.hidden) return;
   intro.classList.add("is-out");
@@ -1354,7 +1355,7 @@ async function selectSong(index, autoplay) {
       if (token === state.selectToken && el.audio.paused) togglePlay();
     };
     el.audio.addEventListener("canplay", state.canplayHandler, { once: true });
-    setTimeout(() => { if (state.introActive) hideTitleIntro(); }, 4000);
+    setTimeout(() => { if (state.introActive && !state.endIntro) hideTitleIntro(); }, 4000);
   }
 }
 
@@ -1403,7 +1404,7 @@ function updateLyrics() {
   if (!lines.length) return;
   const now = el.audio.currentTime || 0;
   const first = Number(lines[0].dataset.time);
-  if (state.introActive && now >= Math.max(0, first - 4)) hideTitleIntro();
+  if (state.introActive && !state.endIntro && now >= Math.max(0, first - 4)) hideTitleIntro();
   let active = null;
   lines.forEach((line, index) => {
     const start = Number(line.dataset.time);
@@ -1472,17 +1473,24 @@ function updateWho() {
   if (box.dataset.k === key) return;
   box.dataset.k = key;
   box.replaceChildren();
-  const t = document.createElement("div"); t.className = "wt"; t.textContent = "Sync"; box.append(t);
-  const line = (label, v, pend) => {
-    const sp = document.createElement("span");
+  const wrap = document.createElement("div"); wrap.className = "wbox"; box.append(wrap);
+  const t = document.createElement("div"); t.className = "wt"; t.textContent = "Sync"; wrap.append(t);
+  const line = (label, v, pend, stampKey) => {
+    const sp = document.createElement("button");
+    sp.type = "button";
     sp.className = "w " + (v ? (pend ? "pend" : "ok") : "");
     sp.append(label + ": ");
     const b = document.createElement("b"); b.textContent = v || "–"; sp.append(b);
     sp.title = v ? (pend ? "wird noch abgeglichen …" : "abgeglichen") : "nicht eingestellt";
-    box.append(sp);
+    sp.addEventListener("click", () => {
+      const ts = Number(localStorage.getItem(stampKey)) || 0;
+      const when = ts ? new Date(ts).toLocaleString("de-AT", { dateStyle: "medium", timeStyle: "medium" }) : "noch nicht in diesem Browser";
+      uiDialog({ eyebrow: "Sync", title: label + (v ? `: ${v}` : ""), lines: [v ? `Letzte Synchronisierung: ${when}` : "Nicht eingestellt.", pend ? "Aktuell wird noch abgeglichen …" : ""].filter(Boolean), buttons: [{ value: true, kind: "primary", label: "OK" }] });
+    });
+    wrap.append(sp);
   };
-  line("Benutzer", u, uPend);
-  line("Favoriten", c, cPend);
+  line("Benutzer", u, uPend, "lastSyncUser");
+  line("Favoriten", c, cPend, "lastSyncFav");
 }
 setInterval(updateWho, 600);
 document.addEventListener("DOMContentLoaded", updateWho);
@@ -2312,12 +2320,20 @@ function bind() {
     localStorage.setItem(STORAGE.scale, String(state.scale));
     applyScale();
   });
+  el.audio.addEventListener("play", () => { if (state.endIntro) hideTitleIntro(); });
   el.audio.addEventListener("timeupdate", updateProgress);
   el.audio.addEventListener("loadedmetadata", updateProgress);
   el.audio.addEventListener("ended", () => {
     el.play.textContent = "▶";
     el.status.textContent = "Ende";
-    if (stopAfterSong()) { el.status.textContent = state.mode === "ludwt" ? "Ende (einzeln)" : "Liste beendet"; return; }
+    if (stopAfterSong()) {
+      el.status.textContent = state.mode === "ludwt" ? "Ende (einzeln)" : "Liste beendet";
+      const cur = state.songs[state.index];
+      /* Karaoke: am Schluss Liednummer und Titel zeigen; Video: erstes Bild (Titelbild) zeigen */
+      if (cur && state.curVersion === "karaoke") { state.endIntro = true; showTitleIntro(cur); }
+      else if (state.curVersion === "video") { try { el.audio.currentTime = 0; } catch { /* egal */ } }
+      return;
+    }
     step(1);
   });
   el.audio.addEventListener("error", () => {
@@ -3079,7 +3095,14 @@ async function syncFavoritesCore() {
 }
 
 const _runSync0 = runSync;
-runSync = async function (...a) { state.syncRun = (state.syncRun || 0) + 1; try { return await _runSync0.apply(this, a); } finally { state.syncRun--; } };
+runSync = async function (...a) {
+  state.syncRun = (state.syncRun || 0) + 1;
+  try {
+    const r = await _runSync0.apply(this, a);
+    if (typeof r === "string" && !/Passwort|Abgebrochen|nicht erreichbar|Fehler|fehlgeschlagen/i.test(r)) stampSync("lastSyncFav");
+    return r;
+  } finally { state.syncRun--; }
+};
 
 async function autoSync() {
   const code = localStorage.getItem("sync-code");
@@ -3708,6 +3731,7 @@ async function fetchUser(name, hash, extra) {
     if (res.status === 401) return { state: "locked" };
     if (!res.ok) return { state: "error" };
     const d = await res.json();
+    if (!extra) stampSync("lastSyncUser");
     return { state: "ok", presets: d.presets || {}, links: Array.isArray(d.links) ? d.links : [], updated: d.updated || "", keyOk: !!d.keyOk, none: !!d.none };
   } catch { return { state: "error" }; }
 }
@@ -3715,9 +3739,11 @@ async function fetchUser(name, hash, extra) {
 async function putUser(name, authHash, fields, extra) {
   try {
     const res = await fetch(`${SYNC_BASE}/user/${encodeURIComponent(name)}`, { method: "PUT", headers: { "content-type": "application/json", "x-user-hash": authHash || "", ...(extra || {}) }, body: JSON.stringify(fields) });
+    if (res.ok) stampSync("lastSyncUser");
     return res.ok;
   } catch { return false; }
 }
+function stampSync(k) { try { localStorage.setItem(k, String(Date.now())); } catch { /* egal */ } }
 
 /* Tesla-Voreinstellung und Standard (gemeinsam für alle, Server; sonst eingebaute Werte) */
 async function sysData(n) {
