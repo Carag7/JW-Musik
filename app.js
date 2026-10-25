@@ -1289,7 +1289,9 @@ function setMediaSession(song) {
 async function selectSong(index, autoplay) {
   if (index < 0 || index >= state.songs.length) return;
   state.index = index;
-  const token = (state.selectToken = (state.selectToken || 0) + 1);
+  const token = (state.selectToken || 0) + 1;
+  state.selectToken = token;
+  if (state.endIntro) { state.endIntro = false; document.getElementById("titleIntro").hidden = true; state.introActive = false; }
   state.audioTry = 0;
   state.waveData = null;
   const song = state.songs[index];
@@ -2321,6 +2323,17 @@ function bind() {
     applyScale();
   });
   el.audio.addEventListener("play", () => { if (state.endIntro) hideTitleIntro(); });
+  const setBuf = (on) => el.play.classList.toggle("buffering", on);
+  ["play", "waiting", "loadstart"].forEach((n) => el.audio.addEventListener(n, () => { if (!el.audio.paused || n === "play") setBuf(true); }));
+  ["playing", "pause", "ended", "error", "emptied"].forEach((n) => el.audio.addEventListener(n, () => setBuf(false)));
+  const paintBuf = () => {
+    const i = document.querySelector("#bufBar i"), d = el.audio.duration, b = el.audio.buffered;
+    if (!i) return;
+    let end = 0;
+    try { for (let k = 0; k < b.length; k++) if (b.start(k) <= el.audio.currentTime + 0.5) end = Math.max(end, b.end(k)); } catch { /* egal */ }
+    i.style.width = d && isFinite(d) ? `${Math.min(100, (end / d) * 100)}%` : "0%";
+  };
+  ["progress", "timeupdate", "loadedmetadata", "durationchange", "emptied"].forEach((n) => el.audio.addEventListener(n, paintBuf));
   el.audio.addEventListener("timeupdate", updateProgress);
   el.audio.addEventListener("loadedmetadata", updateProgress);
   el.audio.addEventListener("ended", () => {
@@ -2331,7 +2344,7 @@ function bind() {
       const cur = state.songs[state.index];
       /* Karaoke: am Schluss Liednummer und Titel zeigen; Video: erstes Bild (Titelbild) zeigen */
       if (cur && state.curVersion === "karaoke") { state.endIntro = true; showTitleIntro(cur); }
-      else if (state.curVersion === "video") { try { el.audio.currentTime = 0; } catch { /* egal */ } }
+      else if (state.curVersion === "video" && cur) { state.endIntro = true; showTitleIntro(cur); }
       return;
     }
     step(1);
