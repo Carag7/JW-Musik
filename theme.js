@@ -10,14 +10,69 @@
     { id: "wald", name: "Wald", bar: "#0a1410", light: false, sw: ["#0a1410", "#16291f", "#d9b44a"], hint: "dunkles Grün mit Gold, ruhig" },
     { id: "rubin", name: "Rubin", bar: "#14080a", light: false, sw: ["#14080a", "#2a1115", "#ff5a5f"], hint: "dunkles Rot, schont die Nachtsicht" },
     { id: "himmel", name: "Himmel", bar: "#e6f0fa", light: true, sw: ["#e6f0fa", "#ffffff", "#0b7bbf"], hint: "helles Blau, frisch und klar" },
-    { id: "sand", name: "Sand", bar: "#f3ead8", light: true, sw: ["#f3ead8", "#fffaf0", "#c2410c"], hint: "warmes Papier, augenschonend hell" }
+    { id: "sand", name: "Sand", bar: "#f3ead8", light: true, sw: ["#f3ead8", "#fffaf0", "#c2410c"], hint: "warmes Papier, augenschonend hell" },
+    { id: "sk-studio", name: "Studio Glas", bar: "#0b1220", light: false, skin: true, grp: "Skin", sw: ["#0b1220", "#1a2540", "#4cc9f0"], hint: "Skin: Glas, runde Tasten, feine Linie" },
+    { id: "sk-retro", name: "Retro Deck", bar: "#1a1410", light: false, skin: true, grp: "Skin", sw: ["#1a1410", "#33271d", "#d9a441"], hint: "Skin: Hi-Fi-Deck, Messing, Segment-Balken" },
+    { id: "sk-neon", name: "Neon Linie", bar: "#05060d", light: false, skin: true, grp: "Skin", sw: ["#05060d", "#12152b", "#00f0ff"], hint: "Skin: Neon-Umrisse mit Leuchten" },
+    { id: "sk-papier", name: "Papier Minimal", bar: "#f6f2ea", light: true, skin: true, grp: "Skin", sw: ["#f6f2ea", "#ebe5d8", "#1d1b17"], hint: "Skin: hell, feine Linien, Serifenschrift" },
+    { id: "sk-kontur", name: "Kontur Pop", bar: "#fff6d6", light: true, skin: true, grp: "Skin", sw: ["#fff6d6", "#ffe58a", "#ff3d81"], hint: "Skin: dicke Rahmen, harte Schatten, bunt" },
+    { id: "tx-nacht", name: "Tesla Nacht", bar: "#0e0f12", light: false, skin: true, grp: "Tesla", sw: ["#0e0f12", "#22242a", "#e82127"], hint: "Tesla: große Tasten, dunkel, wenig Blendung" },
+    { id: "tx-tag", name: "Tesla Tag", bar: "#f2f4f7", light: true, skin: true, grp: "Tesla", sw: ["#f2f4f7", "#e1e5ea", "#1c5fe0"], hint: "Tesla: große Tasten, hell, hoher Kontrast" },
+    { id: "tx-kontrast", name: "Tesla Kontrast", bar: "#000000", light: false, skin: true, grp: "Tesla", sw: ["#000000", "#1a1a1a", "#ffd400"], hint: "Tesla: Schwarz-Gelb, extra dicke Balken" },
+    { id: "hy-amoled", name: "Handy AMOLED", bar: "#000000", light: false, skin: true, grp: "Handy", sw: ["#000000", "#17171b", "#5eead4"], hint: "Handy: Reinschwarz, Mint, kompakt" },
+    { id: "hy-pastell", name: "Handy Pastell", bar: "#f3effb", light: true, skin: true, grp: "Handy", sw: ["#f3effb", "#e6def7", "#8b5cf6"], hint: "Handy: hell, weiche Karten, Flieder" },
+    { id: "hy-sunset", name: "Handy Sunset", bar: "#1b0f1f", light: false, skin: true, grp: "Handy", sw: ["#1b0f1f", "#3a1f3f", "#ff7a45"], hint: "Handy: Abendrot-Verlauf, Daumen-freundlich" },
+    { id: "an-disco", name: "Disco ✦ animiert", bar: "#12002b", light: false, skin: true, anim: true, grp: "Animiert", sw: ["#12002b", "#2c1066", "#ff2ea6"], hint: "Animiert: tanzende Farben, hüpfende Tasten" },
+    { id: "an-aquarium", name: "Aquarium ✦ animiert", bar: "#021b33", light: false, skin: true, anim: true, grp: "Animiert", sw: ["#021b33", "#0a3a66", "#2ee6c5"], hint: "Animiert: Blasen, Wellen, schwimmender Fisch" },
+    { id: "an-weltall", name: "Weltall ✦ animiert", bar: "#05030f", light: false, skin: true, anim: true, grp: "Animiert", sw: ["#05030f", "#17123a", "#ffb703"], hint: "Animiert: Sterne, Rakete, kreisende Planeten-Taste" }
   ];
+  const REC_SHOWN = ["klassisch", "graphit", "tag", "amber", "sk-studio", "sk-retro", "tx-nacht", "tx-tag", "hy-amoled", "an-weltall"];
   const REC = { day: ["tag"], night: ["amber"] };
   const byId = (id) => THEMES.find((t) => t.id === id);
 
   const get = (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch { return d; } };
   const put = (k, v) => { try { localStorage.setItem(k, v); } catch { /* egal */ } };
   const getJ = (k, d) => { try { return JSON.parse(get(k, "")) ?? d; } catch { return d; } };
+
+  /* Welche Designs vorne (◐ und Auswahlfenster) angezeigt werden */
+  function shownIds() {
+    const a = getJ("themeShown", null);
+    let ids = Array.isArray(a) ? a.filter(byId) : REC_SHOWN.slice();
+    if (!ids.length) ids = REC_SHOWN.slice();
+    return ids;
+  }
+  function shownThemes() {
+    const ids = new Set(shownIds());
+    const c = cfg();
+    if (c.mode === "manual") ids.add(c.theme);
+    return THEMES.filter((t) => ids.has(t.id));
+  }
+  function setShown(id, on) {
+    const cur = new Set(shownIds());
+    if (on) cur.add(id); else cur.delete(id);
+    if (!cur.size) cur.add(id);
+    put("themeShown", JSON.stringify(THEMES.filter((t) => cur.has(t.id)).map((t) => t.id)));
+  }
+  /* Liste mit Häkchen „im Hauptfenster anzeigen“ (Einstellungen und Voreinstellungen) */
+  function mountShown(root) {
+    if (!root) return;
+    root.replaceChildren();
+    const shown = new Set(shownIds());
+    let grp = "";
+    THEMES.forEach((t) => {
+      const g = t.grp || "Klassisch";
+      if (g !== grp) { grp = g; root.append(h("p", "ap-title shown-grp", g === "Skin" ? "Skins" : g === "Klassisch" ? "Farb-Designs" : g === "Animiert" ? "Animierte Skins" : g + "-optimiert")); }
+      const lab = h("label", "set-row check shown-row");
+      const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = shown.has(t.id);
+      cb.addEventListener("change", () => { setShown(t.id, cb.checked); });
+      const sw = h("span", "theme-sw"); t.sw.forEach((col) => { const i = h("i"); i.style.background = col; sw.append(i); });
+      lab.append(cb, sw, document.createTextNode(" " + t.name));
+      root.append(lab);
+    });
+    const rec = h("button", "chip", "Empfehlung wählen"); rec.type = "button";
+    rec.addEventListener("click", () => { put("themeShown", JSON.stringify(REC_SHOWN)); mountShown(root); });
+    root.append(rec);
+  }
 
   function cfg() {
     let mode = get("themeMode", "");
@@ -91,6 +146,7 @@
     if (fade) { root.classList.add("theme-fade"); setTimeout(() => root.classList.remove("theme-fade"), 450); }
     if (r.id === "klassisch") root.removeAttribute("data-theme"); else root.setAttribute("data-theme", r.id);
     if (t.light) root.setAttribute("data-light", "1"); else root.removeAttribute("data-light");
+    if (t.skin) root.setAttribute("data-skin", t.id); else root.removeAttribute("data-skin");
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute("content", t.bar);
     current = r.id;
@@ -102,8 +158,9 @@
   /* ◐ oben: im festen Modus alle Designs durchschalten; bei Automatik wird auf „fest“ umgestellt */
   function cycle() {
     const c = cfg();
-    const i = THEMES.findIndex((t) => t.id === (current || c.theme));
-    const next = THEMES[(i + 1) % THEMES.length];
+    const list = shownThemes();
+    const i = list.findIndex((t) => t.id === (current || c.theme));
+    const next = list[(i + 1) % list.length];
     put("themeMode", "manual"); put("theme", next.id);
     apply(true);
     return { name: next.name, wasAuto: c.mode !== "manual" };
@@ -138,24 +195,32 @@
 
     if (c.mode === "manual") {
       const seg = h("div", "theme-seg"); seg.id = "themeSeg";
+      const shownNow = new Set(shownIds());
       THEMES.forEach((t) => {
+        const wrap = h("span", "theme-opt-wrap");
+        const cbx = document.createElement("input"); cbx.type = "checkbox"; cbx.checked = shownNow.has(t.id); cbx.title = "Im Hauptfenster anzeigen";
+        cbx.addEventListener("change", () => setShown(t.id, cbx.checked));
         const b = h("button", "seg-btn theme-opt", ""); b.type = "button"; b.dataset.theme = t.id;
         const sw = h("span", "theme-sw"); t.sw.forEach((col) => { const i = h("i"); i.style.background = col; sw.append(i); });
         b.append(sw, document.createTextNode(t.name)); b.title = t.hint;
         b.setAttribute("aria-pressed", String(t.id === c.theme));
         b.addEventListener("click", () => { put("theme", t.id); redraw(); });
-        seg.append(b);
+        wrap.append(cbx, b);
+        seg.append(wrap);
       });
       root.append(seg);
+      root.append(h("small", "set-hint", "Häkchen = Design wird vorne im Hauptfenster (◐ und Auswahl) angeboten."));
     } else {
       root.append(h("p", "set-hint", "Welche Designs sollen am Tag und welche in der Nacht verwendet werden? Bei mehreren Häkchen gilt das erste in der Liste; das ◐ oben schaltet dann ebenfalls durch."));
       const tbl = h("table", "theme-tbl");
-      const hd = h("tr"); ["Design", "Tag", "Nacht"].forEach((x) => hd.append(h("th", "", x))); tbl.append(hd);
+      const hd = h("tr"); ["☑ vorne · Design", "Tag", "Nacht"].forEach((x) => hd.append(h("th", "", x))); tbl.append(hd);
       THEMES.forEach((t) => {
         const tr = h("tr");
         const name = h("td", "");
         const sw = h("span", "theme-sw"); t.sw.forEach((col) => { const i = h("i"); i.style.background = col; sw.append(i); });
-        name.append(sw, document.createTextNode(t.name));
+        const cbs = document.createElement("input"); cbs.type = "checkbox"; cbs.checked = shownIds().includes(t.id); cbs.title = "Im Hauptfenster anzeigen";
+        cbs.addEventListener("change", () => setShown(t.id, cbs.checked));
+        name.append(cbs, sw, document.createTextNode(t.name));
         tr.append(name);
         for (const [key, list] of [["themeDay", c.day], ["themeNight", c.night]]) {
           const td = h("td", "center");
@@ -240,7 +305,7 @@
     card.append(h("p", "theme-picker-title", "Design wählen"));
     const wide = window.innerWidth >= 560;
     const cur = (cfg().mode === "manual" ? cfg().theme : "");
-    THEMES.forEach((th) => {
+    shownThemes().forEach((th) => {
       const b = h("button", "theme-pick");
       b.type = "button";
       if (th.id === cur) b.setAttribute("aria-pressed", "true");
@@ -264,7 +329,7 @@
     document.body.append(box);
   }
 
-  const api = { THEMES, REC, resolve, apply, cycle, mountUi, sunTimes, cfg, openPicker, onChange: null };
+  const api = { THEMES, REC, REC_SHOWN, shownIds, mountShown, resolve, apply, cycle, mountUi, sunTimes, cfg, openPicker, onChange: null };
   window.THEME = api;
 
   apply(false);

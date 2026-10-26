@@ -14,6 +14,7 @@
   <link rel="icon" href="icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="icon.svg" />
   <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="skins.css" />
   <script src="password.js"></script>
 </head>
 <body>
@@ -51,9 +52,11 @@
     <h2 id="introTitle"></h2>
   </div>
   <header class="topbar">
-    <button id="menuToggle" class="lieder-toggle" type="button" aria-expanded="true">Lieder</button>
-    <button id="eigeneToggle" class="lieder-toggle" type="button" aria-pressed="false">Listen</button>
-    <button id="ludwtToggle" class="lieder-toggle" type="button" aria-pressed="false">LuD+WT</button>
+    <div class="tb-main">
+      <button id="menuToggle" class="lieder-toggle" type="button" aria-expanded="true">Lieder</button>
+      <button id="eigeneToggle" class="lieder-toggle" type="button" aria-pressed="false">Listen</button>
+      <button id="ludwtToggle" class="lieder-toggle" type="button" aria-pressed="false">LuD+WT</button>
+    </div>
     <div id="listTools" class="list-tools" hidden>
       <button id="listSmaller" class="ghost" type="button" aria-label="Liste kleiner">A−</button>
       <button id="listLarger" class="ghost" type="button" aria-label="Liste größer">A+</button>
@@ -66,8 +69,8 @@
     <div class="top-actions">
       <button id="smallerBtn" class="ghost" type="button" aria-label="Schrift kleiner">A−</button>
       <button id="largerBtn" class="ghost" type="button" aria-label="Schrift größer">A+</button>
-      <button id="fullscreenBtn" class="ghost" type="button">Vollbild</button>
       <button id="themeBtn" class="ghost" type="button" aria-label="Design wechseln" title="Design wechseln">◐</button>
+      <button id="fullscreenBtn" class="ghost" type="button">Vollbild</button>
       <button id="autoStartBtn" class="ghost auto-ico" type="button" aria-pressed="false" aria-label="Autoplay beim Öffnen">⏵</button>
       <button id="refreshBtn" class="ghost" type="button" hidden>Neu laden</button>
       <a id="lyricsLink" class="ghost text-link" href="https://www.jw.org/en/library/music-songs/sing-out-joyfully/" target="_blank" rel="noopener">Text</a>
@@ -304,6 +307,8 @@
           </div>
           <small id="sysMsg" class="set-hint"></small>
         </div>
+        <button id="themeShownToggle" class="pw-toggle" type="button" aria-expanded="false">▸ Designs im Hauptfenster auswählen</button>
+        <div id="themeShownBox" hidden></div>
         <div id="userArea">
         <p class="ap-title">Benutzer und Voreinstellungen</p>
         <p id="userLine" class="user-line"></p>
@@ -449,6 +454,13 @@
   </div>
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
+  <div id="kbBar" class="kb-bar" hidden>
+    <span id="kbLabel" class="kb-label"></span>
+    <button id="kbDown" type="button" class="kb-step" aria-label="um 1 verringern" hidden>▼</button>
+    <input id="kbInput" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+    <button id="kbUp" type="button" class="kb-step" aria-label="um 1 erhöhen" hidden>▲</button>
+    <button id="kbOk" type="button" class="kb-ok">OK</button>
+  </div>
   <video id="audio" preload="none" playsinline webkit-playsinline></video>
   <script src="ludwt.js"></script>
   <script src="fehlend.js"></script>

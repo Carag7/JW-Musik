@@ -1277,8 +1277,8 @@ function setMediaSession(song) {
     artist: "Sing Out Joyfully",
     album: song.category || "Karaoke"
   });
-  navigator.mediaSession.setActionHandler("previoustrack", () => step(-1));
-  navigator.mediaSession.setActionHandler("nexttrack", () => step(1));
+  navigator.mediaSession.setActionHandler("previoustrack", () => { if (stepAllowed()) step(-1); });
+  navigator.mediaSession.setActionHandler("nexttrack", () => { if (stepAllowed()) step(1); });
   navigator.mediaSession.setActionHandler("play", togglePlay);
   navigator.mediaSession.setActionHandler("pause", togglePlay);
   const optional = (action, handler) => {
@@ -1366,7 +1366,51 @@ async function selectSong(index, autoplay) {
   }
 }
 
+/* ---------- Verbindung: Neuaufbau nach Netzverlust ---------- */
+let reconnBusy = false, reconnTimer = 0;
+function netUi() {
+  el.play.classList.toggle("net-off", !navigator.onLine || Boolean(state.netErr));
+  el.play.classList.toggle("reconnecting", reconnBusy);
+}
+function reconnect(manual) {
+  const song = state.songs[state.index];
+  if (!song || (reconnBusy && !manual)) return;
+  reconnBusy = true;
+  netUi();
+  state.wantPlay = true;
+  state.resumeAt = Math.max(el.audio.currentTime || 0, state.lastTime || 0);
+  el.status.textContent = navigator.onLine ? "Verbindung wird neu aufgebaut …" : "Keine Internetverbindung – es wird weiter versucht …";
+  clearTimeout(reconnTimer);
+  reconnTimer = setTimeout(() => { reconnBusy = false; netUi(); }, 9000);
+  selectSong(state.index, true);
+}
+function setupNet() {
+  window.addEventListener("offline", () => { state.netErr = true; netUi(); });
+  window.addEventListener("online", () => { netUi(); if (state.wantPlay && (el.audio.paused || state.netErr)) reconnect(); });
+  el.audio.addEventListener("playing", () => { state.netErr = false; reconnBusy = false; state.waitSince = 0; clearTimeout(reconnTimer); netUi(); });
+  el.audio.addEventListener("play", () => { state.wantPlay = true; });
+  const playingCls = () => document.body.classList.toggle("is-playing", !el.audio.paused && !el.audio.ended);
+  ["play", "playing", "pause", "ended", "emptied"].forEach((n) => el.audio.addEventListener(n, playingCls));
+  el.audio.addEventListener("waiting", () => { if (!state.waitSince) state.waitSince = Date.now(); });
+  el.audio.addEventListener("timeupdate", () => { state.waitSince = 0; if (el.audio.currentTime > 0) state.lastTime = el.audio.currentTime; });
+  el.audio.addEventListener("error", () => { const c = el.audio.error ? el.audio.error.code : 0; if (!navigator.onLine || c === 2) { state.netErr = true; netUi(); } });
+  setInterval(() => {
+    netUi();
+    if (!state.wantPlay || reconnBusy || !navigator.onLine) return;
+    const stuck = state.waitSince && Date.now() - state.waitSince > 12000;
+    if (state.netErr || stuck) reconnect();
+  }, 4000);
+  /* Play-Taste ca. 1 Sekunde gedrückt halten = Verbindung neu aufbauen */
+  let t = 0;
+  const start = () => { clearTimeout(t); t = setTimeout(() => { state.playHeld = true; reconnect(true); }, 1000); };
+  const stop = () => clearTimeout(t);
+  el.play.addEventListener("pointerdown", start);
+  ["pointerup", "pointerleave", "pointercancel"].forEach((n) => el.play.addEventListener(n, stop));
+  netUi();
+}
+
 function togglePlay() {
+  if (state.netErr && navigator.onLine) { reconnect(true); return; }
   if (!state.currentAudio) {
     const pool = visibleSongs();
     const first = pool[0] || state.songs[0];
@@ -1388,6 +1432,7 @@ function togglePlay() {
       el.status.textContent = "Wiedergabe blockiert. Tippe noch einmal auf Play.";
     });
   } else {
+    state.wantPlay = false;
     el.audio.pause();
     el.play.textContent = "▶";
     setStatus("Pause", "is-pause");
@@ -1529,6 +1574,20 @@ function stopAfterSong() {
     } else if (pool.indexOf(cur) === pool.length - 1) return true;
   }
   return false;
+}
+
+/* Schutz gegen „Stroboskop“: automatische Wechsel (Liedende, Medientasten) höchstens 3 in 4 Sekunden */
+const stepLog = [];
+function stepAllowed() {
+  const now = Date.now();
+  while (stepLog.length && now - stepLog[0] > 4000) stepLog.shift();
+  if (stepLog.length >= 3) {
+    try { el.audio.pause(); } catch { /* egal */ }
+    el.status.textContent = "Automatischer Wechsel gestoppt (Lieder wechselten zu schnell).";
+    return false;
+  }
+  stepLog.push(now);
+  return true;
 }
 
 function step(delta) {
@@ -1839,6 +1898,69 @@ function setupNumberSteppers() {
   new MutationObserver(() => enhanceNumbers(document)).observe(document.body, { childList: true, subtree: true });
 }
 
+/* Eingabeleiste: Tippst du auf ein Eingabefeld, erscheint es als Leiste direkt über der Tastatur (Handy, iPad; nicht im Tesla) */
+function setupKbBar() {
+  if (!window.matchMedia || !matchMedia("(pointer: coarse)").matches) return;
+  try { if (isTesla()) return; } catch { /* egal */ }
+  const bar = document.getElementById("kbBar"), inp = document.getElementById("kbInput"), lab = document.getElementById("kbLabel");
+  const up = document.getElementById("kbUp"), down = document.getElementById("kbDown"), ok = document.getElementById("kbOk");
+  if (!bar) return;
+  let target = null;
+  const vv = window.visualViewport;
+  const place = () => {
+    if (bar.hidden) return;
+    const hgt = bar.offsetHeight;
+    const top = vv ? vv.offsetTop + vv.height - hgt : window.innerHeight - hgt;
+    bar.style.top = `${Math.max(0, Math.round(top))}px`;
+  };
+  if (vv) { vv.addEventListener("resize", place); vv.addEventListener("scroll", place); }
+  window.addEventListener("resize", place);
+  const labelOf = (t) => {
+    const l = t.closest("label");
+    let txt = "";
+    if (l) { const c = l.cloneNode(true); c.querySelectorAll("input,select,textarea,button,.stp").forEach((n) => n.remove()); txt = c.textContent; }
+    return (txt || t.getAttribute("aria-label") || t.placeholder || "").replace(/\s+/g, " ").trim();
+  };
+  const close = (commit, submit) => {
+    if (!target) return;
+    const t = target; target = null;
+    bar.hidden = true;
+    if (commit) t.dispatchEvent(new Event("change", { bubbles: true }));
+    if (submit && t.form) { try { t.form.requestSubmit(); } catch { /* egal */ } }
+  };
+  const push = () => { if (target) { target.value = inp.value; target.dispatchEvent(new Event("input", { bubbles: true })); } };
+  document.addEventListener("focusin", (e) => {
+    const t = e.target;
+    if (!t || !t.matches || t === inp || !t.matches('input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=button]):not([type=submit]):not([type=file]):not([type=color]), textarea')) return;
+    if (t.readOnly || t.disabled || t.closest("#kbBar")) return;
+    if (target && target !== t) { const old = target; target = null; old.dispatchEvent(new Event("change", { bubbles: true })); }
+    target = t;
+    const isNum = t.type === "number";
+    inp.type = ["text", "search", "password", "number", "email", "tel", "url"].includes(t.type) ? t.type : "text";
+    ["inputmode", "min", "max", "step", "placeholder", "maxlength"].forEach((a) => { if (t.hasAttribute(a)) inp.setAttribute(a, t.getAttribute(a)); else inp.removeAttribute(a); });
+    inp.value = t.value;
+    lab.textContent = labelOf(t);
+    up.hidden = down.hidden = !isNum;
+    bar.hidden = false;
+    place();
+    inp.focus();
+    try { inp.setSelectionRange(inp.value.length, inp.value.length); } catch { /* number-Felder */ }
+    [120, 300, 600, 1000].forEach((ms) => setTimeout(place, ms));
+  });
+  inp.addEventListener("input", push);
+  inp.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); close(true, true); inp.blur(); } });
+  inp.addEventListener("blur", () => setTimeout(() => { if (document.activeElement !== inp) close(true); }, 60));
+  [up, down, ok].forEach((b) => b.addEventListener("pointerdown", (e) => e.preventDefault()));
+  const bump = (d) => {
+    const min = inp.min !== "" ? Number(inp.min) : -Infinity, max = inp.max !== "" ? Number(inp.max) : Infinity;
+    inp.value = String(Math.max(min, Math.min(max, (Number(inp.value) || 0) + d)));
+    push();
+  };
+  up.addEventListener("click", () => bump(1));
+  down.addEventListener("click", () => bump(-1));
+  ok.addEventListener("click", () => { inp.blur(); close(true); });
+}
+
 function setupViewport() {
   const root = document.documentElement;
   const standalone = window.navigator.standalone === true || (window.matchMedia && matchMedia("(display-mode: standalone)").matches);
@@ -1926,6 +2048,8 @@ const isTesla = () => /Tesla/i.test(navigator.userAgent);
 
 function bind() {
   setupViewport();
+  setupNet();
+  setupKbBar();
   setupNumberSteppers();
   applyTopOffsets();
   try {
@@ -2219,7 +2343,7 @@ function bind() {
     handle.addEventListener("pointermove", move);
     handle.addEventListener("pointerup", up);
   });
-  el.play.addEventListener("click", togglePlay);
+  el.play.addEventListener("click", () => { if (state.playHeld) { state.playHeld = false; return; } togglePlay(); });
   el.prev.addEventListener("click", () => step(-1));
   el.next.addEventListener("click", () => step(1));
   bindSkipButton(el.back15, -1);
@@ -2412,6 +2536,7 @@ function bind() {
   el.audio.addEventListener("ended", () => {
     el.play.textContent = "▶";
     el.status.textContent = "Ende";
+    state.wantPlay = false;
     if (stopAfterSong()) {
       el.status.textContent = state.mode === "ludwt" ? "Ende (einzeln)" : "Liste beendet";
       const cur = state.songs[state.index];
@@ -2420,6 +2545,7 @@ function bind() {
       else if (state.curVersion === "video" && cur) { state.endIntro = true; showTitleIntro(cur); }
       return;
     }
+    if ((el.audio.duration || 0) < 2 || !stepAllowed()) return;   // leere/defekte Datei oder Wechsel-Schleife
     step(1);
   });
   el.audio.addEventListener("error", () => {
@@ -2746,7 +2872,7 @@ async function putSync(store, data) {
 }
 
 /* ---- Einstellungen mit abgleichen (optional, pro Schlüssel Drei-Wege-Abgleich) ---- */
-const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBarAlways", "holdGuard", "holdHint", "eggMode", "eggFall", "eggGif", "startGif", "sidebarW", "topOffMain", "topOffSet", "startGif", "ludwtSingle", "listRepeat", "srcTags", "favPlace", "favSeek", "showExtra", "srcFilter", "sync-auto-max", "skipSec", "skipBack", "skipFwd", "fehlMode", "fehlNotify", "fehlAll", "fehlHelpSeen", STORAGE.scale, STORAGE.listSize];
+const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBarAlways", "holdGuard", "holdHint", "eggMode", "eggFall", "eggGif", "startGif", "themeShown", "sidebarW", "topOffMain", "topOffSet", "startGif", "ludwtSingle", "listRepeat", "srcTags", "favPlace", "favSeek", "showExtra", "srcFilter", "sync-auto-max", "skipSec", "skipBack", "skipFwd", "fehlMode", "fehlNotify", "fehlAll", "fehlHelpSeen", STORAGE.scale, STORAGE.listSize];
 const isSettingKey = (k) => SETTING_KEYS.includes(k) || /^fehl[TL]_/.test(k);
 const syncSettingsOn = () => false;   // Einstellungen werden jetzt über den Benutzer gespeichert
 function collectSettings() {
@@ -3739,6 +3865,7 @@ const PRESETS = [
   { id: "topoff", offByDefault: true, label: "Abstand oben (px): Hauptfenster / Einstellungen", keys: ["topOffMain", "topOffSet"], fields: [{ key: "topOffMain", t: "Haupt", n: [0, 300], dv: "0" }, { key: "topOffSet", t: "Einstellungen", n: [0, 300], dv: "0" }] },
   { id: "startgif", label: "Startseite: GIF „Chor“ statt des Bildes", keys: ["startGif"], def: { startGif: "0" }, fields: [{ key: "startGif", o: BOOL, dv: "0" }] },
   { id: "lupeopt", label: "Lupe-Optionen: LuD+WT einzeln (■) / Liste wiederholen (↻)", keys: ["ludwtSingle", "listRepeat"], fields: [{ key: "ludwtSingle", t: "einzeln", o: BOOL, dv: "0" }, { key: "listRepeat", t: "wiederholen", o: BOOL, dv: "1" }] },
+  { id: "themeshown", label: "Designs im Hauptfenster (Auswahl)", keys: ["themeShown"] },
   { id: "skip", label: "Springen zurück / vor (Sekunden)", keys: ["skipSec", "skipBack", "skipFwd"],
     fields: [{ key: "skipBack", t: "zurück", n: [1, 300], dv: "15" }, { key: "skipFwd", t: "vor", n: [1, 300], dv: "15" }] },
   { id: "fehl", label: "Fehlend: Prüfung, Hinweis und Anzeige", keys: ["fehlMode", "fehlNotify", "fehlAll"], rx: /^fehl[TL]_/, fields: [{ key: "fehlNotify", t: "Hinweis", o: BOOL, dv: "0" }] },
@@ -4128,7 +4255,20 @@ function setupSyncUser() {
   nameIn.value = userName() && !SYS[userName()] ? userName() : ""; passIn.value = "";
   refreshSyncInfo();
 }
+function setupThemeShown() {
+  const tog = document.getElementById("themeShownToggle"), box = document.getElementById("themeShownBox");
+  if (!tog || !box || tog.dataset.on) return;
+  tog.dataset.on = "1";
+  tog.addEventListener("click", () => {
+    const open = box.hidden;
+    box.hidden = !open;
+    tog.setAttribute("aria-expanded", String(open));
+    tog.textContent = (open ? "▾" : "▸") + " Designs im Hauptfenster auswählen";
+    if (open && window.THEME) window.THEME.mountShown(box);
+  });
+}
 function setupPresetBox() {
+  setupThemeShown();
   document.getElementById("presetBox").hidden = false;
   document.getElementById("subTabs").hidden = false;
   const msg = document.getElementById("userMsg");
