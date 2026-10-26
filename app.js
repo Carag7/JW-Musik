@@ -2369,32 +2369,43 @@ function bind() {
   const setBuf = (on) => el.play.classList.toggle("buffering", on);
   ["play", "waiting", "loadstart"].forEach((n) => el.audio.addEventListener(n, () => { if (!el.audio.paused || n === "play") setBuf(true); }));
   ["playing", "pause", "ended", "error", "emptied"].forEach((n) => el.audio.addEventListener(n, () => setBuf(false)));
+  let bufEnd = -1, bufGrow = 0, bufT1 = 0, bufT2 = 0, bufArmed = true, bufHidEnd = -1;
   const paintBuf = () => {
-    const i = document.querySelector("#bufBar i"), d = el.audio.duration, b = el.audio.buffered;
+    const bar = document.getElementById("bufBar"), i = bar && bar.querySelector("i");
     if (!i) return;
+    const d = el.audio.duration, b = el.audio.buffered, now = Date.now();
     let end = 0;
     try { for (let k = 0; k < b.length; k++) if (b.start(k) <= el.audio.currentTime + 0.5) end = Math.max(end, b.end(k)); } catch { /* egal */ }
-    const pct = d && isFinite(d) ? Math.min(100, (end / d) * 100) : 0;
-    if (!state.bufLinger) i.style.width = `${pct}%`;
-    const bar = document.getElementById("bufBar");
-    const filling = Boolean(el.audio.currentSrc) && (!d || !isFinite(d) || end < d - 0.5);
-    clearTimeout(state.bufHide);
-    if (filling) { bar.classList.add("on"); bar.classList.remove("fade"); }
-    else if (bar.classList.contains("on") && !bar.classList.contains("fade") && !state.bufLinger) {
+    if (end !== bufEnd) { if (end > bufEnd) bufGrow = now; bufEnd = end; }
+    const known = d && isFinite(d);
+    const full = known && end >= d - 0.5;
+    const growing = now - bufGrow < 2500 || (el.audio.readyState < 3 && !el.audio.paused);
+    /* Hysterese: nach dem Ausblenden nur wieder zeigen bei Stocken oder bei großem Sprung (≥ 15 %) */
+    const waiting = el.audio.readyState < 3 && !el.audio.paused;
+    const jump = known && bufHidEnd >= 0 && end - bufHidEnd >= 0.15 * d;
+    const shownNow = bar.classList.contains("on") && !state.bufLinger;
+    const filling = Boolean(el.audio.currentSrc) && !full && growing && (shownNow || bufArmed || waiting || jump);
+    if (filling) {
+      clearTimeout(bufT1); clearTimeout(bufT2); state.bufLinger = false;
+      bar.classList.add("on"); bar.classList.remove("fade");
+      i.style.width = `${known ? Math.min(100, (end / d) * 100) : 0}%`;
+    } else if (bar.classList.contains("on") && !state.bufLinger) {
       state.bufLinger = true;
-      i.style.width = "100%";
-      state.bufHide = setTimeout(() => {
+      bufArmed = false; bufHidEnd = end;
+      if (full) i.style.width = "100%";
+      bufT1 = setTimeout(() => {
         bar.classList.add("fade");
-        state.bufHide = setTimeout(() => { bar.classList.remove("on", "fade"); state.bufLinger = false; }, 1500);
-      }, 1500);
+        bufT2 = setTimeout(() => { bar.classList.remove("on", "fade"); state.bufLinger = false; }, 1500);
+      }, full ? 1500 : 200);
     }
-    if (filling) state.bufLinger = false;
-    if (filling || bar.classList.contains("on")) {
+    if (bar.classList.contains("on")) {
       const tr = bar.parentElement.getBoundingClientRect(), a = el.back15.getBoundingClientRect(), z = el.fwd15.getBoundingClientRect();
       bar.style.left = `${a.left - tr.left}px`;
       bar.style.width = `${z.right - a.left}px`;
     }
   };
+  ["emptied", "loadstart"].forEach((n) => el.audio.addEventListener(n, () => { bufEnd = -1; bufGrow = Date.now(); bufArmed = true; bufHidEnd = -1; }));
+  setInterval(paintBuf, 700);
   ["progress", "timeupdate", "loadedmetadata", "durationchange", "emptied", "loadstart", "canplay"].forEach((n) => el.audio.addEventListener(n, paintBuf));
   el.audio.addEventListener("timeupdate", updateProgress);
   el.audio.addEventListener("loadedmetadata", updateProgress);

@@ -1409,3 +1409,13 @@ body.no-song #favoriteBtn2, body.no-song #favoriteBtn { display: none !important
 .stp { display: inline-flex; flex-direction: column; margin-left: 6px; vertical-align: middle; }
 .stp button { width: 34px; height: 22px; padding: 0; line-height: 1; font-size: 12px; border: 1px solid var(--line); background: var(--panel-2); color: var(--text); border-radius: 6px; cursor: pointer; }
 .stp button + button { margin-top: 2px; }
+
+/* eigene Pfeile ersetzen die eingebauten */
+input[data-stp]::-webkit-outer-spin-button, input[data-stp]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+input[data-stp] { -moz-appearance: textfield; appearance: textfield; }
+
+.set-row.two { flex-wrap: nowrap; justify-content: space-between; }
+.set-row.two .lbl { flex: 1 1 0; min-width: 0; }
+.set-row.two input { flex: 0 0 auto; }
+.set-row:has(> input[type="number"]) { flex-wrap: nowrap; justify-content: space-between; }
+.set-row:has(> input[type="number"]) input { flex: 0 0 auto; }
