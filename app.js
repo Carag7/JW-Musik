@@ -355,6 +355,11 @@ function scheduleSync() {
   syncTimer = setTimeout(async () => { state.favPending = false; if (typeof autoSync === "function") await autoSync(); }, 8000);
 }
 
+function applyTopOffsets() {
+  const v = (k) => { const n = Math.round(Number(lsv(k, 0))); return n > 0 ? Math.min(300, n) : 0; };
+  document.documentElement.style.setProperty("--top-off", `${v("topOffMain")}px`);
+  document.documentElement.style.setProperty("--set-off", `${v("topOffSet")}px`);
+}
 function applyScale() {
   document.documentElement.style.setProperty("--lyrics", `${state.scale}px`);
 }
@@ -1887,6 +1892,7 @@ const isTesla = () => /Tesla/i.test(navigator.userAgent);
 
 function bind() {
   setupViewport();
+  applyTopOffsets();
   try {
     const w = Number(localStorage.getItem("sidebarW"));
     if (w >= 180) document.documentElement.style.setProperty("--sidebar", `${w}px`);
@@ -2682,7 +2688,7 @@ async function putSync(store, data) {
 }
 
 /* ---- Einstellungen mit abgleichen (optional, pro Schlüssel Drei-Wege-Abgleich) ---- */
-const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBarAlways", "holdGuard", "holdHint", "eggMode", "eggFall", "eggGif", "startGif", "sidebarW", "srcTags", "favPlace", "favSeek", "showExtra", "srcFilter", "sync-auto-max", "skipSec", "skipBack", "skipFwd", "fehlMode", "fehlNotify", "fehlAll", "fehlHelpSeen", STORAGE.scale, STORAGE.listSize];
+const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBarAlways", "holdGuard", "holdHint", "eggMode", "eggFall", "eggGif", "startGif", "sidebarW", "topOffMain", "topOffSet", "startGif", "ludwtSingle", "listRepeat", "srcTags", "favPlace", "favSeek", "showExtra", "srcFilter", "sync-auto-max", "skipSec", "skipBack", "skipFwd", "fehlMode", "fehlNotify", "fehlAll", "fehlHelpSeen", STORAGE.scale, STORAGE.listSize];
 const isSettingKey = (k) => SETTING_KEYS.includes(k) || /^fehl[TL]_/.test(k);
 const syncSettingsOn = () => false;   // Einstellungen werden jetzt über den Benutzer gespeichert
 function collectSettings() {
@@ -2723,6 +2729,7 @@ function applySettings(obj) {
   if (!changed) return;
   try { if (window.THEME) window.THEME.apply(true); } catch { /* egal */ }
   try { state.scale = Number(localStorage.getItem(STORAGE.scale) || 42); applyScale(); state.listSize = Number(localStorage.getItem(STORAGE.listSize) || 16); applyListSize(); const sw = Number(localStorage.getItem("sidebarW")); if (sw >= 180) document.documentElement.style.setProperty("--sidebar", `${sw}px`); } catch { /* egal */ }
+  try { applyTopOffsets(); } catch { /* egal */ }
   try { updateSkipLabels(); updateAutoIcon(); updateVersionBar(); rebuildExtras(); applyStartGif(); } catch { /* egal */ }
 }
 async function runSync(code, silent, typedPass) {
@@ -3628,6 +3635,18 @@ function setupAdvBox() {
   num("advListSize", () => state.listSize, (v) => { state.listSize = v; localStorage.setItem(STORAGE.listSize, String(v)); applyListSize(); }, 10, 48);
   num("advScale", () => state.scale, (v) => { state.scale = v; localStorage.setItem(STORAGE.scale, String(v)); applyScale(); }, 10, 200);
   num("advSidebar", () => parseInt(getComputedStyle(document.documentElement).getPropertyValue("--sidebar"), 10) || 300, (v) => window.setSidebarWidth && window.setSidebarWidth(v), 180, 1200);
+  const topNum = (id, key) => {
+    const inp = document.getElementById(id);
+    inp.value = String(Number(localStorage.getItem(key)) || 0);
+    inp.onchange = () => {
+      const v = Math.max(0, Math.min(300, Math.round(Number(inp.value) || 0)));
+      inp.value = String(v);
+      localStorage.setItem(key, String(v));
+      applyTopOffsets();
+    };
+  };
+  topNum("advTopMain", "topOffMain");
+  topNum("advTopSet", "topOffSet");
   num("advBack", () => skipSec(-1), (v) => { localStorage.setItem("skipBack", String(v)); updateSkipLabels(); }, 1, 300);
   num("advFwd", () => skipSec(1), (v) => { localStorage.setItem("skipFwd", String(v)); updateSkipLabels(); }, 1, 300);
   const hold = document.getElementById("advHold");
@@ -3657,6 +3676,9 @@ const PRESETS = [
   { id: "fontkar", label: "Schriftgröße Karaoke-Text", keys: [STORAGE.scale], fields: [{ key: STORAGE.scale, n: [10, 200], dv: "42" }] },
   { id: "fontlist", label: "Schriftgröße Auswahlfenster", keys: [STORAGE.listSize], fields: [{ key: STORAGE.listSize, n: [10, 48], dv: "16" }] },
   { id: "sidebar", label: "Breite des Auswahlfensters (px)", keys: ["sidebarW"], fields: [{ key: "sidebarW", n: [180, 1200], dv: "300" }] },
+  { id: "topoff", label: "Abstand oben (px): Hauptfenster / Einstellungen", keys: ["topOffMain", "topOffSet"], fields: [{ key: "topOffMain", t: "Haupt", n: [0, 300], dv: "0" }, { key: "topOffSet", t: "Einstellungen", n: [0, 300], dv: "0" }] },
+  { id: "startgif", label: "Startseite: GIF „Chor“ statt des Bildes", keys: ["startGif"], def: { startGif: "0" }, fields: [{ key: "startGif", o: BOOL, dv: "0" }] },
+  { id: "lupeopt", label: "Lupe-Optionen: LuD+WT einzeln (■) / Liste wiederholen (↻)", keys: ["ludwtSingle", "listRepeat"], fields: [{ key: "ludwtSingle", t: "einzeln", o: BOOL, dv: "0" }, { key: "listRepeat", t: "wiederholen", o: BOOL, dv: "1" }] },
   { id: "skip", label: "Springen zurück / vor (Sekunden)", keys: ["skipSec", "skipBack", "skipFwd"],
     fields: [{ key: "skipBack", t: "zurück", n: [1, 300], dv: "15" }, { key: "skipFwd", t: "vor", n: [1, 300], dv: "15" }] },
   { id: "fehl", label: "Fehlend: Prüfung, Hinweis und Anzeige", keys: ["fehlMode", "fehlNotify", "fehlAll"], rx: /^fehl[TL]_/, fields: [{ key: "fehlNotify", t: "Hinweis", o: BOOL, dv: "0" }] },
@@ -3723,6 +3745,7 @@ function applyTarget(target, noFill) {
     state.scale = Number(lsv(STORAGE.scale, 42)); applyScale(); state.listSize = Number(lsv(STORAGE.listSize, 16)); applyListSize();
     const sw = Number(lsv("sidebarW", 0)); if (sw >= 180) document.documentElement.style.setProperty("--sidebar", `${sw}px`);
   } catch { /* egal */ }
+  try { applyTopOffsets(); } catch { /* egal */ }
   try { updateSkipLabels(); updateAutoIcon(); updateVersionBar(); rebuildExtras(); applyStartGif(); applyFavPlace(); renderList(); } catch { /* egal */ }
   try { if (!noFill && !document.getElementById("codeModal").hidden) fillSettingsFields(); } catch { /* egal */ }
 }
@@ -3754,7 +3777,7 @@ async function fetchUser(name, hash, extra) {
     if (!res.ok) return { state: "error" };
     const d = await res.json();
     if (!extra) stampSync("lastSyncUser");
-    return { state: "ok", presets: d.presets || {}, links: Array.isArray(d.links) ? d.links : [], updated: d.updated || "", keyOk: !!d.keyOk, none: !!d.none };
+    return { state: "ok", presets: d.presets || {}, links: Array.isArray(d.links) ? d.links : [], updated: d.updated || "", keyOk: !!d.keyOk, none: !!d.none, factory: d.factory || null };
   } catch { return { state: "error" }; }
 }
 /* fields: {presets?, links?, hash?}; authHash = bisheriges Passwort-Hash des Benutzers; extra = zusätzliche Header (z. B. x-write-key) */
@@ -3965,14 +3988,24 @@ async function openSysEditor(name) {
   buildPresetRows(document.getElementById("sysRows"), { live: false, name, get: () => draft, save: (d) => { draft = d; } });
   ed.hidden = false; area.hidden = true;
   document.getElementById("sysCancel").onclick = () => { close(); msg.textContent = "Nicht gespeichert."; };
+  let factory = r.factory ? normPresets(r.factory) : null;
+  const more = document.getElementById("sysMore"), tog = document.getElementById("sysMoreToggle"), asF = document.getElementById("sysAsFactory"), clr = document.getElementById("sysFactoryClear");
+  more.hidden = true; asF.checked = false; clr.hidden = !factory;
+  tog.textContent = "▸"; tog.setAttribute("aria-expanded", "false");
+  tog.onclick = () => { more.hidden = !more.hidden; tog.textContent = more.hidden ? "▸" : "▾"; tog.setAttribute("aria-expanded", String(!more.hidden)); };
+  clr.onclick = async () => {
+    if (!(await uiConfirm({ eyebrow: "Werkseinstellung", title: "Eigene Werkseinstellung entfernen?", lines: ["Danach gelten wieder die fest eingebauten Werte als Werkseinstellung."], ok: "Entfernen" }))) return;
+    const ok = await putUser(SYS[name], "", { factory: null }, { "x-write-key": key });
+    if (ok) { factory = null; clr.hidden = true; em.textContent = "Eigene Werkseinstellung entfernt."; } else em.textContent = "Nicht möglich: Schreib-Passwort falsch oder Server nicht erreichbar.";
+  };
   document.getElementById("sysFactory").onclick = async () => {
-    if (!(await uiConfirm({ eyebrow: "Werkseinstellung", title: "Werkseinstellung wiederherstellen?", lines: ["Die Felder werden auf die fest eingebauten Werte zurückgesetzt. Gespeichert wird erst mit „Speichern“."], ok: "Wiederherstellen" }))) return;
-    draft = sysDefault(name);
+    if (!(await uiConfirm({ eyebrow: "Werkseinstellung", title: "Werkseinstellung wiederherstellen?", lines: [factory ? "Die Felder werden auf deine gespeicherte Werkseinstellung zurückgesetzt." : "Die Felder werden auf die fest eingebauten Werte zurückgesetzt.", "Gespeichert wird erst mit „Speichern“."], ok: "Wiederherstellen" }))) return;
+    draft = factory ? normPresets(JSON.parse(JSON.stringify(factory))) : sysDefault(name);
     buildPresetRows(document.getElementById("sysRows"), { live: false, name, get: () => draft, save: (d) => { draft = d; } });
   };
   document.getElementById("sysSave").onclick = async () => {
     em.textContent = "Bitte warten …";
-    const ok = await putUser(SYS[name], "", { presets: draft }, { "x-write-key": key });
+    const ok = await putUser(SYS[name], "", asF.checked ? { presets: draft, factory: draft } : { presets: draft }, { "x-write-key": key });
     if (!ok) { em.textContent = "Nicht gespeichert: Schreib-Passwort falsch oder Server nicht erreichbar."; return; }
     const r2 = await fetchUser(SYS[name], "");
     when.textContent = stamp(r2.updated);

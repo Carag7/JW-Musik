@@ -12,7 +12,9 @@
   --lyrics: 42px;
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --flyer-h: 112px;
-  --safe-top: env(safe-area-inset-top, 0px);
+  --top-off: 0px;
+  --set-off: 0px;
+  --safe-top: calc(env(safe-area-inset-top, 0px) + var(--top-off, 0px));
   --topbar: calc(58px + var(--safe-top));
   --accent-rgb: 240, 180, 41;
   --accent2-rgb: 125, 211, 199;
@@ -1387,3 +1389,14 @@ body.no-song #favoriteBtn2, body.no-song #favoriteBtn { display: none !important
 .transport { position: relative; }
 .buf-bar { position: absolute; top: calc(100% + 6px); left: 0; width: 100px; margin: 0; display: none; }
 .buf-bar.on { display: block; }
+
+/* Abstand oben: am Handy nur im Hochformat */
+@media (orientation: landscape) and (max-height: 480px) and (max-width: 1000px) and (pointer: coarse) {
+  :root { --top-off: 0px !important; --set-off: 0px !important; }
+}
+#codeModal { box-sizing: border-box; padding-top: var(--set-off, 0px); }
+/* Unterreiter (Einstellungen / Voreinstellungen): nur bei „Allgemein“ und optisch klar untergeordnet */
+#codeForm .sub-tabs { display: flex !important; grid-template-columns: none; flex-wrap: nowrap; gap: 16px; margin: 0 0 8px 8px; padding: 0 0 0 10px; border-left: 3px solid var(--accent); overflow: visible !important; }
+#codeForm .sub-tabs .seg-btn { flex: 0 0 auto !important; background: transparent !important; border: 0 !important; border-bottom: 2px solid transparent !important; border-radius: 0 !important; min-height: 30px !important; padding: 0 2px !important; font-size: 13px !important; color: var(--muted) !important; }
+#codeForm .sub-tabs .seg-btn[aria-pressed="true"] { color: var(--accent) !important; border-bottom-color: var(--accent) !important; }
+#codeForm .sub-tabs.tab-off, #codeForm .sub-tabs[hidden], #codeForm:not(.settings-mode) .sub-tabs, #codeForm .set-tabs.tab-off { display: none !important; }
