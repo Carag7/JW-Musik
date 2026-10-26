@@ -292,11 +292,15 @@
             <button id="sysFactory" class="chip" type="button">Werkseinstellung wiederherstellen</button>
             <button id="sysCancel" class="chip" type="button">Abbrechen</button>
           </div>
-          <button id="sysMoreToggle" class="pw-toggle sys-more-tog" type="button" aria-expanded="false" aria-label="Notfall">▸</button>
+          <button id="sysMoreToggle" class="pw-toggle sys-more-tog" type="button" aria-expanded="false" aria-label="Notfall" title="Notfall-Optionen">▸</button>
           <div id="sysMore" hidden>
-            <small class="set-hint">Nur im Notfall: legt fest, was „Werkseinstellung wiederherstellen“ liefert.</small>
-            <button id="sysSetFactory" class="chip danger" type="button">Aktuelle Werte als neue Werkseinstellung festlegen</button>
-            <button id="sysFactoryClear" class="chip" type="button" hidden>Eigene Werkseinstellung entfernen</button>
+            <small class="set-hint">Werkseinstellung festlegen: Die Werte, die gerade in den Feldern stehen, werden die neue Werkseinstellung (das liefert „Werkseinstellung wiederherstellen“). Die normale Voreinstellung ändert sich dadurch nicht. Das Schreib-Passwort wird noch einmal verlangt.</small>
+            <button id="sysSetFactory" class="chip danger" type="button">Aktuelle Werte als Werkseinstellung festlegen</button>
+            <button id="sysMore2Toggle" class="pw-toggle sys-more-tog" type="button" aria-label="Ganz im Notfall">▸</button>
+            <div id="sysMore2" hidden>
+              <small class="set-hint">Ganz im Notfall: vergisst die selbst festgelegte Werkseinstellung und stellt die ursprünglich im Programm eingebaute wieder her. Das Schreib-Passwort wird noch einmal verlangt.</small>
+              <button id="sysFactoryClear" class="chip danger" type="button">Auf ursprüngliche (eingebaute) Werkseinstellung zurücksetzen</button>
+            </div>
           </div>
           <small id="sysMsg" class="set-hint"></small>
         </div>

@@ -1811,6 +1811,34 @@ function tryAutoStartNow() {
 }
 
 /* iPhone/iPad-Web-App: Leiste unter Statuszeile/Fenster-Knöpfen; Tastatur: sichtbare Höhe merken */
+/* Zahlenfelder bekommen kleine Pfeile ▲ ▼ (+1 / −1), weil die Handy-Tastatur keine hat */
+function enhanceNumbers(root) {
+  (root || document).querySelectorAll('#codeModal input[type="number"]:not([data-stp])').forEach((inp) => {
+    inp.dataset.stp = "1";
+    const box = document.createElement("span");
+    box.className = "stp";
+    const mk = (txt, dir, label) => {
+      const b = document.createElement("button");
+      b.type = "button"; b.textContent = txt; b.setAttribute("aria-label", label); b.tabIndex = -1;
+      b.addEventListener("pointerdown", (e) => e.preventDefault());   // Tastatur bleibt offen
+      b.addEventListener("click", () => {
+        const min = inp.min !== "" ? Number(inp.min) : -Infinity, max = inp.max !== "" ? Number(inp.max) : Infinity;
+        const v = Math.max(min, Math.min(max, (Number(inp.value) || 0) + dir));
+        inp.value = String(v);
+        inp.dispatchEvent(new Event("input", { bubbles: true }));
+        inp.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+      return b;
+    };
+    box.append(mk("▲", 1, "um 1 erhöhen"), mk("▼", -1, "um 1 verringern"));
+    inp.insertAdjacentElement("afterend", box);
+  });
+}
+function setupNumberSteppers() {
+  enhanceNumbers(document);
+  new MutationObserver(() => enhanceNumbers(document)).observe(document.body, { childList: true, subtree: true });
+}
+
 function setupViewport() {
   const root = document.documentElement;
   const standalone = window.navigator.standalone === true || (window.matchMedia && matchMedia("(display-mode: standalone)").matches);
@@ -1826,14 +1854,14 @@ function setupViewport() {
   const vv = window.visualViewport;
   const sync = () => {
     if (!vv) return;
-    if (vv.scale <= 1.01 && window.innerHeight - vv.height > 100) root.style.setProperty("--vvh", `${Math.round(vv.height)}px`);
-    else root.style.removeProperty("--vvh");
+    if (vv.scale <= 1.01 && window.innerHeight - vv.height > 100) { root.style.setProperty("--vvh", `${Math.round(vv.height)}px`); root.style.setProperty("--vvtop", `${Math.round(vv.offsetTop)}px`); }
+    else { root.style.removeProperty("--vvh"); root.style.removeProperty("--vvtop"); }
     const ae = document.activeElement;
     if (ae && ae.matches && ae.matches("input, textarea, select")) {
       setTimeout(() => ae.scrollIntoView({ block: "center", behavior: "smooth" }), 80);
     }
   };
-  if (vv) { vv.addEventListener("resize", sync); sync(); }
+  if (vv) { vv.addEventListener("resize", sync); vv.addEventListener("scroll", () => { if (root.style.getPropertyValue("--vvh")) root.style.setProperty("--vvtop", `${Math.round(vv.offsetTop)}px`); }); sync(); }
   /* Eingabefeld bleibt sichtbar, wenn die Tastatur aufgeht (auch nach dem Aufklappen der Tastatur) */
   document.addEventListener("focusin", (e) => {
     const t = e.target;
@@ -1898,6 +1926,7 @@ const isTesla = () => /Tesla/i.test(navigator.userAgent);
 
 function bind() {
   setupViewport();
+  setupNumberSteppers();
   applyTopOffsets();
   try {
     const w = Number(localStorage.getItem("sidebarW"));
@@ -2155,11 +2184,13 @@ function bind() {
     localStorage.setItem(STORAGE.listSize, String(state.listSize));
     applyListSize();
   });
+  /* tatsächliche Breite in px (die Variable kann „100vw“ sein, dann liefert parseInt fälschlich 100) */
+  const sidebarPx = () => { const sb = document.getElementById("sidebar"); const w = sb ? Math.round(sb.getBoundingClientRect().width) : 0; return w >= 100 ? w : (Number.parseInt(getComputedStyle(document.documentElement).getPropertyValue("--sidebar"), 10) || 300); };
+  window.sidebarPx = sidebarPx;
   const setSidebarWidth = (px) => {
-    const raw = getComputedStyle(document.documentElement).getPropertyValue("--sidebar");
-    const current = Number.parseInt(raw, 10) || 300;
-    const next = Number.isFinite(px) ? px : current;
-    const width = Math.max(180, Math.min(window.innerWidth - 160, next));
+    const next = Number.isFinite(px) ? px : sidebarPx();
+    const maxW = window.innerWidth <= 700 ? window.innerWidth : window.innerWidth - 160;
+    const width = Math.max(180, Math.min(maxW, next));
     document.documentElement.style.setProperty("--sidebar", `${width}px`);
     if (Number.isFinite(px)) { try { localStorage.setItem("sidebarW", String(Math.round(width))); } catch { /* egal */ } }
     positionArrow();
@@ -2175,8 +2206,8 @@ function bind() {
   };
   window.addEventListener("resize", positionArrow);
   positionArrow();
-  document.getElementById("splitLeft").addEventListener("click", () => setSidebarWidth(parseInt(getComputedStyle(document.documentElement).getPropertyValue("--sidebar"), 10) - 40));
-  document.getElementById("splitRight").addEventListener("click", () => setSidebarWidth(parseInt(getComputedStyle(document.documentElement).getPropertyValue("--sidebar"), 10) + 40));
+  document.getElementById("splitLeft").addEventListener("click", () => setSidebarWidth(sidebarPx() - 40));
+  document.getElementById("splitRight").addEventListener("click", () => setSidebarWidth(sidebarPx() + 40));
   const handle = document.getElementById("splitHandle");
   handle.addEventListener("pointerdown", (event) => {
     handle.setPointerCapture(event.pointerId);
@@ -2344,11 +2375,21 @@ function bind() {
     let end = 0;
     try { for (let k = 0; k < b.length; k++) if (b.start(k) <= el.audio.currentTime + 0.5) end = Math.max(end, b.end(k)); } catch { /* egal */ }
     const pct = d && isFinite(d) ? Math.min(100, (end / d) * 100) : 0;
-    i.style.width = `${pct}%`;
+    if (!state.bufLinger) i.style.width = `${pct}%`;
     const bar = document.getElementById("bufBar");
     const filling = Boolean(el.audio.currentSrc) && (!d || !isFinite(d) || end < d - 0.5);
-    bar.classList.toggle("on", filling);
-    if (filling) {
+    clearTimeout(state.bufHide);
+    if (filling) { bar.classList.add("on"); bar.classList.remove("fade"); }
+    else if (bar.classList.contains("on") && !bar.classList.contains("fade") && !state.bufLinger) {
+      state.bufLinger = true;
+      i.style.width = "100%";
+      state.bufHide = setTimeout(() => {
+        bar.classList.add("fade");
+        state.bufHide = setTimeout(() => { bar.classList.remove("on", "fade"); state.bufLinger = false; }, 1500);
+      }, 1500);
+    }
+    if (filling) state.bufLinger = false;
+    if (filling || bar.classList.contains("on")) {
       const tr = bar.parentElement.getBoundingClientRect(), a = el.back15.getBoundingClientRect(), z = el.fwd15.getBoundingClientRect();
       bar.style.left = `${a.left - tr.left}px`;
       bar.style.width = `${z.right - a.left}px`;
@@ -3640,7 +3681,7 @@ function setupAdvBox() {
   };
   num("advListSize", () => state.listSize, (v) => { state.listSize = v; localStorage.setItem(STORAGE.listSize, String(v)); applyListSize(); }, 10, 48);
   num("advScale", () => state.scale, (v) => { state.scale = v; localStorage.setItem(STORAGE.scale, String(v)); applyScale(); }, 10, 200);
-  num("advSidebar", () => parseInt(getComputedStyle(document.documentElement).getPropertyValue("--sidebar"), 10) || 300, (v) => window.setSidebarWidth && window.setSidebarWidth(v), 180, 1200);
+  num("advSidebar", () => (window.sidebarPx ? window.sidebarPx() : 300), (v) => window.setSidebarWidth && window.setSidebarWidth(v), 180, 1200);
   const topNum = (id, key) => {
     const inp = document.getElementById(id);
     inp.value = String(Number(localStorage.getItem(key)) || 0);
@@ -3747,7 +3788,8 @@ function presetCapture(data, only) {
 const niceVal = (v) => (v === null || v === undefined ? "–" : v === "1" ? "ein" : v === "0" ? "aus" : v);
 const presetDiff = (target) => target.filter((t) => lsv(t.key, null) !== t.val).map((t) => ({ ...t, old: lsv(t.key, null) }));
 function applyTarget(target, noFill) {
-  target.forEach((t) => lss(t.key, t.val));
+  state.applyingPreset = true;
+  try { target.forEach((t) => lss(t.key, t.val)); } finally { state.applyingPreset = false; }
   try { if (window.THEME) window.THEME.apply(true); } catch { /* egal */ }
   try {
     state.scale = Number(lsv(STORAGE.scale, 42)); applyScale(); state.listSize = Number(lsv(STORAGE.listSize, 16)); applyListSize();
@@ -3998,7 +4040,7 @@ async function openSysEditor(name) {
   document.getElementById("sysCancel").onclick = () => { close(); msg.textContent = "Nicht gespeichert."; };
   let factory = r.factory ? normPresets(r.factory) : null;
   const more = document.getElementById("sysMore"), tog = document.getElementById("sysMoreToggle"), setF = document.getElementById("sysSetFactory"), clr = document.getElementById("sysFactoryClear");
-  more.hidden = true; clr.hidden = !factory;
+  more.hidden = true;
   setF.onclick = async () => {
     if (!(await uiConfirm({ eyebrow: "Notfall", title: "Neue Werkseinstellung festlegen?", lines: ["Die Werte, die gerade in den Feldern stehen, werden die neue Werkseinstellung (für „Werkseinstellung wiederherstellen“).", "Die normale Voreinstellung ändert sich dadurch nicht."], ok: "Weiter" }))) return;
     const pw = await uiPrompt({ eyebrow: "Notfall", title: "Schreib-Passwort noch einmal eingeben", type: "password", ok: "Festlegen" });
@@ -4010,9 +4052,16 @@ async function openSysEditor(name) {
   };
   tog.textContent = "▸"; tog.setAttribute("aria-expanded", "false");
   tog.onclick = () => { more.hidden = !more.hidden; tog.textContent = more.hidden ? "▸" : "▾"; tog.setAttribute("aria-expanded", String(!more.hidden)); };
+  const more2 = document.getElementById("sysMore2"), tog2 = document.getElementById("sysMore2Toggle");
+  more2.hidden = true; tog2.textContent = "▸";
+  tog2.onclick = () => { more2.hidden = !more2.hidden; tog2.textContent = more2.hidden ? "▸" : "▾"; };
+  clr.hidden = false;
   clr.onclick = async () => {
-    if (!(await uiConfirm({ eyebrow: "Werkseinstellung", title: "Eigene Werkseinstellung entfernen?", lines: ["Danach gelten wieder die fest eingebauten Werte als Werkseinstellung."], ok: "Entfernen" }))) return;
-    const ok = await putUser(SYS[name], "", { factory: null }, { "x-write-key": key });
+    if (!(await uiConfirm({ eyebrow: "Notfall", title: "Auf ursprüngliche Werkseinstellung zurücksetzen?", lines: ["Die selbst festgelegte Werkseinstellung wird gelöscht. Danach gelten wieder die fest im Programm eingebauten Werte."], ok: "Weiter" }))) return;
+    const pw = await uiPrompt({ eyebrow: "Notfall", title: "Schreib-Passwort noch einmal eingeben", type: "password", ok: "Zurücksetzen" });
+    if (!pw) return;
+    if (!(await verifyKey(name, pw))) { em.textContent = "Schreib-Passwort falsch."; return; }
+    const ok = await putUser(SYS[name], "", { factory: null }, { "x-write-key": pw });
     if (ok) { factory = null; clr.hidden = true; em.textContent = "Eigene Werkseinstellung entfernt."; } else em.textContent = "Nicht möglich: Schreib-Passwort falsch oder Server nicht erreichbar.";
   };
   document.getElementById("sysFactory").onclick = async () => {
@@ -4036,7 +4085,9 @@ async function openSysEditor(name) {
 async function userSaveSettings() {
   const n = userName();
   if (!n || !userSyncOk) return;
-  const d = presetCapture(userData());
+  const d = userData();
+  if (state.touched) { state.touched.forEach((id) => { d.on[id] = true; }); state.touched.clear(); }
+  presetCapture(d);
   const before = lsv("userPresets", "");
   userSaveLocal(d);
   if (lsv("userPresets", "") !== before) await putProfile(n, { presets: d });
@@ -4046,11 +4097,16 @@ async function userSaveSettings() {
   const orig = Storage.prototype.setItem;
   let t = 0;
   const flush = async () => { try { await userSaveSettings(); } finally { state.setPending = false; } };
+  state.touched = new Set();
   Storage.prototype.setItem = function (k, v) {
     orig.call(this, k, v);
     if (this !== localStorage) return;
     try {
-      if (userName() && PRESETS.some((p) => p.keys.includes(k) || (p.rx && p.rx.test(k)))) { clearTimeout(t); state.setPending = true; t = setTimeout(flush, 2500); }
+      const row = userName() && PRESETS.find((p) => p.keys.includes(k) || (p.rx && p.rx.test(k)));
+      if (row) {
+        if (!state.applyingPreset && !row.offByDefault) state.touched.add(row.id);   // händische Änderung: Zeile wird (wieder) angehakt
+        clearTimeout(t); state.setPending = true; t = setTimeout(flush, 2500);
+      }
     } catch { /* egal */ }
   };
   window.addEventListener("pagehide", () => { try { userSaveSettings(); } catch { /* egal */ } });
