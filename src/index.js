@@ -401,7 +401,7 @@ async function handleUser(request, env, path) {
   if (request.method === "GET") {
     if (!rec) return tesla ? json({ ok: true, none: true, presets: {}, links: [], updated: "", keyOk }, CORS) : new Response("not found", { status: 404, headers: CORS });
     if (!tesla && rec.hash && rec.hash !== sent) return json({ ok: false, locked: true }, CORS, 401);
-    return json({ ok: true, locked: !!rec.hash, presets: rec.presets || {}, links: tesla ? [] : (rec.links || []), updated: rec.updated || "", keyOk: keyOk }, CORS);
+    return json({ ok: true, locked: !!rec.hash, presets: rec.presets || {}, links: tesla ? [] : (rec.links || []), updated: rec.updated || "", keyOk: keyOk, factory: rec.factory || null }, CORS);
   }
   if (request.method === "DELETE") {
     if (!env.WRITE_KEY) return json({ ok: false, fehler: "In Cloudflare fehlt das Secret WRITE_KEY." }, CORS, 403);
@@ -423,6 +423,10 @@ async function handleUser(request, env, path) {
       links: Array.isArray(body.links) ? [...new Set(body.links.map(cleanName).filter((n) => n.length >= 2 && n !== name && !n.startsWith("_")))].slice(0, 30) : (rec ? rec.links || [] : []),
       updated: new Date().toISOString()
     };
+    /* eigene Werkseinstellung (nur _tesla/_standard): Objekt = speichern, null = entfernen, sonst unverändert */
+    if (tesla && body.factory && typeof body.factory === "object") next.factory = body.factory;
+    else if (tesla && body.factory === null) { /* entfernt */ }
+    else if (rec && rec.factory) next.factory = rec.factory;
     await env.MUSIK.put(key, JSON.stringify(next), { httpMetadata: { contentType: "application/json" } });
     return json({ ok: true, created: !rec }, CORS);
   }
