@@ -1,7 +1,14 @@
 {
-  "letzter_lauf": "2026-10-23T07:19:28Z",
-  "letzter_erfolg": "2026-10-23T07:19:28Z",
+  "letzter_lauf": "2026-10-26T04:48:05Z",
+  "letzter_erfolg": "2026-10-26T04:48:05Z",
   "laeufe": [
+    {
+      "zeit": "2026-10-26T04:48:05Z",
+      "ok": true,
+      "ausloeser": "schedule",
+      "wochen_gefunden": 28,
+      "fehler": []
+    },
     {
       "zeit": "2026-10-23T07:19:28Z",
       "ok": true,
