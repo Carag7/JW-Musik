@@ -1829,11 +1829,17 @@ function setupViewport() {
     if (vv.scale <= 1.01 && window.innerHeight - vv.height > 100) root.style.setProperty("--vvh", `${Math.round(vv.height)}px`);
     else root.style.removeProperty("--vvh");
     const ae = document.activeElement;
-    if (ae && ae.matches && ae.matches("input, textarea") && ae.closest(".login-gate")) {
-      setTimeout(() => ae.scrollIntoView({ block: "center", behavior: "smooth" }), 50);
+    if (ae && ae.matches && ae.matches("input, textarea, select")) {
+      setTimeout(() => ae.scrollIntoView({ block: "center", behavior: "smooth" }), 80);
     }
   };
   if (vv) { vv.addEventListener("resize", sync); sync(); }
+  /* Eingabefeld bleibt sichtbar, wenn die Tastatur aufgeht (auch nach dem Aufklappen der Tastatur) */
+  document.addEventListener("focusin", (e) => {
+    const t = e.target;
+    if (!t || !t.matches || !t.matches("input:not([type=checkbox]):not([type=radio]):not([type=range]), textarea, select")) return;
+    [250, 600].forEach((ms) => setTimeout(() => { if (document.activeElement === t) t.scrollIntoView({ block: "center", behavior: "smooth" }); }, ms));
+  });
   document.addEventListener("focusin", (e) => {
     const t = e.target;
     if (t && t.matches && t.matches("input, textarea") && t.closest(".login-gate")) {
@@ -3638,12 +3644,14 @@ function setupAdvBox() {
   const topNum = (id, key) => {
     const inp = document.getElementById(id);
     inp.value = String(Number(localStorage.getItem(key)) || 0);
-    inp.onchange = () => {
+    const put = (fix) => {
       const v = Math.max(0, Math.min(300, Math.round(Number(inp.value) || 0)));
-      inp.value = String(v);
+      if (fix) inp.value = String(v);
       localStorage.setItem(key, String(v));
       applyTopOffsets();
     };
+    inp.oninput = () => put(false);
+    inp.onchange = () => put(true);
   };
   topNum("advTopMain", "topOffMain");
   topNum("advTopSet", "topOffSet");
@@ -3676,7 +3684,7 @@ const PRESETS = [
   { id: "fontkar", label: "Schriftgröße Karaoke-Text", keys: [STORAGE.scale], fields: [{ key: STORAGE.scale, n: [10, 200], dv: "42" }] },
   { id: "fontlist", label: "Schriftgröße Auswahlfenster", keys: [STORAGE.listSize], fields: [{ key: STORAGE.listSize, n: [10, 48], dv: "16" }] },
   { id: "sidebar", label: "Breite des Auswahlfensters (px)", keys: ["sidebarW"], fields: [{ key: "sidebarW", n: [180, 1200], dv: "300" }] },
-  { id: "topoff", label: "Abstand oben (px): Hauptfenster / Einstellungen", keys: ["topOffMain", "topOffSet"], fields: [{ key: "topOffMain", t: "Haupt", n: [0, 300], dv: "0" }, { key: "topOffSet", t: "Einstellungen", n: [0, 300], dv: "0" }] },
+  { id: "topoff", offByDefault: true, label: "Abstand oben (px): Hauptfenster / Einstellungen", keys: ["topOffMain", "topOffSet"], fields: [{ key: "topOffMain", t: "Haupt", n: [0, 300], dv: "0" }, { key: "topOffSet", t: "Einstellungen", n: [0, 300], dv: "0" }] },
   { id: "startgif", label: "Startseite: GIF „Chor“ statt des Bildes", keys: ["startGif"], def: { startGif: "0" }, fields: [{ key: "startGif", o: BOOL, dv: "0" }] },
   { id: "lupeopt", label: "Lupe-Optionen: LuD+WT einzeln (■) / Liste wiederholen (↻)", keys: ["ludwtSingle", "listRepeat"], fields: [{ key: "ludwtSingle", t: "einzeln", o: BOOL, dv: "0" }, { key: "listRepeat", t: "wiederholen", o: BOOL, dv: "1" }] },
   { id: "skip", label: "Springen zurück / vor (Sekunden)", keys: ["skipSec", "skipBack", "skipFwd"],
@@ -3690,7 +3698,7 @@ const SYS = { tesla: "_tesla", standard: "_standard" };
 const TESLA_EXTRA = { eggMode: "auto", eggFall: "0", eggGif: "chor", startGif: "0" };
 const lsv = (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch { return d; } };
 const lss = (k, v) => { try { localStorage.setItem(k, v); } catch { /* egal */ } };
-const defaultOn = () => Object.fromEntries(PRESETS.map((p) => [p.id, true]));
+const defaultOn = () => Object.fromEntries(PRESETS.map((p) => [p.id, !p.offByDefault]));
 const normPresets = (p) => { p = p || {}; return p.on && typeof p.on === "object" ? { on: { ...defaultOn(), ...p.on }, vals: p.vals && typeof p.vals === "object" ? p.vals : {} } : { on: { ...defaultOn(), ...p }, vals: {} }; };
 const sysDefault = (n) => {
   const vals = {};
@@ -3989,8 +3997,17 @@ async function openSysEditor(name) {
   ed.hidden = false; area.hidden = true;
   document.getElementById("sysCancel").onclick = () => { close(); msg.textContent = "Nicht gespeichert."; };
   let factory = r.factory ? normPresets(r.factory) : null;
-  const more = document.getElementById("sysMore"), tog = document.getElementById("sysMoreToggle"), asF = document.getElementById("sysAsFactory"), clr = document.getElementById("sysFactoryClear");
-  more.hidden = true; asF.checked = false; clr.hidden = !factory;
+  const more = document.getElementById("sysMore"), tog = document.getElementById("sysMoreToggle"), setF = document.getElementById("sysSetFactory"), clr = document.getElementById("sysFactoryClear");
+  more.hidden = true; clr.hidden = !factory;
+  setF.onclick = async () => {
+    if (!(await uiConfirm({ eyebrow: "Notfall", title: "Neue Werkseinstellung festlegen?", lines: ["Die Werte, die gerade in den Feldern stehen, werden die neue Werkseinstellung (für „Werkseinstellung wiederherstellen“).", "Die normale Voreinstellung ändert sich dadurch nicht."], ok: "Weiter" }))) return;
+    const pw = await uiPrompt({ eyebrow: "Notfall", title: "Schreib-Passwort noch einmal eingeben", type: "password", ok: "Festlegen" });
+    if (!pw) return;
+    if (!(await verifyKey(name, pw))) { em.textContent = "Schreib-Passwort falsch."; return; }
+    const ok = await putUser(SYS[name], "", { factory: draft }, { "x-write-key": pw });
+    if (ok) { factory = normPresets(JSON.parse(JSON.stringify(draft))); clr.hidden = false; em.textContent = "Neue Werkseinstellung gespeichert."; }
+    else em.textContent = "Nicht gespeichert: Server nicht erreichbar.";
+  };
   tog.textContent = "▸"; tog.setAttribute("aria-expanded", "false");
   tog.onclick = () => { more.hidden = !more.hidden; tog.textContent = more.hidden ? "▸" : "▾"; tog.setAttribute("aria-expanded", String(!more.hidden)); };
   clr.onclick = async () => {
@@ -4005,7 +4022,7 @@ async function openSysEditor(name) {
   };
   document.getElementById("sysSave").onclick = async () => {
     em.textContent = "Bitte warten …";
-    const ok = await putUser(SYS[name], "", asF.checked ? { presets: draft, factory: draft } : { presets: draft }, { "x-write-key": key });
+    const ok = await putUser(SYS[name], "", { presets: draft }, { "x-write-key": key });
     if (!ok) { em.textContent = "Nicht gespeichert: Schreib-Passwort falsch oder Server nicht erreichbar."; return; }
     const r2 = await fetchUser(SYS[name], "");
     when.textContent = stamp(r2.updated);

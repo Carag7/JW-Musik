@@ -1400,3 +1400,6 @@ body.no-song #favoriteBtn2, body.no-song #favoriteBtn { display: none !important
 #codeForm .sub-tabs .seg-btn { flex: 0 0 auto !important; background: transparent !important; border: 0 !important; border-bottom: 2px solid transparent !important; border-radius: 0 !important; min-height: 30px !important; padding: 0 2px !important; font-size: 13px !important; color: var(--muted) !important; }
 #codeForm .sub-tabs .seg-btn[aria-pressed="true"] { color: var(--accent) !important; border-bottom-color: var(--accent) !important; }
 #codeForm .sub-tabs.tab-off, #codeForm .sub-tabs[hidden], #codeForm:not(.settings-mode) .sub-tabs, #codeForm .set-tabs.tab-off { display: none !important; }
+
+#codeModal .login-card, #codeModal .login-card.has-ludwt { max-height: calc(var(--vvh, 100dvh) - var(--set-off, 0px) - 12px) !important; overflow-y: auto; }
+.sys-more-tog { align-self: flex-end; width: auto; opacity: .45; font-size: 12px; padding: 0 6px; min-height: 22px; }

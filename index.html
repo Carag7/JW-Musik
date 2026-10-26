@@ -287,15 +287,16 @@
           <p id="sysTitle" class="ap-title"></p>
           <small id="sysWhen" class="set-hint"></small>
           <div id="sysRows" class="preset-rows"></div>
-          <button id="sysMoreToggle" class="pw-toggle" type="button" aria-expanded="false">▸</button>
-          <div id="sysMore" hidden>
-            <label class="set-row check"><input id="sysAsFactory" type="checkbox" /> Diese Werte beim Speichern auch als Werkseinstellung merken</label>
-            <button id="sysFactoryClear" class="chip" type="button" hidden>Eigene Werkseinstellung entfernen</button>
-          </div>
           <div class="adv-btns">
             <button id="sysSave" class="chip primary-chip" type="button">Speichern</button>
             <button id="sysFactory" class="chip" type="button">Werkseinstellung wiederherstellen</button>
             <button id="sysCancel" class="chip" type="button">Abbrechen</button>
+          </div>
+          <button id="sysMoreToggle" class="pw-toggle sys-more-tog" type="button" aria-expanded="false" aria-label="Notfall">▸</button>
+          <div id="sysMore" hidden>
+            <small class="set-hint">Nur im Notfall: legt fest, was „Werkseinstellung wiederherstellen“ liefert.</small>
+            <button id="sysSetFactory" class="chip danger" type="button">Aktuelle Werte als neue Werkseinstellung festlegen</button>
+            <button id="sysFactoryClear" class="chip" type="button" hidden>Eigene Werkseinstellung entfernen</button>
           </div>
           <small id="sysMsg" class="set-hint"></small>
         </div>
