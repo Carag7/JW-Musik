@@ -16,15 +16,15 @@
     { id: "sk-neon", name: "Neon Linie", bar: "#05060d", light: false, skin: true, grp: "Skin", sw: ["#05060d", "#12152b", "#00f0ff"], hint: "Skin: Neon-Umrisse mit Leuchten" },
     { id: "sk-papier", name: "Papier Minimal", bar: "#f6f2ea", light: true, skin: true, grp: "Skin", sw: ["#f6f2ea", "#ebe5d8", "#1d1b17"], hint: "Skin: hell, feine Linien, Serifenschrift" },
     { id: "sk-kontur", name: "Kontur Pop", bar: "#fff6d6", light: true, skin: true, grp: "Skin", sw: ["#fff6d6", "#ffe58a", "#ff3d81"], hint: "Skin: dicke Rahmen, harte Schatten, bunt" },
+    { id: "an-disco", name: "Disco ✦ animiert", bar: "#12002b", light: false, skin: true, anim: true, grp: "Animiert", sw: ["#12002b", "#2c1066", "#ff2ea6"], hint: "Animiert: tanzende Farben, hüpfende Tasten" },
+    { id: "an-aquarium", name: "Aquarium ✦ animiert", bar: "#021b33", light: false, skin: true, anim: true, grp: "Animiert", sw: ["#021b33", "#0a3a66", "#2ee6c5"], hint: "Animiert: Blasen, Wellen, schwimmender Fisch" },
+    { id: "an-weltall", name: "Weltall ✦ animiert", bar: "#05030f", light: false, skin: true, anim: true, grp: "Animiert", sw: ["#05030f", "#17123a", "#ffb703"], hint: "Animiert: Sterne, Rakete, kreisende Planeten-Taste" },
     { id: "tx-nacht", name: "Tesla Nacht", bar: "#0e0f12", light: false, skin: true, grp: "Tesla", sw: ["#0e0f12", "#22242a", "#e82127"], hint: "Tesla: große Tasten, dunkel, wenig Blendung" },
     { id: "tx-tag", name: "Tesla Tag", bar: "#f2f4f7", light: true, skin: true, grp: "Tesla", sw: ["#f2f4f7", "#e1e5ea", "#1c5fe0"], hint: "Tesla: große Tasten, hell, hoher Kontrast" },
     { id: "tx-kontrast", name: "Tesla Kontrast", bar: "#000000", light: false, skin: true, grp: "Tesla", sw: ["#000000", "#1a1a1a", "#ffd400"], hint: "Tesla: Schwarz-Gelb, extra dicke Balken" },
     { id: "hy-amoled", name: "Handy AMOLED", bar: "#000000", light: false, skin: true, grp: "Handy", sw: ["#000000", "#17171b", "#5eead4"], hint: "Handy: Reinschwarz, Mint, kompakt" },
     { id: "hy-pastell", name: "Handy Pastell", bar: "#f3effb", light: true, skin: true, grp: "Handy", sw: ["#f3effb", "#e6def7", "#8b5cf6"], hint: "Handy: hell, weiche Karten, Flieder" },
-    { id: "hy-sunset", name: "Handy Sunset", bar: "#1b0f1f", light: false, skin: true, grp: "Handy", sw: ["#1b0f1f", "#3a1f3f", "#ff7a45"], hint: "Handy: Abendrot-Verlauf, Daumen-freundlich" },
-    { id: "an-disco", name: "Disco ✦ animiert", bar: "#12002b", light: false, skin: true, anim: true, grp: "Animiert", sw: ["#12002b", "#2c1066", "#ff2ea6"], hint: "Animiert: tanzende Farben, hüpfende Tasten" },
-    { id: "an-aquarium", name: "Aquarium ✦ animiert", bar: "#021b33", light: false, skin: true, anim: true, grp: "Animiert", sw: ["#021b33", "#0a3a66", "#2ee6c5"], hint: "Animiert: Blasen, Wellen, schwimmender Fisch" },
-    { id: "an-weltall", name: "Weltall ✦ animiert", bar: "#05030f", light: false, skin: true, anim: true, grp: "Animiert", sw: ["#05030f", "#17123a", "#ffb703"], hint: "Animiert: Sterne, Rakete, kreisende Planeten-Taste" }
+    { id: "hy-sunset", name: "Handy Sunset", bar: "#1b0f1f", light: false, skin: true, grp: "Handy", sw: ["#1b0f1f", "#3a1f3f", "#ff7a45"], hint: "Handy: Abendrot-Verlauf, Daumen-freundlich" }
   ];
   const REC_SHOWN = ["klassisch", "graphit", "tag", "amber", "sk-studio", "sk-retro", "tx-nacht", "tx-tag", "hy-amoled", "an-weltall"];
   const REC = { day: ["tag"], night: ["amber"] };
@@ -297,36 +297,54 @@
   }
 
   /* Auswahl aller Designs als Fenster (bei aktiver Lupe: Design-Taste ca. 1 s gedrückt halten) */
+  /* Auswahlfenster: alle Designs in drei Reitern (Normal / Tesla / Handy) mit kleiner Vorschau */
+  const TABS = [["normal", "Normal"], ["tesla", "Tesla"], ["handy", "Handy"]];
+  const tabOf = (t) => (t.grp === "Tesla" ? "tesla" : t.grp === "Handy" ? "handy" : "normal");
+  const subOf = (t) => (t.anim ? "Animiert" : t.skin ? "Skins (Tasten, Regler, Menüs)" : "Farbdesigns");
+  function preview(th) {
+    const prev = h("span", "theme-prev");
+    prev.style.background = th.sw[0]; prev.style.borderColor = th.sw[2];
+    const bar = h("i", "theme-prev-bar"); bar.style.background = th.sw[2];
+    const card2 = h("i", "theme-prev-card"); card2.style.background = th.sw[1];
+    const dot = h("i", "theme-prev-dot"); dot.style.background = th.sw[2];
+    const txt = h("b", "theme-prev-txt", "Aa"); txt.style.color = th.light ? "#10141c" : "#f4f4f4";
+    prev.append(card2, bar, dot, txt);
+    return prev;
+  }
   function openPicker() {
     let box = document.getElementById("themePicker");
     if (box) box.remove();
     box = h("div", "theme-picker"); box.id = "themePicker";
     const card = h("div", "theme-picker-card");
     card.append(h("p", "theme-picker-title", "Design wählen"));
-    const wide = window.innerWidth >= 560;
     const cur = (cfg().mode === "manual" ? cfg().theme : "");
-    shownThemes().forEach((th) => {
-      const b = h("button", "theme-pick");
-      b.type = "button";
-      if (th.id === cur) b.setAttribute("aria-pressed", "true");
-      const prev = h("span", "theme-prev");
-      prev.style.background = th.sw[0]; prev.style.borderColor = th.sw[2];
-      const card2 = h("i", "theme-prev-card"); card2.style.background = th.sw[1];
-      const dot = h("i", "theme-prev-dot"); dot.style.background = th.sw[2];
-      const txt = h("b", "theme-prev-txt", "Aa"); txt.style.color = th.light ? "#10141c" : "#f4f4f4";
-      prev.append(card2, dot, txt);
-      const name = h("span", "theme-pick-name", th.name);
-      b.append(prev, name);
-      if (wide) b.append(h("small", "theme-pick-hint", th.hint));
-      b.addEventListener("click", () => { put("themeMode", "manual"); put("theme", th.id); apply(true); box.remove(); });
-      card.append(b);
-    });
+    const curTh = byId(cur);
+    let tab = curTh ? tabOf(curTh) : (get("themeTab", "") || (document.documentElement.dataset.theme && /^(tx-)/.test(cur) ? "tesla" : "normal"));
+    if (!TABS.some((x) => x[0] === tab)) tab = "normal";
+    const tabs = h("div", "theme-tabs"); tabs.setAttribute("role", "tablist");
+    const body = h("div", "theme-picker-body");
+    const paint = () => {
+      tabs.querySelectorAll("button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.k === tab)));
+      body.replaceChildren();
+      let last = "";
+      THEMES.filter((t) => tabOf(t) === tab).forEach((th) => {
+        if (tab === "normal" && subOf(th) !== last) { last = subOf(th); body.append(h("p", "theme-sub", last)); }
+        const b = h("button", "theme-pick"); b.type = "button";
+        if (th.id === cur) b.setAttribute("aria-pressed", "true");
+        b.append(preview(th), h("span", "theme-pick-name", th.name), h("small", "theme-pick-hint", th.hint));
+        b.addEventListener("click", () => { put("themeMode", "manual"); put("theme", th.id); apply(true); box.remove(); });
+        body.append(b);
+      });
+    };
+    TABS.forEach(([k, t]) => { const b = h("button", "theme-tab", t); b.type = "button"; b.dataset.k = k; b.setAttribute("role", "tab"); b.addEventListener("click", () => { tab = k; put("themeTab", k); paint(); }); tabs.append(b); });
+    card.append(tabs, body);
     const x = h("button", "theme-pick-close", "Schließen"); x.type = "button";
     x.addEventListener("click", () => box.remove());
     card.append(x);
     box.append(card);
     box.addEventListener("click", (e) => { if (e.target === box) box.remove(); });
     document.body.append(box);
+    paint();
   }
 
   const api = { THEMES, REC, REC_SHOWN, shownIds, mountShown, resolve, apply, cycle, mountUi, sunTimes, cfg, openPicker, onChange: null };

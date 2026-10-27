@@ -918,7 +918,7 @@ body.no-verbar .version-bar { display: none !important; }
 /* Handy hochkant: Auswahlfenster standardmäßig volle Breite */
 @media (max-width: 700px) and (orientation: portrait) {
   :root { --sidebar: 100vw; }
-  .topbar #menuToggle, .topbar #eigeneToggle, .topbar #ludwtToggle { flex: 0 0 calc((100vw - 36px) * 0.6 / 3) !important; padding-left: 4px !important; padding-right: 4px !important; }
+  .topbar #menuToggle, .topbar #eigeneToggle, .topbar #ludwtToggle { flex: 0 0 calc((100vw - 36px) / 3 - 4px) !important; }
 }
 .fav-tools-main[hidden] { display: none !important; }
 
@@ -1423,6 +1423,10 @@ input[data-stp] { -moz-appearance: textfield; appearance: textfield; }
 /* Die drei Haupt-Buttons bleiben links stehen, der Rest scrollt getrennt */
 .topbar .tb-main { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; position: sticky; left: 0; z-index: 6; background: var(--bar-bg); padding-right: 8px; margin-left: -2px; }
 .topbar .tb-main > * { position: relative; }
+/* Handy: wenig Platz, deshalb scrollt die ganze Leiste (auch die drei Buttons) */
+@media (max-width: 700px), (max-height: 480px) {
+  .topbar .tb-main { position: static; z-index: auto; background: none; padding-right: 0; margin-left: 0; }
+}
 /* Verbindung: Play-Taste */
 @keyframes netPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(214, 40, 40, .75); filter: brightness(1); } 50% { box-shadow: 0 0 0 10px rgba(214, 40, 40, 0); filter: brightness(1.25); } }
 @keyframes reconPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(30, 144, 255, .8); filter: brightness(1); } 50% { box-shadow: 0 0 0 10px rgba(30, 144, 255, 0); filter: brightness(1.3); } }
@@ -1437,3 +1441,61 @@ input[data-stp] { -moz-appearance: textfield; appearance: textfield; }
 .kb-bar input { flex: 1 1 auto; min-width: 0; min-height: 44px; font-size: 18px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel-2); color: var(--text); box-sizing: border-box; }
 .kb-bar button { min-height: 44px; min-width: 44px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel-2); color: var(--text); font-size: 15px; }
 .kb-bar .kb-ok { background: var(--accent); color: var(--on-accent); border-color: var(--accent); font-weight: 700; padding: 0 16px; }
+
+/* ---------- Fernsteuerung (Sync) ---------- */
+#remoteBtn[hidden], .rm-gate[hidden], .rc-panel[hidden], .rm-badge[hidden] { display: none !important; }
+.rm-gate { z-index: 140; background: rgba(0,0,0,.72); }
+.rm-card { position: relative; width: min(92vw, 380px); display: flex; flex-direction: column; gap: 12px; padding: 22px 18px 18px; border-radius: 18px; background: var(--panel, #101826); border: 1px solid var(--line); color: var(--text); box-shadow: 0 18px 50px rgba(0,0,0,.5); }
+.rm-card h2 { margin: 0; font-size: 22px; }
+.rm-eyebrow { margin: 0; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.rm-hint { margin: 0; font-size: 14px; color: var(--muted); }
+.rm-x { position: absolute; top: 8px; right: 8px; width: 36px; height: 36px; border: 0; border-radius: 10px; background: transparent; color: var(--muted); font-size: 18px; }
+.rm-choice { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; text-align: left; width: 100%; padding: 14px; border-radius: 14px; border: 2px solid var(--accent); background: rgba(var(--accent-rgb), .12); color: var(--text); }
+.rm-choice + .rm-choice { border-color: var(--accent-2); background: rgba(var(--accent2-rgb), .12); }
+.rm-choice b { font-size: 18px; } .rm-choice small { font-size: 13px; color: var(--muted); }
+.rm-code { font: 800 44px/1.1 ui-monospace, Menlo, Consolas, monospace; letter-spacing: .18em; text-align: center; padding: 14px 0; border-radius: 14px; background: rgba(255,255,255,.06); }
+.rm-input { width: 100%; font: 700 28px ui-monospace, Menlo, Consolas, monospace; letter-spacing: .15em; text-align: center; text-transform: uppercase; min-height: 56px; border-radius: 12px; border: 2px solid var(--accent); background: var(--panel-2); color: var(--text); }
+.rm-card .chip { width: 100%; min-height: 48px; justify-content: center; }
+.rm-card .primary-chip { background: var(--accent); color: var(--on-accent, #fff); }
+/* Verbindungs-Button: grün / rot / orange pulsierend */
+.rm-badge { position: fixed; z-index: 160; right: 10px; bottom: 10px; display: flex; align-items: center; gap: 8px; min-height: 42px; padding: 0 14px; border-radius: 21px; border: 2px solid #fff; color: #fff; font-weight: 800; font-size: 14px; box-shadow: 0 6px 20px rgba(0,0,0,.45); background: #1e9e4a; }
+.rm-badge .rb-dot { width: 12px; height: 12px; border-radius: 50%; background: #fff; }
+.rm-badge[data-st="off"] { background: #d62828; }
+.rm-badge[data-st="retry"] { background: #f08a00; animation: rbPulse 1s ease-in-out infinite; }
+@keyframes rbPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(240,138,0,.85); } 50% { box-shadow: 0 0 0 12px rgba(240,138,0,0); } }
+body.rc-on .rm-badge { top: calc(var(--safe-top, 0px) + 8px); bottom: auto; }
+/* Fernbedienung */
+.rc-panel { position: fixed; inset: 0; z-index: 130; overflow-y: auto; padding: calc(var(--safe-top, 0px) + 12px) 14px 24px; background: var(--bg, #0b1220); color: var(--text); display: flex; flex-direction: column; gap: 12px; }
+.rc-top { display: flex; align-items: baseline; gap: 10px; padding-right: 220px; } .rc-top small { color: var(--accent); } .rc-top small.warn { color: #f08a00; }
+.rc-now { padding: 12px; border-radius: 16px; background: var(--panel); border: 1px solid var(--line); }
+.rc-num { font-size: 12px; letter-spacing: .12em; color: var(--accent); font-weight: 800; }
+.rc-title { margin: 4px 0; font-size: 24px; } .rc-sub { color: var(--muted); font-size: 14px; }
+.rc-bar { display: flex; align-items: center; gap: 10px; } .rc-bar input { flex: 1; min-width: 0; height: 36px; }
+.rc-tr { display: flex; gap: 8px; justify-content: center; align-items: center; }
+.rc-btn { min-width: 56px; height: 56px; border-radius: 16px; border: 1px solid var(--line); background: var(--panel-2); color: var(--text); font-size: 20px; font-weight: 800; }
+.rc-btn.rc-play { min-width: 84px; height: 68px; background: var(--accent); color: var(--on-accent, #fff); font-size: 28px; }
+.rc-btn.on, .rc-chip.on, .rc-tab.on { background: var(--accent); color: var(--on-accent, #fff); }
+.rc-tr2 .rc-btn { height: 46px; font-size: 16px; }
+.rc-vers, .rc-tabs, .rc-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.rc-chip, .rc-tab { min-height: 42px; padding: 0 14px; border-radius: 21px; border: 1px solid var(--line); background: var(--panel-2); color: var(--text); font-weight: 700; }
+.rc-tab { flex: 1; border-radius: 12px; }
+.rc-q { width: 100%; min-height: 46px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel-2); color: var(--text); padding: 0 12px; font-size: 16px; }
+.rc-list { display: flex; flex-direction: column; gap: 6px; }
+.rc-song { display: flex; gap: 12px; align-items: center; text-align: left; min-height: 50px; padding: 6px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); color: var(--text); }
+.rc-song strong { min-width: 34px; color: var(--accent); } .rc-song.on { border-color: var(--accent); background: rgba(var(--accent-rgb), .16); }
+/* Design-Auswahl: drei Reiter, alle Designs, Vorschau */
+.theme-picker-card { width: min(94vw, 560px); max-height: 88vh; display: flex; flex-direction: column; gap: 10px; overflow: hidden; }
+.theme-picker-body { display: grid; gap: 8px; overflow-y: auto; min-height: 0; padding-right: 2px; }
+.theme-tabs { display: flex; gap: 6px; }
+.theme-tab { flex: 1; min-height: 44px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel-2); color: var(--text); font: inherit; font-weight: 800; }
+.theme-tab[aria-selected="true"] { background: var(--accent); color: var(--on-accent, #fff); border-color: var(--accent); }
+.theme-sub { margin: 6px 0 0; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.theme-pick { display: grid; grid-template-columns: 84px 1fr; grid-template-areas: "p n" "p h"; column-gap: 12px; row-gap: 2px; text-align: left; align-items: center; }
+.theme-pick .theme-prev { grid-area: p; flex: none; width: 84px; height: 52px; }
+.theme-pick-name { grid-area: n; align-self: end; } .theme-pick-hint { grid-area: h; text-align: left !important; align-self: start; }
+.theme-prev-bar { position: absolute; left: 6px; right: 26px; bottom: 6px; height: 5px; border-radius: 3px; }
+.theme-prev-card { bottom: 16px; }
+.theme-prev-txt { top: 10px; }
+.theme-picker-body { display: flex; flex-direction: column; flex: 1 1 auto; }
+.theme-picker-body > * { flex: 0 0 auto; }
+.theme-pick { min-height: 66px; }

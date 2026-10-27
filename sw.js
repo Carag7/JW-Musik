@@ -1,5 +1,6 @@
-const CACHE = "tesla-karaoke-v97";
-const SHELL = ["./", "./index.html", "./style.css", "./skins.css", "./app.js", "./ludwt.js", "./fehlend.js", "./password.js", "./theme.js", "./manifest.json", "./icon.svg", "./songs.json"];
+const CACHE = "tesla-karaoke-v98";
+const SHELL = ["./", "./index.html", "./style.css", "./skins.css",
+  "./remote.js", "./app.js", "./ludwt.js", "./fehlend.js", "./password.js", "./theme.js", "./manifest.json", "./icon.svg", "./songs.json"];
 const MAX_ENTRIES = 120;  // Obergrenze für zusätzlich gemerkte Dateien (Liedtexte, Bilder)
 
 self.addEventListener("install", (event) => {

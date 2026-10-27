@@ -70,6 +70,7 @@
       <button id="smallerBtn" class="ghost" type="button" aria-label="Schrift kleiner">A−</button>
       <button id="largerBtn" class="ghost" type="button" aria-label="Schrift größer">A+</button>
       <button id="themeBtn" class="ghost" type="button" aria-label="Design wechseln" title="Design wechseln">◐</button>
+      <button id="remoteBtn" class="ghost" type="button" hidden title="Sync mit anderem Gerät (Fernsteuerung)">Sync</button>
       <button id="fullscreenBtn" class="ghost" type="button">Vollbild</button>
       <button id="autoStartBtn" class="ghost auto-ico" type="button" aria-pressed="false" aria-label="Autoplay beim Öffnen">⏵</button>
       <button id="refreshBtn" class="ghost" type="button" hidden>Neu laden</button>
@@ -464,6 +465,10 @@
   <video id="audio" preload="none" playsinline webkit-playsinline></video>
   <script src="ludwt.js"></script>
   <script src="fehlend.js"></script>
+  <div id="remoteModal" class="login-gate rm-gate" hidden><div id="rmBody" class="rm-card"></div></div>
+  <div id="remotePanel" class="rc-panel" hidden></div>
+  <button id="remoteBadge" class="rm-badge" type="button" data-st="ok" hidden><i class="rb-dot"></i><span class="rb-txt"></span></button>
   <script src="app.js"></script>
+  <script src="remote.js"></script>
 </body>
 </html>
