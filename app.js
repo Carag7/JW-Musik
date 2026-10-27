@@ -2923,7 +2923,8 @@ async function runSync(code, silent, typedPass) {
   try {
     let r0 = await fetch(`${SYNC_BASE}/sync/${store}`, { cache: "no-store", headers: storeHeaders(store) });
     if (r0.status === 401) {
-      if (silent || typedPass) return silent ? "Passwort für den Favoriten-Abgleich fehlt (Einstellungen → Abgleich)." : "Passwort stimmt nicht.";
+      if (typedPass) return "Passwort stimmt nicht.";
+      if (silent) return "Passwort für den Favoriten-Abgleich fehlt (Einstellungen → Abgleich).";
       const pw = await uiPrompt({ eyebrow: "Favoriten-Abgleich", title: `Passwort für „${store}“`, type: "password", ok: "Weiter" });
       if (!pw) return "Abgebrochen.";
       storeRemember(store, await storeHashOf(store, pw));
@@ -3996,6 +3997,30 @@ async function putProfile(n, fields) {
   return putUser(n, lsv("userHash", ""), fields);
 }
 let userSyncOk = false;   // erst nach erfolgreichem Laden vom Server wird zurückgeschrieben
+/* Stand, den dieses Gerät zuletzt vom Server hatte (damit nur eigene Änderungen hochgeladen werden und nichts von anderen Geräten überschrieben wird) */
+const userBaseGet = () => { try { return JSON.parse(lsv("userBase", "null")); } catch { return null; } };
+const userBaseSet = (d) => lss("userBase", JSON.stringify(d));
+const userDirtySet = (on) => { try { if (on) localStorage.setItem("userDirty", "1"); else localStorage.removeItem("userDirty"); } catch { /* egal */ } };
+const userDirty = () => lsv("userDirty", "") === "1";
+function userMergeUp(base, d, server) {
+  const out = normPresets(JSON.parse(JSON.stringify(server || {})));
+  const b = base ? normPresets(base) : null;
+  Object.keys(d.on).forEach((k) => { if (!b || d.on[k] !== b.on[k]) out.on[k] = d.on[k]; });
+  Object.keys(d.vals).forEach((k) => { if (!b || d.vals[k] !== b.vals[k]) out.vals[k] = d.vals[k]; });
+  return out;
+}
+/* Eigene Änderungen speichern: lokal immer; zum Server mit Zusammenführen (andere Geräte bleiben erhalten); ohne Verbindung später nachholen */
+async function userPush(n, d) {
+  userSaveLocal(d);
+  if (!n || SYS[n]) return false;
+  if (!userSyncOk) { userDirtySet(true); return false; }
+  const r = await fetchUser(n, lsv("userHash", ""));
+  if (r.state === "error" || r.state === "locked") { userDirtySet(true); return false; }
+  const out = r.state === "ok" ? userMergeUp(userBaseGet(), d, normPresets(r.presets)) : d;
+  const ok = await putProfile(n, { presets: out });
+  if (ok) { userBaseSet(d); userDirtySet(false); } else userDirtySet(true);
+  return ok;
+}
 
 /* Anmelden: zuerst wird geprüft, ob der Benutzer existiert. Neue Namen werden erst nach Rückfrage angelegt (Tippfehler!). */
 async function userLogin(rawName, pass) {
@@ -4021,14 +4046,14 @@ async function userLogin(rawName, pass) {
     if (!(await putUser(name, hash, { presets: data, hash, links: [] }))) return { ok: false, msg: "Anlegen fehlgeschlagen." };
     created = true;
   } else { data = normPresets(r.presets); links = r.links; }
-  lss("userName", name); lss("userHash", hash); userSaveLocal(data);
+  lss("userName", name); lss("userHash", hash); userSaveLocal(data); userBaseSet(data); userDirtySet(false);
   userKnownAdd([name, ...links]);
   if (sameNameOn() || !lsv("sync-code", "")) lss("sync-code", name);
   userSyncOk = true;
   const applied = await applyWithPreview(presetTarget(data, "user"), `Einstellungen von „${name}“ übernehmen?`, created);
   return { ok: true, created, applied, msg: created ? `Neuer Benutzer „${name}“ angelegt.` : `Angemeldet als „${name}“.` };
 }
-function userLogout() { ["userName", "userHash", "userPresets"].forEach((k) => { try { localStorage.removeItem(k); } catch { /* egal */ } }); }
+function userLogout() { ["userName", "userHash", "userPresets", "userBase", "userDirty"].forEach((k) => { try { localStorage.removeItem(k); } catch { /* egal */ } }); }
 
 /* beim Start: gespeicherten Benutzer still laden und anwenden */
 async function userAutoLogin() {
@@ -4037,10 +4062,20 @@ async function userAutoLogin() {
   /* zuerst sofort mit dem gespeicherten Stand (auch offline), dann mit dem Server abgleichen */
   await applyWithPreview(presetTarget(userData(), SYS[name] === "_tesla" ? "tesla" : "user"), "", true);
   const r = SYS[name] ? await fetchUser(SYS[name], "") : await fetchUser(name, lsv("userHash", ""));
+  if (r.state === "none" || r.state === "locked") { try { showToast(r.state === "none" ? `Benutzer „${name}“ gibt es auf dem Server nicht mehr. Änderungen bleiben nur auf diesem Gerät.` : `Passwort für „${name}“ stimmt nicht mehr. Bitte neu anmelden.`); } catch { /* egal */ } return; }
   if (r.state !== "ok") return;
   userSyncOk = true;
-  const data = normPresets(r.presets);
-  userSaveLocal(data);
+  let data = normPresets(r.presets);
+  if (userDirty() && !SYS[name]) {
+    /* auf diesem Gerät wurde ohne Verbindung etwas geändert: mit dem Server zusammenführen und hochladen */
+    data = userMergeUp(userBaseGet(), userData(), data);
+    userSaveLocal(data); userBaseSet(data);
+    userKnownAdd([name, ...r.links]);
+    await applyWithPreview(presetTarget(data, "user"), "", true);
+    if (await putProfile(name, { presets: data })) userDirtySet(false);
+    return;
+  }
+  userSaveLocal(data); if (!SYS[name]) userBaseSet(data);
   userKnownAdd([name, ...r.links]);
   await applyWithPreview(presetTarget(data, SYS[name] === "_tesla" ? "tesla" : "user"), "", true);
 }
@@ -4067,7 +4102,7 @@ function renderPresetBox() {
   buildPresetRows(document.getElementById("presetRows"), {
     live: true,
     get: userData,
-    save: async (d) => { userSaveLocal(d); const n = userName(); if (n && userSyncOk) await putProfile(n, { presets: d }); }
+    save: async (d) => { await userPush(userName(), d); }
   });
 }
 
@@ -4144,8 +4179,7 @@ async function resetToProfile(name) {
   if (!yes) return;
   applyTarget(target);
   const d = userData(); d.on = defaultOn(); target.forEach((x) => { d.vals[x.key] = x.val; }); userSaveLocal(d);
-  const n = userName();
-  if (n && userSyncOk) await putProfile(n, { presets: d });
+  await userPush(userName(), d);
   renderPresetBox();
   document.getElementById("userMsg").textContent = `Auf „${label}“ zurückgesetzt.`;
 }
@@ -4222,13 +4256,13 @@ async function openSysEditor(name) {
 /* beim Schließen der Einstellungen: aktuelle Werte der angehakten Zeilen im Benutzer speichern */
 async function userSaveSettings() {
   const n = userName();
-  if (!n || !userSyncOk) return;
+  if (!n) return;
   const d = userData();
   if (state.touched) { state.touched.forEach((id) => { d.on[id] = true; }); state.touched.clear(); }
   presetCapture(d);
   const before = lsv("userPresets", "");
   userSaveLocal(d);
-  if (lsv("userPresets", "") !== before) await putProfile(n, { presets: d });
+  if (lsv("userPresets", "") !== before || userDirty()) await userPush(n, d);
 }
 /* Änderungen an Einstellungen (auch außerhalb des Einstellungsfensters, z. B. A+/A−) werden nach kurzer Pause im Benutzer gespeichert */
 (() => {
@@ -4532,6 +4566,10 @@ function init() {
   checkLogin();
   if (SYS[userName()]) userLogout();
   state.userReady = userAutoLogin().catch(() => {});
+  /* Verbindung wieder da: Benutzer-Einstellungen nachholen */
+  const userRetry = () => { if (!userName() || SYS[userName()]) return; if (!userSyncOk) userAutoLogin().catch(() => {}); else if (userDirty()) userSaveSettings().catch(() => {}); };
+  window.addEventListener("online", () => setTimeout(userRetry, 1500));
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") userRetry(); });
   loadFavorites();
   loadPlaylists();
   applySyncFromUrl();
