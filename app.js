@@ -1483,7 +1483,9 @@ function updateProgress() {
   const current = el.audio.currentTime || 0;
   if (duration > 0) el.progress.value = String((current / duration) * 1000);
   el.currentTime.textContent = formatTime(current, false);
-  el.duration.textContent = formatTime(duration, false);
+  const remain = lsv("timeRemain", "0") === "1" && duration > 0;
+  el.duration.textContent = remain ? `−${formatTime(Math.max(0, duration - current), false)}` : formatTime(duration, false);
+  el.duration.title = remain ? "Noch zu spielen – antippen für Gesamtzeit" : "Gesamtzeit – antippen für noch zu spielen";
   updateLyrics();
   if (state.drawWave && !document.getElementById("spectrum").hidden) state.drawWave();
   if (document.body.classList.contains("edit-mode")) {
@@ -2054,7 +2056,7 @@ function bind() {
   applyTopOffsets();
   try {
     const w = Number(localStorage.getItem("sidebarW"));
-    if (w >= 180) document.documentElement.style.setProperty("--sidebar", `${w}px`);
+    if (w >= 180) document.documentElement.style.setProperty("--sidebar", `${w}px`); else document.documentElement.style.removeProperty("--sidebar");
   } catch { /* egal */ }
   document.body.classList.toggle("hold-hint", holdHintOn());
   applyStartGif();
@@ -2391,6 +2393,10 @@ function bind() {
     holdTimer = setTimeout(openTimecode, 5000);
   });
   el.duration.addEventListener("pointerup", () => clearTimeout(holdTimer));
+  el.duration.setAttribute("role", "button"); el.duration.tabIndex = 0;
+  const flipTime = () => { lss("timeRemain", lsv("timeRemain", "0") === "1" ? "0" : "1"); updateProgress(); };
+  el.duration.addEventListener("click", flipTime);
+  el.duration.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flipTime(); } });
   el.duration.addEventListener("pointerleave", () => clearTimeout(holdTimer));
   const holdSize = (button, target) => {
     let timer = 0;
@@ -3862,7 +3868,7 @@ const PRESETS = [
     fields: [{ key: "themeMode", o: [["manual", "fest"], ["device", "wie Gerät / Tesla"], ["sun", "Sonnenaufgang"]], dv: "manual" }] },
   { id: "fontkar", label: "Schriftgröße Karaoke-Text", keys: [STORAGE.scale], fields: [{ key: STORAGE.scale, n: [10, 200], dv: "42" }] },
   { id: "fontlist", label: "Schriftgröße Auswahlfenster", keys: [STORAGE.listSize], fields: [{ key: STORAGE.listSize, n: [10, 48], dv: "16" }] },
-  { id: "sidebar", label: "Breite des Auswahlfensters (px)", keys: ["sidebarW"], fields: [{ key: "sidebarW", n: [180, 1200], dv: "300" }] },
+  { id: "sidebar", label: "Breite des Auswahlfensters (px, 0 = am Handy ganze Breite)", keys: ["sidebarW"], fields: [{ key: "sidebarW", n: [0, 1200], dv: "300" }] },
   { id: "topoff", offByDefault: true, label: "Abstand oben (px): Hauptfenster / Einstellungen", keys: ["topOffMain", "topOffSet"], fields: [{ key: "topOffMain", t: "Haupt", n: [0, 300], dv: "0" }, { key: "topOffSet", t: "Einstellungen", n: [0, 300], dv: "0" }] },
   { id: "startgif", label: "Startseite: GIF „Chor“ statt des Bildes", keys: ["startGif"], def: { startGif: "0" }, fields: [{ key: "startGif", o: BOOL, dv: "0" }] },
   { id: "lupeopt", label: "Lupe-Optionen: LuD+WT einzeln (■) / Liste wiederholen (↻)", keys: ["ludwtSingle", "listRepeat"], fields: [{ key: "ludwtSingle", t: "einzeln", o: BOOL, dv: "0" }, { key: "listRepeat", t: "wiederholen", o: BOOL, dv: "1" }] },
@@ -3873,7 +3879,7 @@ const PRESETS = [
   { id: "syncmax", label: "Automatisch abgleichen, auch wenn bis zu … Lieder gelöscht wurden", keys: ["sync-auto-max"], def: { "sync-auto-max": "2" }, fields: [{ key: "sync-auto-max", n: [0, 999], dv: "0" }] }
 ];
 /* Standard für neue Benutzer (beste Werte am Desktop); über den Namen „standard“ mit dem Schreib-Passwort änderbar */
-const HANDY_EXTRA = { themeMode: "manual", theme: "hy-amoled", holdGuard: "0", [STORAGE.listSize]: "18" };
+const HANDY_EXTRA = { themeMode: "manual", theme: "hy-amoled", holdGuard: "0", [STORAGE.listSize]: "18", sidebarW: "0" };
 const STD_VALS = { autoStart: "0", showExtra: "1", srcTags: "1", favPlace: "both", favSeek: "off", verBarAlways: "1", holdGuard: "0", holdHint: "0", themeMode: "device", [STORAGE.scale]: "42", [STORAGE.listSize]: "16", sidebarW: "300", skipBack: "15", skipFwd: "15", "sync-auto-max": "2" };
 const SYS = { tesla: "_tesla", standard: "_standard", handy: "_handy" };
 const SYS_LABEL = { tesla: "Tesla", standard: "Standard", handy: "Handy" };
@@ -3934,7 +3940,7 @@ function applyTarget(target, noFill) {
   try { if (window.THEME) window.THEME.apply(true); } catch { /* egal */ }
   try {
     state.scale = Number(lsv(STORAGE.scale, 42)); applyScale(); state.listSize = Number(lsv(STORAGE.listSize, 16)); applyListSize();
-    const sw = Number(lsv("sidebarW", 0)); if (sw >= 180) document.documentElement.style.setProperty("--sidebar", `${sw}px`);
+    const sw = Number(lsv("sidebarW", 0)); if (sw >= 180) document.documentElement.style.setProperty("--sidebar", `${sw}px`); else document.documentElement.style.removeProperty("--sidebar");
   } catch { /* egal */ }
   try { applyTopOffsets(); } catch { /* egal */ }
   try { updateSkipLabels(); updateAutoIcon(); updateVersionBar(); rebuildExtras(); applyStartGif(); applyFavPlace(); renderList(); } catch { /* egal */ }
@@ -4099,6 +4105,11 @@ function renderPresetBox() {
   const code = lsv("sync-code", "");
   document.getElementById("userLine").textContent = name ? `Angemeldet: ${name}` : (code ? `Favoriten-Abgleich: ${code} (kein Benutzer angemeldet)` : "Kein Benutzer angemeldet");
   document.getElementById("userOut").hidden = !name;
+  { /* Gibt es schon einen Benutzer mit demselben Namen wie der Favoriten-Abgleich, genügt ein kurzer Text statt des Hakens */
+    const same = !!name && !SYS[name] && lsv("sync-code", "") === name;
+    const row = document.getElementById("presetSameRow"), txt = document.getElementById("presetSameText");
+    if (row && txt) { row.hidden = same; txt.hidden = !same; txt.textContent = same ? `Favoriten-Abgleich und Einstellungen verwenden denselben Namen „${name}“.` : ""; }
+  }
   try { refreshSyncInfo(); const ci = document.getElementById("codeInput"); if (ci && name && !SYS[name] && sameNameOn()) ci.value = lsv("sync-code", ""); } catch { /* egal */ }
   document.getElementById("userLink").hidden = !name;
   const sel = document.getElementById("userSel");
@@ -4119,11 +4130,16 @@ function refreshPresetRows() {
   document.getElementById("pvAdopt").hidden = !(sync && userName());
   document.getElementById("pvHint").textContent = sync
     ? "Zeigt die Einstellungen, die gerade auf diesem Gerät gelten. Änderungen in den Einstellungen erscheinen hier sofort."
-    : (userName() ? `Zeigt die gespeicherten Werte von „${userName()}“ (Server).` : "Kein Benutzer angemeldet: es werden die Werte dieses Geräts gezeigt.");
+    : (userName() ? `Zeigt die gespeicherten Werte von „${userName()}“ (Server).` : "Kein Benutzer angemeldet: Es werden die Werte von „Standard“ gezeigt und mit diesem Gerät verglichen.");
+  /* ohne Benutzer wird mit „Standard“ verglichen (grün = gleich wie Standard) */
+  const leg = document.getElementById("prLegend");
+  if (leg) leg.dataset.ref = userName() ? "user" : "std";
+  const ref = userName() ? null : (state.stdRef || sysDefault("standard"));
+  if (!userName() && !state.stdRef && !state.stdRefBusy) { state.stdRefBusy = true; sysData("standard").then((d) => { state.stdRef = d; state.stdRefBusy = false; refreshPresetRows(); }).catch(() => { state.stdRefBusy = false; }); }
   buildPresetRows(rows, {
-    live: true, view: state.presetView || "user", mark: !!userName(),
-    get: userData,
-    save: async (d) => { await userPush(userName(), d); }
+    live: true, view: state.presetView || "user", mark: true,
+    get: ref ? () => JSON.parse(JSON.stringify(ref)) : userData,
+    save: async (d) => { if (userName()) await userPush(userName(), d); }
   });
 }
 
@@ -4580,6 +4596,29 @@ async function loginExtras() {
   if (preset === "tesla") { if (await applyTeslaPreset(created)) showToast("Tesla-Voreinstellung angewendet"); }
   else if (preset) { if (await applyProfilePreset(preset, created)) showToast(`${SYS_LABEL[preset]}-Voreinstellung angewendet`); }
   document.getElementById("loginUserPass").value = "";
+  if (!reopened || preset) lss("autoPresetDone", "1");
+}
+/* Geräteart erkennen: Tesla, Handy oder Computer/Tablet (Standard). Nur dieses Symbol mit Haken wird im Anmeldefenster gezeigt. */
+function deviceKind() {
+  if (isTesla()) return "tesla";
+  const ua = navigator.userAgent || "";
+  const coarse = window.matchMedia && matchMedia("(pointer: coarse)").matches;
+  const small = Math.min(screen.width || 9999, screen.height || 9999) < 640;
+  if (/iPhone|iPod/i.test(ua) || (/Android/i.test(ua) && /Mobile/i.test(ua)) || (coarse && small)) return "handy";
+  return "standard";
+}
+function setupLoginAuto() {
+  const kind = deviceKind(), row = document.getElementById("loginAutoRow"), cb = document.getElementById("loginAuto");
+  const first = lsv("autoPresetDone", "") === "";
+  const ico = document.getElementById("loginAutoIcon");
+  if (kind === "tesla") { const im = document.createElement("img"); im.src = "tesla-icon.png"; im.alt = ""; im.width = 26; im.height = 26; ico.append(im); } else ico.textContent = kind === "handy" ? "📱" : "🖥";
+  document.getElementById("loginAutoText").textContent = `${SYS_LABEL[kind]}-Voreinstellung laden`;
+  row.hidden = !first; cb.checked = first;
+  const target = document.querySelector(`.login-preset[data-p="${kind}"]`);
+  const sync = () => { document.querySelectorAll(".login-preset").forEach((o) => { o.checked = o === target && cb.checked; }); };
+  cb.addEventListener("change", sync); sync();
+  target.addEventListener("change", () => { cb.checked = target.checked; });
+  row.dataset.kind = kind;
 }
 function checkLogin() {
   const gate = document.getElementById("loginGate");
@@ -4591,9 +4630,11 @@ function checkLogin() {
   more.addEventListener("click", () => toggleMore(extra.hidden));
   const ti = document.getElementById("loginTeslaInfo"), tt = document.getElementById("loginTeslaText");
   ti.addEventListener("click", () => { tt.hidden = !tt.hidden; ti.textContent = tt.hidden ? "▾" : "▴"; ti.setAttribute("aria-expanded", String(!tt.hidden)); });
+  document.querySelectorAll(".login-info").forEach((b) => b.addEventListener("click", () => { const t = document.getElementById(b.dataset.for); t.hidden = !t.hidden; b.textContent = t.hidden ? "▾" : "▴"; b.setAttribute("aria-expanded", String(!t.hidden)); }));
+  setupLoginAuto();
   /* im Tesla beim allerersten Öffnen gleich aufgeklappt */
   if (isTesla() && lsv("teslaPreset", "") === "") toggleMore(true);
-  document.querySelectorAll(".login-preset").forEach((c) => { c.checked = false; c.addEventListener("change", () => { if (c.checked) document.querySelectorAll(".login-preset").forEach((o) => { if (o !== c) o.checked = false; }); }); });
+  document.querySelectorAll(".login-preset").forEach((c) => { c.addEventListener("change", () => { if (c.checked) document.querySelectorAll(".login-preset").forEach((o) => { if (o !== c) o.checked = false; }); }); });
   bindSameName();
   gate.hidden = authed;
   document.getElementById("loginForm").addEventListener("submit", async (event) => {

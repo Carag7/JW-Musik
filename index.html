@@ -15,6 +15,7 @@
   <link rel="apple-touch-icon" href="icon.svg" />
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="skins.css" />
+  <link rel="stylesheet" href="skins2.css" />
   <script src="password.js"></script>
 </head>
 <body>
@@ -26,6 +27,7 @@
       <label class="remember"><input id="rememberLogin" type="checkbox" checked /> Login im Browser speichern</label>
       <button class="chip" type="submit">Öffnen</button>
       <p id="loginError" class="login-error" hidden>Passwort stimmt nicht</p>
+      <label id="loginAutoRow" class="set-row check login-auto" hidden><input id="loginAuto" type="checkbox" /> <span id="loginAutoIcon" class="la-ico"></span> <span id="loginAutoText"></span></label>
       <button id="loginMore" class="login-more" type="button" aria-expanded="false">▸ Weitere Optionen</button>
       <div id="loginExtra" class="login-extra" hidden>
         <p class="ap-title">Voreinstellung für dieses Gerät <small>(freiwillig)</small></p>
@@ -34,8 +36,16 @@
           <button id="loginTeslaInfo" class="meta-i-small" type="button" aria-expanded="false" aria-label="Erklärung">▾</button>
         </div>
         <small id="loginTeslaText" class="set-hint" hidden>Tesla setzt: automatisch abspielen an, weitere Lieder, Art-Kennzeichen und Art-Buttons aus, Favoriten-Stern oben und unten, Lupe und Player nur nach langem Drücken, Carag aus, Design wie Gerät/Tesla, Abgleich bis 2 gelöschte Lieder. Dafür ist kein Benutzer nötig.</small>
-        <label class="set-row check"><input id="loginHandy" class="login-preset" data-p="handy" type="checkbox" /> <span>📱 Handy</span></label>
-        <label class="set-row check"><input id="loginStandard" class="login-preset" data-p="standard" type="checkbox" /> <span>Standard</span></label>
+        <div class="tesla-row">
+          <label class="set-row check"><input id="loginHandy" class="login-preset" data-p="handy" type="checkbox" /> <span>📱 Handy</span></label>
+          <button id="loginHandyInfo" class="meta-i-small login-info" data-for="loginHandyText" type="button" aria-expanded="false" aria-label="Erklärung">▾</button>
+        </div>
+        <small id="loginHandyText" class="set-hint" hidden>Handy setzt die Standardwerte und dazu: Design „Handy AMOLED“, Schrift im Auswahlfenster 18 und das Auswahlfenster in ganzer Breite. Die Werte kann der Verwalter unter dem Benutzernamen „handy“ ändern. Dafür ist kein Benutzer nötig.</small>
+        <div class="tesla-row">
+          <label class="set-row check"><input id="loginStandard" class="login-preset" data-p="standard" type="checkbox" /> <span>🖥 Standard</span></label>
+          <button id="loginStandardInfo" class="meta-i-small login-info" data-for="loginStandardText" type="button" aria-expanded="false" aria-label="Erklärung">▾</button>
+        </div>
+        <small id="loginStandardText" class="set-hint" hidden>Standard setzt die Grundwerte für Computer und Tablet: nicht automatisch abspielen, weitere Lieder und Art-Kennzeichen an, Favoriten-Stern oben und unten, Design wie Gerät, Schrift 42 (Text) und 16 (Auswahlfenster), Breite 300, Springen 15 Sekunden, Abgleich bis 2 gelöschte Lieder. Dafür ist kein Benutzer nötig.</small>
         <button id="loginApply" class="chip" type="button" hidden>Übernehmen</button>
         <label id="loginSameRow" class="set-row check" hidden><input class="same-name-chk" type="checkbox" /> <span>Favoriten und Listen unter demselben Namen speichern</span></label>
         <div id="loginSyncRow" hidden>
@@ -328,14 +338,15 @@
           <button id="userLink" class="chip" type="button">Mit anderem Benutzer verknüpfen</button>
         </div>
         <small id="userMsg" class="set-hint"></small>
-        <label class="set-row check"><input class="same-name-chk" type="checkbox" /> <span>Gleicher Name für Favoriten-Abgleich und Einstellungen</span></label>
+        <label id="presetSameRow" class="set-row check"><input class="same-name-chk" type="checkbox" /> <span>Gleicher Name für Favoriten-Abgleich und Einstellungen</span></label>
+        <small id="presetSameText" class="set-hint" hidden></small>
         <div class="pr-view" role="group" aria-label="Anzeige">
           <button id="pvUser" class="chip" type="button" aria-pressed="true">Werte des Benutzers</button>
           <button id="pvSync" class="chip" type="button" aria-pressed="false">Sync: dieses Gerät</button>
         </div>
         <button id="pvAdopt" class="chip" type="button" hidden>Gerätewerte in den Benutzer übernehmen</button>
         <small id="pvHint" class="set-hint"></small>
-        <small class="pr-legend"><i class="pr-dot same"></i> grün: gleich wie auf diesem Gerät &nbsp; <i class="pr-dot diff"></i> orange: anders</small>
+        <small id="prLegend" class="pr-legend"><i class="pr-dot same"></i> grün: gleich wie auf diesem Gerät (bzw. wie Standard, wenn kein Benutzer angemeldet ist) &nbsp; <i class="pr-dot diff"></i> orange: anders</small>
         <div id="presetRows" class="preset-rows"></div>
         <div class="adv-btns">
           <button id="presetApply" class="chip" type="button">Meine gespeicherten Werte anwenden</button>

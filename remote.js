@@ -84,9 +84,46 @@
       song: song ? { id: song.id, number: song.number, title: song.title, cat: song.category || "" } : null,
       playing: !a.paused && !a.ended, pos: a.currentTime || 0, dur: isFinite(a.duration) ? a.duration : 0,
       shuffle: !!state.shuffle, mode: state.mode, pl: state.activePlaylist || "", ver: state.version || "karaoke", cur: state.curVersion || "",
-      lw: lwState(),
+      lw: lwState(), buf: bufEnd(), wait: !!(state.wantPlay && el.audio.readyState < 3 && !el.audio.paused), blocked: !!R.blocked,
       favs: [...state.favorites], pls: state.playlists.map((p) => ({ id: p.id, name: p.name, songs: p.songs }))
     };
+  }
+  /* Wiedergabe freischalten: Browser (v. a. Safari/Tesla) erlauben Ton erst nach einem Tipp auf diesem Gerät */
+  const SILENT = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=";
+  function unlockAudio() {
+    const a = el.audio;
+    try {
+      if (!a.getAttribute("src")) {
+        a.src = SILENT; a.muted = true;
+        const p = a.play();
+        const done = () => { try { a.pause(); a.muted = false; a.removeAttribute("src"); a.load(); } catch { /* egal */ } };
+        if (p && p.then) p.then(done).catch(() => { a.muted = false; }); else done();
+      } else if (a.paused) {
+        const p = a.play(); if (p && p.then) p.then(() => { if (!state.wantPlay) a.pause(); }).catch(() => {});
+      }
+    } catch { /* egal */ }
+  }
+  let unlockBtn = null;
+  function showUnlock(on) {
+    R.blocked = on;
+    if (!unlockBtn) {
+      unlockBtn = h("button", "rm-unlock", "▶ Hier tippen, um die Wiedergabe freizugeben"); unlockBtn.type = "button";
+      unlockBtn.onclick = () => { unlockAudio(); try { if (el.audio.paused) togglePlay(); } catch { /* egal */ } showUnlock(false); setTimeout(postState, 400); };
+      document.body.append(unlockBtn);
+    }
+    unlockBtn.hidden = !on;
+  }
+  function checkBlocked() {
+    setTimeout(() => {
+      if (R.role !== "player") return;
+      const wants = state.wantPlay || R.wantedPlay;
+      showUnlock(!!(wants && el.audio.paused && !state.netErr && el.readyState !== 0));
+      postState();
+    }, 1800);
+  }
+  function bufEnd() {
+    try { const a = el.audio, t = a.currentTime || 0; for (let i = 0; i < a.buffered.length; i++) if (a.buffered.start(i) <= t + 0.5 && a.buffered.end(i) >= t) return a.buffered.end(i); } catch { /* egal */ }
+    return 0;
   }
   /* LuD+WT: Lieder der aktuellen Woche */
   function lwState() {
@@ -110,13 +147,13 @@
   function exec(c) {
     const a = c.a;
     switch (c.t) {
-      case "play": if (el.audio.paused) togglePlay(); break;
-      case "pause": if (!el.audio.paused) togglePlay(); break;
+      case "play": R.wantedPlay = true; if (el.audio.paused) togglePlay(); checkBlocked(); break;
+      case "pause": R.wantedPlay = false; showUnlock(false); if (!el.audio.paused) togglePlay(); break;
       case "next": step(1); break;
       case "prev": step(-1); break;
       case "skip": el.audio.currentTime = Math.max(0, (el.audio.currentTime || 0) + Number(a || 0)); break;
       case "seek": el.audio.currentTime = Math.max(0, Number(a || 0)); break;
-      case "song": { const i = state.songs.findIndex((s) => s.id === a); if (i >= 0) selectSong(i, true); break; }
+      case "song": { const i = state.songs.findIndex((s) => s.id === a); R.wantedPlay = true; if (i >= 0) selectSong(i, true); checkBlocked(); break; }
       case "shuffle": state.shuffle = !!a; el.shuffleBtn.setAttribute("aria-pressed", String(!!a)); break;
       case "version": chooseVersion(a); break;
       case "fav": toggleFavorite(); break;
@@ -167,18 +204,19 @@
     if (c.ping) R.peerTs = c.ping;
     let did = false;
     (c.cmds || []).forEach((cmd) => { if (cmd.id > R.lastCmd) { R.lastCmd = cmd.id; try { exec(cmd); } catch { /* egal */ } did = true; } });
-    if (did) setTimeout(postState, 250);
+    if (did) { setTimeout(postState, 250); if (["playlist", "all", "ludwt", "next", "prev"].some((t) => (c.cmds || []).some((x) => x.t === t && x.id === R.lastCmd))) { R.wantedPlay = true; checkBlocked(); } }
   }
   async function startPlayer() {
     if (R.role) return;
+    unlockAudio();
     R.role = "player"; R.ctrl = ""; R.lastCmd = 0; R.code = await freeCode();
     try { if (window.LUDWT) LUDWT.ensureLoaded().then(() => postState()); } catch { /* egal */ }
     await api(`${R.code}/cmd`, "DELETE");
     await api(`${R.code}/state`, "PUT", buildState());
     await api("inbox/latest", "PUT", { code: R.code, ts: Date.now() });
     R.t.poll = setInterval(pollCmd, 1000);
-    R.t.beat = setInterval(postState, 4000);
-    ["play", "pause", "ended", "loadedmetadata", "seeked", "emptied"].forEach((n) => el.audio.addEventListener(n, onAudio));
+    R.t.beat = setInterval(postState, 3000);
+    ["play", "pause", "ended", "loadedmetadata", "seeked", "emptied", "waiting", "canplay"].forEach((n) => el.audio.addEventListener(n, onAudio));
     paintBadge();
     showModal("player");
   }
@@ -234,9 +272,11 @@
   }
 
   /* ---------- Fenster „Sync“ ---------- */
-  function closeModal() { const m = $("remoteModal"); if (m) m.hidden = true; }
+  function stopModalPoll() { clearInterval(R.modalT); R.modalT = 0; }
+  function closeModal() { stopModalPoll(); const m = $("remoteModal"); if (m) m.hidden = true; }
   function showModal(mode) {
     const m = $("remoteModal"), box = $("rmBody");
+    stopModalPoll();
     m.hidden = false; box.replaceChildren();
     const x = h("button", "rm-x", "✕"); x.type = "button"; x.setAttribute("aria-label", "Schließen"); x.onclick = closeModal; box.append(x);
     box.append(h("p", "rm-eyebrow", "Sync mit anderem Gerät"));
@@ -254,7 +294,8 @@
       const c = h("button", "rm-choice"); c.type = "button";
       c.append(h("b", "", "Steuern"), h("small", "", "Dieses Gerät ist die Fernbedienung (z. B. Handy). Du gibst den Code ein."));
       c.onclick = () => showModal("controller");
-      pendingCode().then((code) => { if (code && c.isConnected) c.querySelector("small").textContent = `Code ${code} ist bereit – nur noch bestätigen.`; });
+      const look = () => pendingCode().then((code) => { if (c.isConnected) c.querySelector("small").textContent = code ? `Code ${code} ist bereit – nur noch bestätigen.` : "Dieses Gerät ist die Fernbedienung (z. B. Handy). Du gibst den Code ein."; });
+      look(); R.modalT = setInterval(look, 2500);
       box.append(a, c, h("p", "rm-hint", "Es gibt immer genau ein Gerät, das abspielt, und eines, das steuert."));
     } else if (mode === "player") {
       box.append(h("h2", "", "Gesteuert werden"));
@@ -268,9 +309,14 @@
       const inp = document.createElement("input"); inp.id = "rmCode"; inp.type = "text"; inp.autocomplete = "off"; inp.inputMode = "numeric"; inp.maxLength = 4; inp.pattern = "[0-9]*"; inp.placeholder = "0000"; inp.className = "rm-input";
       box.append(inp);
       const msg = h("p", "rm-hint", ""); msg.id = "rmMsg";
+      const refresh = h("button", "rm-sync", "⟳"); refresh.type = "button"; refresh.title = "Code jetzt abfragen"; refresh.setAttribute("aria-label", "Code abfragen");
+      const look = () => pendingCode().then((c) => { if (c && inp.isConnected && inp.dataset.typed !== "1") { inp.value = c; msg.textContent = "Code vom anderen Gerät gefunden – nur noch bestätigen."; } else if (!c && inp.isConnected && inp.dataset.typed !== "1") msg.textContent = "Warte auf den Code vom anderen Gerät … (wird alle paar Sekunden abgefragt)"; });
+      inp.addEventListener("input", () => { inp.dataset.typed = "1"; });
+      refresh.onclick = () => { inp.dataset.typed = ""; msg.textContent = "Frage ab …"; look(); };
+      box.append(refresh);
       const ok = h("button", "chip primary-chip", "Bestätigen"); ok.type = "button"; ok.onclick = () => connect(inp.value);
       box.append(ok, msg);
-      pendingCode().then((c) => { if (c && !inp.value) { inp.value = c; msg.textContent = "Code vom anderen Gerät gefunden – nur noch bestätigen."; } });
+      look(); R.modalT = setInterval(look, 2500);
     }
   }
 
@@ -293,6 +339,8 @@
     rng.addEventListener("input", () => { R.seeking = true; });
     rng.addEventListener("change", () => { R.seeking = false; const d = (R.last && R.last.dur) || 0; if (d) { send("seek", (Number(rng.value) / 1000) * d); R.pos = { at: Date.now(), v: (Number(rng.value) / 1000) * d }; } });
     bar.append(t1, rng, t2);
+    const bufw = h("div", "rc-buf"); const bf = h("i", "rc-buf-fill"); bf.id = "rcBufFill"; const bt = h("span", "rc-buf-txt", ""); bt.id = "rcBufTxt"; bufw.append(bf, bt);
+    bar.append(bufw);
     const tr = h("div", "rc-tr");
     const mk = (id, txt, fn, cls) => { const b = h("button", "rc-btn " + (cls || ""), txt); b.type = "button"; b.id = id; b.onclick = fn; return b; };
     const sk = (d) => (typeof skipSec === "function" ? skipSec(d) : 15);
@@ -317,6 +365,15 @@
     const cur = s.playing ? R.pos.v + (Date.now() - R.pos.at) / 1000 : R.pos.v;
     const pos = s.dur ? Math.min(cur, s.dur) : cur;
     const t1 = $("rcT1"); if (t1) t1.textContent = fmt(pos);
+    const bf = $("rcBufFill"), bt = $("rcBufTxt");
+    if (bt && !s.dur) bt.textContent = s.blocked ? "Auf dem anderen Gerät einmal tippen (Wiedergabe freigeben)" : s.wait ? "Puffer: lädt …" : "Puffer: –";
+    if (bf && s.dur) {
+      const end = Math.max(s.buf || 0, 0), ahead = end - pos, full = end >= s.dur - 1;
+      bf.style.width = `${Math.min(100, (end / s.dur) * 100)}%`;
+      const low = s.playing && !full && (ahead < 8 || s.wait);
+      bf.dataset.st = full ? "full" : low ? "low" : "ok";
+      bt.textContent = s.blocked ? "Auf dem anderen Gerät einmal tippen (Wiedergabe freigeben)" : full ? "Puffer: komplett geladen" : s.wait ? "Puffer: lädt … (wartet auf Daten)" : `Puffer: bis ${fmt(end)} (${ahead > 0 ? "+" + Math.round(ahead) + " s voraus" : "nichts voraus"})`;
+    }
     const rng = $("rcRange"); if (rng && !R.seeking && s.dur) rng.value = String(Math.round((pos / s.dur) * 1000));
   }
   function paintPanel() {
@@ -336,7 +393,7 @@
     tickPos(); paintList(true);
   }
   function songRow(song, onTap, active) {
-    const b = h("button", "rc-song" + (active ? " on" : "")); b.type = "button";
+    const b = h("button", "rc-song" + (active ? " on" + ((R.last && R.last.playing) ? " playing" : "") : "")); b.type = "button";
     b.append(h("strong", "", song.id), h("span", "", song.title));
     b.onclick = onTap; return b;
   }
@@ -344,7 +401,7 @@
     const box = $("rcList"); if (!box) return;
     const s = R.last || {};
     document.querySelectorAll("#remotePanel .rc-tab").forEach((b) => b.classList.toggle("on", b.dataset.k === R.listTab));
-    const key = [R.listTab, R.plSel, R.q, s.song && s.song.id, (s.pls || []).length, s.lw ? s.lw.week + s.lw.rows.length : ""].join("|");
+    const key = [R.listTab, R.plSel, R.q, s.song && s.song.id, !!s.playing, (s.pls || []).length, s.lw ? s.lw.week + s.lw.rows.length : ""].join("|");
     if (soft && box.dataset.k === key) return;
     box.dataset.k = key; box.replaceChildren();
     const cur = s.song && s.song.id;
@@ -400,6 +457,6 @@
     setInterval(paintBadge, 1000);
     window.addEventListener("pagehide", () => { if (R.role === "player") { try { navigator.sendBeacon(`${BASE()}/remote/${R.code}/state`, new Blob([JSON.stringify({ phase: "closed", ts: Date.now() })], { type: "application/json" })); } catch { /* egal */ } } });
   }
-  window.REMOTE = { R, send, end };
+  window.REMOTE = { R, send, end, post: postState };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
 })();

@@ -1519,3 +1519,21 @@ body.rc-on .rm-badge { top: calc(var(--safe-top, 0px) + 8px); bottom: auto; }
 .pr-legend { display: block; margin: 4px 0; color: var(--muted); }
 .pr-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; vertical-align: middle; } .pr-dot.same { background: #1e9e4a; } .pr-dot.diff { background: #f08a00; }
 .preset-row > .preset-fields { flex-direction: column; align-items: flex-end; gap: 4px; max-width: 55%; }
+
+/* Fernbedienung: gewähltes Lied orange (Pause) bzw. grün (spielt), Puffer, Freigabe-Knopf */
+.rc-song.on { border-color: #f08a00; background: rgba(240,138,0,.18); } .rc-song.on strong { color: #f08a00; }
+.rc-song.on.playing { border-color: #1e9e4a; background: rgba(30,158,74,.2); } .rc-song.on.playing strong { color: #1e9e4a; }
+.rc-bar { flex-wrap: wrap; } .rc-bar .rc-buf { flex: 1 0 100%; }
+.rc-buf { position: relative; height: 22px; border-radius: 8px; background: rgba(255,255,255,.08); overflow: hidden; }
+.rc-buf-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: #1e9e4a; opacity: .55; transition: width .6s; }
+.rc-buf-fill[data-st="low"] { background: #f08a00; animation: rbPulse2 1s ease-in-out infinite; } .rc-buf-fill[data-st="full"] { opacity: .8; }
+@keyframes rbPulse2 { 50% { opacity: .9; } }
+.rc-buf-txt { position: relative; display: block; font-size: 12px; line-height: 22px; padding: 0 8px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rm-sync { width: 100%; min-height: 40px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel-2); color: var(--text); font-size: 20px; }
+.rm-unlock { position: fixed; z-index: 170; left: 50%; transform: translateX(-50%); bottom: 70px; max-width: 92vw; min-height: 52px; padding: 0 18px; border-radius: 26px; border: 2px solid #fff; background: #f08a00; color: #fff; font-weight: 800; font-size: 16px; box-shadow: 0 8px 24px rgba(0,0,0,.5); animation: rbPulse 1s ease-in-out infinite; }
+.rm-unlock[hidden] { display: none !important; }
+
+#duration { cursor: pointer; user-select: none; -webkit-user-select: none; min-width: 48px; text-align: right; padding: 8px 0 8px 6px; }
+.pr-rsame { background: rgba(30,158,74,.10); } .pr-rdiff { background: rgba(240,138,0,.16) !important; }
+.preset-field input.pr-same, .preset-field select.pr-same { background: rgba(30,158,74,.18) !important; }
+.preset-field input.pr-diff, .preset-field select.pr-diff { background: rgba(240,138,0,.25) !important; }

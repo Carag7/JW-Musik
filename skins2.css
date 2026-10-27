@@ -1,0 +1,177 @@
+/* Zwei zusätzliche Skins: „Bibliothek“ (sk-jwl, Stil einer Bibliotheks-App: flach, Blau/Violett, Material-Tasten)
+   und „Aurora Pro“ (sk-pro, Premium: Glas, schwebender Player, große Typografie).
+   Alle anderen Designs und der bisherige Aufbau bleiben unverändert: Die Regeln gelten nur für diese beiden Skins. */
+
+/* ============================================================
+   1) BIBLIOTHEK  (sk-jwl)
+   ============================================================ */
+html[data-theme="sk-jwl"] {
+  --bg: #ececee; --panel: #ffffff; --panel-2: #f4f4f6; --line: rgba(0,0,0,.12); --text: #2b2b2e; --muted: #6a6a72;
+  --accent: #4a6da7; --accent-rgb: 74, 109, 167; --accent-2: #6c4a9c; --accent2-rgb: 108, 74, 156; --accent3: #3d8f8a; --ink-rgb: 23, 26, 32;
+  --on-accent: #ffffff; --on-accent-2: #ffffff; --lyric-active: #2f4f87; --sel-bg: #dbe6f6; --sel-text: #1d2b45; --strong: #1b1b1e;
+  --bar-bg: #4a6da7; --side-bg: #ffffff; --flyer-bg: #ffffff;
+  --glow1: rgba(0,0,0,0); --glow2: rgba(0,0,0,0); --ok: #2e9e5b; --info: #4a6da7;
+  --sk-font: "Noto Sans", "Roboto", "Segoe UI", system-ui, sans-serif;
+  --sk-r: 4px; --sk-btn: #ffffff; --sk-bd: 1px solid rgba(0,0,0,.14); --sk-sh: 0 1px 2px rgba(0,0,0,.14); --sk-press: scale(.97);
+  --sk-play-bg: #4a6da7; --sk-play-r: 50%; --sk-play-bd: 0; --sk-play-sh: 0 3px 8px rgba(0,0,0,.35);
+  --ic-play: "▶"; --ic-pause: "❚❚"; --ic-prev: "⏮"; --ic-next: "⏭"; --ic-fav: "☆"; --ic-fav-on: "★"; --sk-ic: 24px; --sk-ic2: 20px; --sk-ic3: 24px;
+  --sk-track: 3px; --sk-track-r: 0; --sk-track-bg: #c9cfdb; --sk-thumb: 16px; --sk-thumb-bg: #4a6da7; --sk-thumb-sh: 0 1px 4px rgba(0,0,0,.4);
+  --sk-list-r: 0; --sk-list-bd: 0 solid transparent; --sk-in-r: 4px; --sk-flyer-bd: 0 solid transparent; --sk-flyer-sh: 0 -2px 8px rgba(0,0,0,.18);
+  color-scheme: light;
+}
+html[data-theme="sk-jwl"] body { background: #ececee; letter-spacing: 0; }
+/* obere Leiste: einfarbig blau, weiße Beschriftung */
+html[data-theme="sk-jwl"] .topbar { background: #4a6da7; border-bottom: 0; box-shadow: 0 2px 6px rgba(0,0,0,.3); color: #fff; }
+html[data-theme="sk-jwl"] .topbar .ghost, html[data-theme="sk-jwl"] .topbar .chip, html[data-theme="sk-jwl"] .topbar .text-link {
+  background: transparent !important; border: 0 !important; box-shadow: none !important; color: #fff !important; border-radius: 4px; font-weight: 600; letter-spacing: .02em;
+}
+html[data-theme="sk-jwl"] .topbar .ghost:hover, html[data-theme="sk-jwl"] .topbar .chip:hover { background: rgba(255,255,255,.16) !important; }
+html[data-theme="sk-jwl"] .topbar #menuToggle, html[data-theme="sk-jwl"] .topbar #eigeneToggle, html[data-theme="sk-jwl"] .topbar #ludwtToggle {
+  background: transparent !important; color: #fff !important; border: 0 !important; border-bottom: 3px solid transparent !important; border-radius: 0 !important;
+  box-shadow: none !important; text-transform: uppercase; font-size: 14px !important; letter-spacing: .06em; font-weight: 700;
+}
+html[data-theme="sk-jwl"] .topbar #menuToggle[aria-expanded="true"], html[data-theme="sk-jwl"] .topbar #eigeneToggle[aria-pressed="true"], html[data-theme="sk-jwl"] .topbar #ludwtToggle[aria-pressed="true"] { border-bottom-color: #fff !important; background: rgba(255,255,255,.12) !important; }
+/* Auswahlfenster: weiße Liste mit feinen Trennlinien */
+html[data-theme="sk-jwl"] .sidebar { background: #fff; border-right: 1px solid rgba(0,0,0,.1); }
+html[data-theme="sk-jwl"] .brand h1, html[data-theme="sk-jwl"] .brand .eyebrow { color: #4a6da7; }
+html[data-theme="sk-jwl"] .song-btn { border-bottom: 1px solid rgba(0,0,0,.08) !important; margin-bottom: 0 !important; padding: 8px 12px; background: #fff; }
+html[data-theme="sk-jwl"] .song-btn strong { color: #4a6da7; font-weight: 700; }
+html[data-theme="sk-jwl"] .song-btn:hover { background: #f1f4fa; border-color: rgba(0,0,0,.08); }
+html[data-theme="sk-jwl"] .song-btn.active { background: #dbe6f6; box-shadow: inset 4px 0 0 #4a6da7; border-color: rgba(0,0,0,.08); }
+html[data-theme="sk-jwl"] .search-wrap input, html[data-theme="sk-jwl"] select, html[data-theme="sk-jwl"] input[type="text"], html[data-theme="sk-jwl"] input[type="search"], html[data-theme="sk-jwl"] input[type="number"], html[data-theme="sk-jwl"] input[type="password"] {
+  background: #fff; border: 0; border-bottom: 2px solid #9aa7bf; border-radius: 4px 4px 0 0; color: var(--text);
+}
+/* Bühne: weiße Karte, ruhige Schrift */
+html[data-theme="sk-jwl"] .stage { background: #ececee; }
+html[data-theme="sk-jwl"] .now h2 { color: #1b1b1e; font-weight: 700; }
+html[data-theme="sk-jwl"] .now .eyebrow, html[data-theme="sk-jwl"] .song-number { color: #4a6da7; text-transform: uppercase; letter-spacing: .1em; }
+html[data-theme="sk-jwl"] .lyrics { background: #fff; border-radius: 2px; box-shadow: 0 1px 3px rgba(0,0,0,.18); margin: 6px 0 0; padding-left: 14px; padding-right: 14px; }
+html[data-theme="sk-jwl"] .lyric-line { color: #4a4a50; }
+html[data-theme="sk-jwl"] .lyric-line.active { color: #1d3f78; background: #e9f0fb; box-shadow: inset 4px 0 0 #4a6da7; padding-left: 10px; border-radius: 0; }
+html[data-theme="sk-jwl"] .start-actions .chip { background: #4a6da7; color: #fff; border: 0; box-shadow: 0 2px 5px rgba(0,0,0,.3); text-transform: uppercase; letter-spacing: .06em; font-size: 16px; }
+html[data-theme="sk-jwl"] .seg-btn { text-transform: uppercase; letter-spacing: .05em; font-size: 12.5px; font-weight: 700; }
+html[data-theme="sk-jwl"] .seg-btn[aria-pressed="true"], html[data-theme="sk-jwl"] .chip[aria-pressed="true"] { background: #4a6da7 !important; color: #fff !important; }
+/* Wiedergabeleiste: weiß, Material-Tasten */
+html[data-theme="sk-jwl"] .flyer { background: #fff; }
+html[data-theme="sk-jwl"] .round { background: transparent; border: 0; box-shadow: none; color: #4a4a50; }
+html[data-theme="sk-jwl"] .round.play { background: #4a6da7; color: #fff; width: 62px; height: 62px; box-shadow: 0 3px 8px rgba(0,0,0,.35); }
+html[data-theme="sk-jwl"] .round:not(.play):hover { background: rgba(74,109,167,.12); }
+html[data-theme="sk-jwl"] .nav-song { color: #6a6a72; }
+html[data-theme="sk-jwl"] #currentTime, html[data-theme="sk-jwl"] #duration { color: #4a4a50; font-variant-numeric: tabular-nums; }
+html[data-theme="sk-jwl"] .buf-bar i { background: #9bb2d8; }
+html[data-theme="sk-jwl"] .login-card { background: #fff; border-radius: 4px; box-shadow: 0 8px 28px rgba(0,0,0,.35); color: var(--text); }
+html[data-theme="sk-jwl"] .login-gate { background: rgba(30,30,40,.55); }
+html[data-theme="sk-jwl"] .login-card h2 { color: #4a6da7; }
+html[data-theme="sk-jwl"] .ap-title { color: #4a6da7; text-transform: uppercase; letter-spacing: .08em; font-size: 12px; }
+html[data-theme="sk-jwl"] .chip { text-transform: uppercase; letter-spacing: .04em; font-size: 13px; font-weight: 700; }
+html[data-theme="sk-jwl"] .chip.primary-chip, html[data-theme="sk-jwl"] .login-card .chip[type="submit"] { background: #4a6da7; color: #fff; border: 0; }
+
+/* ============================================================
+   2) AURORA PRO  (sk-pro)  – Premium: Glas, Typografie, schwebender Player
+   ============================================================ */
+html[data-theme="sk-pro"] {
+  --bg: #07080d; --panel: rgba(255,255,255,.045); --panel-2: rgba(255,255,255,.07); --line: rgba(255,255,255,.09); --text: #f3f4fa; --muted: #8b90a6;
+  --accent: #8b7cff; --accent-rgb: 139, 124, 255; --accent-2: #35e0c2; --accent2-rgb: 53, 224, 194; --accent3: #ff8fb8; --ink-rgb: 255, 255, 255;
+  --on-accent: #0b0820; --on-accent-2: #04231d; --lyric-active: #ffffff; --sel-bg: rgba(139,124,255,.28); --sel-text: #fff; --strong: #fff;
+  --bar-bg: rgba(10,11,18,.55); --side-bg: rgba(255,255,255,.035); --flyer-bg: rgba(16,18,28,.58);
+  --glow1: rgba(139,124,255,.22); --glow2: rgba(53,224,194,.12); --ok: #3ee08a; --info: #8bb4ff;
+  --flyer-h: 132px;
+  --sk-font: "Inter", "SF Pro Display", "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+  --sk-r: 999px; --sk-btn: rgba(255,255,255,.06); --sk-bd: 1px solid rgba(255,255,255,.1); --sk-blur: blur(18px) saturate(160%);
+  --sk-sh: inset 0 1px 0 rgba(255,255,255,.08); --sk-press: scale(.95);
+  --sk-play-bg: linear-gradient(135deg, #8b7cff 0%, #35e0c2 100%); --sk-play-r: 50%; --sk-play-bd: 0; --sk-play-sh: 0 10px 34px rgba(139,124,255,.55), inset 0 1px 0 rgba(255,255,255,.4);
+  --ic-play: "▶"; --ic-pause: "❚❚"; --ic-prev: "⏮"; --ic-next: "⏭"; --ic-fav: "♡"; --ic-fav-on: "♥"; --sk-ic: 26px; --sk-ic2: 18px; --sk-ic3: 24px;
+  --sk-track: 4px; --sk-track-bg: rgba(255,255,255,.14); --sk-thumb: 16px; --sk-thumb-bg: #fff; --sk-thumb-sh: 0 0 0 6px rgba(139,124,255,.35), 0 0 22px rgba(139,124,255,.9);
+  --sk-list-r: 16px; --sk-list-bd: 1px solid transparent; --sk-in-r: 14px; --sk-flyer-bd: 1px solid rgba(255,255,255,.1);
+  color-scheme: dark;
+}
+html[data-theme="sk-pro"] body {
+  background:
+    radial-gradient(1100px 620px at 8% -12%, rgba(139,124,255,.30), transparent 60%),
+    radial-gradient(900px 560px at 108% 4%, rgba(53,224,194,.16), transparent 58%),
+    radial-gradient(900px 700px at 50% 120%, rgba(255,143,184,.12), transparent 60%),
+    #07080d;
+  letter-spacing: -.005em; -webkit-font-smoothing: antialiased;
+}
+/* obere Leiste: Glas, Hauptbuttons als eine zusammenhängende Pille */
+html[data-theme="sk-pro"] .topbar { background: rgba(10,11,18,.55); border-bottom: 1px solid rgba(255,255,255,.07); backdrop-filter: blur(24px) saturate(170%); -webkit-backdrop-filter: blur(24px) saturate(170%); }
+html[data-theme="sk-pro"] .topbar .tb-main { gap: 2px; padding: 4px; border-radius: 999px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08); }
+html[data-theme="sk-pro"] .topbar #menuToggle, html[data-theme="sk-pro"] .topbar #eigeneToggle, html[data-theme="sk-pro"] .topbar #ludwtToggle {
+  background: transparent !important; border: 0 !important; border-radius: 999px !important; box-shadow: none !important; color: var(--muted) !important;
+  font-weight: 650; letter-spacing: .01em; height: 38px !important; min-height: 38px !important;
+}
+html[data-theme="sk-pro"] .topbar #menuToggle[aria-expanded="true"], html[data-theme="sk-pro"] .topbar #eigeneToggle[aria-pressed="true"], html[data-theme="sk-pro"] .topbar #ludwtToggle[aria-pressed="true"] {
+  background: linear-gradient(135deg, rgba(139,124,255,.95), rgba(53,224,194,.85)) !important; color: #0b0820 !important; box-shadow: 0 6px 20px rgba(139,124,255,.45) !important;
+}
+html[data-theme="sk-pro"] .topbar .ghost, html[data-theme="sk-pro"] .topbar .text-link { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08); border-radius: 999px; color: var(--text); font-weight: 600; }
+html[data-theme="sk-pro"] .topbar .ghost:hover { background: rgba(255,255,255,.12); }
+/* Auswahlfenster: schwebende Glas-Karte */
+html[data-theme="sk-pro"] .sidebar {
+  margin: 10px 0 0 10px; border: 1px solid rgba(255,255,255,.08); border-radius: 26px; background: rgba(255,255,255,.035);
+  backdrop-filter: blur(22px) saturate(150%); -webkit-backdrop-filter: blur(22px) saturate(150%);
+  box-shadow: 0 24px 60px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.06);
+  height: calc(100vh - var(--topbar) - var(--flyer-h) - 6px) !important; min-height: 0 !important; padding: 16px 14px 12px; box-sizing: border-box;
+}
+html[data-theme="sk-pro"] .brand h1 { font-size: 30px; font-weight: 800; letter-spacing: -.035em; background: linear-gradient(120deg, #fff 20%, #b9b0ff 70%, #8ff0dd); -webkit-background-clip: text; background-clip: text; color: transparent; }
+html[data-theme="sk-pro"] .brand h1 .home-link { color: inherit; }
+html[data-theme="sk-pro"] .brand .eyebrow, html[data-theme="sk-pro"] .eyebrow { color: var(--accent-2); letter-spacing: .16em; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+html[data-theme="sk-pro"] .song-btn { border-radius: 16px; margin-bottom: 4px; padding: 8px 12px; background: transparent; transition: background .2s, transform .15s; }
+html[data-theme="sk-pro"] .song-btn strong { font-variant-numeric: tabular-nums; font-weight: 700; background: linear-gradient(135deg, #b9b0ff, #8ff0dd); -webkit-background-clip: text; background-clip: text; color: transparent; }
+html[data-theme="sk-pro"] .song-btn:hover { background: rgba(255,255,255,.06); border-color: transparent; }
+html[data-theme="sk-pro"] .song-btn.active { background: linear-gradient(135deg, rgba(139,124,255,.28), rgba(53,224,194,.14)); border-color: rgba(255,255,255,.14); box-shadow: 0 8px 24px rgba(139,124,255,.22); }
+html[data-theme="sk-pro"] .search-wrap input, html[data-theme="sk-pro"] select, html[data-theme="sk-pro"] input[type="text"], html[data-theme="sk-pro"] input[type="search"], html[data-theme="sk-pro"] input[type="number"], html[data-theme="sk-pro"] input[type="password"] {
+  background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); color: var(--text); border-radius: 14px;
+}
+html[data-theme="sk-pro"] input:focus, html[data-theme="sk-pro"] select:focus { outline: 0; border-color: rgba(139,124,255,.8); box-shadow: 0 0 0 4px rgba(139,124,255,.22); }
+/* Bühne: große Typografie, Liedtext wie in einem Premium-Musikplayer */
+html[data-theme="sk-pro"] .stage { padding: 14px 24px 0; }
+html[data-theme="sk-pro"] .now h2 { font-size: clamp(26px, 3.4vw, 52px); font-weight: 800; letter-spacing: -.04em; line-height: 1.04; background: linear-gradient(120deg, #fff 30%, #c9c2ff 80%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+html[data-theme="sk-pro"] .song-number { color: var(--accent-2); letter-spacing: .2em; font-weight: 800; }
+html[data-theme="sk-pro"] .meta, html[data-theme="sk-pro"] #currentStatus { color: var(--muted); }
+html[data-theme="sk-pro"] body:not(.edit-mode) .lyrics { overflow-x: hidden !important; text-align: center; scroll-behavior: smooth; mask-image: linear-gradient(to bottom, transparent 0, #000 7%, #000 88%, transparent 100%); -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 7%, #000 88%, transparent 100%); }
+html[data-theme="sk-pro"] body:not(.edit-mode) .lyric-line { justify-content: center; opacity: .45; filter: blur(.4px); white-space: normal !important; min-width: 0 !important; overflow-wrap: anywhere; transition: opacity .35s, filter .35s, transform .35s; transform-origin: center; font-weight: 700; letter-spacing: -.02em; }
+html[data-theme="sk-pro"] body:not(.edit-mode) .lyric-line.active { opacity: 1; filter: none; transform: scale(1.04); color: #fff; text-shadow: 0 0 34px rgba(139,124,255,.75), 0 0 2px rgba(255,255,255,.4); background: none; }
+html[data-theme="sk-pro"] .start-actions .chip { background: linear-gradient(135deg, #8b7cff, #35e0c2); color: #0b0820; border: 0; border-radius: 22px; font-weight: 800; box-shadow: 0 14px 40px rgba(139,124,255,.45); }
+html[data-theme="sk-pro"] .start-image { border-radius: 28px; box-shadow: 0 30px 80px rgba(0,0,0,.55); }
+html[data-theme="sk-pro"] .seg { background: rgba(255,255,255,.05); border-radius: 999px; padding: 3px; border: 1px solid rgba(255,255,255,.08); }
+html[data-theme="sk-pro"] .seg .seg-btn { border: 0; background: transparent; color: var(--muted); }
+html[data-theme="sk-pro"] .seg-btn[aria-pressed="true"], html[data-theme="sk-pro"] .chip[aria-pressed="true"] { background: linear-gradient(135deg, #8b7cff, #35e0c2) !important; color: #0b0820 !important; border-color: transparent !important; box-shadow: 0 6px 18px rgba(139,124,255,.4); }
+/* Wiedergabe: schwebendes Dock */
+html[data-theme="sk-pro"] .flyer {
+  left: 50% !important; right: auto !important; transform: translateX(-50%); width: min(1000px, calc(100vw - 20px)) !important; bottom: calc(10px + var(--safe-bottom));
+  min-height: 0; padding: 12px 22px !important; border-radius: 32px; border: 1px solid rgba(255,255,255,.12);
+  background: linear-gradient(180deg, rgba(34,36,52,.62), rgba(14,15,24,.72));
+  backdrop-filter: blur(30px) saturate(180%); -webkit-backdrop-filter: blur(30px) saturate(180%);
+  box-shadow: 0 34px 90px rgba(0,0,0,.65), 0 0 0 1px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.12);
+}
+html[data-theme="sk-pro"] .round { background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1); box-shadow: inset 0 1px 0 rgba(255,255,255,.1); }
+html[data-theme="sk-pro"] .round:hover { background: rgba(255,255,255,.14); }
+html[data-theme="sk-pro"] .round.play { width: 72px; height: 72px; border: 0; }
+html[data-theme="sk-pro"] .round.nav { border-radius: 50%; }
+html[data-theme="sk-pro"] .nav-song { color: var(--muted); font-size: 13px; }
+html[data-theme="sk-pro"] #currentTime, html[data-theme="sk-pro"] #duration { font-variant-numeric: tabular-nums; color: var(--muted); font-weight: 600; }
+html[data-theme="sk-pro"] .buf-bar { background: transparent; }
+html[data-theme="sk-pro"] .buf-bar i { background: linear-gradient(90deg, #8b7cff, #35e0c2); }
+/* Fenster (Einstellungen, Anmeldung, Dialoge): Glas-Blatt */
+html[data-theme="sk-pro"] .login-gate { background: rgba(4,5,10,.62); backdrop-filter: blur(22px) saturate(140%); -webkit-backdrop-filter: blur(22px) saturate(140%); }
+html[data-theme="sk-pro"] .login-card { background: linear-gradient(180deg, rgba(34,36,52,.82), rgba(16,17,27,.9)); border: 1px solid rgba(255,255,255,.12); border-radius: 30px; box-shadow: 0 40px 120px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.1); padding: 24px 22px; }
+html[data-theme="sk-pro"] .login-card h2 { font-size: 28px; font-weight: 800; letter-spacing: -.03em; }
+html[data-theme="sk-pro"] .ap-title { color: var(--accent-2); letter-spacing: .14em; text-transform: uppercase; font-size: 11px; font-weight: 800; }
+html[data-theme="sk-pro"] .set-tabs { background: rgba(255,255,255,.05); border-radius: 999px; padding: 4px; border: 1px solid rgba(255,255,255,.08); }
+html[data-theme="sk-pro"] .set-tabs .seg-btn { border: 0; background: transparent; color: var(--muted); }
+html[data-theme="sk-pro"] .chip.primary-chip, html[data-theme="sk-pro"] .login-card .chip[type="submit"] { background: linear-gradient(135deg, #8b7cff, #35e0c2); color: #0b0820; border: 0; font-weight: 800; box-shadow: 0 10px 28px rgba(139,124,255,.4); }
+html[data-theme="sk-pro"] .chip.danger { background: linear-gradient(135deg, #ff5d73, #ff8a5c); color: #fff; border: 0; }
+html[data-theme="sk-pro"] .to-top { background: linear-gradient(135deg, #8b7cff, #35e0c2); color: #0b0820; border: 0; box-shadow: 0 10px 28px rgba(139,124,255,.5); }
+html[data-theme="sk-pro"] *::-webkit-scrollbar { width: 8px; height: 8px; }
+html[data-theme="sk-pro"] *::-webkit-scrollbar-thumb { background: rgba(255,255,255,.16); border-radius: 8px; }
+html[data-theme="sk-pro"] *::-webkit-scrollbar-track { background: transparent; }
+/* Handy hochkant: Dock volle Breite, Auswahlfenster ohne Seitenrand */
+@media (max-width: 700px) {
+  html[data-theme="sk-pro"] .flyer { width: calc(100vw - 14px) !important; padding: 10px 12px !important; border-radius: 26px; }
+  html[data-theme="sk-pro"] .sidebar { margin: 8px 8px 0; }
+  html[data-theme="sk-pro"] .stage { padding: 10px 14px 0; }
+}
+/* Fernbedienung im Skin */
+html[data-theme="sk-pro"] .rc-panel { background: radial-gradient(900px 500px at 10% -10%, rgba(139,124,255,.28), transparent 60%), #07080d; }
+html[data-theme="sk-pro"] .rc-now, html[data-theme="sk-pro"] .rc-song { background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.09); border-radius: 18px; }
+html[data-theme="sk-jwl"] .rc-panel { background: #ececee; }

@@ -16,6 +16,8 @@
     { id: "sk-neon", name: "Neon Linie", bar: "#05060d", light: false, skin: true, grp: "Skin", sw: ["#05060d", "#12152b", "#00f0ff"], hint: "Skin: Neon-Umrisse mit Leuchten" },
     { id: "sk-papier", name: "Papier Minimal", bar: "#f6f2ea", light: true, skin: true, grp: "Skin", sw: ["#f6f2ea", "#ebe5d8", "#1d1b17"], hint: "Skin: hell, feine Linien, Serifenschrift" },
     { id: "sk-kontur", name: "Kontur Pop", bar: "#fff6d6", light: true, skin: true, grp: "Skin", sw: ["#fff6d6", "#ffe58a", "#ff3d81"], hint: "Skin: dicke Rahmen, harte Schatten, bunt" },
+    { id: "sk-jwl", name: "Bibliothek", bar: "#4a6da7", light: true, skin: true, grp: "Skin", sw: ["#ececee", "#ffffff", "#4a6da7"], hint: "Skin: flach, Blau und Violett, Liste mit Trennlinien, runde Play-Taste" },
+    { id: "sk-pro", name: "Aurora Pro", bar: "#07080d", light: false, skin: true, grp: "Skin", sw: ["#07080d", "#2a2650", "#8b7cff"], hint: "Skin: Premium mit Glas, schwebendem Player und großer Schrift" },
     { id: "an-disco", name: "Disco ✦ animiert", bar: "#12002b", light: false, skin: true, anim: true, grp: "Animiert", sw: ["#12002b", "#2c1066", "#ff2ea6"], hint: "Animiert: tanzende Farben, hüpfende Tasten" },
     { id: "an-aquarium", name: "Aquarium ✦ animiert", bar: "#021b33", light: false, skin: true, anim: true, grp: "Animiert", sw: ["#021b33", "#0a3a66", "#2ee6c5"], hint: "Animiert: Blasen, Wellen, schwimmender Fisch" },
     { id: "an-weltall", name: "Weltall ✦ animiert", bar: "#05030f", light: false, skin: true, anim: true, grp: "Animiert", sw: ["#05030f", "#17123a", "#ffb703"], hint: "Animiert: Sterne, Rakete, kreisende Planeten-Taste" },
@@ -250,6 +252,9 @@
       });
       root.append(seg);
       root.append(h("small", "set-hint", "Häkchen = Design wird vorne im Hauptfenster (◐ und Auswahl) angeboten."));
+      const all = h("button", "chip", "Alle Designs ansehen (Reiter Normal / Tesla / Handy)"); all.type = "button";
+      all.addEventListener("click", () => openPicker());
+      root.append(all);
     } else {
       root.append(h("p", "set-hint", "Welche Designs sollen am Tag und welche in der Nacht verwendet werden? Bei mehreren Häkchen gilt das erste in der Liste; das ◐ oben schaltet dann ebenfalls durch."));
       const tbl = h("table", "theme-tbl");
