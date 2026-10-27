@@ -2,6 +2,7 @@
  *
  * Aufgaben:
  *  - /api/refresh        startet den GitHub-Workflow (Button "Jetzt aktualisieren")
+ *  - /api/users          Liste aller Benutzer (Name, Passwort ja/nein) – nur mit WRITE_KEY
  *  - /api/media-index    Verzeichnis aller Dateien in R2 (Karaoke-MP3, Meeting-MP3, Videos, LRC)
  *  - /api/r2-plan, /api/r2-run   einmaliges Aufräumen von R2 (nur mit WRITE_KEY)
  *  - /sync/<name>        Favoriten-Speicher und Liedtext-Zeiten (lrc-003, lrcm-003)
@@ -36,6 +37,7 @@ export default {
       return new Response(null, { headers: CORS });
     }
     if (path === "/api/refresh") return handleRefresh(request, env);
+    if (path === "/api/users") return handleUsers(request, env);
     if (path === "/api/media-index") return handleIndex(request, env, url);
     if (path === "/api/r2-prune") return handlePrune(request, env, url);
     if (path === "/api/r2-fetch") return handleFetchToR2(request, env, url);
@@ -391,7 +393,7 @@ async function handleUser(request, env, path) {
   if (request.method === "OPTIONS") return new Response(null, { headers: CORS });
   const name = path.slice(6).toLowerCase().replace(/[^a-z0-9äöüß._-]/g, "").slice(0, 40);
   if (name.length < 2) return new Response("bad name", { status: 400, headers: CORS });
-  const tesla = name === "_tesla" || name === "_standard";
+  const tesla = name === "_tesla" || name === "_standard" || name === "_handy";
   if (!tesla && name.startsWith("_")) return new Response("bad name", { status: 400, headers: CORS });
   const key = `benutzer/${name}.json`;
   const sent = request.headers.get("x-user-hash") || "";
@@ -435,6 +437,27 @@ async function handleUser(request, env, path) {
 }
 
 /* Fernsteuerung: /remote/<code>/state (Player schreibt), /remote/<code>/cmd (Fernbedienung schreibt), /remote/inbox/<speicher> (Code für das zweite Gerät) */
+/* Liste aller Benutzer (nur Namen, ob ein Passwort gesetzt ist, letzte Änderung) – nie die Passwörter. Nur mit Schreib-Schlüssel. */
+async function handleUsers(request, env) {
+  if (request.method === "OPTIONS") return new Response(null, { headers: CORS });
+  if (!env.WRITE_KEY) return json({ ok: false, fehler: "In Cloudflare fehlt das Secret WRITE_KEY." }, CORS, 403);
+  if (request.headers.get("x-write-key") !== env.WRITE_KEY) return json({ ok: false, fehler: "Schlüssel falsch." }, CORS, 401);
+  const users = [];
+  let cursor;
+  do {
+    const list = await env.MUSIK.list({ prefix: "benutzer/", cursor });
+    for (const o of list.objects) {
+      const name = o.key.slice(9).replace(/\.json$/, "");
+      let rec = null;
+      try { const obj = await env.MUSIK.get(o.key); rec = obj ? await obj.json() : null; } catch { rec = null; }
+      users.push({ name, passwort: !!(rec && rec.hash), geaendert: (rec && rec.updated) || "", system: name.startsWith("_"), verknuepft: rec && Array.isArray(rec.links) ? rec.links.length : 0 });
+    }
+    cursor = list.truncated ? list.cursor : undefined;
+  } while (cursor && users.length < 2000);
+  users.sort((a, b) => a.system - b.system || a.name.localeCompare(b.name));
+  return json({ ok: true, anzahl: users.length, benutzer: users }, CORS);
+}
+
 async function handleRemote(request, env, path) {
   if (request.method === "OPTIONS") return new Response(null, { headers: CORS });
   const parts = path.split("/").filter(Boolean);   // ["remote", a, b?]
