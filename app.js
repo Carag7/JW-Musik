@@ -2872,7 +2872,7 @@ async function putSync(store, data) {
 }
 
 /* ---- Einstellungen mit abgleichen (optional, pro Schlüssel Drei-Wege-Abgleich) ---- */
-const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBarAlways", "holdGuard", "holdHint", "eggMode", "eggFall", "eggGif", "startGif", "themeShown", "sidebarW", "topOffMain", "topOffSet", "startGif", "ludwtSingle", "listRepeat", "srcTags", "favPlace", "favSeek", "showExtra", "srcFilter", "sync-auto-max", "skipSec", "skipBack", "skipFwd", "fehlMode", "fehlNotify", "fehlAll", "fehlHelpSeen", STORAGE.scale, STORAGE.listSize];
+const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBarAlways", "holdGuard", "holdHint", "eggMode", "eggFall", "eggGif", "startGif", "themeShown", "themeTabs", "themeOrder", "sidebarW", "topOffMain", "topOffSet", "startGif", "ludwtSingle", "listRepeat", "srcTags", "favPlace", "favSeek", "showExtra", "srcFilter", "sync-auto-max", "skipSec", "skipBack", "skipFwd", "fehlMode", "fehlNotify", "fehlAll", "fehlHelpSeen", STORAGE.scale, STORAGE.listSize];
 const isSettingKey = (k) => SETTING_KEYS.includes(k) || /^fehl[TL]_/.test(k);
 const syncSettingsOn = () => false;   // Einstellungen werden jetzt über den Benutzer gespeichert
 function collectSettings() {
@@ -3866,15 +3866,17 @@ const PRESETS = [
   { id: "topoff", offByDefault: true, label: "Abstand oben (px): Hauptfenster / Einstellungen", keys: ["topOffMain", "topOffSet"], fields: [{ key: "topOffMain", t: "Haupt", n: [0, 300], dv: "0" }, { key: "topOffSet", t: "Einstellungen", n: [0, 300], dv: "0" }] },
   { id: "startgif", label: "Startseite: GIF „Chor“ statt des Bildes", keys: ["startGif"], def: { startGif: "0" }, fields: [{ key: "startGif", o: BOOL, dv: "0" }] },
   { id: "lupeopt", label: "Lupe-Optionen: LuD+WT einzeln (■) / Liste wiederholen (↻)", keys: ["ludwtSingle", "listRepeat"], fields: [{ key: "ludwtSingle", t: "einzeln", o: BOOL, dv: "0" }, { key: "listRepeat", t: "wiederholen", o: BOOL, dv: "1" }] },
-  { id: "themeshown", label: "Designs im Hauptfenster (Auswahl)", keys: ["themeShown"] },
+  { id: "themeshown", label: "Designs im Hauptfenster (Auswahl)", keys: ["themeShown", "themeTabs", "themeOrder"] },
   { id: "skip", label: "Springen zurück / vor (Sekunden)", keys: ["skipSec", "skipBack", "skipFwd"],
     fields: [{ key: "skipBack", t: "zurück", n: [1, 300], dv: "15" }, { key: "skipFwd", t: "vor", n: [1, 300], dv: "15" }] },
   { id: "fehl", label: "Fehlend: Prüfung, Hinweis und Anzeige", keys: ["fehlMode", "fehlNotify", "fehlAll"], rx: /^fehl[TL]_/, fields: [{ key: "fehlNotify", t: "Hinweis", o: BOOL, dv: "0" }] },
   { id: "syncmax", label: "Automatisch abgleichen, auch wenn bis zu … Lieder gelöscht wurden", keys: ["sync-auto-max"], def: { "sync-auto-max": "2" }, fields: [{ key: "sync-auto-max", n: [0, 999], dv: "0" }] }
 ];
 /* Standard für neue Benutzer (beste Werte am Desktop); über den Namen „standard“ mit dem Schreib-Passwort änderbar */
+const HANDY_EXTRA = { themeMode: "manual", theme: "hy-amoled", holdGuard: "0", [STORAGE.listSize]: "18" };
 const STD_VALS = { autoStart: "0", showExtra: "1", srcTags: "1", favPlace: "both", favSeek: "off", verBarAlways: "1", holdGuard: "0", holdHint: "0", themeMode: "device", [STORAGE.scale]: "42", [STORAGE.listSize]: "16", sidebarW: "300", skipBack: "15", skipFwd: "15", "sync-auto-max": "2" };
-const SYS = { tesla: "_tesla", standard: "_standard" };
+const SYS = { tesla: "_tesla", standard: "_standard", handy: "_handy" };
+const SYS_LABEL = { tesla: "Tesla", standard: "Standard", handy: "Handy" };
 const TESLA_EXTRA = { eggMode: "auto", eggFall: "0", eggGif: "chor", startGif: "0" };
 const lsv = (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch { return d; } };
 const lss = (k, v) => { try { localStorage.setItem(k, v); } catch { /* egal */ } };
@@ -3883,7 +3885,7 @@ const normPresets = (p) => { p = p || {}; return p.on && typeof p.on === "object
 const sysDefault = (n) => {
   const vals = {};
   if (n === "tesla") PRESETS.forEach((p) => Object.assign(vals, p.def || {}));
-  else Object.assign(vals, STD_VALS);
+  else { Object.assign(vals, STD_VALS); if (n === "handy") Object.assign(vals, HANDY_EXTRA); }
   return { on: n === "tesla" ? Object.fromEntries(PRESETS.map((p) => [p.id, !!p.def])) : defaultOn(), vals };
 };
 const sameNameOn = () => lsv("sameName", "1") === "1";
@@ -3985,6 +3987,12 @@ async function sysData(n) {
   return r.state === "ok" && !r.none && Object.keys(r.presets).length ? normPresets(r.presets) : sysDefault(n);
 }
 const teslaData = () => sysData("tesla");
+/* Handy- und Standard-Voreinstellung anwenden (vollständige Werte des Profils) */
+async function applyProfilePreset(name, silent) {
+  const ok = await applyWithPreview(presetTarget(await sysData(name), "user"), `${SYS_LABEL[name]}-Voreinstellung anwenden?`, silent);
+  if (ok) lss(name + "Preset", "1");
+  return ok;
+}
 /* Tesla-Voreinstellung anwenden (mit Vorschau der Änderungen, sofern nicht silent) */
 async function applyTeslaPreset(silent) {
   const ok = await applyWithPreview(presetTarget(await teslaData(), "tesla"), "Tesla-Voreinstellung anwenden?", silent);
@@ -4019,6 +4027,7 @@ async function userPush(n, d) {
   const out = r.state === "ok" ? userMergeUp(userBaseGet(), d, normPresets(r.presets)) : d;
   const ok = await putProfile(n, { presets: out });
   if (ok) { userBaseSet(d); userDirtySet(false); } else userDirtySet(true);
+  try { if (!document.getElementById("presetBox").hidden && !document.getElementById("codeModal").hidden) refreshPresetRows(); } catch { /* egal */ }
   return ok;
 }
 
@@ -4099,8 +4108,20 @@ function renderPresetBox() {
   userKnown().forEach((n) => add(n, n));
   add("__new", "＋ Neuer Benutzer …");
   sel.value = name && userKnown().includes(name) ? name : "";
-  buildPresetRows(document.getElementById("presetRows"), {
-    live: true,
+  refreshPresetRows();
+}
+function refreshPresetRows() {
+  const rows = document.getElementById("presetRows");
+  if (!rows) return;
+  const sync = state.presetView === "sync";
+  document.getElementById("pvUser").setAttribute("aria-pressed", String(!sync));
+  document.getElementById("pvSync").setAttribute("aria-pressed", String(sync));
+  document.getElementById("pvAdopt").hidden = !(sync && userName());
+  document.getElementById("pvHint").textContent = sync
+    ? "Zeigt die Einstellungen, die gerade auf diesem Gerät gelten. Änderungen in den Einstellungen erscheinen hier sofort."
+    : (userName() ? `Zeigt die gespeicherten Werte von „${userName()}“ (Server).` : "Kein Benutzer angemeldet: es werden die Werte dieses Geräts gezeigt.");
+  buildPresetRows(rows, {
+    live: true, view: state.presetView || "user", mark: !!userName(),
     get: userData,
     save: async (d) => { await userPush(userName(), d); }
   });
@@ -4115,6 +4136,7 @@ function buildPresetRows(rows, o) {
     wrap.className = "preset-row";
     const l = document.createElement("label");
     l.className = "set-row check";
+    let rowDiff = false;
     const c = document.createElement("input");
     c.type = "checkbox"; c.checked = data.on[p.id] !== false;
     const sp = document.createElement("span");
@@ -4129,7 +4151,8 @@ function buildPresetRows(rows, o) {
       const lab = document.createElement("label");
       lab.className = "preset-field";
       if (f.t) lab.append(document.createTextNode(f.t + " "));
-      const shown = o.live ? lsv(f.key, f.dv) : (data.vals[f.key] ?? (o.name === "tesla" ? (p.def || {})[f.key] : STD_VALS[f.key]) ?? f.dv);
+      const stored = data.vals[f.key], devv = lsv(f.key, null);
+      const shown = o.live ? ((o.view === "sync" || stored === undefined) ? lsv(f.key, f.dv) : stored) : (data.vals[f.key] ?? (o.name === "tesla" ? (p.def || {})[f.key] : o.name === "handy" ? { ...STD_VALS, ...HANDY_EXTRA }[f.key] : STD_VALS[f.key]) ?? f.dv);
       let inp;
       if (f.o) {
         inp = document.createElement("select");
@@ -4139,6 +4162,10 @@ function buildPresetRows(rows, o) {
         inp.type = "number"; inp.min = f.n[0]; inp.max = f.n[1]; inp.inputMode = "numeric";
       }
       inp.value = String(shown);
+      if (o.live && o.mark && stored !== undefined) {
+        const diff = String(stored) !== String(devv === null ? f.dv : devv);
+        inp.classList.add(diff ? "pr-diff" : "pr-same"); rowDiff = rowDiff || diff;
+      }
       inputs.push([f, inp]);
       inp.onchange = async () => {
         let v = inp.value;
@@ -4158,6 +4185,11 @@ function buildPresetRows(rows, o) {
       fb.hidden = !c.checked;
       await o.save(d);
     };
+    if (!(p.fields || []).length && o.live && o.mark) {
+      const ks = presetKeys(p).filter((k) => data.vals[k] !== undefined);
+      if (ks.length) rowDiff = ks.some((k) => String(data.vals[k]) !== String(lsv(k, "")));
+      if (ks.length) wrap.classList.add(rowDiff ? "pr-rdiff" : "pr-rsame");
+    } else if (o.live && o.mark && inputs.length && inputs.some(([f]) => data.vals[f.key] !== undefined)) wrap.classList.add(rowDiff ? "pr-rdiff" : "pr-rsame");
     if ((p.fields || []).length) wrap.append(fb);
     rows.append(wrap);
   });
@@ -4169,7 +4201,7 @@ async function resetToProfile(name) {
   const all = { on: defaultOn(), vals: data.vals };
   const target = presetTarget(all, name === "tesla" ? "tesla" : "user");
   const diff = presetDiff(target);
-  const label = name === "tesla" ? "Tesla" : "Standard";
+  const label = SYS_LABEL[name];
   const yes = await uiDialog({
     eyebrow: "Zurücksetzen", title: `Wirklich alles auf „${label}“ zurücksetzen?`, cancelValue: false,
     lines: [`Alle Einstellungen${userName() ? ` von „${userName()}“` : ""} und dieses Geräts werden auf die Werte von „${label}“ gesetzt.${diff.length ? ` ${diff.length} Werte ändern sich.` : " Es ändert sich nichts."}`,
@@ -4193,7 +4225,7 @@ async function openSysEditor(name) {
   const msg = document.getElementById("userMsg");
   let key = sysKey();
   if (!key || !(await verifyKey(name, key))) {
-    key = await askKey(name === "tesla" ? "Tesla Voreinstellungen ändern" : "Standard Voreinstellungen ändern");
+    key = await askKey(`${SYS_LABEL[name]} Voreinstellungen ändern`);
     if (!key) return;
     if (!(await verifyKey(name, key))) { msg.textContent = "Schreib-Passwort falsch oder Server nicht erreichbar."; return; }
     sysKeyMem = key;
@@ -4202,7 +4234,7 @@ async function openSysEditor(name) {
   let draft = r.state === "ok" && !r.none && Object.keys(r.presets).length ? normPresets(r.presets) : sysDefault(name);
   const ed = document.getElementById("sysEditor"), area = document.getElementById("userArea");
   const when = document.getElementById("sysWhen"), em = document.getElementById("sysMsg");
-  document.getElementById("sysTitle").textContent = name === "tesla" ? "Tesla Voreinstellungen (gelten für alle)" : "Standard Voreinstellungen (für alle neuen Benutzer)";
+  document.getElementById("sysTitle").textContent = name === "tesla" ? "Tesla Voreinstellungen (gelten für alle)" : name === "handy" ? "Handy Voreinstellungen (gelten für alle)" : "Standard Voreinstellungen (für alle neuen Benutzer)";
   const stamp = (u) => (u ? `Zuletzt geändert: ${new Date(u).toLocaleString("de-AT", { dateStyle: "medium", timeStyle: "short" })}` : "Noch nie geändert (eingebaute Werte).");
   when.textContent = stamp(r.updated);
   em.textContent = "";
@@ -4248,7 +4280,7 @@ async function openSysEditor(name) {
     const r2 = await fetchUser(SYS[name], "");
     when.textContent = stamp(r2.updated);
     close();
-    msg.textContent = `${name === "tesla" ? "Tesla" : "Standard"} Voreinstellungen gespeichert. ${stamp(r2.updated)}`;
+    msg.textContent = `${SYS_LABEL[name]} Voreinstellungen gespeichert. ${stamp(r2.updated)}`;
   };
   ed.scrollIntoView({ block: "start" });
 }
@@ -4267,17 +4299,23 @@ async function userSaveSettings() {
 /* Änderungen an Einstellungen (auch außerhalb des Einstellungsfensters, z. B. A+/A−) werden nach kurzer Pause im Benutzer gespeichert */
 (() => {
   const orig = Storage.prototype.setItem;
-  let t = 0;
+  let t = 0, rt = 0;
   const flush = async () => { try { await userSaveSettings(); } finally { state.setPending = false; } };
   state.touched = new Set();
   Storage.prototype.setItem = function (k, v) {
     orig.call(this, k, v);
     if (this !== localStorage) return;
     try {
+      if (!state.applyingPreset && PRESETS.some((p) => p.keys.includes(k) || (p.rx && p.rx.test(k)))) {
+        clearTimeout(rt);
+        rt = setTimeout(() => { try { const pb = document.getElementById("presetBox"); if (pb && !pb.hidden && !document.getElementById("codeModal").hidden && !(document.activeElement && document.activeElement.closest && document.activeElement.closest("#presetRows"))) refreshPresetRows(); } catch { /* egal */ } }, 300);
+      }
+    } catch { /* egal */ }
+    try {
       const row = userName() && PRESETS.find((p) => p.keys.includes(k) || (p.rx && p.rx.test(k)));
       if (row) {
         if (!state.applyingPreset && !row.offByDefault) state.touched.add(row.id);   // händische Änderung: Zeile wird (wieder) angehakt
-        clearTimeout(t); state.setPending = true; t = setTimeout(flush, 2500);
+        clearTimeout(t); state.setPending = true; t = setTimeout(flush, 1500);
       }
     } catch { /* egal */ }
   };
@@ -4329,9 +4367,23 @@ function setupPresetBox() {
     run(sel.value, "");
   };
   document.getElementById("userGo").onclick = () => run(nameIn.value, passIn.value);
+  document.getElementById("pvUser").onclick = () => { state.presetView = "user"; refreshPresetRows(); };
+  document.getElementById("pvSync").onclick = () => { state.presetView = "sync"; refreshPresetRows(); };
+  document.getElementById("pvAdopt").onclick = async () => {
+    const n = userName(); if (!n) return;
+    const d = userData(); PRESETS.forEach((p) => { if (!p.offByDefault) d.on[p.id] = d.on[p.id] !== false; });
+    presetCapture(d);
+    msg.textContent = "Bitte warten …";
+    const ok = await userPush(n, d);
+    msg.textContent = ok ? `Die Einstellungen dieses Geräts sind jetzt bei „${n}“ gespeichert.` : "Lokal gespeichert, Server nicht erreichbar (wird nachgeholt).";
+    refreshPresetRows();
+  };
   document.getElementById("userOut").onclick = () => { userLogout(); msg.textContent = "Abgemeldet. Die Werte auf diesem Gerät bleiben bestehen."; renderPresetBox(); };
   document.getElementById("presetApply").onclick = async () => { if (await applyWithPreview(presetTarget(userData(), "user"), "Gespeicherte Werte anwenden?")) showToast("Voreinstellungen angewendet"); };
   document.getElementById("teslaApply").onclick = async () => { if (await applyTeslaPreset()) showToast("Tesla-Voreinstellung angewendet"); };
+  document.getElementById("handyApply").onclick = async () => { if (await applyProfilePreset("handy")) showToast("Handy-Voreinstellung angewendet"); };
+  document.getElementById("stdApply").onclick = async () => { if (await applyProfilePreset("standard")) showToast("Standard-Voreinstellung angewendet"); };
+  document.getElementById("handyReset").onclick = () => resetToProfile("handy");
   document.getElementById("stdReset").onclick = () => resetToProfile("standard");
   document.getElementById("teslaReset").onclick = () => resetToProfile("tesla");
   document.getElementById("userLink").onclick = async () => {
@@ -4505,7 +4557,8 @@ function showLogin() {
 }
 /* Tesla-Haken und Benutzer aus dem Anmeldefenster anwenden (wie beim Einloggen, nur ohne Login-Passwort) */
 async function loginExtras() {
-  const tesla = document.getElementById("loginTesla").checked;
+  const pick = (document.querySelector(".login-preset:checked") || {}).dataset;
+  const preset = pick ? pick.p : "";
   const un = document.getElementById("loginUser").value.trim();
   const up = document.getElementById("loginUserPass").value;
   const reopened = !document.getElementById("loginBack").hidden;
@@ -4524,7 +4577,8 @@ async function loginExtras() {
     created = !!r.created;
   }
   /* neue Benutzer bekommen die Werte ohne Rückfrage, sonst werden Änderungen vorher gezeigt */
-  if (tesla) { if (await applyTeslaPreset(created)) showToast("Tesla-Voreinstellung angewendet"); }
+  if (preset === "tesla") { if (await applyTeslaPreset(created)) showToast("Tesla-Voreinstellung angewendet"); }
+  else if (preset) { if (await applyProfilePreset(preset, created)) showToast(`${SYS_LABEL[preset]}-Voreinstellung angewendet`); }
   document.getElementById("loginUserPass").value = "";
 }
 function checkLogin() {
@@ -4539,7 +4593,7 @@ function checkLogin() {
   ti.addEventListener("click", () => { tt.hidden = !tt.hidden; ti.textContent = tt.hidden ? "▾" : "▴"; ti.setAttribute("aria-expanded", String(!tt.hidden)); });
   /* im Tesla beim allerersten Öffnen gleich aufgeklappt */
   if (isTesla() && lsv("teslaPreset", "") === "") toggleMore(true);
-  document.getElementById("loginTesla").checked = false;
+  document.querySelectorAll(".login-preset").forEach((c) => { c.checked = false; c.addEventListener("change", () => { if (c.checked) document.querySelectorAll(".login-preset").forEach((o) => { if (o !== c) o.checked = false; }); }); });
   bindSameName();
   gate.hidden = authed;
   document.getElementById("loginForm").addEventListener("submit", async (event) => {

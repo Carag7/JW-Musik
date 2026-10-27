@@ -34,6 +34,31 @@
   const put = (k, v) => { try { localStorage.setItem(k, v); } catch { /* egal */ } };
   const getJ = (k, d) => { try { return JSON.parse(get(k, "")) ?? d; } catch { return d; } };
 
+  /* Reihenfolge und Reiter (Normal / Tesla / Handy) pro Design, vom Benutzer einstellbar */
+  const TABS = [["normal", "Normal"], ["tesla", "Tesla"], ["handy", "Handy"]];
+  const defTab = (t) => (t.grp === "Tesla" ? "tesla" : t.grp === "Handy" ? "handy" : "normal");
+  const tabMap = () => { const m = getJ("themeTabs", null); return m && typeof m === "object" && !Array.isArray(m) ? m : {}; };
+  const tabOf = (t) => { const v = tabMap()[t.id]; return TABS.some((x) => x[0] === v) ? v : defTab(t); };
+  function ordered() {
+    const o = getJ("themeOrder", null);
+    const ids = Array.isArray(o) ? o.filter(byId) : [];
+    const rest = THEMES.filter((t) => !ids.includes(t.id)).map((t) => t.id);
+    return [...ids, ...rest].map(byId);
+  }
+  const customOrder = () => Array.isArray(getJ("themeOrder", null)) && getJ("themeOrder", []).length > 0;
+  function setTab(id, tab) { const m = tabMap(); if (tab === defTab(byId(id))) delete m[id]; else m[id] = tab; put("themeTabs", JSON.stringify(m)); }
+  function move(id, dir) {
+    const all = ordered().map((t) => t.id);
+    const tab = tabOf(byId(id));
+    const same = all.filter((x) => tabOf(byId(x)) === tab);
+    const i = same.indexOf(id), j = i + dir;
+    if (i < 0 || j < 0 || j >= same.length) return;
+    const a = all.indexOf(id), b = all.indexOf(same[j]);
+    [all[a], all[b]] = [all[b], all[a]];
+    put("themeOrder", JSON.stringify(all));
+  }
+  function resetOrder() { try { localStorage.removeItem("themeOrder"); localStorage.removeItem("themeTabs"); } catch { /* egal */ } }
+
   /* Welche Designs vorne (◐ und Auswahlfenster) angezeigt werden */
   function shownIds() {
     const a = getJ("themeShown", null);
@@ -45,7 +70,7 @@
     const ids = new Set(shownIds());
     const c = cfg();
     if (c.mode === "manual") ids.add(c.theme);
-    return THEMES.filter((t) => ids.has(t.id));
+    return ordered().filter((t) => ids.has(t.id));
   }
   function setShown(id, on) {
     const cur = new Set(shownIds());
@@ -58,20 +83,35 @@
     if (!root) return;
     root.replaceChildren();
     const shown = new Set(shownIds());
-    let grp = "";
-    THEMES.forEach((t) => {
-      const g = t.grp || "Klassisch";
-      if (g !== grp) { grp = g; root.append(h("p", "ap-title shown-grp", g === "Skin" ? "Skins" : g === "Klassisch" ? "Farb-Designs" : g === "Animiert" ? "Animierte Skins" : g + "-optimiert")); }
-      const lab = h("label", "set-row check shown-row");
-      const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = shown.has(t.id);
-      cb.addEventListener("change", () => { setShown(t.id, cb.checked); });
-      const sw = h("span", "theme-sw"); t.sw.forEach((col) => { const i = h("i"); i.style.background = col; sw.append(i); });
-      lab.append(cb, sw, document.createTextNode(" " + t.name));
-      root.append(lab);
+    const all = ordered();
+    root.append(h("small", "set-hint", "Haken = im Hauptfenster (◐) anzeigen. Reiter = in welchem Reiter das Design im Auswahlfenster steht. Mit ▲ ▼ änderst du die Reihenfolge."));
+    TABS.forEach(([tk, tn]) => {
+      const list = all.filter((t) => tabOf(t) === tk);
+      root.append(h("p", "ap-title shown-grp", `Reiter „${tn}“ (${list.length})`));
+      list.forEach((t, idx) => {
+        const row = h("div", "set-row shown-row2");
+        const lab = h("label", "shown-lab");
+        const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = shown.has(t.id);
+        cb.addEventListener("change", () => { setShown(t.id, cb.checked); });
+        const sw = h("span", "theme-sw"); t.sw.forEach((col) => { const i = h("i"); i.style.background = col; sw.append(i); });
+        lab.append(cb, sw, document.createTextNode(" " + t.name));
+        const sel = document.createElement("select"); sel.className = "shown-tab"; sel.setAttribute("aria-label", "Reiter");
+        TABS.forEach(([k, n]) => { const o = document.createElement("option"); o.value = k; o.textContent = n; sel.append(o); });
+        sel.value = tk;
+        sel.addEventListener("change", () => { setTab(t.id, sel.value); mountShown(root); });
+        const up = h("button", "ghost shown-mv", "▲"); up.type = "button"; up.disabled = idx === 0; up.setAttribute("aria-label", "nach oben");
+        const dn = h("button", "ghost shown-mv", "▼"); dn.type = "button"; dn.disabled = idx === list.length - 1; dn.setAttribute("aria-label", "nach unten");
+        up.addEventListener("click", () => { move(t.id, -1); mountShown(root); });
+        dn.addEventListener("click", () => { move(t.id, 1); mountShown(root); });
+        row.append(lab, sel, up, dn);
+        root.append(row);
+      });
     });
     const rec = h("button", "chip", "Empfehlung wählen"); rec.type = "button";
     rec.addEventListener("click", () => { put("themeShown", JSON.stringify(REC_SHOWN)); mountShown(root); });
-    root.append(rec);
+    const rst = h("button", "chip", "Reihenfolge und Reiter zurücksetzen"); rst.type = "button";
+    rst.addEventListener("click", () => { resetOrder(); mountShown(root); });
+    root.append(rec, rst);
   }
 
   function cfg() {
@@ -298,8 +338,6 @@
 
   /* Auswahl aller Designs als Fenster (bei aktiver Lupe: Design-Taste ca. 1 s gedrückt halten) */
   /* Auswahlfenster: alle Designs in drei Reitern (Normal / Tesla / Handy) mit kleiner Vorschau */
-  const TABS = [["normal", "Normal"], ["tesla", "Tesla"], ["handy", "Handy"]];
-  const tabOf = (t) => (t.grp === "Tesla" ? "tesla" : t.grp === "Handy" ? "handy" : "normal");
   const subOf = (t) => (t.anim ? "Animiert" : t.skin ? "Skins (Tasten, Regler, Menüs)" : "Farbdesigns");
   function preview(th) {
     const prev = h("span", "theme-prev");
@@ -327,8 +365,8 @@
       tabs.querySelectorAll("button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.k === tab)));
       body.replaceChildren();
       let last = "";
-      THEMES.filter((t) => tabOf(t) === tab).forEach((th) => {
-        if (tab === "normal" && subOf(th) !== last) { last = subOf(th); body.append(h("p", "theme-sub", last)); }
+      ordered().filter((t) => tabOf(t) === tab).forEach((th) => {
+        if (tab === "normal" && !customOrder() && subOf(th) !== last) { last = subOf(th); body.append(h("p", "theme-sub", last)); }
         const b = h("button", "theme-pick"); b.type = "button";
         if (th.id === cur) b.setAttribute("aria-pressed", "true");
         b.append(preview(th), h("span", "theme-pick-name", th.name), h("small", "theme-pick-hint", th.hint));

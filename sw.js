@@ -1,4 +1,4 @@
-const CACHE = "tesla-karaoke-v99";
+const CACHE = "tesla-karaoke-v100";
 const SHELL = ["./", "./index.html", "./style.css", "./skins.css",
   "./remote.js", "./app.js", "./ludwt.js", "./fehlend.js", "./password.js", "./theme.js", "./manifest.json", "./icon.svg", "./songs.json"];
 const MAX_ENTRIES = 120;  // Obergrenze für zusätzlich gemerkte Dateien (Liedtexte, Bilder)

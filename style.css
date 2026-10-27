@@ -1499,3 +1499,23 @@ body.rc-on .rm-badge { top: calc(var(--safe-top, 0px) + 8px); bottom: auto; }
 .theme-picker-body { display: flex; flex-direction: column; flex: 1 1 auto; }
 .theme-picker-body > * { flex: 0 0 auto; }
 .theme-pick { min-height: 66px; }
+.rc-kind { font-style: normal; font-size: 11px; font-weight: 800; color: var(--muted); min-width: 74px; }
+.rc-song { flex-wrap: nowrap; } .rc-song span { min-width: 0; }
+.shown-row2 { display: flex !important; align-items: center; gap: 6px; flex-wrap: nowrap; }
+.shown-row2 .shown-lab { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 6px; overflow-wrap: anywhere; }
+.shown-row2 .shown-tab { flex: 0 0 auto; width: auto; min-height: 36px; }
+.shown-row2 .shown-mv { flex: 0 0 auto; min-width: 36px; min-height: 36px; padding: 0; }
+
+/* Voreinstellungen: Text links (mit Umbruch), Werte immer rechts; grün = gleich, orange = anders */
+.preset-row { display: flex !important; align-items: center; gap: 8px; border-left: 4px solid transparent; padding-left: 4px; }
+.preset-row > .set-row { flex: 1 1 0; min-width: 0; overflow-wrap: anywhere; word-break: normal; }
+.preset-row > .preset-fields { flex: 0 1 auto; max-width: 62%; margin: 0 !important; justify-content: flex-end; }
+.preset-field { white-space: nowrap; }
+.pr-rsame { border-left-color: #1e9e4a; } .pr-rdiff { border-left-color: #f08a00; background: rgba(240,138,0,.08); }
+.preset-field input.pr-same, .preset-field select.pr-same { border-color: #1e9e4a !important; }
+.preset-field input.pr-diff, .preset-field select.pr-diff { border-color: #f08a00 !important; box-shadow: 0 0 0 1px #f08a00; }
+.pr-view { display: flex; gap: 8px; margin: 6px 0; } .pr-view .chip { flex: 1; min-height: 44px; justify-content: center; }
+.pr-view .chip[aria-pressed="true"] { background: var(--accent); color: var(--on-accent, #fff); }
+.pr-legend { display: block; margin: 4px 0; color: var(--muted); }
+.pr-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; vertical-align: middle; } .pr-dot.same { background: #1e9e4a; } .pr-dot.diff { background: #f08a00; }
+.preset-row > .preset-fields { flex-direction: column; align-items: flex-end; gap: 4px; max-width: 55%; }

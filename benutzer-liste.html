@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Benutzerliste</title>
+<style>
+body{font:16px/1.5 system-ui;max-width:760px;margin:24px auto;padding:0 16px;background:#0b1220;color:#eee}
+input,button{font:inherit;padding:10px 14px;border-radius:10px;border:1px solid #445;background:#162033;color:#eee;margin:4px 0}
+input{width:100%;box-sizing:border-box}
+button{background:#f0b429;color:#1b1404;font-weight:700;cursor:pointer;margin-right:6px}button.sec{background:#162033;color:#eee}
+table{width:100%;border-collapse:collapse;margin-top:12px}th,td{padding:8px 10px;border-bottom:1px solid #26334d;text-align:left}th{color:#9ab;font-weight:600}
+.ja{color:#f0b429;font-weight:700}.nein{color:#7bd88f}small{color:#9ab}h1{font-size:22px}.sys td:first-child{color:#9ab}
+</style></head><body>
+<h1>Benutzerliste</h1>
+<p><small>Zeigt alle angelegten Benutzer und ob ein Passwort gesetzt ist. Die Passwörter selbst werden nie angezeigt und sind auch nicht gespeichert (nur ein nicht umkehrbarer Hash).</small></p>
+<label>Schlüssel (das Secret <code>WRITE_KEY</code> in Cloudflare)
+<input id="key" type="password" autocomplete="off"></label>
+<button id="go" type="button">Liste laden</button>
+<button id="csv" class="sec" type="button" hidden>Als Datei speichern (CSV)</button>
+<p id="msg"><small>Bereit.</small></p>
+<table id="tab" hidden><thead><tr><th>Benutzer</th><th>Passwort</th><th>Verknüpft</th><th>Zuletzt geändert</th></tr></thead><tbody></tbody></table>
+<script>
+const $=id=>document.getElementById(id);
+const BASE=/github\.io$/.test(location.hostname)?"https://musik.carag.workers.dev":"";
+let rows=[];
+const fmt=s=>s?new Date(s).toLocaleString("de-AT",{dateStyle:"medium",timeStyle:"short"}):"–";
+async function load(){
+  $("msg").textContent="Bitte warten …";
+  try{
+    const r=await fetch(BASE+"/api/users",{headers:{"x-write-key":$("key").value}});
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok||!j.ok){$("msg").textContent=j.fehler||("Fehler "+r.status);return;}
+    rows=j.benutzer; const tb=$("tab").querySelector("tbody"); tb.replaceChildren();
+    rows.forEach(u=>{const tr=document.createElement("tr"); if(u.system)tr.className="sys";
+      [u.name+(u.system?" (Voreinstellung)":""),u.passwort?"ja":"nein",u.verknuepft||"–",fmt(u.geaendert)].forEach((t,i)=>{const td=document.createElement("td");td.textContent=t;if(i===1)td.className=u.passwort?"ja":"nein";tr.append(td);});
+      tb.append(tr);});
+    $("tab").hidden=false; $("csv").hidden=false;
+    $("msg").textContent=j.anzahl+" Einträge (Stand "+new Date().toLocaleString("de-AT")+")";
+  }catch(e){$("msg").textContent="Server nicht erreichbar.";}
+}
+$("go").onclick=load; $("key").addEventListener("keydown",e=>{if(e.key==="Enter")load();});
+$("csv").onclick=()=>{
+  const lines=["Benutzer;Passwort;Verknüpft;Zuletzt geändert",...rows.map(u=>[u.name,u.passwort?"ja":"nein",u.verknuepft,u.geaendert].join(";"))];
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["﻿"+lines.join("\r\n")],{type:"text/csv"}));a.download="benutzer.csv";a.click();
+};
+</script></body></html>

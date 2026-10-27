@@ -5,9 +5,24 @@
   const $ = (id) => document.getElementById(id);
   const BASE = () => (typeof SYNC_BASE !== "undefined" ? SYNC_BASE : location.origin);
   const R = { role: "", code: "", cid: "", ctrl: "", lastCmd: 0, cmdSeq: 0, cmds: [], fails: 0, inflight: 0, t: {}, peerTs: 0, last: null, pos: { at: 0, v: 0 }, listTab: "songs", plSel: "", q: "" };
-  const CODE_CHARS = "abcdefghjkmnpqrstuvwxyz23456789";
-  const genCode = () => Array.from({ length: 6 }, () => CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)]).join("");
-  const storeName = () => { try { return (localStorage.getItem("sync-code") || "").toLowerCase().replace(/[^a-z0-9-]/g, ""); } catch { return ""; } };
+  /* vierstelliger Zahlencode; nur Codes, die gerade nicht benutzt werden */
+  const rnd4 = () => String(Math.floor(Math.random() * 10000)).padStart(4, "0");
+  async function freeCode() {
+    for (let i = 0; i < 12; i++) {
+      const c = rnd4();
+      const r = await api(`${c}/state`);
+      if (r.status === 404 || (r.ok && r.json && (r.json.phase === "closed" || Date.now() - (r.json.ts || 0) > 60000))) return c;
+    }
+    return rnd4();
+  }
+  /* Code, den ein anderes Gerät gerade erzeugt hat (läuft noch, wartet auf Fernbedienung) */
+  async function pendingCode() {
+    const i = await api("inbox/latest");
+    if (!i.ok || !i.json || !i.json.code || Date.now() - (i.json.ts || 0) > 30 * 60000) return "";
+    const s = await api(`${i.json.code}/state`);
+    if (s.ok && s.json && s.json.phase === "wait" && Date.now() - (s.json.ts || 0) < 30000) return i.json.code;
+    return "";
+  }
   const h = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
   const fmt = (s) => { s = Math.max(0, Math.round(s || 0)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; };
 
@@ -50,12 +65,12 @@
     if (!role) return;
     Object.values(R.t).forEach((t) => { clearInterval(t); clearTimeout(t); });
     R.t = {};
-    const code = R.code, store = R.storeKey;
+    const code = R.code;
     R.role = ""; R.ctrl = ""; R.last = null;
     paintBadge(); closePanel(); closeModal();
     if (notify) {
       if (role === "controller") await api(`${code}/cmd`, "PUT", { cid: R.cid, bye: true, ping: Date.now(), cmds: [] });
-      else { await api(`${code}/state`, "PUT", { phase: "closed", ts: Date.now() }); if (store) await api(`inbox/${store}`, "DELETE"); }
+      else { await api(`${code}/state`, "PUT", { phase: "closed", ts: Date.now() }); await api("inbox/latest", "DELETE"); }
     }
     try { if (typeof showToast === "function") showToast(msg || "Fernsteuerung beendet."); } catch { /* egal */ }
   }
@@ -69,8 +84,19 @@
       song: song ? { id: song.id, number: song.number, title: song.title, cat: song.category || "" } : null,
       playing: !a.paused && !a.ended, pos: a.currentTime || 0, dur: isFinite(a.duration) ? a.duration : 0,
       shuffle: !!state.shuffle, mode: state.mode, pl: state.activePlaylist || "", ver: state.version || "karaoke", cur: state.curVersion || "",
+      lw: lwState(),
       favs: [...state.favorites], pls: state.playlists.map((p) => ({ id: p.id, name: p.name, songs: p.songs }))
     };
+  }
+  /* LuD+WT: Lieder der aktuellen Woche */
+  function lwState() {
+    try {
+      if (!window.LUDWT || !LUDWT.weekCount()) return null;
+      const wk = LUDWT.defaultWeek(); if (!wk) return null;
+      const w = LUDWT.weeks().find((x) => x.montag === wk);
+      const rows = LUDWT.rows(wk, state.songs).filter((r) => r.song).map((r) => ({ k: r.kindShort, p: r.pos, id: r.song.id }));
+      return { week: wk, to: w ? w.sonntag : "", rows };
+    } catch { return null; }
   }
   let postBusy = false, postAgain = false;
   async function postState() {
@@ -100,7 +126,7 @@
         state.mode = "playlists"; state.activePlaylist = pl.id; state.shuffle = !!a.shuffle;
         el.shuffleBtn.setAttribute("aria-pressed", String(!!a.shuffle));
         $("eigeneToggle").setAttribute("aria-pressed", "true"); $("menuToggle").setAttribute("aria-expanded", "false"); $("ludwtToggle").setAttribute("aria-pressed", "false");
-        document.body.classList.remove("ludwt-mode");
+        document.body.classList.remove("ludwt-mode"); $("ludwtBar").hidden = true;
         renderList();
         const ids = a.start ? [a.start] : [];
         const pool = playPool();
@@ -108,7 +134,20 @@
         if (pick) selectSong(state.songs.indexOf(pick), true);
         break;
       }
-      case "all": state.mode = "songs"; state.playFavorites = false; state.shuffle = !!(a && a.shuffle); el.shuffleBtn.setAttribute("aria-pressed", String(state.shuffle)); $("menuToggle").setAttribute("aria-expanded", "true"); $("eigeneToggle").setAttribute("aria-pressed", "false"); { const pool = playPool(); const pick = state.shuffle ? pool[Math.floor(Math.random() * pool.length)] : pool[0]; if (pick) selectSong(state.songs.indexOf(pick), true); } break;
+      case "ludwt": {
+        state.ludwtWeek = a.week;
+        if (state.mode !== "ludwt") $("ludwtToggle").click();
+        Promise.resolve(window.LUDWT && LUDWT.ensureLoaded()).then(() => {
+          state.ludwtWeek = a.week; state.shuffle = false; el.shuffleBtn.setAttribute("aria-pressed", "false");
+          try { fillLudwtWeeks(); } catch { /* egal */ }
+          renderList();
+          const i = state.songs.findIndex((x) => x.id === a.start);
+          if (i >= 0) selectSong(i, true);
+          setTimeout(postState, 300);
+        });
+        break;
+      }
+      case "all": document.body.classList.remove("ludwt-mode"); $("ludwtBar").hidden = true; state.mode = "songs"; state.playFavorites = false; state.shuffle = !!(a && a.shuffle); el.shuffleBtn.setAttribute("aria-pressed", String(state.shuffle)); $("menuToggle").setAttribute("aria-expanded", "true"); $("eigeneToggle").setAttribute("aria-pressed", "false"); { const pool = playPool(); const pick = state.shuffle ? pool[Math.floor(Math.random() * pool.length)] : pool[0]; if (pick) selectSong(state.songs.indexOf(pick), true); } break;
       default: break;
     }
   }
@@ -120,7 +159,7 @@
     if (c.bye) { end(false, "Das andere Gerät hat die Verbindung beendet."); return; }
     if (c.hello && !R.ctrl) {
       R.ctrl = c.cid; paintBadge();
-      if (R.storeKey) api(`inbox/${R.storeKey}`, "DELETE");
+      api("inbox/latest", "DELETE");
       try { showToast("Fernbedienung verbunden."); } catch { /* egal */ }
       closeModal(); postState();
     }
@@ -132,10 +171,11 @@
   }
   async function startPlayer() {
     if (R.role) return;
-    R.role = "player"; R.code = genCode(); R.ctrl = ""; R.lastCmd = 0; R.storeKey = storeName();
+    R.role = "player"; R.ctrl = ""; R.lastCmd = 0; R.code = await freeCode();
+    try { if (window.LUDWT) LUDWT.ensureLoaded().then(() => postState()); } catch { /* egal */ }
     await api(`${R.code}/cmd`, "DELETE");
     await api(`${R.code}/state`, "PUT", buildState());
-    if (R.storeKey) await api(`inbox/${R.storeKey}`, "PUT", { code: R.code, ts: Date.now() });
+    await api("inbox/latest", "PUT", { code: R.code, ts: Date.now() });
     R.t.poll = setInterval(pollCmd, 1000);
     R.t.beat = setInterval(postState, 4000);
     ["play", "pause", "ended", "loadedmetadata", "seeked", "emptied"].forEach((n) => el.audio.addEventListener(n, onAudio));
@@ -167,9 +207,9 @@
     paintPanel();
   }
   async function connect(codeRaw) {
-    const code = String(codeRaw || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    const code = String(codeRaw || "").replace(/[^0-9]/g, "");
     const msg = $("rmMsg");
-    if (code.length < 4) { msg.textContent = "Bitte den Code vom anderen Gerät eingeben."; return; }
+    if (code.length !== 4) { msg.textContent = "Bitte den Code vom anderen Gerät eingeben."; return; }
     msg.textContent = "Verbinde …";
     const r = await api(`${code}/state`);
     if (r.status === 404) { msg.textContent = "Dieser Code ist unbekannt. Auf dem anderen Gerät „Wird gesteuert“ wählen und den angezeigten Code eingeben."; return; }
@@ -202,7 +242,7 @@
     box.append(h("p", "rm-eyebrow", "Sync mit anderem Gerät"));
     if (R.role && mode === "choose") {
       box.append(h("h2", "", R.role === "player" ? "Dieses Gerät wird gesteuert" : "Dieses Gerät steuert"));
-      box.append(h("p", "rm-hint", R.role === "player" ? (R.ctrl ? "Eine Fernbedienung ist verbunden." : `Code: ${R.code.toUpperCase()}`) : "Verbunden mit einem anderen Gerät."));
+      box.append(h("p", "rm-hint", R.role === "player" ? (R.ctrl ? "Eine Fernbedienung ist verbunden." : `Code: ${R.code}`) : "Verbunden mit einem anderen Gerät."));
       const b = h("button", "chip danger", "Verbindung beenden"); b.type = "button"; b.onclick = () => end(true); box.append(b);
       return;
     }
@@ -214,23 +254,23 @@
       const c = h("button", "rm-choice"); c.type = "button";
       c.append(h("b", "", "Steuern"), h("small", "", "Dieses Gerät ist die Fernbedienung (z. B. Handy). Du gibst den Code ein."));
       c.onclick = () => showModal("controller");
+      pendingCode().then((code) => { if (code && c.isConnected) c.querySelector("small").textContent = `Code ${code} ist bereit – nur noch bestätigen.`; });
       box.append(a, c, h("p", "rm-hint", "Es gibt immer genau ein Gerät, das abspielt, und eines, das steuert."));
     } else if (mode === "player") {
       box.append(h("h2", "", "Gesteuert werden"));
-      box.append(h("p", "rm-hint", "Gib diesen Code auf dem anderen Gerät ein (Sync → Steuern). Mit gleichem Favoriten-Namen erscheint er dort von selbst."));
-      box.append(h("div", "rm-code", R.code.toUpperCase()));
+      box.append(h("p", "rm-hint", "Auf dem anderen Gerät Sync → Steuern öffnen. Der Code steht dort schon bereit, du musst ihn nur bestätigen."));
+      box.append(h("div", "rm-code", R.code));
       box.append(h("p", "rm-hint", "Warte auf das andere Gerät …"));
       const b = h("button", "chip", "Abbrechen"); b.type = "button"; b.onclick = () => end(true, "Fernsteuerung abgebrochen."); box.append(b);
     } else if (mode === "controller") {
       box.append(h("h2", "", "Steuern"));
       box.append(h("p", "rm-hint", "Code vom anderen Gerät:"));
-      const inp = document.createElement("input"); inp.id = "rmCode"; inp.type = "text"; inp.autocomplete = "off"; inp.autocapitalize = "characters"; inp.placeholder = "Code"; inp.className = "rm-input";
+      const inp = document.createElement("input"); inp.id = "rmCode"; inp.type = "text"; inp.autocomplete = "off"; inp.inputMode = "numeric"; inp.maxLength = 4; inp.pattern = "[0-9]*"; inp.placeholder = "0000"; inp.className = "rm-input";
       box.append(inp);
       const msg = h("p", "rm-hint", ""); msg.id = "rmMsg";
       const ok = h("button", "chip primary-chip", "Bestätigen"); ok.type = "button"; ok.onclick = () => connect(inp.value);
       box.append(ok, msg);
-      const st = storeName();
-      if (st) api(`inbox/${st}`).then((r) => { if (r.ok && r.json && r.json.code && Date.now() - (r.json.ts || 0) < 30 * 60000) { inp.value = r.json.code.toUpperCase(); msg.textContent = "Code vom anderen Gerät gefunden – nur noch bestätigen."; } });
+      pendingCode().then((c) => { if (c && !inp.value) { inp.value = c; msg.textContent = "Code vom anderen Gerät gefunden – nur noch bestätigen."; } });
     }
   }
 
@@ -265,7 +305,7 @@
     const vers = h("div", "rc-vers");
     [["karaoke", "Karaoke"], ["meeting", "Instrumental"], ["video", "Video"], ["sung", "Zusammenkünfte"]].forEach(([v, t]) => { const b = h("button", "rc-chip", t); b.type = "button"; b.dataset.v = v; b.onclick = () => send("version", v); vers.append(b); });
     const tabs = h("div", "rc-tabs");
-    [["songs", "Lieder"], ["lists", "Listen"]].forEach(([k, t]) => { const b = h("button", "rc-tab", t); b.type = "button"; b.dataset.k = k; b.onclick = () => { R.listTab = k; R.plSel = ""; paintList(); }; tabs.append(b); });
+    [["songs", "Lieder"], ["lists", "Listen"], ["ludwt", "LuD+WT"]].forEach(([k, t]) => { const b = h("button", "rc-tab", t); b.type = "button"; b.dataset.k = k; b.onclick = () => { R.listTab = k; R.plSel = ""; paintList(); }; tabs.append(b); });
     const q = document.createElement("input"); q.type = "search"; q.id = "rcQ"; q.placeholder = "Lied suchen (Nummer oder Titel)"; q.autocomplete = "off"; q.className = "rc-q";
     q.addEventListener("input", () => { R.q = q.value; paintList(); });
     const list = h("div", "rc-list"); list.id = "rcList";
@@ -304,7 +344,7 @@
     const box = $("rcList"); if (!box) return;
     const s = R.last || {};
     document.querySelectorAll("#remotePanel .rc-tab").forEach((b) => b.classList.toggle("on", b.dataset.k === R.listTab));
-    const key = [R.listTab, R.plSel, R.q, s.song && s.song.id, (s.pls || []).length].join("|");
+    const key = [R.listTab, R.plSel, R.q, s.song && s.song.id, (s.pls || []).length, s.lw ? s.lw.week + s.lw.rows.length : ""].join("|");
     if (soft && box.dataset.k === key) return;
     box.dataset.k = key; box.replaceChildren();
     const cur = s.song && s.song.id;
@@ -316,6 +356,19 @@
       const z = h("button", "rc-chip", "🔀 alle zufällig"); z.type = "button"; z.onclick = () => send("all", { shuffle: true });
       row.append(a, z); box.append(row);
       state.songs.filter((x) => !x.extra && match(x)).forEach((song) => box.append(songRow(song, () => send("song", song.id), song.id === cur)));
+    } else if (R.listTab === "ludwt") {
+      const lw = s.lw;
+      if (!lw || !lw.rows.length) { box.append(h("p", "rm-hint", "Für die aktuelle Woche gibt es auf dem anderen Gerät noch keine Lieder.")); return; }
+      const fd = (d) => { const x = new Date(`${d}T00:00:00`); return `${x.getDate()}.${x.getMonth() + 1}.`; };
+      box.append(h("p", "rm-hint", `Aktuelle Woche ${fd(lw.week)} – ${lw.to ? fd(lw.to) : ""}`));
+      const row = h("div", "rc-actions");
+      const a = h("button", "rc-chip", "▶ Woche starten"); a.type = "button"; a.onclick = () => send("ludwt", { week: lw.week, start: lw.rows[0].id });
+      row.append(a); box.append(row);
+      lw.rows.forEach((r) => {
+        const song = state.songs.find((x) => x.id === r.id); if (!song) return;
+        const b = songRow(song, () => send("ludwt", { week: lw.week, start: r.id }), r.id === cur);
+        b.prepend(h("em", "rc-kind", `${r.k} ${r.p}`)); box.append(b);
+      });
     } else if (!R.plSel) {
       const pls = s.pls || [];
       if (!pls.length) box.append(h("p", "rm-hint", "Auf dem anderen Gerät gibt es noch keine Wiedergabelisten."));
@@ -341,7 +394,7 @@
     if (wrap) { new MutationObserver(vis).observe(wrap, { attributes: true, attributeFilter: ["hidden"] }); vis(); }
     if (btn) btn.addEventListener("click", () => showModal(R.role ? "choose" : "choose"));
     if (badge) badge.addEventListener("click", async () => {
-      const ok = await uiConfirm({ eyebrow: "Sync", title: "Verbindung beenden?", lines: ["Die Fernsteuerung wird getrennt. Ein Passwort ist nicht nötig."], ok: "Beenden" });
+      const ok = await uiConfirm({ eyebrow: "Sync", title: "Verbindung beenden?", lines: ["Bist du sicher, dass du die Verbindung beenden möchtest?"], ok: "Beenden" });
       if (ok) end(true);
     });
     setInterval(paintBadge, 1000);

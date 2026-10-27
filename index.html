@@ -28,12 +28,15 @@
       <p id="loginError" class="login-error" hidden>Passwort stimmt nicht</p>
       <button id="loginMore" class="login-more" type="button" aria-expanded="false">▸ Weitere Optionen</button>
       <div id="loginExtra" class="login-extra" hidden>
+        <p class="ap-title">Voreinstellung für dieses Gerät <small>(freiwillig)</small></p>
         <div class="tesla-row">
-          <label class="set-row check"><input id="loginTesla" type="checkbox" /> <img src="tesla-icon.png" alt="" width="26" height="26" /> <span>Voreinstellung für Tesla</span></label>
-          <button id="loginApply" class="chip" type="button" hidden>Übernehmen</button>
+          <label class="set-row check"><input id="loginTesla" class="login-preset" data-p="tesla" type="checkbox" /> <img src="tesla-icon.png" alt="" width="26" height="26" /> <span>Tesla</span></label>
           <button id="loginTeslaInfo" class="meta-i-small" type="button" aria-expanded="false" aria-label="Erklärung">▾</button>
         </div>
-        <small id="loginTeslaText" class="set-hint" hidden>Setzt: automatisch abspielen an, weitere Lieder, Art-Kennzeichen und Art-Buttons aus, Favoriten-Stern oben und unten, Lupe und Player nur nach langem Drücken, Carag aus, Design wie Gerät/Tesla, Abgleich bis 2 gelöschte Lieder. Dafür ist kein Benutzer nötig.</small>
+        <small id="loginTeslaText" class="set-hint" hidden>Tesla setzt: automatisch abspielen an, weitere Lieder, Art-Kennzeichen und Art-Buttons aus, Favoriten-Stern oben und unten, Lupe und Player nur nach langem Drücken, Carag aus, Design wie Gerät/Tesla, Abgleich bis 2 gelöschte Lieder. Dafür ist kein Benutzer nötig.</small>
+        <label class="set-row check"><input id="loginHandy" class="login-preset" data-p="handy" type="checkbox" /> <span>📱 Handy</span></label>
+        <label class="set-row check"><input id="loginStandard" class="login-preset" data-p="standard" type="checkbox" /> <span>Standard</span></label>
+        <button id="loginApply" class="chip" type="button" hidden>Übernehmen</button>
         <label id="loginSameRow" class="set-row check" hidden><input class="same-name-chk" type="checkbox" /> <span>Favoriten und Listen unter demselben Namen speichern</span></label>
         <div id="loginSyncRow" hidden>
           <label class="stack">Name für den Favoriten-Abgleich <small>(freiwillig)</small><input id="loginSyncName" type="text" autocomplete="off" autocapitalize="off" /></label>
@@ -326,22 +329,32 @@
         </div>
         <small id="userMsg" class="set-hint"></small>
         <label class="set-row check"><input class="same-name-chk" type="checkbox" /> <span>Gleicher Name für Favoriten-Abgleich und Einstellungen</span></label>
+        <div class="pr-view" role="group" aria-label="Anzeige">
+          <button id="pvUser" class="chip" type="button" aria-pressed="true">Werte des Benutzers</button>
+          <button id="pvSync" class="chip" type="button" aria-pressed="false">Sync: dieses Gerät</button>
+        </div>
+        <button id="pvAdopt" class="chip" type="button" hidden>Gerätewerte in den Benutzer übernehmen</button>
+        <small id="pvHint" class="set-hint"></small>
+        <small class="pr-legend"><i class="pr-dot same"></i> grün: gleich wie auf diesem Gerät &nbsp; <i class="pr-dot diff"></i> orange: anders</small>
         <div id="presetRows" class="preset-rows"></div>
         <div class="adv-btns">
           <button id="presetApply" class="chip" type="button">Meine gespeicherten Werte anwenden</button>
           <button id="teslaApply" class="chip" type="button">Tesla-Voreinstellung auf dieses Gerät anwenden</button>
+          <button id="handyApply" class="chip" type="button">Handy-Voreinstellung auf dieses Gerät anwenden</button>
+          <button id="stdApply" class="chip" type="button">Standard-Voreinstellung auf dieses Gerät anwenden</button>
         </div>
         <button id="adminToggle" class="pw-toggle" type="button" aria-expanded="false">▸ Verwaltung und Zurücksetzen</button>
         <div id="adminBox" class="admin-box" hidden>
           <p class="ap-title">Alles zurücksetzen</p>
-          <small class="set-hint">Setzt alle Einstellungen des angemeldeten Benutzers (und dieses Geräts) auf die Werte von „Standard“ oder „Tesla“ zurück. Vorher kommt eine Sicherheitsabfrage.</small>
+          <small class="set-hint">Setzt alle Einstellungen des angemeldeten Benutzers (und dieses Geräts) auf die Werte von „Standard“, „Handy“ oder „Tesla“ zurück. Vorher kommt eine Sicherheitsabfrage.</small>
           <div class="adv-btns">
             <button id="stdReset" class="chip" type="button">Standard Voreinstellungen</button>
             <button id="teslaReset" class="chip" type="button">Tesla Voreinstellungen</button>
+            <button id="handyReset" class="chip" type="button">Handy Voreinstellungen</button>
           </div>
           <p class="ap-title">Benutzer</p>
           <div class="adv-btns"><button id="userDel" class="chip danger" type="button">Benutzer löschen</button></div>
-          <small class="set-hint">Standard und Tesla ändern: oben im Feld „Neuer Benutzer“ den Namen „standard“ oder „tesla“ eingeben und das Schreib-Passwort (WRITE_KEY) eingeben.</small>
+          <small class="set-hint">Standard und Tesla ändern: oben im Feld „Neuer Benutzer“ den Namen „standard“, „handy“ oder „tesla“ eingeben und das Schreib-Passwort (WRITE_KEY) eingeben.</small>
         </div>
         <small class="set-hint">Ein Haken bedeutet: Diese Einstellung gehört zum Benutzer. Ihr aktueller Wert wird automatisch auf dem Server gespeichert und beim Anmelden und bei jedem Start wieder gesetzt. Vorher zeigt ein aufklappbares Fenster, was sich ändert.</small>
         </div>
