@@ -32,7 +32,7 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname;
 
-    if (request.method === "OPTIONS" && (path.startsWith("/api/") || path.startsWith("/sync/") || path.startsWith("/media/"))) {
+    if (request.method === "OPTIONS" && (path.startsWith("/api/") || path.startsWith("/sync/") || path.startsWith("/remote/") || path.startsWith("/media/"))) {
       return new Response(null, { headers: CORS });
     }
     if (path === "/api/refresh") return handleRefresh(request, env);
@@ -42,6 +42,7 @@ export default {
     if (path === "/api/r2-plan" || path === "/api/r2-run") return handleMigrate(request, env, url, path);
     if (path.startsWith("/sync/")) return handleSync(request, env, path);
     if (path.startsWith("/user/")) return handleUser(request, env, path);
+    if (path.startsWith("/remote/")) return handleRemote(request, env, path);
 
     if (path.startsWith("/media/")) {
       const key = decodeURIComponent(path.slice(7));
@@ -431,6 +432,34 @@ async function handleUser(request, env, path) {
     return json({ ok: true, created: !rec }, CORS);
   }
   return new Response("method", { status: 405, headers: CORS });
+}
+
+/* Fernsteuerung: /remote/<code>/state (Player schreibt), /remote/<code>/cmd (Fernbedienung schreibt), /remote/inbox/<speicher> (Code für das zweite Gerät) */
+async function handleRemote(request, env, path) {
+  if (request.method === "OPTIONS") return new Response(null, { headers: CORS });
+  const parts = path.split("/").filter(Boolean);   // ["remote", a, b?]
+  let key = "";
+  if (parts[1] === "inbox" && /^[a-z0-9-]{2,40}$/.test(parts[2] || "")) key = `remote/inbox-${parts[2]}.json`;
+  else if (/^[a-z0-9]{4,12}$/.test(parts[1] || "") && (parts[2] === "state" || parts[2] === "cmd")) key = `remote/${parts[1]}-${parts[2]}.json`;
+  else return new Response("Not Found", { status: 404, headers: CORS });
+  const hdr = { ...CORS, "cache-control": "no-store" };
+  if (request.method === "GET") {
+    const obj = await env.MUSIK.get(key);
+    if (!obj) return new Response("{}", { status: 404, headers: { ...hdr, "content-type": "application/json" } });
+    return new Response(obj.body, { headers: { ...hdr, "content-type": "application/json" } });
+  }
+  if (request.method === "PUT" || request.method === "POST") {
+    const text = await request.text();
+    if (text.length > 120000) return new Response("too large", { status: 413, headers: hdr });
+    try { JSON.parse(text); } catch { return new Response("bad json", { status: 400, headers: hdr }); }
+    await env.MUSIK.put(key, text, { httpMetadata: { contentType: "application/json" } });
+    return new Response('{"ok":true}', { headers: { ...hdr, "content-type": "application/json" } });
+  }
+  if (request.method === "DELETE") {
+    await env.MUSIK.delete(key);
+    return new Response('{"ok":true}', { headers: { ...hdr, "content-type": "application/json" } });
+  }
+  return new Response("method", { status: 405, headers: hdr });
 }
 
 async function handleSync(request, env, path) {
