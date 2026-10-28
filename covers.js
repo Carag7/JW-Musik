@@ -380,6 +380,7 @@
     ensureThumb();
     try { let lp = lupe(); new MutationObserver(() => { if (lupe() !== lp) { lp = lupe(); changed(); } }).observe(document.body, { attributes: true, attributeFilter: ["class"] }); } catch { /* egal */ }
     const gb = $("coverGalleryBtn"); if (gb) gb.addEventListener("click", openGallery);
+    const fg = $("footGallery"); if (fg) fg.addEventListener("click", () => { openGallery(); });
     load(false);
     setInterval(() => { const s = cur(); const k = s ? s.id : ""; if (boot.k !== k) { boot.k = k; paintThumb(); if (gal) paintGallery(); } if (gal) paintMini(); }, 500);
     window.addEventListener("pagehide", () => { /* nichts */ });
