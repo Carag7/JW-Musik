@@ -873,7 +873,7 @@ body.video-mode.sidebar-open #audio { left: var(--sidebar); width: calc(100vw - 
 .plain-hint { margin: 0; color: var(--muted); font-size: 14px; }
 
 /* Kleine Symbole oben rechts: Autoplay und Auswahlliste ausblenden (unauffällig wie das „i“) */
-.topbar > .top-actions #autoStartBtn, .topbar #closeSidebar {
+.topbar .top-actions #autoStartBtn, .topbar #closeSidebar {
   width: 26px !important; min-width: 26px !important; height: 26px !important; min-height: 26px !important; padding: 0 !important;
   border-radius: 50% !important; justify-content: center; font-size: 13px !important; line-height: 1; opacity: 0.6; align-self: center;
   background: transparent !important; font-weight: 700;
@@ -981,11 +981,11 @@ html[data-light] .topbar #menuToggle[aria-expanded="true"], html[data-light] .to
 .theme-seg { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
 .theme-seg .seg-btn { border: 1px solid var(--line); border-radius: 12px; min-height: 38px; }
 .theme-seg .seg-btn[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
-.topbar > .top-actions #themeBtn {
+.topbar .top-actions #themeBtn {
   width: 26px !important; min-width: 26px !important; height: 26px !important; min-height: 26px !important; padding: 0 !important;
   border-radius: 50% !important; justify-content: center; font-size: 14px !important; line-height: 1; opacity: 0.7; align-self: center; background: transparent !important;
 }
-.topbar > .top-actions #themeBtn:hover { opacity: 1; }
+.topbar .top-actions #themeBtn:hover { opacity: 1; }
 /* sanfter Wechsel */
 html.theme-fade, html.theme-fade * { transition: background-color .25s ease, color .25s ease, border-color .25s ease !important; }
 
@@ -1419,14 +1419,14 @@ input[data-stp] { -moz-appearance: textfield; appearance: textfield; }
 .set-row.two input { flex: 0 0 auto; }
 .set-row:has(> input[type="number"]) { flex-wrap: nowrap; justify-content: space-between; }
 .set-row:has(> input[type="number"]) input { flex: 0 0 auto; }
+/* Zahlenfelder: eine saubere Spalte untereinander, Pfeile direkt rechts daneben */
+#advBox .set-row:has(> input[type="number"]) { display: grid; grid-template-columns: minmax(0, 1fr) 88px 36px; column-gap: 6px; align-items: center; }
+#advBox .set-row:has(> input[type="number"]) > input { width: 100%; min-width: 0; box-sizing: border-box; text-align: center; }
+#advBox .set-row:has(> input[type="number"]) .stp { margin-left: 0; }
 
-/* Die drei Haupt-Buttons bleiben links stehen, der Rest scrollt getrennt */
-.topbar .tb-main { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; position: sticky; left: 0; z-index: 6; background: var(--bar-bg); padding-right: 8px; margin-left: -2px; }
+/* Die drei Haupt-Buttons sind normale Elemente der Leiste (kein „Kleben“ mehr: sonst verdeckten sie beim Scrollen die anderen Buttons) */
+.topbar .tb-main { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; position: static !important; z-index: auto !important; background: none; padding-right: 0; margin-left: 0; }
 .topbar .tb-main > * { position: relative; }
-/* Handy: wenig Platz, deshalb scrollt die ganze Leiste (auch die drei Buttons) */
-@media (max-width: 700px), (max-height: 480px) {
-  .topbar .tb-main { position: static; z-index: auto; background: none; padding-right: 0; margin-left: 0; }
-}
 /* Verbindung: Play-Taste */
 @keyframes netPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(214, 40, 40, .75); filter: brightness(1); } 50% { box-shadow: 0 0 0 10px rgba(214, 40, 40, 0); filter: brightness(1.25); } }
 @keyframes reconPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(30, 144, 255, .8); filter: brightness(1); } 50% { box-shadow: 0 0 0 10px rgba(30, 144, 255, 0); filter: brightness(1.3); } }
@@ -1529,7 +1529,9 @@ body.rc-on .rm-badge { top: calc(var(--safe-top, 0px) + 8px); bottom: auto; }
 .rc-buf-fill[data-st="low"] { background: #f08a00; animation: rbPulse2 1s ease-in-out infinite; } .rc-buf-fill[data-st="full"] { opacity: .8; }
 @keyframes rbPulse2 { 50% { opacity: .9; } }
 .rc-buf-txt { position: relative; display: block; font-size: 12px; line-height: 22px; padding: 0 8px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.rm-sync { width: 100%; min-height: 40px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel-2); color: var(--text); font-size: 20px; }
+.rm-synrow { display: flex; justify-content: flex-end; margin: -2px 0 2px; }
+.rm-sync { width: 28px; height: 28px; min-height: 28px; padding: 0; border-radius: 50%; border: 1px solid var(--line); background: transparent; color: var(--muted); font-size: 15px; line-height: 1; opacity: .75; cursor: pointer; }
+.rm-sync:hover { opacity: 1; color: var(--text); }
 .rm-unlock { position: fixed; z-index: 170; left: 50%; transform: translateX(-50%); bottom: 70px; max-width: 92vw; min-height: 52px; padding: 0 18px; border-radius: 26px; border: 2px solid #fff; background: #f08a00; color: #fff; font-weight: 800; font-size: 16px; box-shadow: 0 8px 24px rgba(0,0,0,.5); animation: rbPulse 1s ease-in-out infinite; }
 .rm-unlock[hidden] { display: none !important; }
 
@@ -1537,3 +1539,26 @@ body.rc-on .rm-badge { top: calc(var(--safe-top, 0px) + 8px); bottom: auto; }
 .pr-rsame { background: rgba(30,158,74,.10); } .pr-rdiff { background: rgba(240,138,0,.16) !important; }
 .preset-field input.pr-same, .preset-field select.pr-same { background: rgba(30,158,74,.18) !important; }
 .preset-field input.pr-diff, .preset-field select.pr-diff { background: rgba(240,138,0,.25) !important; }
+
+/* Obere Leiste: die drei Hauptbuttons bleiben immer sichtbar, alle übrigen Werkzeuge liegen in einer eigenen Zeile (Handy hochkant) */
+.topbar .tb-tools { display: contents; }
+@media (max-width: 700px) and (orientation: portrait) {
+  :root { --topbar: calc(104px + var(--safe-top)); }
+  .topbar { flex-wrap: wrap !important; align-content: center; row-gap: 6px; overflow: hidden !important; padding-top: calc(5px + var(--safe-top)) !important; padding-bottom: 5px !important; }
+  .topbar .tb-main { flex: 0 0 100%; width: 100%; box-sizing: border-box; }
+  .topbar .tb-tools { display: flex; flex: 0 0 100%; width: 100%; align-items: center; gap: 8px; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; -webkit-overflow-scrolling: touch; min-height: 40px; }
+  .topbar .tb-tools::-webkit-scrollbar { display: none; }
+  .topbar .tb-tools > * { flex: 0 0 auto; }
+  .topbar .top-actions { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+  .topbar #menuToggle, .topbar #eigeneToggle, .topbar #ludwtToggle { flex: 1 1 0 !important; min-width: 0; }
+  .topbar .tb-main { gap: 6px; }
+}
+
+/* Ausrichtung des Karaoke-Textes (Einstellung): überschreibt die Vorgabe des Designs */
+html[data-lalign="left"] body:not(.edit-mode) .lyric-line { text-align: left !important; justify-content: flex-start !important; }
+html[data-lalign="center"] body:not(.edit-mode) .lyric-line { text-align: center !important; justify-content: center !important; }
+html[data-lalign="right"] body:not(.edit-mode) .lyric-line { text-align: right !important; justify-content: flex-end !important; }
+html[data-lalign] body:not(.edit-mode) .lyric-line { transform-origin: var(--lal-origin, center) !important; }
+html[data-lalign="left"] { --lal-origin: left center; }
+html[data-lalign="right"] { --lal-origin: right center; }
+#advBox select { max-width: 55%; }

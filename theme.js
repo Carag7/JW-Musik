@@ -16,14 +16,28 @@
     { id: "sk-neon", name: "Neon Linie", bar: "#05060d", light: false, skin: true, grp: "Skin", sw: ["#05060d", "#12152b", "#00f0ff"], hint: "Skin: Neon-Umrisse mit Leuchten" },
     { id: "sk-papier", name: "Papier Minimal", bar: "#f6f2ea", light: true, skin: true, grp: "Skin", sw: ["#f6f2ea", "#ebe5d8", "#1d1b17"], hint: "Skin: hell, feine Linien, Serifenschrift" },
     { id: "sk-kontur", name: "Kontur Pop", bar: "#fff6d6", light: true, skin: true, grp: "Skin", sw: ["#fff6d6", "#ffe58a", "#ff3d81"], hint: "Skin: dicke Rahmen, harte Schatten, bunt" },
-    { id: "sk-jwl", name: "Bibliothek", bar: "#4a6da7", light: true, skin: true, grp: "Skin", sw: ["#ececee", "#ffffff", "#4a6da7"], hint: "Skin: flach, Blau und Violett, Liste mit Trennlinien, runde Play-Taste" },
-    { id: "sk-pro", name: "Aurora Pro", bar: "#07080d", light: false, skin: true, grp: "Skin", sw: ["#07080d", "#2a2650", "#8b7cff"], hint: "Skin: Premium mit Glas, schwebendem Player und großer Schrift" },
+    { id: "sk-jwl", name: "Bibliothek", bar: "#4a6da7", light: true, skin: true, grp: "Pro", sw: ["#ececee", "#ffffff", "#4a6da7"], hint: "Skin: flach, Blau und Violett, Liste mit Trennlinien, runde Play-Taste" },
+    { id: "sk-pro", name: "Aurora Pro", bar: "#07080d", light: false, skin: true, grp: "Pro", sw: ["#07080d", "#2a2650", "#8b7cff"], hint: "Skin: Premium mit Glas, schwebendem Player und großer Schrift" },
+    { id: "sk-pro-gold", name: "Aurora Gold", bar: "#0a0805", light: false, skin: true, grp: "Pro", sw: ["#0a0805", "#3a2c12", "#f2c36b"], hint: "Aurora Pro in Gold und Bernstein" },
+    { id: "sk-pro-rose", name: "Aurora Rosé", bar: "#0c0509", light: false, skin: true, grp: "Pro", sw: ["#0c0509", "#3a1226", "#ff5d9e"], hint: "Aurora Pro in Pink und Orange" },
+    { id: "sk-pro-ozean", name: "Aurora Ozean", bar: "#040a12", light: false, skin: true, grp: "Pro", sw: ["#040a12", "#10284a", "#3da8ff"], hint: "Aurora Pro in Blau und Cyan" },
+    { id: "sk-pro-smaragd", name: "Aurora Smaragd", bar: "#040c09", light: false, skin: true, grp: "Pro", sw: ["#040c09", "#0f3322", "#2fe08a"], hint: "Aurora Pro in Grün und Limette" },
+    { id: "sk-pro-platin", name: "Aurora Platin", bar: "#08090b", light: false, skin: true, grp: "Pro", sw: ["#08090b", "#2a2e38", "#d9dde6"], hint: "Aurora Pro in Silber und Weiß" },
+    { id: "sk-atelier", name: "Atelier", bar: "#0b0b0d", light: false, skin: true, grp: "Pro", sw: ["#0b0b0d", "#2a2418", "#d6bd8f"], hint: "ganz anderer Aufbau: Player-Leiste links, Verzeichnis rechts, Serifenschrift, Champagner auf Schwarz" },
+    { id: "sk-jwl-petrol", name: "Bibliothek Petrol (weiß)", bar: "#0f6e8c", light: true, skin: true, grp: "Pro", sw: ["#ffffff", "#e6f4f8", "#0f6e8c"], hint: "Bibliothek: weißer Hintergrund, Petrol-Leiste" },
+    { id: "sk-jwl-beere", name: "Bibliothek Beere (weiß)", bar: "#b3264a", light: true, skin: true, grp: "Pro", sw: ["#ffffff", "#fdeff2", "#b3264a"], hint: "Bibliothek: weißer Hintergrund, Beeren-Rot" },
+    { id: "sk-jwl-nacht", name: "Bibliothek Nacht", bar: "#2a3a58", light: false, skin: true, grp: "Pro", sw: ["#101114", "#1b1c21", "#7ea2e6"], hint: "Bibliothek: dunkel, Blau" },
+    { id: "sk-jwl-schiefer", name: "Bibliothek Schiefer", bar: "#1f4a47", light: false, skin: true, grp: "Pro", sw: ["#16191c", "#20262a", "#4fc6b5"], hint: "Bibliothek: dunkler Schiefer, Türkis" },
+    { id: "sk-jwl-burgund", name: "Bibliothek Burgund", bar: "#5a1f33", light: false, skin: true, grp: "Pro", sw: ["#151012", "#231a1d", "#e5849a"], hint: "Bibliothek: dunkel, Burgund und Rosé" },
     { id: "an-disco", name: "Disco ✦ animiert", bar: "#12002b", light: false, skin: true, anim: true, grp: "Animiert", sw: ["#12002b", "#2c1066", "#ff2ea6"], hint: "Animiert: tanzende Farben, hüpfende Tasten" },
     { id: "an-aquarium", name: "Aquarium ✦ animiert", bar: "#021b33", light: false, skin: true, anim: true, grp: "Animiert", sw: ["#021b33", "#0a3a66", "#2ee6c5"], hint: "Animiert: Blasen, Wellen, schwimmender Fisch" },
     { id: "an-weltall", name: "Weltall ✦ animiert", bar: "#05030f", light: false, skin: true, anim: true, grp: "Animiert", sw: ["#05030f", "#17123a", "#ffb703"], hint: "Animiert: Sterne, Rakete, kreisende Planeten-Taste" },
     { id: "tx-nacht", name: "Tesla Nacht", bar: "#0e0f12", light: false, skin: true, grp: "Tesla", sw: ["#0e0f12", "#22242a", "#e82127"], hint: "Tesla: große Tasten, dunkel, wenig Blendung" },
     { id: "tx-tag", name: "Tesla Tag", bar: "#f2f4f7", light: true, skin: true, grp: "Tesla", sw: ["#f2f4f7", "#e1e5ea", "#1c5fe0"], hint: "Tesla: große Tasten, hell, hoher Kontrast" },
     { id: "tx-kontrast", name: "Tesla Kontrast", bar: "#000000", light: false, skin: true, grp: "Tesla", sw: ["#000000", "#1a1a1a", "#ffd400"], hint: "Tesla: Schwarz-Gelb, extra dicke Balken" },
+    { id: "tx-blau", name: "Tesla Blau", bar: "#171a20", light: false, skin: true, grp: "Tesla", sw: ["#171a20", "#2b303a", "#3e6ae1"], hint: "Tesla: Anthrazit mit Tesla-Blau, weiche Kacheln" },
+    { id: "tx-karte", name: "Tesla Karte", bar: "#121a26", light: false, skin: true, grp: "Tesla", sw: ["#121a26", "#25354a", "#4fc3f7"], hint: "Tesla: Nacht-Kartenblau mit Cyan und Gelb" },
+    { id: "tx-energie", name: "Tesla Energie", bar: "#0f1512", light: false, skin: true, grp: "Tesla", sw: ["#0f1512", "#223027", "#3ecf6b"], hint: "Tesla: Dunkelgrün wie die Energie-Anzeige" },
     { id: "hy-amoled", name: "Handy AMOLED", bar: "#000000", light: false, skin: true, grp: "Handy", sw: ["#000000", "#17171b", "#5eead4"], hint: "Handy: Reinschwarz, Mint, kompakt" },
     { id: "hy-pastell", name: "Handy Pastell", bar: "#f3effb", light: true, skin: true, grp: "Handy", sw: ["#f3effb", "#e6def7", "#8b5cf6"], hint: "Handy: hell, weiche Karten, Flieder" },
     { id: "hy-sunset", name: "Handy Sunset", bar: "#1b0f1f", light: false, skin: true, grp: "Handy", sw: ["#1b0f1f", "#3a1f3f", "#ff7a45"], hint: "Handy: Abendrot-Verlauf, Daumen-freundlich" }
@@ -37,8 +51,8 @@
   const getJ = (k, d) => { try { return JSON.parse(get(k, "")) ?? d; } catch { return d; } };
 
   /* Reihenfolge und Reiter (Normal / Tesla / Handy) pro Design, vom Benutzer einstellbar */
-  const TABS = [["normal", "Normal"], ["tesla", "Tesla"], ["handy", "Handy"]];
-  const defTab = (t) => (t.grp === "Tesla" ? "tesla" : t.grp === "Handy" ? "handy" : "normal");
+  const TABS = [["normal", "Normal"], ["pro", "Professionell"], ["tesla", "Tesla"], ["handy", "Handy"]];
+  const defTab = (t) => (t.grp === "Tesla" ? "tesla" : t.grp === "Handy" ? "handy" : t.grp === "Pro" ? "pro" : "normal");
   const tabMap = () => { const m = getJ("themeTabs", null); return m && typeof m === "object" && !Array.isArray(m) ? m : {}; };
   const tabOf = (t) => { const v = tabMap()[t.id]; return TABS.some((x) => x[0] === v) ? v : defTab(t); };
   function ordered() {
@@ -219,6 +233,14 @@
     const redraw = () => { apply(true); mountUi(root); };
 
     root.append(h("p", "ap-title", "Design (für dieses Gerät)"));
+    /* Reiter und Reihenfolge der Designs bearbeiten (gleiche Liste wie unter Allgemein → Voreinstellungen) */
+    const ed = document.createElement("details"); ed.className = "theme-edit";
+    ed.open = get("themeEditOpen", "1") === "1";
+    ed.addEventListener("toggle", () => put("themeEditOpen", ed.open ? "1" : "0"));
+    const sm = document.createElement("summary"); sm.textContent = "✎ Designs bearbeiten: Reiter zuordnen und Reihenfolge ändern"; ed.append(sm);
+    const edBody = h("div", "theme-edit-body"); ed.append(edBody);
+    mountShown(edBody);
+    root.append(ed);
     const modes = h("div", "theme-modes");
     [["manual", "Fest"], ["device", "Automatisch: wie Gerät / Tesla"], ["sun", "Automatisch: Sonnenaufgang / -untergang"]].forEach(([id, label]) => {
       const lab = h("label", "set-row check");
@@ -252,7 +274,7 @@
       });
       root.append(seg);
       root.append(h("small", "set-hint", "Häkchen = Design wird vorne im Hauptfenster (◐ und Auswahl) angeboten."));
-      const all = h("button", "chip", "Alle Designs ansehen (Reiter Normal / Tesla / Handy)"); all.type = "button";
+      const all = h("button", "chip", "Alle Designs ansehen (Reiter Normal / Professionell / Tesla / Handy)"); all.type = "button";
       all.addEventListener("click", () => openPicker());
       root.append(all);
     } else {
@@ -381,6 +403,15 @@
     };
     TABS.forEach(([k, t]) => { const b = h("button", "theme-tab", t); b.type = "button"; b.dataset.k = k; b.setAttribute("role", "tab"); b.addEventListener("click", () => { tab = k; put("themeTab", k); paint(); }); tabs.append(b); });
     card.append(tabs, body);
+    const ed = h("button", "chip theme-pick-edit", "✎ Reiter und Reihenfolge bearbeiten"); ed.type = "button";
+    let editing = false;
+    ed.addEventListener("click", () => {
+      editing = !editing;
+      ed.textContent = editing ? "✔ Fertig" : "✎ Reiter und Reihenfolge bearbeiten";
+      tabs.hidden = editing;
+      if (editing) { body.replaceChildren(); mountShown(body); } else paint();
+    });
+    card.append(ed);
     const x = h("button", "theme-pick-close", "Schließen"); x.type = "button";
     x.addEventListener("click", () => box.remove());
     card.append(x);

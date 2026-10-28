@@ -70,6 +70,7 @@
       <button id="eigeneToggle" class="lieder-toggle" type="button" aria-pressed="false">Listen</button>
       <button id="ludwtToggle" class="lieder-toggle" type="button" aria-pressed="false">LuD+WT</button>
     </div>
+    <div class="tb-tools">
     <div id="listTools" class="list-tools" hidden>
       <button id="listSmaller" class="ghost" type="button" aria-label="Liste kleiner">A−</button>
       <button id="listLarger" class="ghost" type="button" aria-label="Liste größer">A+</button>
@@ -90,6 +91,7 @@
       <a id="lyricsLink" class="ghost text-link" href="https://www.jw.org/en/library/music-songs/sing-out-joyfully/" target="_blank" rel="noopener">Text</a>
       <button id="closeSidebar" class="ghost x-ico" type="button" aria-label="Auswahlliste ausblenden" title="Auswahlliste ausblenden">×</button>
       <button id="logoutBtn" class="ghost" type="button" hidden>Logout</button>
+    </div>
     </div>
   </header>
   <div class="app">
@@ -363,6 +365,9 @@
             <button id="teslaReset" class="chip" type="button">Tesla Voreinstellungen</button>
             <button id="handyReset" class="chip" type="button">Handy Voreinstellungen</button>
           </div>
+          <p class="ap-title">Dieses Gerät auf Werkszustand</p>
+          <small class="set-hint">Löscht alles auf diesem Gerät (Einstellungen, Anmeldung, lokale Favoriten, Zwischenspeicher), als wäre es ein neuer Browser. Es kommen zwei Sicherheitsabfragen.</small>
+          <div class="adv-btns"><button id="factoryReset" class="chip danger" type="button">Gerät zurücksetzen …</button></div>
           <p class="ap-title">Benutzer</p>
           <div class="adv-btns"><button id="userDel" class="chip danger" type="button">Benutzer löschen</button></div>
           <small class="set-hint">Standard und Tesla ändern: oben im Feld „Neuer Benutzer“ den Namen „standard“, „handy“ oder „tesla“ eingeben und das Schreib-Passwort (WRITE_KEY) eingeben.</small>
@@ -374,6 +379,7 @@
         <p class="ap-title">Anzeige und Werkzeuge</p>
         <label class="set-row">Schriftgröße Auswahlfenster <input id="advListSize" type="number" min="10" max="48" inputmode="numeric" /></label>
         <label class="set-row">Schriftgröße Karaoke-Text <input id="advScale" type="number" min="10" max="200" inputmode="numeric" /></label>
+        <label class="set-row">Ausrichtung Karaoke-Text <select id="advAlign"><option value="skin">wie das Design</option><option value="left">linksbündig</option><option value="center">Mitte</option><option value="right">rechtsbündig</option></select></label>
         <label class="set-row">Breite Auswahlfenster (px) <input id="advSidebar" type="number" min="180" max="1200" inputmode="numeric" /></label>
         <label class="set-row two"><span class="lbl">Abstand oben<br>Hauptfenster (px)</span> <input id="advTopMain" type="number" min="0" max="300" inputmode="numeric" /></label>
         <label class="set-row two"><span class="lbl">Abstand oben<br>Einstellungen (px)</span> <input id="advTopSet" type="number" min="0" max="300" inputmode="numeric" /></label>

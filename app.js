@@ -360,6 +360,12 @@ function applyTopOffsets() {
   document.documentElement.style.setProperty("--top-off", `${v("topOffMain")}px`);
   document.documentElement.style.setProperty("--set-off", `${v("topOffSet")}px`);
 }
+/* Ausrichtung des Karaoke-Textes: „skin“ = wie vom Design vorgegeben, sonst links / Mitte / rechts */
+function applyLyricAlign() {
+  let v = "skin"; try { v = localStorage.getItem("lyricAlign") || "skin"; } catch { /* egal */ }
+  if (!["left", "center", "right"].includes(v)) v = "skin";
+  if (v === "skin") document.documentElement.removeAttribute("data-lalign"); else document.documentElement.setAttribute("data-lalign", v);
+}
 function applyScale() {
   document.documentElement.style.setProperty("--lyrics", `${state.scale}px`);
 }
@@ -2388,13 +2394,21 @@ function bind() {
     btn.setAttribute("aria-pressed", String(!hidden));
   });
   let holdTimer = 0;
+  let downAt = 0;
   el.duration.addEventListener("pointerdown", () => {
-    if (document.getElementById("lyricSearchWrap").hidden) return;
+    downAt = Date.now();
+    if (document.getElementById("lyricSearchWrap").hidden) return;   // Zeitcode-Halten nur mit Lupe
     holdTimer = setTimeout(openTimecode, 5000);
   });
-  el.duration.addEventListener("pointerup", () => clearTimeout(holdTimer));
   el.duration.setAttribute("role", "button"); el.duration.tabIndex = 0;
-  const flipTime = () => { lss("timeRemain", lsv("timeRemain", "0") === "1" ? "0" : "1"); updateProgress(); };
+  /* Umschalten Gesamtzeit ↔ noch zu spielen: immer, auch ohne Lupe. Auslösung bei Antippen (pointerup) UND Klick,
+     doppelte Auslösung innerhalb 120 ms wird verhindert (manche Browser schlucken den Klick). */
+  let lastFlip = 0;
+  const flipTime = () => {
+    const n = Date.now(); if (n - lastFlip < 120) return; lastFlip = n;
+    lss("timeRemain", lsv("timeRemain", "0") === "1" ? "0" : "1"); updateProgress();
+  };
+  el.duration.addEventListener("pointerup", () => { clearTimeout(holdTimer); if (downAt && Date.now() - downAt < 800) flipTime(); downAt = 0; });
   el.duration.addEventListener("click", flipTime);
   el.duration.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flipTime(); } });
   el.duration.addEventListener("pointerleave", () => clearTimeout(holdTimer));
@@ -2878,7 +2892,7 @@ async function putSync(store, data) {
 }
 
 /* ---- Einstellungen mit abgleichen (optional, pro Schlüssel Drei-Wege-Abgleich) ---- */
-const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBarAlways", "holdGuard", "holdHint", "eggMode", "eggFall", "eggGif", "startGif", "themeShown", "themeTabs", "themeOrder", "sidebarW", "topOffMain", "topOffSet", "startGif", "ludwtSingle", "listRepeat", "srcTags", "favPlace", "favSeek", "showExtra", "srcFilter", "sync-auto-max", "skipSec", "skipBack", "skipFwd", "fehlMode", "fehlNotify", "fehlAll", "fehlHelpSeen", STORAGE.scale, STORAGE.listSize];
+const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBarAlways", "holdGuard", "holdHint", "eggMode", "eggFall", "eggGif", "startGif", "themeShown", "themeTabs", "themeOrder", "sidebarW", "topOffMain", "topOffSet", "startGif", "ludwtSingle", "listRepeat", "srcTags", "favPlace", "favSeek", "showExtra", "srcFilter", "sync-auto-max", "lyricAlign", "skipSec", "skipBack", "skipFwd", "fehlMode", "fehlNotify", "fehlAll", "fehlHelpSeen", STORAGE.scale, STORAGE.listSize];
 const isSettingKey = (k) => SETTING_KEYS.includes(k) || /^fehl[TL]_/.test(k);
 const syncSettingsOn = () => false;   // Einstellungen werden jetzt über den Benutzer gespeichert
 function collectSettings() {
@@ -2918,7 +2932,7 @@ function applySettings(obj) {
   }
   if (!changed) return;
   try { if (window.THEME) window.THEME.apply(true); } catch { /* egal */ }
-  try { state.scale = Number(localStorage.getItem(STORAGE.scale) || 42); applyScale(); state.listSize = Number(localStorage.getItem(STORAGE.listSize) || 16); applyListSize(); const sw = Number(localStorage.getItem("sidebarW")); if (sw >= 180) document.documentElement.style.setProperty("--sidebar", `${sw}px`); } catch { /* egal */ }
+  try { state.scale = Number(localStorage.getItem(STORAGE.scale) || 42); applyScale(); state.listSize = Number(localStorage.getItem(STORAGE.listSize) || 16); applyListSize(); applyLyricAlign(); const sw = Number(localStorage.getItem("sidebarW")); if (sw >= 180) document.documentElement.style.setProperty("--sidebar", `${sw}px`); } catch { /* egal */ }
   try { applyTopOffsets(); } catch { /* egal */ }
   try { updateSkipLabels(); updateAutoIcon(); updateVersionBar(); rebuildExtras(); applyStartGif(); } catch { /* egal */ }
 }
@@ -3842,6 +3856,8 @@ function setupAdvBox() {
   topNum("advTopSet", "topOffSet");
   num("advBack", () => skipSec(-1), (v) => { localStorage.setItem("skipBack", String(v)); updateSkipLabels(); }, 1, 300);
   num("advFwd", () => skipSec(1), (v) => { localStorage.setItem("skipFwd", String(v)); updateSkipLabels(); }, 1, 300);
+  const al = document.getElementById("advAlign");
+  if (al) { al.value = lsv("lyricAlign", "skin"); al.onchange = () => { lss("lyricAlign", al.value); applyLyricAlign(); }; }
   const hold = document.getElementById("advHold");
   hold.checked = holdOn();
   hold.onchange = () => { try { localStorage.setItem("holdGuard", hold.checked ? "1" : "0"); } catch { /* egal */ } };
@@ -3867,6 +3883,7 @@ const PRESETS = [
   { id: "theme", label: "Design (fest, wie Gerät / Tesla oder Sonnenaufgang, Zeiten)", keys: ["themeMode", "theme", "themeDay", "themeNight", "themeShift"], def: { themeMode: "device" },
     fields: [{ key: "themeMode", o: [["manual", "fest"], ["device", "wie Gerät / Tesla"], ["sun", "Sonnenaufgang"]], dv: "manual" }] },
   { id: "fontkar", label: "Schriftgröße Karaoke-Text", keys: [STORAGE.scale], fields: [{ key: STORAGE.scale, n: [10, 200], dv: "42" }] },
+  { id: "lyricalign", label: "Ausrichtung des Karaoke-Textes", keys: ["lyricAlign"], fields: [{ key: "lyricAlign", o: [["skin", "wie Design"], ["left", "links"], ["center", "Mitte"], ["right", "rechts"]], dv: "skin" }] },
   { id: "fontlist", label: "Schriftgröße Auswahlfenster", keys: [STORAGE.listSize], fields: [{ key: STORAGE.listSize, n: [10, 48], dv: "16" }] },
   { id: "sidebar", label: "Breite des Auswahlfensters (px, 0 = am Handy ganze Breite)", keys: ["sidebarW"], fields: [{ key: "sidebarW", n: [0, 1200], dv: "300" }] },
   { id: "topoff", offByDefault: true, label: "Abstand oben (px): Hauptfenster / Einstellungen", keys: ["topOffMain", "topOffSet"], fields: [{ key: "topOffMain", t: "Haupt", n: [0, 300], dv: "0" }, { key: "topOffSet", t: "Einstellungen", n: [0, 300], dv: "0" }] },
@@ -3939,7 +3956,7 @@ function applyTarget(target, noFill) {
   try { target.forEach((t) => lss(t.key, t.val)); } finally { state.applyingPreset = false; }
   try { if (window.THEME) window.THEME.apply(true); } catch { /* egal */ }
   try {
-    state.scale = Number(lsv(STORAGE.scale, 42)); applyScale(); state.listSize = Number(lsv(STORAGE.listSize, 16)); applyListSize();
+    state.scale = Number(lsv(STORAGE.scale, 42)); applyScale(); state.listSize = Number(lsv(STORAGE.listSize, 16)); applyListSize(); applyLyricAlign();
     const sw = Number(lsv("sidebarW", 0)); if (sw >= 180) document.documentElement.style.setProperty("--sidebar", `${sw}px`); else document.documentElement.style.removeProperty("--sidebar");
   } catch { /* egal */ }
   try { applyTopOffsets(); } catch { /* egal */ }
@@ -4232,6 +4249,28 @@ async function resetToProfile(name) {
   document.getElementById("userMsg").textContent = `Auf „${label}“ zurückgesetzt.`;
 }
 
+/* Dieses Gerät auf Werkszustand: als würde man sich mit einem neuen Browser anmelden (zwei Sicherheitsabfragen) */
+async function factoryReset() {
+  const first = await uiDialog({
+    eyebrow: "Sicherheitsabfrage 1 von 2", title: "Dieses Gerät ganz zurücksetzen?", cancelValue: false,
+    lines: ["Alle Einstellungen, die Anmeldung, lokale Favoriten und Listen, der Zwischenspeicher und die Fernbedienungs-Verbindung auf diesem Gerät werden gelöscht.", "Danach sieht die Seite aus wie bei einem neuen Browser und du musst dich neu anmelden. Daten, die auf dem Server unter einem Benutzernamen gespeichert sind, bleiben dort erhalten."],
+    buttons: [{ value: true, kind: "danger", label: "Weiter" }, { value: false, kind: "cancel", label: "Abbrechen" }]
+  });
+  if (!first) return;
+  const second = await uiDialog({
+    eyebrow: "Sicherheitsabfrage 2 von 2", title: "Wirklich sicher? Das kann nicht rückgängig gemacht werden.", cancelValue: false,
+    lines: ["Lokale Favoriten und Listen, die nicht unter einem Benutzernamen gesichert sind, sind danach endgültig weg."],
+    buttons: [{ value: true, kind: "danger", label: "Ja, alles löschen" }, { value: false, kind: "cancel", label: "Abbrechen" }]
+  });
+  if (!second) return;
+  try { sessionStorage.clear(); } catch { /* egal */ }
+  try { localStorage.clear(); } catch { /* egal */ }
+  try { if (window.caches) for (const k of await caches.keys()) await caches.delete(k); } catch { /* egal */ }
+  try { if (navigator.serviceWorker) for (const r of await navigator.serviceWorker.getRegistrations()) await r.unregister(); } catch { /* egal */ }
+  try { if (indexedDB && indexedDB.databases) for (const d of await indexedDB.databases()) if (d.name) indexedDB.deleteDatabase(d.name); } catch { /* egal */ }
+  location.replace(location.pathname);
+}
+
 /* Editor für „Standard“ und „Tesla“: zeigt die gespeicherten Werte, mit Speichern / Abbrechen */
 async function verifyKey(name, key) {
   const r = await fetchUser(SYS[name], "", { "x-write-key": key });
@@ -4402,6 +4441,7 @@ function setupPresetBox() {
   document.getElementById("handyReset").onclick = () => resetToProfile("handy");
   document.getElementById("stdReset").onclick = () => resetToProfile("standard");
   document.getElementById("teslaReset").onclick = () => resetToProfile("tesla");
+  document.getElementById("factoryReset").onclick = factoryReset;
   document.getElementById("userLink").onclick = async () => {
     const me = userName();
     if (!me) return;

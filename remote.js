@@ -307,13 +307,12 @@
       box.append(h("h2", "", "Steuern"));
       box.append(h("p", "rm-hint", "Code vom anderen Gerät:"));
       const inp = document.createElement("input"); inp.id = "rmCode"; inp.type = "text"; inp.autocomplete = "off"; inp.inputMode = "numeric"; inp.maxLength = 4; inp.pattern = "[0-9]*"; inp.placeholder = "0000"; inp.className = "rm-input";
-      box.append(inp);
       const msg = h("p", "rm-hint", ""); msg.id = "rmMsg";
       const refresh = h("button", "rm-sync", "⟳"); refresh.type = "button"; refresh.title = "Code jetzt abfragen"; refresh.setAttribute("aria-label", "Code abfragen");
       const look = () => pendingCode().then((c) => { if (c && inp.isConnected && inp.dataset.typed !== "1") { inp.value = c; msg.textContent = "Code vom anderen Gerät gefunden – nur noch bestätigen."; } else if (!c && inp.isConnected && inp.dataset.typed !== "1") msg.textContent = "Warte auf den Code vom anderen Gerät … (wird alle paar Sekunden abgefragt)"; });
       inp.addEventListener("input", () => { inp.dataset.typed = "1"; });
       refresh.onclick = () => { inp.dataset.typed = ""; msg.textContent = "Frage ab …"; look(); };
-      box.append(refresh);
+      const synRow = h("div", "rm-synrow"); synRow.append(refresh); box.append(synRow, inp);
       const ok = h("button", "chip primary-chip", "Bestätigen"); ok.type = "button"; ok.onclick = () => connect(inp.value);
       box.append(ok, msg);
       look(); R.modalT = setInterval(look, 2500);
