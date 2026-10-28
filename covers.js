@@ -5,7 +5,8 @@
   const OLD = "start-bg.png";
   const $ = (id) => document.getElementById(id);
   const base = () => (typeof SYNC_BASE !== "undefined" ? SYNC_BASE : location.origin);
-  const mode = () => (lsv("coverMode", "neu") === "alt" ? "alt" : "neu");
+  const lupe = () => document.body.classList.contains("glass-open");
+  const mode = () => (lsv("coverMode", "neu") === "alt" || !lupe() ? "alt" : "neu");
   const numOf = (s) => { const n = parseInt(s && (s.number != null ? s.number : s.id), 10); return n > 0 ? n : 0; };
   let map = {};
   let loaded = 0, loading = null;
@@ -34,7 +35,7 @@
   let thumb = null, lastKey = "";
   function ensureThumb() {
     if (thumb && thumb.isConnected) return thumb;
-    const row = $("titleRow"); if (!row) return null;
+    const row = document.querySelector(".stage > .now .meta-row") || $("titleRow"); if (!row) return null;
     thumb = document.createElement("button"); thumb.id = "coverThumb"; thumb.type = "button"; thumb.className = "cover-thumb"; thumb.hidden = true;
     thumb.setAttribute("aria-label", "Cover groß anzeigen");
     const im = document.createElement("img"); im.alt = ""; im.decoding = "async"; thumb.append(im);
@@ -126,6 +127,7 @@
     art.addEventListener("pointerup", (e) => {
       const dx = e.clientX - sx, dy = e.clientY - sy;
       if (Date.now() - st > 800) return;
+      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) { closeNow(); return; }   // Antippen: zurück zum Karaoke-Text (das kleine Cover öffnet wieder)
       if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy)) { if (typeof stepAllowed !== "function" || stepAllowed()) step(dx < 0 ? 1 : -1); }
       else if (dy > 90 && Math.abs(dy) > Math.abs(dx)) closeNow();
     });
@@ -376,6 +378,7 @@
   /* ---------- Start ---------- */
   function boot() {
     ensureThumb();
+    try { let lp = lupe(); new MutationObserver(() => { if (lupe() !== lp) { lp = lupe(); changed(); } }).observe(document.body, { attributes: true, attributeFilter: ["class"] }); } catch { /* egal */ }
     const gb = $("coverGalleryBtn"); if (gb) gb.addEventListener("click", openGallery);
     load(false);
     setInterval(() => { const s = cur(); const k = s ? s.id : ""; if (boot.k !== k) { boot.k = k; paintThumb(); if (gal) paintGallery(); } if (gal) paintMini(); }, 500);

@@ -24,6 +24,11 @@
     { id: "sk-pro-smaragd", name: "Aurora Smaragd", bar: "#040c09", light: false, skin: true, grp: "Pro", sw: ["#040c09", "#0f3322", "#2fe08a"], hint: "Aurora Pro in Grün und Limette" },
     { id: "sk-pro-platin", name: "Aurora Platin", bar: "#08090b", light: false, skin: true, grp: "Pro", sw: ["#08090b", "#2a2e38", "#d9dde6"], hint: "Aurora Pro in Silber und Weiß" },
     { id: "sk-atelier", name: "Atelier", bar: "#0b0b0d", light: false, skin: true, grp: "Pro", sw: ["#0b0b0d", "#2a2418", "#d6bd8f"], hint: "ganz anderer Aufbau: Player-Leiste links, Verzeichnis rechts, Serifenschrift, Champagner auf Schwarz" },
+    { id: "sk-atelier-saphir", name: "Atelier Saphir", bar: "#090b11", light: false, skin: true, grp: "Pro", sw: ["#090b11", "#151925", "#8fb0ee"], hint: "Atelier in Saphirblau" },
+    { id: "sk-atelier-rose", name: "Atelier Rosé", bar: "#0e090b", light: false, skin: true, grp: "Pro", sw: ["#0e090b", "#1c1317", "#e8a9b6"], hint: "Atelier in Altrosa" },
+    { id: "sk-atelier-salbei", name: "Atelier Salbei", bar: "#090d0b", light: false, skin: true, grp: "Pro", sw: ["#090d0b", "#141c18", "#aecfa6"], hint: "Atelier in Salbeigrün" },
+    { id: "sk-atelier-kupfer", name: "Atelier Kupfer", bar: "#0d0807", light: false, skin: true, grp: "Pro", sw: ["#0d0807", "#1b1210", "#e0925f"], hint: "Atelier in Kupfer" },
+    { id: "sk-atelier-elfenbein", name: "Atelier Elfenbein", bar: "#f5f0e6", light: true, skin: true, grp: "Pro", sw: ["#f5f0e6", "#e8dfce", "#8a6420"], hint: "Atelier hell: Elfenbein mit Bronze" },
     { id: "sk-jwl-petrol", name: "Bibliothek Petrol (weiß)", bar: "#0f6e8c", light: true, skin: true, grp: "Pro", sw: ["#ffffff", "#e6f4f8", "#0f6e8c"], hint: "Bibliothek: weißer Hintergrund, Petrol-Leiste" },
     { id: "sk-jwl-beere", name: "Bibliothek Beere (weiß)", bar: "#b3264a", light: true, skin: true, grp: "Pro", sw: ["#ffffff", "#fdeff2", "#b3264a"], hint: "Bibliothek: weißer Hintergrund, Beeren-Rot" },
     { id: "sk-jwl-nacht", name: "Bibliothek Nacht", bar: "#2a3a58", light: false, skin: true, grp: "Pro", sw: ["#101114", "#1b1c21", "#7ea2e6"], hint: "Bibliothek: dunkel, Blau" },
@@ -84,6 +89,7 @@
   const FAMILIES = [
     { id: "f-pro", name: "Aurora Pro", ids: ["sk-pro", "sk-pro-gold", "sk-pro-rose", "sk-pro-ozean", "sk-pro-smaragd", "sk-pro-platin"], hint: "Glas, schwebender Player – 6 Farben" },
     { id: "f-jwl", name: "Bibliothek", ids: ["sk-jwl", "sk-jwl-petrol", "sk-jwl-beere", "sk-jwl-nacht", "sk-jwl-schiefer", "sk-jwl-burgund"], hint: "Flach, Liste mit Trennlinien – 2 weiße und 3 dunkle Varianten" },
+    { id: "f-atl", name: "Atelier", ids: ["sk-atelier", "sk-atelier-saphir", "sk-atelier-rose", "sk-atelier-salbei", "sk-atelier-kupfer", "sk-atelier-elfenbein"], hint: "Magazin-Aufbau, Serifenschrift – 6 Farben" },
     { id: "f-txk", name: "Tesla Kacheln", ids: ["tx-blau", "tx-karte", "tx-energie"], hint: "Tesla-Bildschirm-Look – 3 Farben" },
     { id: "f-farb", name: "Farbdesigns", ids: ["klassisch", "graphit", "tag", "amber", "mitternacht", "wald", "rubin", "himmel", "sand"], hint: "gleiches Aussehen, nur andere Farben" }
   ];
@@ -92,7 +98,7 @@
     if (!f) return t.name;
     if (f.id === "f-farb") return t.name;
     if (t.name === f.name) return "Original";
-    const base = f.id === "f-pro" ? "Aurora " : f.id === "f-jwl" ? "Bibliothek " : "Tesla ";
+    const base = f.id === "f-pro" ? "Aurora " : f.id === "f-jwl" ? "Bibliothek " : f.id === "f-atl" ? "Atelier " : "Tesla ";
     return t.name.startsWith(base) ? t.name.slice(base.length) : t.name;
   };
   function ordered() {
@@ -145,7 +151,7 @@
     const TL = tabsList();
     const again = () => mountShown(root);
     root.append(h("small", "set-hint", "Haken = im Hauptfenster (◐) anzeigen. Reiter = in welchem Reiter das Design im Auswahlfenster steht. Mit ▲ ▼ änderst du die Reihenfolge. Gruppen (gleicher Aufbau, andere Farben) lassen sich auf- und zuklappen."));
-    if (allOn()) root.append(h("small", "set-hint theme-all-note", "Test-Modus „alle Designs“ ist an – die Haken gelten erst wieder, wenn er ausgeschaltet ist."));
+    if (allOn()) root.append(h("small", "set-hint theme-all-note", "Die Einstellung „alle Designs“ ist an – die Haken gelten erst wieder, wenn er ausgeschaltet ist."));
 
     /* Reiter verwalten */
     const mg = h("div", "tab-manager");
@@ -333,7 +339,7 @@
       const all = h("label", "set-row check");
       const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = allOn(); cb.id = "themeAllOpt";
       cb.addEventListener("change", () => { put("themeAll", cb.checked ? "1" : "0"); mountUi(root); });
-      all.append(cb, document.createTextNode(" Test: alle Designs einschalten"));
+      all.append(cb, document.createTextNode(" Alle Designs einschalten"));
       root.append(all);
       root.append(h("small", "set-hint", "Mit Haken wechselt das ◐ oben (bei aktiver Lupe) durch alle Designs. Ohne Haken gelten nur die unten angehakten."));
       const edBody = h("div", "theme-edit-body"); root.append(edBody);

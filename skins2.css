@@ -231,113 +231,122 @@ html[data-theme="tx-energie"] {
       Player als senkrechte Leiste links, Auswahlliste als „Index“ rechts, Zeitleiste als schmaler Streifen unten,
       Serifenschrift, Champagner auf Obsidian, feine Linien statt Flächen
    ============================================================ */
-html[data-theme="sk-atelier"] {
-  --bg: #0b0b0d; --panel: #111114; --panel-2: #17171b; --line: rgba(214,189,143,.2); --text: #ece6da; --muted: #8f897d; --ink-rgb: 236, 230, 218;
+html[data-theme^="sk-atelier"] {
+  --bg: #0b0b0d; --panel: #111114; --panel-2: #17171b; --line: rgba(var(--accent-rgb),.2); --text: #ece6da; --muted: #8f897d; --ink-rgb: 236, 230, 218;
   --accent: #d6bd8f; --accent-rgb: 214, 189, 143; --accent-2: #8fb7a8; --accent2-rgb: 143, 183, 168; --accent3: #e7d9bd; --on-accent: #17120a; --on-accent-2: #0a1612;
-  --lyric-active: #f6efe0; --sel-bg: rgba(214,189,143,.12); --sel-text: #f6efe0; --strong: #f6efe0;
-  --bar-bg: #0b0b0d; --side-bg: transparent; --flyer-bg: #0b0b0d; --glow1: rgba(214,189,143,.10); --glow2: rgba(143,183,168,.06); --ok: #8fd1a5; --info: #d6bd8f;
+  --lyric-active: #f6efe0; --sel-bg: rgba(var(--accent-rgb),.12); --sel-text: #f6efe0; --strong: #f6efe0;
+  --bar-bg: var(--bg); --side-bg: transparent; --flyer-bg: var(--bg); --glow1: rgba(var(--accent-rgb),.10); --glow2: rgba(var(--accent2-rgb),.06); --ok: #8fd1a5; --info: #d6bd8f;
   --flyer-h: 84px;
   --sk-font: "Inter", "Helvetica Neue", "Segoe UI", system-ui, sans-serif;
   --at-serif: "Cormorant Garamond", "Playfair Display", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
-  --sk-r: 0; --sk-btn: transparent; --sk-bd: 1px solid rgba(214,189,143,.35); --sk-sh: none; --sk-press: scale(.96);
-  --sk-play-bg: #d6bd8f; --sk-play-r: 50%; --sk-play-bd: 0; --sk-play-sh: 0 0 0 7px rgba(214,189,143,.10), 0 12px 40px rgba(214,189,143,.25);
+  --sk-r: 0; --sk-btn: transparent; --sk-bd: 1px solid rgba(var(--accent-rgb),.35); --sk-sh: none; --sk-press: scale(.96);
+  --sk-play-bg: var(--accent); --sk-play-r: 50%; --sk-play-bd: 0; --sk-play-sh: 0 0 0 7px rgba(var(--accent-rgb),.10), 0 12px 40px rgba(var(--accent-rgb),.25);
   --ic-play: "▶"; --ic-pause: "❚❚"; --ic-prev: "◁"; --ic-next: "▷"; --ic-fav: "♡"; --ic-fav-on: "♥"; --sk-ic: 22px; --sk-ic2: 17px; --sk-ic3: 22px;
-  --sk-track: 2px; --sk-track-r: 0; --sk-track-bg: rgba(214,189,143,.22); --sk-thumb: 13px; --sk-thumb-bg: #d6bd8f; --sk-thumb-sh: 0 0 0 5px rgba(214,189,143,.18);
+  --sk-track: 2px; --sk-track-r: 0; --sk-track-bg: rgba(var(--accent-rgb),.22); --sk-thumb: 13px; --sk-thumb-bg: var(--accent); --sk-thumb-sh: 0 0 0 5px rgba(var(--accent-rgb),.18);
   --sk-list-r: 0; --sk-list-bd: 0 solid transparent; --sk-in-r: 0; --sk-flyer-bd: 0 solid transparent; --sk-flyer-sh: none;
   color-scheme: dark;
 }
-html[data-theme="sk-atelier"] body {
-  background: radial-gradient(1200px 520px at 50% -18%, rgba(214,189,143,.10), transparent 62%), radial-gradient(800px 500px at 100% 110%, rgba(143,183,168,.06), transparent 60%), #0b0b0d;
+html[data-theme^="sk-atelier"] body {
+  background: radial-gradient(1200px 520px at 50% -18%, rgba(var(--accent-rgb),.10), transparent 62%), radial-gradient(800px 500px at 100% 110%, rgba(var(--accent2-rgb),.06), transparent 60%), var(--bg);
   -webkit-font-smoothing: antialiased;
 }
 /* Kopfzeile: nur Schrift, wie ein Magazin-Menü */
-html[data-theme="sk-atelier"] .topbar { background: rgba(11,11,13,.92); border-bottom: 1px solid var(--line); }
-html[data-theme="sk-atelier"] .topbar .ghost, html[data-theme="sk-atelier"] .topbar .chip, html[data-theme="sk-atelier"] .topbar .text-link {
+html[data-theme^="sk-atelier"] .topbar { background: color-mix(in srgb, var(--bg) 92%, transparent); border-bottom: 1px solid var(--line); }
+html[data-theme^="sk-atelier"] .topbar .ghost, html[data-theme^="sk-atelier"] .topbar .chip, html[data-theme^="sk-atelier"] .topbar .text-link {
   background: transparent !important; border: 0 !important; box-shadow: none !important; border-radius: 0 !important; color: var(--muted) !important;
   font-size: 11.5px !important; font-weight: 600; letter-spacing: .16em; text-transform: uppercase;
 }
-html[data-theme="sk-atelier"] .topbar .ghost:hover, html[data-theme="sk-atelier"] .topbar .chip:hover, html[data-theme="sk-atelier"] .topbar .text-link:hover { color: var(--accent) !important; }
-html[data-theme="sk-atelier"] .topbar .fav-tools-main { border: 1px solid var(--line) !important; background: transparent !important; border-radius: 0 !important; }
-html[data-theme="sk-atelier"] .topbar .fav-tools-main #syncFav { color: var(--accent) !important; }
-html[data-theme="sk-atelier"] .topbar #menuToggle, html[data-theme="sk-atelier"] .topbar #eigeneToggle, html[data-theme="sk-atelier"] .topbar #ludwtToggle {
+html[data-theme^="sk-atelier"] .topbar .ghost:hover, html[data-theme^="sk-atelier"] .topbar .chip:hover, html[data-theme^="sk-atelier"] .topbar .text-link:hover { color: var(--accent) !important; }
+html[data-theme^="sk-atelier"] .topbar .fav-tools-main { border: 1px solid var(--line) !important; background: transparent !important; border-radius: 0 !important; }
+html[data-theme^="sk-atelier"] .topbar .fav-tools-main #syncFav { color: var(--accent) !important; }
+html[data-theme^="sk-atelier"] .topbar #menuToggle, html[data-theme^="sk-atelier"] .topbar #eigeneToggle, html[data-theme^="sk-atelier"] .topbar #ludwtToggle {
   background: transparent !important; border: 0 !important; border-bottom: 1px solid transparent !important; border-radius: 0 !important; box-shadow: none !important;
   color: var(--muted) !important; font-family: var(--at-serif); font-style: italic; font-size: 19px !important; font-weight: 500; letter-spacing: .01em; text-transform: none;
 }
-html[data-theme="sk-atelier"] .topbar #menuToggle[aria-expanded="true"], html[data-theme="sk-atelier"] .topbar #eigeneToggle[aria-pressed="true"], html[data-theme="sk-atelier"] .topbar #ludwtToggle[aria-pressed="true"] {
+html[data-theme^="sk-atelier"] .topbar #menuToggle[aria-expanded="true"], html[data-theme^="sk-atelier"] .topbar #eigeneToggle[aria-pressed="true"], html[data-theme^="sk-atelier"] .topbar #ludwtToggle[aria-pressed="true"] {
   color: var(--accent) !important; border-bottom-color: var(--accent) !important; background: transparent !important;
 }
 /* Auswahl: Verzeichnis ohne Kästen */
-html[data-theme="sk-atelier"] .sidebar { background: transparent; border-right: 0; border-left: 1px solid var(--line); }
-html[data-theme="sk-atelier"] .brand h1 { font-family: var(--at-serif); font-weight: 500; font-style: italic; font-size: 34px; letter-spacing: -.01em; color: var(--text); }
-html[data-theme="sk-atelier"] .brand h1 .home-link { color: inherit; }
-html[data-theme="sk-atelier"] .brand .eyebrow, html[data-theme="sk-atelier"] .eyebrow { color: var(--accent); letter-spacing: .26em; font-size: 10px; font-weight: 600; text-transform: uppercase; }
-html[data-theme="sk-atelier"] .song-btn { background: transparent; border: 0 !important; border-bottom: 1px solid rgba(214,189,143,.12) !important; border-radius: 0; margin: 0 !important; padding: 10px 6px; box-shadow: none; }
-html[data-theme="sk-atelier"] .song-btn strong { font-family: var(--at-serif); font-size: 19px; font-weight: 500; color: var(--accent); font-variant-numeric: lining-nums; }
-html[data-theme="sk-atelier"] .song-btn:hover { background: rgba(214,189,143,.05); }
-html[data-theme="sk-atelier"] .song-btn.active { background: transparent; box-shadow: inset 2px 0 0 var(--accent); padding-left: 12px; }
-html[data-theme="sk-atelier"] .song-btn.active strong, html[data-theme="sk-atelier"] .song-btn.active span { color: var(--lyric-active); }
-html[data-theme="sk-atelier"] .search-wrap input, html[data-theme="sk-atelier"] select, html[data-theme="sk-atelier"] input[type="text"], html[data-theme="sk-atelier"] input[type="search"], html[data-theme="sk-atelier"] input[type="number"], html[data-theme="sk-atelier"] input[type="password"] {
-  background: transparent; border: 0; border-bottom: 1px solid rgba(214,189,143,.45); border-radius: 0; color: var(--text);
+html[data-theme^="sk-atelier"] .sidebar { background: transparent; border-right: 0; border-left: 1px solid var(--line); }
+html[data-theme^="sk-atelier"] .brand h1 { font-family: var(--at-serif); font-weight: 500; font-style: italic; font-size: 34px; letter-spacing: -.01em; color: var(--text); }
+html[data-theme^="sk-atelier"] .brand h1 .home-link { color: inherit; }
+html[data-theme^="sk-atelier"] .brand .eyebrow, html[data-theme^="sk-atelier"] .eyebrow { color: var(--accent); letter-spacing: .26em; font-size: 10px; font-weight: 600; text-transform: uppercase; }
+html[data-theme^="sk-atelier"] .song-btn { background: transparent; border: 0 !important; border-bottom: 1px solid rgba(var(--accent-rgb),.12) !important; border-radius: 0; margin: 0 !important; padding: 10px 6px; box-shadow: none; }
+html[data-theme^="sk-atelier"] .song-btn strong { font-family: var(--at-serif); font-size: 19px; font-weight: 500; color: var(--accent); font-variant-numeric: lining-nums; }
+html[data-theme^="sk-atelier"] .song-btn:hover { background: rgba(var(--accent-rgb),.05); }
+html[data-theme^="sk-atelier"] .song-btn.active { background: transparent; box-shadow: inset 2px 0 0 var(--accent); padding-left: 12px; }
+html[data-theme^="sk-atelier"] .song-btn.active strong, html[data-theme^="sk-atelier"] .song-btn.active span { color: var(--lyric-active); }
+html[data-theme^="sk-atelier"] .search-wrap input, html[data-theme^="sk-atelier"] select, html[data-theme^="sk-atelier"] input[type="text"], html[data-theme^="sk-atelier"] input[type="search"], html[data-theme^="sk-atelier"] input[type="number"], html[data-theme^="sk-atelier"] input[type="password"] {
+  background: transparent; border: 0; border-bottom: 1px solid rgba(var(--accent-rgb),.45); border-radius: 0; color: var(--text);
 }
-html[data-theme="sk-atelier"] input:focus, html[data-theme="sk-atelier"] select:focus { outline: 0; border-bottom-color: var(--accent); box-shadow: 0 1px 0 var(--accent); }
+html[data-theme^="sk-atelier"] input:focus, html[data-theme^="sk-atelier"] select:focus { outline: 0; border-bottom-color: var(--accent); box-shadow: 0 1px 0 var(--accent); }
 /* Bühne: große Serifen-Überschrift, Liedtext linksbündig wie im Buch */
-html[data-theme="sk-atelier"] .stage { padding: 18px 44px 0; }
-html[data-theme="sk-atelier"] .now h2 { font-family: var(--at-serif); font-weight: 400; font-size: clamp(34px, 4.6vw, 72px); line-height: 1; letter-spacing: -.02em; color: var(--text); }
-html[data-theme="sk-atelier"] .song-number { font-family: var(--sk-font); color: var(--accent); letter-spacing: .3em; font-size: 11px; font-weight: 600; text-transform: uppercase; }
-html[data-theme="sk-atelier"] .meta, html[data-theme="sk-atelier"] #currentStatus { color: var(--muted); letter-spacing: .04em; }
-html[data-theme="sk-atelier"] .lyrics { font-family: var(--at-serif); border-top: 1px solid var(--line); margin-top: 12px; padding-left: 28px; }
-html[data-theme="sk-atelier"] body:not(.edit-mode) .lyric-line { font-family: var(--at-serif); font-weight: 500; letter-spacing: 0; line-height: 1.32; color: rgba(236,230,218,.34); padding-left: 18px; border-left: 1px solid transparent; transition: color .3s, border-color .3s; }
-html[data-theme="sk-atelier"] body:not(.edit-mode) .lyric-line.active { color: var(--lyric-active); font-weight: 600; border-left-color: var(--accent); }
-html[data-theme="sk-atelier"] .start-actions .chip, html[data-theme="sk-atelier"] .chip { background: transparent; color: var(--accent); border: 1px solid rgba(214,189,143,.5); border-radius: 0; letter-spacing: .16em; text-transform: uppercase; font-size: 11.5px; font-weight: 600; box-shadow: none; }
-html[data-theme="sk-atelier"] .chip:hover { background: rgba(214,189,143,.1); }
-html[data-theme="sk-atelier"] .chip[aria-pressed="true"], html[data-theme="sk-atelier"] .seg-btn[aria-pressed="true"], html[data-theme="sk-atelier"] .chip.primary-chip, html[data-theme="sk-atelier"] .login-card .chip[type="submit"] { background: var(--accent) !important; color: var(--on-accent) !important; border-color: var(--accent) !important; }
-html[data-theme="sk-atelier"] .seg, html[data-theme="sk-atelier"] .set-tabs { border: 1px solid var(--line); border-radius: 0; background: transparent; }
-html[data-theme="sk-atelier"] .seg-btn { border-radius: 0; letter-spacing: .1em; text-transform: uppercase; font-size: 11.5px; }
-html[data-theme="sk-atelier"] .ap-title { color: var(--accent); letter-spacing: .24em; text-transform: uppercase; font-size: 10.5px; font-weight: 600; }
-html[data-theme="sk-atelier"] .login-gate { background: rgba(5,5,6,.78); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
-html[data-theme="sk-atelier"] .login-card { background: #0f0f12; border: 1px solid rgba(214,189,143,.4); border-radius: 0; box-shadow: 0 40px 100px rgba(0,0,0,.75); }
-html[data-theme="sk-atelier"] .login-card h2 { font-family: var(--at-serif); font-style: italic; font-weight: 500; font-size: 30px; }
-html[data-theme="sk-atelier"] .buf-bar i { background: var(--accent); }
-html[data-theme="sk-atelier"] .nav-song { color: var(--muted); font-family: var(--at-serif); font-style: italic; font-size: 15px; }
-html[data-theme="sk-atelier"] #currentTime, html[data-theme="sk-atelier"] #duration { color: var(--accent); font-family: var(--at-serif); font-size: 18px; font-variant-numeric: lining-nums tabular-nums; font-weight: 600; }
-html[data-theme="sk-atelier"] .round { background: transparent; border: 1px solid rgba(214,189,143,.35); box-shadow: none; color: var(--text); }
-html[data-theme="sk-atelier"] .round:hover { border-color: var(--accent); color: var(--accent); }
-html[data-theme="sk-atelier"] .round.play { border: 0; color: var(--on-accent); }
-html[data-theme="sk-atelier"] .round.nav, html[data-theme="sk-atelier"] .round.fav2 { border-radius: 50%; }
-html[data-theme="sk-atelier"] .flyer { background: #0b0b0d; border-top: 1px solid var(--line); }
-html[data-theme="sk-atelier"] *::-webkit-scrollbar { width: 6px; height: 6px; }
-html[data-theme="sk-atelier"] *::-webkit-scrollbar-thumb { background: rgba(214,189,143,.28); }
-html[data-theme="sk-atelier"] *::-webkit-scrollbar-track { background: transparent; }
-html[data-theme="sk-atelier"] .rc-panel { background: #0b0b0d; }
+html[data-theme^="sk-atelier"] .stage { padding: 18px 44px 0; }
+html[data-theme^="sk-atelier"] .now h2 { font-family: var(--at-serif); font-weight: 400; font-size: clamp(34px, 4.6vw, 72px); line-height: 1; letter-spacing: -.02em; color: var(--text); }
+html[data-theme^="sk-atelier"] .song-number { font-family: var(--sk-font); color: var(--accent); letter-spacing: .3em; font-size: 11px; font-weight: 600; text-transform: uppercase; }
+html[data-theme^="sk-atelier"] .meta, html[data-theme^="sk-atelier"] #currentStatus { color: var(--muted); letter-spacing: .04em; }
+html[data-theme^="sk-atelier"] .lyrics { font-family: var(--at-serif); border-top: 1px solid var(--line); margin-top: 12px; padding-left: 28px; }
+html[data-theme^="sk-atelier"] body:not(.edit-mode) .lyric-line { font-family: var(--at-serif); font-weight: 500; letter-spacing: 0; line-height: 1.32; color: rgba(var(--ink-rgb),.34); padding-left: 18px; border-left: 1px solid transparent; transition: color .3s, border-color .3s; }
+html[data-theme^="sk-atelier"] body:not(.edit-mode) .lyric-line.active { color: var(--lyric-active); font-weight: 600; border-left-color: var(--accent); }
+html[data-theme^="sk-atelier"] .start-actions .chip, html[data-theme^="sk-atelier"] .chip { background: transparent; color: var(--accent); border: 1px solid rgba(var(--accent-rgb),.5); border-radius: 0; letter-spacing: .16em; text-transform: uppercase; font-size: 11.5px; font-weight: 600; box-shadow: none; }
+html[data-theme^="sk-atelier"] .chip:hover { background: rgba(var(--accent-rgb),.1); }
+html[data-theme^="sk-atelier"] .chip[aria-pressed="true"], html[data-theme^="sk-atelier"] .seg-btn[aria-pressed="true"], html[data-theme^="sk-atelier"] .chip.primary-chip, html[data-theme^="sk-atelier"] .login-card .chip[type="submit"] { background: var(--accent) !important; color: var(--on-accent) !important; border-color: var(--accent) !important; }
+html[data-theme^="sk-atelier"] .seg, html[data-theme^="sk-atelier"] .set-tabs { border: 1px solid var(--line); border-radius: 0; background: transparent; }
+html[data-theme^="sk-atelier"] .seg-btn { border-radius: 0; letter-spacing: .1em; text-transform: uppercase; font-size: 11.5px; }
+html[data-theme^="sk-atelier"] .ap-title { color: var(--accent); letter-spacing: .24em; text-transform: uppercase; font-size: 10.5px; font-weight: 600; }
+html[data-theme^="sk-atelier"] .login-gate { background: color-mix(in srgb, var(--bg) 78%, #000); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+html[data-theme^="sk-atelier"] .login-card { background: var(--panel); border: 1px solid rgba(var(--accent-rgb),.4); border-radius: 0; box-shadow: 0 40px 100px var(--at-shadow, rgba(0,0,0,.75)); }
+html[data-theme^="sk-atelier"] .login-card h2 { font-family: var(--at-serif); font-style: italic; font-weight: 500; font-size: 30px; }
+html[data-theme^="sk-atelier"] .buf-bar i { background: var(--accent); }
+html[data-theme^="sk-atelier"] .nav-song { color: var(--muted); font-family: var(--at-serif); font-style: italic; font-size: 15px; }
+html[data-theme^="sk-atelier"] #currentTime, html[data-theme^="sk-atelier"] #duration { color: var(--accent); font-family: var(--at-serif); font-size: 18px; font-variant-numeric: lining-nums tabular-nums; font-weight: 600; }
+html[data-theme^="sk-atelier"] .round { background: transparent; border: 1px solid rgba(var(--accent-rgb),.35); box-shadow: none; color: var(--text); }
+html[data-theme^="sk-atelier"] .round:hover { border-color: var(--accent); color: var(--accent); }
+html[data-theme^="sk-atelier"] .round.play { border: 0; color: var(--on-accent); }
+html[data-theme^="sk-atelier"] .round.nav, html[data-theme^="sk-atelier"] .round.fav2 { border-radius: 50%; }
+html[data-theme^="sk-atelier"] .flyer { background: var(--bg); border-top: 1px solid var(--line); }
+html[data-theme^="sk-atelier"] *::-webkit-scrollbar { width: 6px; height: 6px; }
+html[data-theme^="sk-atelier"] *::-webkit-scrollbar-thumb { background: rgba(var(--accent-rgb),.28); }
+html[data-theme^="sk-atelier"] *::-webkit-scrollbar-track { background: transparent; }
+html[data-theme^="sk-atelier"] .rc-panel { background: var(--bg); }
 
 /* Breite Bildschirme: Player-Leiste links (senkrecht), Zeitstreifen unten, Verzeichnis rechts */
 @media (min-width: 701px) and (min-height: 520px) {
-  html[data-theme="sk-atelier"] body:not(.player-hidden) .flyer { display: contents; }
-  html[data-theme="sk-atelier"] body:not(.player-hidden) .app { padding-left: 108px; box-sizing: border-box; grid-template-columns: minmax(0, 1fr) var(--sidebar) !important; }
-  html[data-theme="sk-atelier"] body:not(.player-hidden) .app.sidebar-hidden { grid-template-columns: minmax(0, 1fr) !important; }
-  html[data-theme="sk-atelier"] .app .sidebar { grid-column: 2; grid-row: 1; }
-  html[data-theme="sk-atelier"] .app .stage { grid-column: 1; grid-row: 1; }
-  html[data-theme="sk-atelier"] body:not(.player-hidden) .transport {
+  html[data-theme^="sk-atelier"] body:not(.player-hidden) .flyer { display: contents; }
+  html[data-theme^="sk-atelier"] body:not(.player-hidden) .app { padding-left: 108px; box-sizing: border-box; grid-template-columns: minmax(0, 1fr) var(--sidebar) !important; }
+  html[data-theme^="sk-atelier"] body:not(.player-hidden) .app.sidebar-hidden { grid-template-columns: minmax(0, 1fr) !important; }
+  html[data-theme^="sk-atelier"] .app .sidebar { grid-column: 2; grid-row: 1; }
+  html[data-theme^="sk-atelier"] .app .stage { grid-column: 1; grid-row: 1; }
+  html[data-theme^="sk-atelier"] body:not(.player-hidden) .transport {
     position: fixed; left: 0; top: var(--topbar); bottom: var(--flyer-h); width: 108px; box-sizing: border-box; z-index: 91;
     flex-direction: column; justify-content: center; align-items: center; gap: clamp(6px, 1.8vh, 16px); padding: 10px 0; overflow-y: auto; scrollbar-width: none;
-    border-right: 1px solid var(--line); background: #0b0b0d;
+    border-right: 1px solid var(--line); background: var(--bg);
   }
-  html[data-theme="sk-atelier"] .transport #favoriteBtn2 { order: 0; }
-  html[data-theme="sk-atelier"] .transport #back15 { order: 1; }
-  html[data-theme="sk-atelier"] .transport #prevBtn { order: 2; }
-  html[data-theme="sk-atelier"] .transport #playBtn { order: 3; width: 78px; height: 78px; }
-  html[data-theme="sk-atelier"] .transport #nextBtn { order: 4; }
-  html[data-theme="sk-atelier"] .transport #fwd15 { order: 5; }
-  html[data-theme="sk-atelier"] .transport #bufBar { order: 6; width: 44px; }
-  html[data-theme="sk-atelier"] .transport .round:not(.play) { width: 48px; height: 48px; flex: 0 0 auto; }
-  html[data-theme="sk-atelier"] body:not(.player-hidden) .timeline {
+  html[data-theme^="sk-atelier"] .transport #favoriteBtn2 { order: 0; }
+  html[data-theme^="sk-atelier"] .transport #back15 { order: 1; }
+  html[data-theme^="sk-atelier"] .transport #prevBtn { order: 2; }
+  html[data-theme^="sk-atelier"] .transport #playBtn { order: 3; width: 78px; height: 78px; }
+  html[data-theme^="sk-atelier"] .transport #nextBtn { order: 4; }
+  html[data-theme^="sk-atelier"] .transport #fwd15 { order: 5; }
+  html[data-theme^="sk-atelier"] .transport #bufBar { order: 6; width: 44px; }
+  html[data-theme^="sk-atelier"] .transport .round:not(.play) { width: 48px; height: 48px; flex: 0 0 auto; }
+  html[data-theme^="sk-atelier"] body:not(.player-hidden) .timeline {
     position: fixed; left: 108px; right: 0; bottom: 0; height: var(--flyer-h); box-sizing: border-box; z-index: 91; max-width: none !important;
     display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "bar bar" "prev next"; align-content: center; row-gap: 4px;
-    padding: 8px 44px calc(8px + var(--safe-bottom)); background: #0b0b0d; border-top: 1px solid var(--line);
+    padding: 8px 44px calc(8px + var(--safe-bottom)); background: var(--bg); border-top: 1px solid var(--line);
   }
-  html[data-theme="sk-atelier"] .timeline .bar-row { grid-area: bar; width: 100%; }
-  html[data-theme="sk-atelier"] .timeline .nav-row { grid-area: prev; }
-  html[data-theme="sk-atelier"] .timeline #nextSong { grid-area: next; text-align: right; }
-  html[data-theme="sk-atelier"] .timeline .spectrum { position: absolute; left: 44px; right: 44px; bottom: 100%; width: calc(100% - 88px); height: 70px; }
-  html[data-theme="sk-atelier"] body.player-hidden .app { padding-left: 0; }
+  html[data-theme^="sk-atelier"] .timeline .bar-row { grid-area: bar; width: 100%; }
+  html[data-theme^="sk-atelier"] .timeline .nav-row { grid-area: prev; }
+  html[data-theme^="sk-atelier"] .timeline #nextSong { grid-area: next; text-align: right; }
+  html[data-theme^="sk-atelier"] .timeline .spectrum { position: absolute; left: 44px; right: 44px; bottom: 100%; width: calc(100% - 88px); height: 70px; }
+  html[data-theme^="sk-atelier"] body.player-hidden .app { padding-left: 0; }
 }
+
+/* Atelier: Farbvarianten (Aufbau bleibt gleich) */
+html[data-theme="sk-atelier-saphir"] { --bg: #090b11; --panel: #0f121a; --panel-2: #151925; --text: #e6e9f2; --muted: #8790a6; --ink-rgb: 230, 233, 242; --accent: #8fb0ee; --accent-rgb: 143, 176, 238; --accent-2: #d6bd8f; --accent2-rgb: 214, 189, 143; --accent3: #c4d6f7; --on-accent: #0a1020; --on-accent-2: #17120a; --lyric-active: #f2f6ff; --sel-text: #f2f6ff; --strong: #f2f6ff; }
+html[data-theme="sk-atelier-rose"] { --bg: #0e090b; --panel: #150e11; --panel-2: #1c1317; --text: #f0e4e7; --muted: #a08990; --ink-rgb: 240, 228, 231; --accent: #e8a9b6; --accent-rgb: 232, 169, 182; --accent-2: #c9b48a; --accent2-rgb: 201, 180, 138; --accent3: #f4cfd7; --on-accent: #1d0c11; --on-accent-2: #17120a; --lyric-active: #fff1f4; --sel-text: #fff1f4; --strong: #fff1f4; }
+html[data-theme="sk-atelier-salbei"] { --bg: #090d0b; --panel: #0e1411; --panel-2: #141c18; --text: #e4ece6; --muted: #86988c; --ink-rgb: 228, 236, 230; --accent: #aecfa6; --accent-rgb: 174, 207, 166; --accent-2: #d6bd8f; --accent2-rgb: 214, 189, 143; --accent3: #cfe6c8; --on-accent: #0b150a; --on-accent-2: #17120a; --lyric-active: #f1faee; --sel-text: #f1faee; --strong: #f1faee; }
+html[data-theme="sk-atelier-kupfer"] { --bg: #0d0807; --panel: #140d0b; --panel-2: #1b1210; --text: #f0e5df; --muted: #a08c82; --ink-rgb: 240, 229, 223; --accent: #e0925f; --accent-rgb: 224, 146, 95; --accent-2: #9ec3b3; --accent2-rgb: 158, 195, 179; --accent3: #f0c3a4; --on-accent: #1d0d05; --on-accent-2: #0a1612; --lyric-active: #fff2ea; --sel-text: #fff2ea; --strong: #fff2ea; }
+html[data-theme="sk-atelier-elfenbein"] { --bg: #f5f0e6; --panel: #efe8da; --panel-2: #e8dfce; --text: #211d16; --muted: #6f675a; --ink-rgb: 33, 29, 22; --accent: #8a6420; --accent-rgb: 138, 100, 32; --accent-2: #3f6f60; --accent2-rgb: 63, 111, 96; --accent3: #6b4c14; --on-accent: #fffaf0; --on-accent-2: #f3fbf7; --lyric-active: #120f09; --sel-bg: rgba(138,100,32,.12); --sel-text: #120f09; --strong: #120f09; --glow1: rgba(138,100,32,.10); --glow2: rgba(63,111,96,.06); --at-shadow: rgba(60,45,20,.35); color-scheme: light; }
+html[data-theme="sk-atelier-elfenbein"] body { background: radial-gradient(1200px 520px at 50% -18%, rgba(138,100,32,.10), transparent 62%), #f5f0e6; }
+html[data-theme^="sk-atelier"]:not([data-theme="sk-atelier"]) body { background-color: var(--bg); }

@@ -1583,3 +1583,6 @@ html[data-lalign="right"] { --lal-origin: right center; }
 .tab-manager { margin: 8px 0 12px; }
 .theme-embedded { max-height: none; }
 .theme-seg { display: flex; flex-wrap: wrap; gap: 6px; }
+#advBox select#advAlign, #advBox select#advCover { background: var(--panel-2); color: var(--text); border: 1px solid var(--line); border-radius: 10px; font-size: 16px; }
+#advBox .set-row:has(> select#advAlign), #advBox .set-row:has(> select#advCover) { min-height: 46px; }
+body:not(.glass-open) #advBox .set-row:has(> select#advCover) { display: none !important; }
