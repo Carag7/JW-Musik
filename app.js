@@ -982,7 +982,7 @@ function renderPlain(song, kind) {
   eyebrow.textContent = `Lied ${song.id}`;
   const img = document.createElement("img");
   img.className = "start-image";
-  img.src = "start-bg.png";
+  img.src = window.COVERS ? COVERS.src(song) : "start-bg.png";
   img.alt = "";
   const title = document.createElement("h2");
   title.textContent = song.title;
@@ -1281,7 +1281,8 @@ function setMediaSession(song) {
   navigator.mediaSession.metadata = new MediaMetadata({
     title: `${state.favorites.has(song.id) ? "★ " : ""}${song.title}`,
     artist: "Sing Out Joyfully",
-    album: song.category || "Karaoke"
+    album: song.category || "Karaoke",
+    artwork: window.COVERS ? COVERS.artwork(song) : []
   });
   navigator.mediaSession.setActionHandler("previoustrack", () => { if (stepAllowed()) step(-1); });
   navigator.mediaSession.setActionHandler("nexttrack", () => { if (stepAllowed()) step(1); });
@@ -2892,7 +2893,7 @@ async function putSync(store, data) {
 }
 
 /* ---- Einstellungen mit abgleichen (optional, pro Schlüssel Drei-Wege-Abgleich) ---- */
-const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBarAlways", "holdGuard", "holdHint", "eggMode", "eggFall", "eggGif", "startGif", "themeShown", "themeTabs", "themeOrder", "sidebarW", "topOffMain", "topOffSet", "startGif", "ludwtSingle", "listRepeat", "srcTags", "favPlace", "favSeek", "showExtra", "srcFilter", "sync-auto-max", "lyricAlign", "skipSec", "skipBack", "skipFwd", "fehlMode", "fehlNotify", "fehlAll", "fehlHelpSeen", STORAGE.scale, STORAGE.listSize];
+const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBarAlways", "holdGuard", "holdHint", "eggMode", "eggFall", "eggGif", "startGif", "themeShown", "themeTabs", "themeOrder", "themeTabList", "coverMode", "sidebarW", "topOffMain", "topOffSet", "startGif", "ludwtSingle", "listRepeat", "srcTags", "favPlace", "favSeek", "showExtra", "srcFilter", "sync-auto-max", "lyricAlign", "skipSec", "skipBack", "skipFwd", "fehlMode", "fehlNotify", "fehlAll", "fehlHelpSeen", STORAGE.scale, STORAGE.listSize];
 const isSettingKey = (k) => SETTING_KEYS.includes(k) || /^fehl[TL]_/.test(k);
 const syncSettingsOn = () => false;   // Einstellungen werden jetzt über den Benutzer gespeichert
 function collectSettings() {
@@ -3858,6 +3859,8 @@ function setupAdvBox() {
   num("advFwd", () => skipSec(1), (v) => { localStorage.setItem("skipFwd", String(v)); updateSkipLabels(); }, 1, 300);
   const al = document.getElementById("advAlign");
   if (al) { al.value = lsv("lyricAlign", "skin"); al.onchange = () => { lss("lyricAlign", al.value); applyLyricAlign(); }; }
+  const cv = document.getElementById("advCover");
+  if (cv) { cv.value = lsv("coverMode", "neu") === "alt" ? "alt" : "neu"; cv.onchange = () => { lss("coverMode", cv.value); if (window.COVERS) COVERS.refresh(); }; }
   const hold = document.getElementById("advHold");
   hold.checked = holdOn();
   hold.onchange = () => { try { localStorage.setItem("holdGuard", hold.checked ? "1" : "0"); } catch { /* egal */ } };
@@ -3884,12 +3887,13 @@ const PRESETS = [
     fields: [{ key: "themeMode", o: [["manual", "fest"], ["device", "wie Gerät / Tesla"], ["sun", "Sonnenaufgang"]], dv: "manual" }] },
   { id: "fontkar", label: "Schriftgröße Karaoke-Text", keys: [STORAGE.scale], fields: [{ key: STORAGE.scale, n: [10, 200], dv: "42" }] },
   { id: "lyricalign", label: "Ausrichtung des Karaoke-Textes", keys: ["lyricAlign"], fields: [{ key: "lyricAlign", o: [["skin", "wie Design"], ["left", "links"], ["center", "Mitte"], ["right", "rechts"]], dv: "skin" }] },
+  { id: "cover", label: "Cover anzeigen (neue Cover oder altes Bild)", keys: ["coverMode"], fields: [{ key: "coverMode", o: [["neu", "neu"], ["alt", "alt"]], dv: "neu" }] },
   { id: "fontlist", label: "Schriftgröße Auswahlfenster", keys: [STORAGE.listSize], fields: [{ key: STORAGE.listSize, n: [10, 48], dv: "16" }] },
   { id: "sidebar", label: "Breite des Auswahlfensters (px, 0 = am Handy ganze Breite)", keys: ["sidebarW"], fields: [{ key: "sidebarW", n: [0, 1200], dv: "300" }] },
   { id: "topoff", offByDefault: true, label: "Abstand oben (px): Hauptfenster / Einstellungen", keys: ["topOffMain", "topOffSet"], fields: [{ key: "topOffMain", t: "Haupt", n: [0, 300], dv: "0" }, { key: "topOffSet", t: "Einstellungen", n: [0, 300], dv: "0" }] },
   { id: "startgif", label: "Startseite: GIF „Chor“ statt des Bildes", keys: ["startGif"], def: { startGif: "0" }, fields: [{ key: "startGif", o: BOOL, dv: "0" }] },
   { id: "lupeopt", label: "Lupe-Optionen: LuD+WT einzeln (■) / Liste wiederholen (↻)", keys: ["ludwtSingle", "listRepeat"], fields: [{ key: "ludwtSingle", t: "einzeln", o: BOOL, dv: "0" }, { key: "listRepeat", t: "wiederholen", o: BOOL, dv: "1" }] },
-  { id: "themeshown", label: "Designs im Hauptfenster (Auswahl)", keys: ["themeShown", "themeTabs", "themeOrder"] },
+  { id: "themeshown", label: "Designs im Hauptfenster (Auswahl)", keys: ["themeShown", "themeTabs", "themeOrder", "themeTabList"] },
   { id: "skip", label: "Springen zurück / vor (Sekunden)", keys: ["skipSec", "skipBack", "skipFwd"],
     fields: [{ key: "skipBack", t: "zurück", n: [1, 300], dv: "15" }, { key: "skipFwd", t: "vor", n: [1, 300], dv: "15" }] },
   { id: "fehl", label: "Fehlend: Prüfung, Hinweis und Anzeige", keys: ["fehlMode", "fehlNotify", "fehlAll"], rx: /^fehl[TL]_/, fields: [{ key: "fehlNotify", t: "Hinweis", o: BOOL, dv: "0" }] },

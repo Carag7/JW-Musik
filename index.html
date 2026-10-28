@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="skins.css" />
   <link rel="stylesheet" href="skins2.css" />
+  <link rel="stylesheet" href="covers.css" />
   <script src="password.js"></script>
 </head>
 <body>
@@ -25,9 +26,9 @@
       <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Passwort" required />
       <label class="remember"><input id="showPw" type="checkbox" /> Passwort anzeigen</label>
       <label class="remember"><input id="rememberLogin" type="checkbox" checked /> Login im Browser speichern</label>
+      <label id="loginAutoRow" class="set-row check login-auto" hidden><input id="loginAuto" type="checkbox" /> <span id="loginAutoIcon" class="la-ico"></span> <span id="loginAutoText"></span></label>
       <button class="chip" type="submit">Öffnen</button>
       <p id="loginError" class="login-error" hidden>Passwort stimmt nicht</p>
-      <label id="loginAutoRow" class="set-row check login-auto" hidden><input id="loginAuto" type="checkbox" /> <span id="loginAutoIcon" class="la-ico"></span> <span id="loginAutoText"></span></label>
       <button id="loginMore" class="login-more" type="button" aria-expanded="false">▸ Weitere Optionen</button>
       <div id="loginExtra" class="login-extra" hidden>
         <p class="ap-title">Voreinstellung für dieses Gerät <small>(freiwillig)</small></p>
@@ -103,6 +104,7 @@
         </div>
         <button id="playerToggle" class="ghost player-icon" type="button" aria-label="Player" aria-pressed="true"></button>
         <button id="lyricSearchToggle" class="ghost" type="button" aria-label="im Liedtext suchen"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="10" cy="10" r="6.5"/><path d="M15 15l6 6"/></svg></button>
+        <button id="coverGalleryBtn" class="ghost cover-gal-btn" type="button" aria-label="Cover-Galerie" title="Cover-Galerie"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="currentColor"><path d="M3 3h8v8H3zm10 0h8v8h-8zM3 13h8v8H3zm10 0h8v8h-8z"/></svg></button>
       </header>
 
       <div id="playlistBar" class="playlist-bar" hidden>
@@ -379,7 +381,8 @@
         <p class="ap-title">Anzeige und Werkzeuge</p>
         <label class="set-row">Schriftgröße Auswahlfenster <input id="advListSize" type="number" min="10" max="48" inputmode="numeric" /></label>
         <label class="set-row">Schriftgröße Karaoke-Text <input id="advScale" type="number" min="10" max="200" inputmode="numeric" /></label>
-        <label class="set-row">Ausrichtung Karaoke-Text <select id="advAlign"><option value="skin">wie das Design</option><option value="left">linksbündig</option><option value="center">Mitte</option><option value="right">rechtsbündig</option></select></label>
+        <label class="set-row">Ausrichtung Karaoke-Text (Design = wie vom Design vorgegeben) <select id="advAlign"><option value="skin">Design</option><option value="left">links</option><option value="center">Mitte</option><option value="right">rechts</option></select></label>
+        <label class="set-row">Cover anzeigen <select id="advCover"><option value="neu">Neu</option><option value="alt">Alt</option></select></label>
         <label class="set-row">Breite Auswahlfenster (px) <input id="advSidebar" type="number" min="180" max="1200" inputmode="numeric" /></label>
         <label class="set-row two"><span class="lbl">Abstand oben<br>Hauptfenster (px)</span> <input id="advTopMain" type="number" min="0" max="300" inputmode="numeric" /></label>
         <label class="set-row two"><span class="lbl">Abstand oben<br>Einstellungen (px)</span> <input id="advTopSet" type="number" min="0" max="300" inputmode="numeric" /></label>
@@ -500,5 +503,6 @@
   <button id="remoteBadge" class="rm-badge" type="button" data-st="ok" hidden><i class="rb-dot"></i><span class="rb-txt"></span></button>
   <script src="app.js"></script>
   <script src="remote.js"></script>
+  <script src="covers.js"></script>
 </body>
 </html>

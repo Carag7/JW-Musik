@@ -51,10 +51,50 @@
   const getJ = (k, d) => { try { return JSON.parse(get(k, "")) ?? d; } catch { return d; } };
 
   /* Reihenfolge und Reiter (Normal / Tesla / Handy) pro Design, vom Benutzer einstellbar */
-  const TABS = [["normal", "Normal"], ["pro", "Professionell"], ["tesla", "Tesla"], ["handy", "Handy"]];
+  const BASE_TABS = [["normal", "Normal"], ["pro", "Professionell"], ["tesla", "Tesla"], ["handy", "Handy"]];
+  /* Reiterliste: standardmäßig die vier Reiter; der Benutzer kann eigene anlegen, umbenennen und entfernen */
+  const tabsList = () => {
+    const a = getJ("themeTabList", null);
+    const ok = Array.isArray(a) ? a.filter((x) => Array.isArray(x) && typeof x[0] === "string" && typeof x[1] === "string" && x[0] && x[1].trim()) : [];
+    return ok.length ? ok : BASE_TABS.map((x) => x.slice());
+  };
+  const saveTabs = (l) => put("themeTabList", JSON.stringify(l));
+  function addTab(name) {
+    name = String(name || "").trim().slice(0, 24); if (!name) return null;
+    const l = tabsList(); const id = "u" + Date.now().toString(36);
+    l.push([id, name]); saveTabs(l); return id;
+  }
+  function removeTab(id) {
+    const l = tabsList(); if (l.length <= 1) return false;
+    saveTabs(l.filter((x) => x[0] !== id));
+    const m = tabMap(); Object.keys(m).forEach((k) => { if (m[k] === id) delete m[k]; }); put("themeTabs", JSON.stringify(m));
+    return true;
+  }
+  function renameTab(id, name) { name = String(name || "").trim().slice(0, 24); if (!name) return; saveTabs(tabsList().map((x) => (x[0] === id ? [id, name] : x))); }
+  function resetTabs() { try { localStorage.removeItem("themeTabList"); } catch { /* egal */ } }
   const defTab = (t) => (t.grp === "Tesla" ? "tesla" : t.grp === "Handy" ? "handy" : t.grp === "Pro" ? "pro" : "normal");
   const tabMap = () => { const m = getJ("themeTabs", null); return m && typeof m === "object" && !Array.isArray(m) ? m : {}; };
-  const tabOf = (t) => { const v = tabMap()[t.id]; return TABS.some((x) => x[0] === v) ? v : defTab(t); };
+  const tabOf = (t) => {
+    const l = tabsList(); const v = tabMap()[t.id];
+    if (l.some((x) => x[0] === v)) return v;
+    const d = defTab(t);
+    return l.some((x) => x[0] === d) ? d : l[0][0];
+  };
+  /* Gruppen: Designs mit gleichem Aufbau, die sich nur in der Farbe unterscheiden */
+  const FAMILIES = [
+    { id: "f-pro", name: "Aurora Pro", ids: ["sk-pro", "sk-pro-gold", "sk-pro-rose", "sk-pro-ozean", "sk-pro-smaragd", "sk-pro-platin"], hint: "Glas, schwebender Player – 6 Farben" },
+    { id: "f-jwl", name: "Bibliothek", ids: ["sk-jwl", "sk-jwl-petrol", "sk-jwl-beere", "sk-jwl-nacht", "sk-jwl-schiefer", "sk-jwl-burgund"], hint: "Flach, Liste mit Trennlinien – 2 weiße und 3 dunkle Varianten" },
+    { id: "f-txk", name: "Tesla Kacheln", ids: ["tx-blau", "tx-karte", "tx-energie"], hint: "Tesla-Bildschirm-Look – 3 Farben" },
+    { id: "f-farb", name: "Farbdesigns", ids: ["klassisch", "graphit", "tag", "amber", "mitternacht", "wald", "rubin", "himmel", "sand"], hint: "gleiches Aussehen, nur andere Farben" }
+  ];
+  const famOf = (t) => FAMILIES.find((f) => f.ids.includes(t.id));
+  const shortName = (t, f) => {
+    if (!f) return t.name;
+    if (f.id === "f-farb") return t.name;
+    if (t.name === f.name) return "Original";
+    const base = f.id === "f-pro" ? "Aurora " : f.id === "f-jwl" ? "Bibliothek " : "Tesla ";
+    return t.name.startsWith(base) ? t.name.slice(base.length) : t.name;
+  };
   function ordered() {
     const o = getJ("themeOrder", null);
     const ids = Array.isArray(o) ? o.filter(byId) : [];
@@ -73,10 +113,12 @@
     [all[a], all[b]] = [all[b], all[a]];
     put("themeOrder", JSON.stringify(all));
   }
-  function resetOrder() { try { localStorage.removeItem("themeOrder"); localStorage.removeItem("themeTabs"); } catch { /* egal */ } }
+  function resetOrder() { try { localStorage.removeItem("themeOrder"); localStorage.removeItem("themeTabs"); localStorage.removeItem("themeTabList"); } catch { /* egal */ } }
 
   /* Welche Designs vorne (◐ und Auswahlfenster) angezeigt werden */
+  const allOn = () => get("themeAll", "0") === "1";
   function shownIds() {
+    if (allOn()) return THEMES.map((t) => t.id);
     const a = getJ("themeShown", null);
     let ids = Array.isArray(a) ? a.filter(byId) : REC_SHOWN.slice();
     if (!ids.length) ids = REC_SHOWN.slice();
@@ -100,33 +142,78 @@
     root.replaceChildren();
     const shown = new Set(shownIds());
     const all = ordered();
-    root.append(h("small", "set-hint", "Haken = im Hauptfenster (◐) anzeigen. Reiter = in welchem Reiter das Design im Auswahlfenster steht. Mit ▲ ▼ änderst du die Reihenfolge."));
-    TABS.forEach(([tk, tn]) => {
+    const TL = tabsList();
+    const again = () => mountShown(root);
+    root.append(h("small", "set-hint", "Haken = im Hauptfenster (◐) anzeigen. Reiter = in welchem Reiter das Design im Auswahlfenster steht. Mit ▲ ▼ änderst du die Reihenfolge. Gruppen (gleicher Aufbau, andere Farben) lassen sich auf- und zuklappen."));
+    if (allOn()) root.append(h("small", "set-hint theme-all-note", "Test-Modus „alle Designs“ ist an – die Haken gelten erst wieder, wenn er ausgeschaltet ist."));
+
+    /* Reiter verwalten */
+    const mg = h("div", "tab-manager");
+    mg.append(h("p", "ap-title", "Reiter verwalten"));
+    TL.forEach(([id, name]) => {
+      const r = h("div", "set-row tab-mg-row");
+      const inp = document.createElement("input"); inp.type = "text"; inp.value = name; inp.maxLength = 24; inp.setAttribute("aria-label", "Name des Reiters");
+      inp.addEventListener("change", () => { renameTab(id, inp.value); again(); });
+      const del = h("button", "ghost shown-mv", "✕"); del.type = "button"; del.title = "Reiter entfernen"; del.setAttribute("aria-label", "Reiter entfernen"); del.disabled = TL.length <= 1;
+      del.addEventListener("click", () => { if (removeTab(id)) again(); });
+      r.append(inp, del); mg.append(r);
+    });
+    const nr = h("div", "set-row tab-mg-row");
+    const ni = document.createElement("input"); ni.type = "text"; ni.placeholder = "Neuer Reiter, z. B. Auto"; ni.maxLength = 24;
+    const nb = h("button", "chip", "＋ Reiter anlegen"); nb.type = "button";
+    const doAdd = () => { if (addTab(ni.value)) again(); };
+    nb.addEventListener("click", doAdd); ni.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); doAdd(); } });
+    nr.append(ni, nb); mg.append(nr);
+    mg.append(h("small", "set-hint", "Entfernst du einen Reiter, wandern seine Designs in ihren ursprünglichen Reiter (oder in den ersten). Mindestens ein Reiter bleibt."));
+    root.append(mg);
+
+    const rowFor = (t, list, idx) => {
+      const row = h("div", "set-row shown-row2");
+      const lab = h("label", "shown-lab");
+      const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = shown.has(t.id); cb.disabled = allOn();
+      cb.addEventListener("change", () => { setShown(t.id, cb.checked); });
+      const sw = h("span", "theme-sw"); t.sw.forEach((col) => { const i = h("i"); i.style.background = col; sw.append(i); });
+      lab.append(cb, sw, document.createTextNode(" " + t.name));
+      const sel = document.createElement("select"); sel.className = "shown-tab"; sel.setAttribute("aria-label", "Reiter");
+      TL.forEach(([k, n]) => { const o = document.createElement("option"); o.value = k; o.textContent = n; sel.append(o); });
+      sel.value = tabOf(t);
+      sel.addEventListener("change", () => { setTab(t.id, sel.value); again(); });
+      const up = h("button", "ghost shown-mv", "▲"); up.type = "button"; up.disabled = idx === 0; up.setAttribute("aria-label", "nach oben");
+      const dn = h("button", "ghost shown-mv", "▼"); dn.type = "button"; dn.disabled = idx === list.length - 1; dn.setAttribute("aria-label", "nach unten");
+      up.addEventListener("click", () => { move(t.id, -1); again(); });
+      dn.addEventListener("click", () => { move(t.id, 1); again(); });
+      row.append(lab, sel, up, dn);
+      return row;
+    };
+    TL.forEach(([tk, tn]) => {
       const list = all.filter((t) => tabOf(t) === tk);
       root.append(h("p", "ap-title shown-grp", `Reiter „${tn}“ (${list.length})`));
+      const doneFam = new Set();
       list.forEach((t, idx) => {
-        const row = h("div", "set-row shown-row2");
-        const lab = h("label", "shown-lab");
-        const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = shown.has(t.id);
-        cb.addEventListener("change", () => { setShown(t.id, cb.checked); });
-        const sw = h("span", "theme-sw"); t.sw.forEach((col) => { const i = h("i"); i.style.background = col; sw.append(i); });
-        lab.append(cb, sw, document.createTextNode(" " + t.name));
-        const sel = document.createElement("select"); sel.className = "shown-tab"; sel.setAttribute("aria-label", "Reiter");
-        TABS.forEach(([k, n]) => { const o = document.createElement("option"); o.value = k; o.textContent = n; sel.append(o); });
-        sel.value = tk;
-        sel.addEventListener("change", () => { setTab(t.id, sel.value); mountShown(root); });
-        const up = h("button", "ghost shown-mv", "▲"); up.type = "button"; up.disabled = idx === 0; up.setAttribute("aria-label", "nach oben");
-        const dn = h("button", "ghost shown-mv", "▼"); dn.type = "button"; dn.disabled = idx === list.length - 1; dn.setAttribute("aria-label", "nach unten");
-        up.addEventListener("click", () => { move(t.id, -1); mountShown(root); });
-        dn.addEventListener("click", () => { move(t.id, 1); mountShown(root); });
-        row.append(lab, sel, up, dn);
-        root.append(row);
+        const f = famOf(t);
+        const mem = f ? list.filter((x) => famOf(x) === f) : [];
+        if (f && mem.length >= 2) {
+          if (doneFam.has(f.id)) return;
+          doneFam.add(f.id);
+          const d = document.createElement("details"); d.className = "shown-fam";
+          d.open = get("themeFam_" + f.id, "0") === "1";
+          d.addEventListener("toggle", () => put("themeFam_" + f.id, d.open ? "1" : "0"));
+          const s = document.createElement("summary");
+          const all = document.createElement("input"); all.type = "checkbox"; all.disabled = allOn(); all.title = "Alle Farben dieser Gruppe vorne anzeigen";
+          all.checked = mem.every((x) => shown.has(x.id));
+          all.addEventListener("click", (e) => e.stopPropagation());
+          all.addEventListener("change", () => { mem.forEach((x) => { const cur = new Set(shownIds()); if (all.checked) cur.add(x.id); else cur.delete(x.id); if (!cur.size) cur.add(x.id); put("themeShown", JSON.stringify(THEMES.filter((q) => cur.has(q.id)).map((q) => q.id))); }); again(); });
+          s.append(all, document.createTextNode(` ${f.name} (${mem.length} Farben)`));
+          d.append(s);
+          mem.forEach((x) => d.append(rowFor(x, list, list.indexOf(x))));
+          root.append(d);
+        } else root.append(rowFor(t, list, idx));
       });
     });
     const rec = h("button", "chip", "Empfehlung wählen"); rec.type = "button";
-    rec.addEventListener("click", () => { put("themeShown", JSON.stringify(REC_SHOWN)); mountShown(root); });
+    rec.addEventListener("click", () => { put("themeShown", JSON.stringify(REC_SHOWN)); again(); });
     const rst = h("button", "chip", "Reihenfolge und Reiter zurücksetzen"); rst.type = "button";
-    rst.addEventListener("click", () => { resetOrder(); mountShown(root); });
+    rst.addEventListener("click", () => { resetOrder(); again(); });
     root.append(rec, rst);
   }
 
@@ -233,14 +320,32 @@
     const redraw = () => { apply(true); mountUi(root); };
 
     root.append(h("p", "ap-title", "Design (für dieses Gerät)"));
-    /* Reiter und Reihenfolge der Designs bearbeiten (gleiche Liste wie unter Allgemein → Voreinstellungen) */
-    const ed = document.createElement("details"); ed.className = "theme-edit";
-    ed.open = get("themeEditOpen", "1") === "1";
-    ed.addEventListener("toggle", () => put("themeEditOpen", ed.open ? "1" : "0"));
-    const sm = document.createElement("summary"); sm.textContent = "✎ Designs bearbeiten: Reiter zuordnen und Reihenfolge ändern"; ed.append(sm);
-    const edBody = h("div", "theme-edit-body"); ed.append(edBody);
-    mountShown(edBody);
-    root.append(ed);
+    /* drei Reiter: Wählen · Anzeigen & Reiter · Alle Designs */
+    let sub = get("themeSub", "wahl"); if (!["wahl", "anz", "alle"].includes(sub)) sub = "wahl";
+    const st = h("div", "set-tabs sub-tabs theme-subtabs"); st.setAttribute("role", "tablist");
+    [["wahl", "Wählen"], ["anz", "Anzeigen & Reiter"], ["alle", "Alle Designs"]].forEach(([k, n]) => {
+      const b = h("button", "seg-btn", n); b.type = "button"; b.setAttribute("aria-pressed", String(k === sub));
+      b.addEventListener("click", () => { put("themeSub", k); mountUi(root); });
+      st.append(b);
+    });
+    root.append(st);
+    if (sub === "anz") {
+      const all = h("label", "set-row check");
+      const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = allOn(); cb.id = "themeAllOpt";
+      cb.addEventListener("change", () => { put("themeAll", cb.checked ? "1" : "0"); mountUi(root); });
+      all.append(cb, document.createTextNode(" Test: alle Designs einschalten"));
+      root.append(all);
+      root.append(h("small", "set-hint", "Mit Haken wechselt das ◐ oben (bei aktiver Lupe) durch alle Designs. Ohne Haken gelten nur die unten angehakten."));
+      const edBody = h("div", "theme-edit-body"); root.append(edBody);
+      mountShown(edBody);
+      return;
+    }
+    if (sub === "alle") {
+      root.append(h("small", "set-hint", "Alle Designs ansehen: Tippen wählt das Design sofort (Wechsel auf „Fest“)."));
+      const holder = h("div", "theme-picker-holder theme-embedded"); root.append(holder);
+      const inner = buildPicker(holder, { onPick: () => { inner.paint(); } });
+      return;
+    }
     const modes = h("div", "theme-modes");
     [["manual", "Fest"], ["device", "Automatisch: wie Gerät / Tesla"], ["sun", "Automatisch: Sonnenaufgang / -untergang"]].forEach(([id, label]) => {
       const lab = h("label", "set-row check");
@@ -259,24 +364,16 @@
 
     if (c.mode === "manual") {
       const seg = h("div", "theme-seg"); seg.id = "themeSeg";
-      const shownNow = new Set(shownIds());
-      THEMES.forEach((t) => {
-        const wrap = h("span", "theme-opt-wrap");
-        const cbx = document.createElement("input"); cbx.type = "checkbox"; cbx.checked = shownNow.has(t.id); cbx.title = "Im Hauptfenster anzeigen";
-        cbx.addEventListener("change", () => setShown(t.id, cbx.checked));
+      shownThemes().forEach((t) => {
         const b = h("button", "seg-btn theme-opt", ""); b.type = "button"; b.dataset.theme = t.id;
         const sw = h("span", "theme-sw"); t.sw.forEach((col) => { const i = h("i"); i.style.background = col; sw.append(i); });
         b.append(sw, document.createTextNode(t.name)); b.title = t.hint;
         b.setAttribute("aria-pressed", String(t.id === c.theme));
         b.addEventListener("click", () => { put("theme", t.id); redraw(); });
-        wrap.append(cbx, b);
-        seg.append(wrap);
+        seg.append(b);
       });
       root.append(seg);
-      root.append(h("small", "set-hint", "Häkchen = Design wird vorne im Hauptfenster (◐ und Auswahl) angeboten."));
-      const all = h("button", "chip", "Alle Designs ansehen (Reiter Normal / Professionell / Tesla / Handy)"); all.type = "button";
-      all.addEventListener("click", () => openPicker());
-      root.append(all);
+      root.append(h("small", "set-hint", "Hier stehen die vorne angebotenen Designs. Alle anderen findest du im Reiter „Alle Designs“, welche vorne erscheinen, stellst du unter „Anzeigen & Reiter“ ein."));
     } else {
       root.append(h("p", "set-hint", "Welche Designs sollen am Tag und welche in der Nacht verwendet werden? Bei mehreren Häkchen gilt das erste in der Liste; das ◐ oben schaltet dann ebenfalls durch."));
       const tbl = h("table", "theme-tbl");
@@ -364,7 +461,7 @@
   }
 
   /* Auswahl aller Designs als Fenster (bei aktiver Lupe: Design-Taste ca. 1 s gedrückt halten) */
-  /* Auswahlfenster: alle Designs in drei Reitern (Normal / Tesla / Handy) mit kleiner Vorschau */
+  /* Auswahlfenster: alle Designs in Reitern mit kleiner Vorschau; Designs mit gleichem Aufbau sind als Gruppe mit Farbauswahl zusammengefasst */
   const subOf = (t) => (t.anim ? "Animiert" : t.skin ? "Skins (Tasten, Regler, Menüs)" : "Farbdesigns");
   function preview(th) {
     const prev = h("span", "theme-prev");
@@ -376,49 +473,87 @@
     prev.append(card2, bar, dot, txt);
     return prev;
   }
+  function famCard(f, mem, cur, pick) {
+    const card = h("div", "theme-fam");
+    const active = mem.find((x) => x.id === cur) || mem[0];
+    const head = h("div", "theme-fam-head");
+    head.append(preview(active), (() => { const w = h("span", "theme-fam-txt"); w.append(h("b", "", f.name), h("small", "", f.hint + (mem.some((x) => x.id === cur) ? ` · aktiv: ${shortName(active, f)}` : ""))); return w; })());
+    card.append(head);
+    const chips = h("div", "theme-fam-chips");
+    mem.forEach((x) => {
+      const b = h("button", "theme-chip"); b.type = "button"; b.title = x.hint;
+      if (x.id === cur) b.setAttribute("aria-pressed", "true");
+      const sw = h("span", "theme-sw"); x.sw.forEach((col) => { const i = h("i"); i.style.background = col; sw.append(i); });
+      b.append(sw, document.createTextNode(shortName(x, f)));
+      b.addEventListener("click", () => pick(x));
+      chips.append(b);
+    });
+    card.append(chips);
+    return card;
+  }
+  function renderThemeList(body, tab, cur, pick) {
+    const list = ordered().filter((t) => tabOf(t) === tab);
+    const done = new Set(); let last = "";
+    if (!list.length) body.append(h("p", "set-hint", "In diesem Reiter sind noch keine Designs. Unter „Anzeigen & Reiter“ kannst du Designs hierher verschieben."));
+    list.forEach((th) => {
+      const f = famOf(th);
+      const mem = f ? list.filter((x) => famOf(x) === f) : [];
+      const grouped = f && mem.length >= 2;
+      if (grouped && done.has(f.id)) return;
+      if (tab === "normal" && !customOrder() && subOf(th) !== last && !(grouped && f.id === "f-farb" && last === "Farbdesigns")) { last = subOf(th); body.append(h("p", "theme-sub", last)); }
+      if (grouped) { done.add(f.id); body.append(famCard(f, mem, cur, pick)); return; }
+      const b = h("button", "theme-pick"); b.type = "button";
+      if (th.id === cur) b.setAttribute("aria-pressed", "true");
+      b.append(preview(th), h("span", "theme-pick-name", th.name), h("small", "theme-pick-hint", th.hint));
+      b.addEventListener("click", () => pick(th));
+      body.append(b);
+    });
+  }
+  /* baut Reiter + Liste in einen Behälter (Fenster oder eingebettet im Einstellungsfenster) */
+  function buildPicker(card, opts) {
+    opts = opts || {};
+    const cur = (cfg().mode === "manual" ? cfg().theme : "");
+    const curTh = byId(cur);
+    const TL = tabsList();
+    let tab = curTh ? tabOf(curTh) : (get("themeTab", "") || "normal");
+    if (!TL.some((x) => x[0] === tab)) tab = TL[0][0];
+    const tabs = h("div", "theme-tabs"); tabs.setAttribute("role", "tablist");
+    const body = h("div", "theme-picker-body");
+    const pick = (th) => { put("themeMode", "manual"); put("theme", th.id); apply(true); if (opts.onPick) opts.onPick(th); };
+    const paint = () => {
+      tabs.querySelectorAll("button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.k === tab)));
+      body.replaceChildren();
+      renderThemeList(body, tab, cfg().mode === "manual" ? cfg().theme : "", pick);
+    };
+    TL.forEach(([k, n]) => { const b = h("button", "theme-tab", n); b.type = "button"; b.dataset.k = k; b.setAttribute("role", "tab"); b.addEventListener("click", () => { tab = k; put("themeTab", k); paint(); }); tabs.append(b); });
+    card.append(tabs, body);
+    paint();
+    return { paint };
+  }
   function openPicker() {
     let box = document.getElementById("themePicker");
     if (box) box.remove();
     box = h("div", "theme-picker"); box.id = "themePicker";
     const card = h("div", "theme-picker-card");
     card.append(h("p", "theme-picker-title", "Design wählen"));
-    const cur = (cfg().mode === "manual" ? cfg().theme : "");
-    const curTh = byId(cur);
-    let tab = curTh ? tabOf(curTh) : (get("themeTab", "") || (document.documentElement.dataset.theme && /^(tx-)/.test(cur) ? "tesla" : "normal"));
-    if (!TABS.some((x) => x[0] === tab)) tab = "normal";
-    const tabs = h("div", "theme-tabs"); tabs.setAttribute("role", "tablist");
-    const body = h("div", "theme-picker-body");
-    const paint = () => {
-      tabs.querySelectorAll("button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.k === tab)));
-      body.replaceChildren();
-      let last = "";
-      ordered().filter((t) => tabOf(t) === tab).forEach((th) => {
-        if (tab === "normal" && !customOrder() && subOf(th) !== last) { last = subOf(th); body.append(h("p", "theme-sub", last)); }
-        const b = h("button", "theme-pick"); b.type = "button";
-        if (th.id === cur) b.setAttribute("aria-pressed", "true");
-        b.append(preview(th), h("span", "theme-pick-name", th.name), h("small", "theme-pick-hint", th.hint));
-        b.addEventListener("click", () => { put("themeMode", "manual"); put("theme", th.id); apply(true); box.remove(); });
-        body.append(b);
-      });
-    };
-    TABS.forEach(([k, t]) => { const b = h("button", "theme-tab", t); b.type = "button"; b.dataset.k = k; b.setAttribute("role", "tab"); b.addEventListener("click", () => { tab = k; put("themeTab", k); paint(); }); tabs.append(b); });
-    card.append(tabs, body);
+    const close = () => box.remove();
+    const holder = h("div", "theme-picker-holder"); card.append(holder);
+    let inner = buildPicker(holder, { onPick: close });
     const ed = h("button", "chip theme-pick-edit", "✎ Reiter und Reihenfolge bearbeiten"); ed.type = "button";
     let editing = false;
     ed.addEventListener("click", () => {
       editing = !editing;
       ed.textContent = editing ? "✔ Fertig" : "✎ Reiter und Reihenfolge bearbeiten";
-      tabs.hidden = editing;
-      if (editing) { body.replaceChildren(); mountShown(body); } else paint();
+      holder.replaceChildren();
+      if (editing) mountShown(holder); else inner = buildPicker(holder, { onPick: close });
     });
     card.append(ed);
     const x = h("button", "theme-pick-close", "Schließen"); x.type = "button";
-    x.addEventListener("click", () => box.remove());
+    x.addEventListener("click", close);
     card.append(x);
     box.append(card);
-    box.addEventListener("click", (e) => { if (e.target === box) box.remove(); });
+    box.addEventListener("click", (e) => { if (e.target === box) close(); });
     document.body.append(box);
-    paint();
   }
 
   const api = { THEMES, REC, REC_SHOWN, shownIds, mountShown, resolve, apply, cycle, mountUi, sunTimes, cfg, openPicker, onChange: null };

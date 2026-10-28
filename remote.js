@@ -304,7 +304,7 @@
       box.append(h("p", "rm-hint", "Warte auf das andere Gerät …"));
       const b = h("button", "chip", "Abbrechen"); b.type = "button"; b.onclick = () => end(true, "Fernsteuerung abgebrochen."); box.append(b);
     } else if (mode === "controller") {
-      box.append(h("h2", "", "Steuern"));
+      const headRow = h("div", "rm-headrow"); headRow.append(h("h2", "", "Steuern")); box.append(headRow);
       box.append(h("p", "rm-hint", "Code vom anderen Gerät:"));
       const inp = document.createElement("input"); inp.id = "rmCode"; inp.type = "text"; inp.autocomplete = "off"; inp.inputMode = "numeric"; inp.maxLength = 4; inp.pattern = "[0-9]*"; inp.placeholder = "0000"; inp.className = "rm-input";
       const msg = h("p", "rm-hint", ""); msg.id = "rmMsg";
@@ -312,7 +312,7 @@
       const look = () => pendingCode().then((c) => { if (c && inp.isConnected && inp.dataset.typed !== "1") { inp.value = c; msg.textContent = "Code vom anderen Gerät gefunden – nur noch bestätigen."; } else if (!c && inp.isConnected && inp.dataset.typed !== "1") msg.textContent = "Warte auf den Code vom anderen Gerät … (wird alle paar Sekunden abgefragt)"; });
       inp.addEventListener("input", () => { inp.dataset.typed = "1"; });
       refresh.onclick = () => { inp.dataset.typed = ""; msg.textContent = "Frage ab …"; look(); };
-      const synRow = h("div", "rm-synrow"); synRow.append(refresh); box.append(synRow, inp);
+      headRow.append(refresh); box.append(inp);
       const ok = h("button", "chip primary-chip", "Bestätigen"); ok.type = "button"; ok.onclick = () => connect(inp.value);
       box.append(ok, msg);
       look(); R.modalT = setInterval(look, 2500);
