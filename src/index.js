@@ -3,6 +3,8 @@
  * Aufgaben:
  *  - /api/refresh        startet den GitHub-Workflow (Button "Jetzt aktualisieren")
  *  - /api/users          Liste aller Benutzer (Name, Passwort ja/nein) – nur mit WRITE_KEY
+ *  - /api/covers         Verzeichnis der neuen Cover (R2-Ordner covers_edel/, Dateien 003.jpg usw.)
+ *  - /api/covers-admin   Cover-Dateien zuordnen und umbenennen (nur mit WRITE_KEY)
  *  - /api/media-index    Verzeichnis aller Dateien in R2 (Karaoke-MP3, Meeting-MP3, Videos, LRC)
  *  - /api/r2-plan, /api/r2-run   einmaliges Aufräumen von R2 (nur mit WRITE_KEY)
  *  - /sync/<name>        Favoriten-Speicher und Liedtext-Zeiten (lrc-003, lrcm-003)
@@ -36,6 +38,8 @@ export default {
     if (request.method === "OPTIONS" && (path.startsWith("/api/") || path.startsWith("/sync/") || path.startsWith("/remote/") || path.startsWith("/media/"))) {
       return new Response(null, { headers: CORS });
     }
+    if (path === "/api/covers") return handleCovers(env);
+    if (path === "/api/covers-admin") return handleCoversAdmin(request, env, url);
     if (path === "/api/refresh") return handleRefresh(request, env);
     if (path === "/api/users") return handleUsers(request, env);
     if (path === "/api/media-index") return handleIndex(request, env, url);
@@ -48,7 +52,8 @@ export default {
 
     if (path.startsWith("/media/")) {
       const key = decodeURIComponent(path.slice(7));
-      if (/^(favoriten|sync)\//.test(key) || key.includes("..") || key.split("/").some((p) => p.startsWith("_")) || !/\.(mp3|m4a|aac|wav|mp4|m4v|webm|mov|lrc)$/i.test(key)) return new Response("Not Found", { status: 404, headers: CORS });
+      const isCover = /^covers_edel\/[^/]+\.(jpe?g|png|webp|gif)$/i.test(key);
+      if (/^(favoriten|sync)\//.test(key) || key.includes("..") || key.split("/").some((p) => p.startsWith("_")) || (!isCover && !/\.(mp3|m4a|aac|wav|mp4|m4v|webm|mov|lrc)$/i.test(key))) return new Response("Not Found", { status: 404, headers: CORS });
       return serveR2(env, [key], request);
     }
 
@@ -66,7 +71,7 @@ export default {
 
 const HIGH_MIN = 500;
 
-const MIME = { mp3: "audio/mpeg", m4a: "audio/mp4", aac: "audio/aac", wav: "audio/wav", mp4: "video/mp4", m4v: "video/mp4", webm: "video/webm", mov: "video/quicktime", lrc: "text/plain; charset=utf-8" };
+const MIME = { jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp", gif: "image/gif", mp3: "audio/mpeg", m4a: "audio/mp4", aac: "audio/aac", wav: "audio/wav", mp4: "video/mp4", m4v: "video/mp4", webm: "video/webm", mov: "video/quicktime", lrc: "text/plain; charset=utf-8" };
 
 async function serveR2(env, keys, request) {
   let key = null, head = null;
@@ -631,4 +636,89 @@ async function handleRefresh(request, env) {
   const hint = res.status === 422 ? " (Der Workflow braucht den Trigger „workflow_dispatch“ und der Branch muss „" + ref + "“ heißen.)"
     : res.status === 403 || res.status === 404 ? " (Dem Token fehlt wohl die Berechtigung „Actions: Read and write“.)" : "";
   return reply({ ok: false, fehler: `GitHub antwortete ${res.status}: ${text}${hint}` }, 502);
+}
+
+
+/* ---------- Cover (R2-Ordner covers_edel/) ---------- */
+
+const COVER_DIR = "covers_edel/";
+const COVER_OK = /^covers_edel\/0*(\d{1,3})\.(jpe?g|png|webp)$/i;
+let coverCache = { t: 0, data: null };
+
+async function listCovers(env) {
+  const out = []; let cursor;
+  do {
+    const r = await env.MUSIK.list({ prefix: COVER_DIR, cursor, limit: 1000 });
+    out.push(...r.objects); cursor = r.truncated ? r.cursor : undefined;
+  } while (cursor);
+  return out;
+}
+
+/* öffentlich: Nummer → Schlüssel, nur ordentlich benannte Dateien (003.jpg) */
+async function handleCovers(env) {
+  try {
+    if (!coverCache.data || Date.now() - coverCache.t > 60000) {
+      const objs = await listCovers(env);
+      const map = {}; let other = 0;
+      for (const o of objs) {
+        const m = COVER_OK.exec(o.key);
+        if (m) map[String(parseInt(m[1], 10))] = o.key; else if (o.key !== COVER_DIR) other++;
+      }
+      coverCache = { t: Date.now(), data: { ok: true, anzahl: Object.keys(map).length, nichtBenannt: other, map } };
+    }
+    return new Response(JSON.stringify(coverCache.data), { headers: { ...CORS, "content-type": "application/json; charset=utf-8", "cache-control": "public, max-age=60" } });
+  } catch (err) {
+    return json({ ok: false, fehler: String(err && err.message || err) }, CORS, 500);
+  }
+}
+
+const normTxt = (x) => String(x || "").toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[’'`´]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+
+/* Vorschlag je Datei: Nummer aus dem Dateinamen oder Titel im Dateinamen */
+export function guessCover(name, songs) {
+  const base = normTxt(name.replace(/\.[a-z0-9]+$/i, ""));
+  const nums = (base.match(/\d+/g) || []).map((n) => parseInt(n, 10)).filter((n) => n > 0 && n < 1000);
+  const byNum = new Map(songs.map((s) => [Number(s.number), s]));
+  // 1) Titel im Dateinamen (eindeutig, mindestens zwei Wörter oder 8 Zeichen)
+  const hits = songs.filter((s) => { const t = normTxt(s.title); return t.length >= 8 && (base.includes(t) || (base.length >= 8 && t.includes(base))); });
+  if (hits.length === 1) return { nummer: Number(hits[0].number), sicher: true, grund: "Titel im Dateinamen" };
+  // 2) genau eine Zahl im Namen
+  const uniq = [...new Set(nums)];
+  if (uniq.length === 1 && byNum.has(uniq[0])) return { nummer: uniq[0], sicher: true, grund: "Nummer im Dateinamen" };
+  if (uniq.length > 1) { const c = uniq.filter((n) => byNum.has(n)); if (c.length === 1) return { nummer: c[0], sicher: false, grund: "eine von mehreren Zahlen" }; }
+  return { nummer: null, sicher: false, grund: "" };
+}
+
+async function handleCoversAdmin(request, env, url) {
+  const reply = (obj, status = 200) => json(obj, CORS, status);
+  if (!env.WRITE_KEY) return reply({ ok: false, fehler: "In Cloudflare fehlt das Secret WRITE_KEY." }, 403);
+  if (request.headers.get("x-write-key") !== env.WRITE_KEY) return reply({ ok: false, fehler: "Schlüssel falsch." }, 401);
+  if (request.method === "GET") {
+    let songs = [];
+    try { songs = await (await env.ASSETS.fetch(new Request(new URL("/songs.json", url)))).json(); } catch { /* ohne Vorschläge */ }
+    const objs = (await listCovers(env)).filter((o) => o.key !== COVER_DIR);
+    const dateien = objs.map((o) => {
+      const name = o.key.slice(COVER_DIR.length);
+      const ok = COVER_OK.test(o.key);
+      return { key: o.key, name, groesse: o.size, benannt: ok, vorschlag: ok ? null : guessCover(name, Array.isArray(songs) ? songs : []) };
+    });
+    return reply({ ok: true, anzahl: dateien.length, dateien, lieder: (Array.isArray(songs) ? songs : []).map((s) => ({ nummer: Number(s.number), titel: s.title })) });
+  }
+  if (request.method !== "POST") return reply({ ok: false, fehler: "Nur GET oder POST." }, 405);
+  const body = await request.json().catch(() => ({}));
+  const moves = Array.isArray(body.moves) ? body.moves.slice(0, 100) : [];
+  const done = [], failed = [];
+  const used = new Set((await listCovers(env)).map((o) => o.key));
+  for (const m of moves) {
+    const from = String(m && m.from || ""), to = String(m && m.to || "").replace(/\.jpeg$/i, ".jpg");
+    if (!from.startsWith(COVER_DIR) || from.includes("..") || !/^covers_edel\/\d{3}\.(jpe?g|png|webp)$/i.test(to) || from === to) { failed.push({ from, grund: "ungültig" }); continue; }
+    if (used.has(to) && !m.overwrite) { failed.push({ from, to, grund: "Ziel existiert schon" }); continue; }
+    const obj = await env.MUSIK.get(from);
+    if (!obj) { failed.push({ from, grund: "nicht gefunden" }); continue; }
+    await env.MUSIK.put(to, obj.body, { httpMetadata: obj.httpMetadata });
+    await env.MUSIK.delete(from);
+    used.delete(from); used.add(to); done.push({ from, to });
+  }
+  coverCache = { t: 0, data: null };
+  return reply({ ok: true, umbenannt: done.length, fehler: failed, done });
 }
