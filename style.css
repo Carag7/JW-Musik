@@ -1595,7 +1595,6 @@ body:not(.glass-open) #advBox .set-row:has(> select#advCover) { display: none !i
   .topbar .tb-tools, .topbar > .tb-tools > * { position: relative; z-index: 1; }
 }
 .rc-btn.rc-listen.on { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
-.login-gate { padding-bottom: var(--kb, 0px); box-sizing: border-box; }
 body:not(.glass-open) #advBox .cover-flip-row { display: none !important; }
 
 /* aktive (vorne angebotene) Designs farbig hinterlegt */
@@ -1621,3 +1620,38 @@ body:not(.glass-open) #advBox .cover-flip-row { display: none !important; }
 .sk-ed-cols { display: flex; flex-wrap: wrap; gap: 12px; }
 .sk-col { display: grid; gap: 4px; justify-items: center; font-size: 13px; }
 .sk-col input[type=color] { width: 54px; height: 40px; padding: 0; border: 1px solid var(--line); border-radius: 8px; background: transparent; }
+
+/* nur kurz einblenden */
+.src-tags, .version-bar { transition: opacity .5s; }
+body.tags-fade:not(.fade-peek) .src-tags { opacity: 0; }
+body.tags-fade #songList li:hover .src-tags, body.tags-fade .src-tags:hover, body.tags-fade li:hover .src-tags { opacity: 1; }
+body.verbar-fade:not(.fade-peek):not(.glass-open) .version-bar:not(:hover):not(:focus-within) { opacity: 0; }
+#userName.un-new { border-color: #f59e0b !important; background: rgba(245,158,11,.14) !important; }
+#userName.un-ex { border-color: #22c55e !important; background: rgba(34,197,94,.14) !important; }
+.un-state { display: block; min-height: 1em; }
+.sk-man-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
+.sk-man-row input[type=text] { flex: 1 1 auto; min-width: 0; }
+.sk-man-name { flex: 1 1 auto; }
+.sk-man-tag { opacity: .7; white-space: nowrap; }
+.sk-man-users { display: grid; gap: 2px; }
+
+/* Handy: Fenster bleiben vollflächig; unten Platz für die Tastatur, damit das Eingabefeld hochscrollen kann */
+.login-gate { top: 0 !important; height: 100% !important; bottom: 0 !important; }
+#codeModal .login-card, #codeModal .login-card.has-ludwt { max-height: calc(100dvh - var(--set-off, 0px) - 12px) !important; padding-bottom: calc(14px + var(--kb, 0px)); }
+
+/* Skin-Editor: Benutzerstatus, Farbvorschau, Verwalten-Seite */
+.sk-ed input.sk-new { border-color: #f0a030 !important; box-shadow: 0 0 0 2px rgba(240,160,48,.35); }
+.sk-ed input.sk-exist { border-color: #3ecf6b !important; box-shadow: 0 0 0 2px rgba(62,207,107,.35); }
+.sk-stat { font-size: 13px; } .sk-stat.ok { color: #3ecf6b; } .sk-stat.new { color: #f0a030; }
+.sk-prev { border-radius: 12px; overflow: hidden; border: 1px solid var(--line); background: var(--bg); color: var(--text); }
+.sk-prev-bar { display: flex; justify-content: space-between; padding: 8px 12px; background: var(--bar-bg); color: var(--text); }
+.sk-prev-body { padding: 10px 12px; background: var(--panel); }
+.sk-prev-body p { margin: 4px 0; color: var(--text); } .sk-prev-body .sk-prev-m { color: var(--muted); }
+.sk-prev-body button { border: 0; border-radius: 10px; padding: 8px 14px; background: var(--accent); color: var(--on-accent); font-weight: 700; }
+.sk-prev-body .sk-prev-2 { background: var(--accent-2); color: var(--on-accent-2); }
+
+/* Rückfragen (Benutzer anlegen, Schlüssel, Löschen) liegen über den Design-Fenstern */
+.dlg-gate { z-index: 700 !important; }
+.sk-ed-body { grid-auto-rows: max-content; }
+.sk-prev { min-height: 120px; }
+.sk-ed input[type=text], .sk-ed input[list] { background: var(--panel-2); color: var(--text); border: 1px solid var(--line); border-radius: 10px; min-height: 40px; padding: 0 10px; }

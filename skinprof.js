@@ -8,9 +8,21 @@
   if (!T) return;
   const EXCL = new Set(["theme", "themeMode", "themeDay", "themeNight", "themeShown", "themeTabs", "themeOrder", "themeTabList", "themeCustom", "skinProf", "skinActive", "skinBackup"]);
   const SKIN_ROWS = ["fontkar", "lyricalign", "cover", "fontlist", "sidebar", "verbar"];
-  /* Empfehlung für die „professionellen“ Skins (Aurora Pro, Atelier, Bibliothek) */
-  const PRO_VALS = { [STORAGE.scale]: "48", [STORAGE.listSize]: "17", lyricAlign: "center", coverMode: "neu", coverFlip: "1", sidebarW: "340", verBarAlways: "1" };
-  const PRO_FAMS = ["f-pro", "f-atl", "f-jwl"];
+  /* Empfehlungen je Art von Design (Werte; nur die zugehörigen Zeilen werden angehakt) */
+  const REC_SETS = {
+    pro: { vals: { [STORAGE.scale]: "48", [STORAGE.listSize]: "17", lyricAlign: "center", coverMode: "neu", coverFlip: "1", sidebarW: "340", verBarAlways: "1", verBarFade: "1" }, txt: "Professionell: größerer Text mittig, breiteres Auswahlfenster, Cover mit Drehung, Art-Buttons nur kurz." },
+    tesla: { vals: { [STORAGE.scale]: "56", [STORAGE.listSize]: "20", lyricAlign: "center", sidebarW: "380", srcTags: "0", verBarAlways: "1", coverMode: "neu", coverFlip: "1" }, txt: "Tesla: sehr große Schrift in Text und Liste, breites Auswahlfenster, keine kleinen Kennzeichen." },
+    handy: { vals: { [STORAGE.scale]: "40", [STORAGE.listSize]: "16", lyricAlign: "center", sidebarW: "0", srcTags: "0", verBarAlways: "0", verBarFade: "1", coverMode: "neu", coverFlip: "1" }, txt: "Handy: kompakt, Auswahlfenster in ganzer Breite, Kennzeichen und Art-Buttons nur kurz." },
+    skin: { vals: { [STORAGE.scale]: "46", [STORAGE.listSize]: "17", lyricAlign: "skin", coverMode: "neu", coverFlip: "1" }, txt: "Skin: etwas größerer Text, Ausrichtung wie vom Design vorgegeben." },
+    anim: { vals: { [STORAGE.scale]: "46", [STORAGE.listSize]: "17", lyricAlign: "center", coverMode: "neu", coverFlip: "1" }, txt: "Animiert: Text mittig, etwas größer." },
+    farbe: { vals: { lyricAlign: "skin", coverMode: "neu", coverFlip: "1" }, txt: "Farbdesign: nur Cover-Einstellungen; Größen bleiben wie im Standard." }
+  };
+  function recOf(t) {
+    const b = t.custom ? (T.byId(t.base) || t) : t;
+    const k = b.grp === "Pro" ? "pro" : b.grp === "Tesla" ? "tesla" : b.grp === "Handy" ? "handy" : b.grp === "Skin" ? "skin" : b.grp === "Animiert" ? "anim" : "farbe";
+    return REC_SETS[k];
+  }
+  const REC_ROWS = { [STORAGE.scale]: "fontkar", [STORAGE.listSize]: "fontlist", lyricAlign: "lyricalign", coverMode: "cover", coverFlip: "cover", sidebarW: "sidebar", srcTags: "tags", verBarAlways: "verbar", verBarFade: "verbar" };
 
   const j = (k, d) => { try { const v = JSON.parse(lsv(k, "")); return v === null || v === undefined ? d : v; } catch { return d; } };
   const profAll = () => { const o = j("skinProf", {}); return o && typeof o === "object" && !Array.isArray(o) ? o : {}; };
@@ -75,7 +87,7 @@
     PV_KEYS.forEach((k) => root.style.removeProperty(k));
     delete root.dataset.customSig; T.apply(false);
   }
-  function preview(cols) { const root = document.documentElement; Object.entries(T.customVars(cols).v).forEach(([k, v]) => root.style.setProperty(k, v)); }
+  function preview(cols, node) { Object.entries(T.customVars(cols).v).forEach(([k, v]) => node.style.setProperty(k, v)); node.style.background = cols.panel; node.style.color = cols.text; }
 
   async function openEditor(id) {
     const t = T.byId(id); if (!t) return;
@@ -83,7 +95,7 @@
     const box = el$("div", "theme-picker"); box.id = "skinEd";
     const card = el$("div", "theme-picker-card sk-ed");
     box.append(card);
-    const close = () => { clearPreview(); box.remove(); refreshList(); };
+    const close = () => { box.remove(); refreshList(); };
     box.addEventListener("click", (e) => { if (e.target === box) close(); });
     card.append(el$("p", "theme-picker-title", `⚙ ${t.name}`));
     const body = el$("div", "sk-ed-body"); card.append(body);
@@ -107,7 +119,7 @@
     const rowsBox = el$("div", "sk-ed-rows");
     const btns = el$("div", "sk-ed-btns");
     const bStd = el$("button", "chip", "Aus Voreinstellung „Standard“ kopieren"); bStd.type = "button";
-    const bPro = el$("button", "chip", "Empfehlung für dieses Design"); bPro.type = "button";
+    const bPro = el$("button", "chip", "Empfehlung für dieses Design"); bPro.type = "button"; bPro.title = recOf(t).txt;
     const bSave = el$("button", "chip", "Benutzer speichern"); bSave.type = "button";
     btns.append(bStd, bPro, bSave); body.append(btns, msg);
     body.append(el$("small", "set-hint", "Haken = diese Einstellung wird beim Wechsel geändert. Ohne Haken bleibt sie wie sie ist."), rowsBox);
@@ -116,33 +128,45 @@
     const fresh = async () => {
       const std = await sysData("standard");
       const d = { on: Object.fromEntries(PRESETS.map((p) => [p.id, SKIN_ROWS.includes(p.id)])), vals: { ...std.vals } };
-      const f = T.famOf(t) || (t.base && T.famOf(T.byId(t.base)));
-      if (f && PRO_FAMS.includes(f.id)) Object.assign(d.vals, PRO_VALS);
       return d;
     };
     const paintRows = () => buildPresetRows(rowsBox, { live: false, name: nm.value, skip: ["theme", "themeshown"], get: () => draft, save: async (d) => { draft = d; await persist(true); } });
-    let tm = 0;
+    let tm = 0, exists = false;
+    const stat = el$("small", "sk-stat", "");
+    nameRow.after(stat);
+    const paintStat = () => { nm.classList.toggle("sk-new", !exists); nm.classList.toggle("sk-exist", exists); stat.className = "sk-stat " + (exists ? "ok" : "new"); stat.textContent = exists ? "● vorhandener Benutzer – wird bearbeitet" : "● neuer Benutzer – wird erst nach Rückfrage angelegt"; };
     async function persist(quiet) {
       const name = userCleanName(nm.value);
       if (!name) { msg.textContent = "Bitte einen Namen eingeben."; return false; }
+      if (!exists) {
+        const yes = await uiDialog({ eyebrow: "Benutzer", title: `Benutzer „${name}“ neu anlegen?`, cancelValue: false, lines: ["Diesen Benutzer gibt es noch nicht. Er speichert die Einstellungen für dieses Design."], buttons: [{ value: true, kind: "primary", label: "Anlegen" }, { value: false, kind: "cancel", label: "Abbrechen" }] });
+        if (!yes) { msg.textContent = "Nicht angelegt."; return false; }
+      }
       prof.user = name; save();
       const ok = await putUser(name, "", { presets: draft, hash: "", links: [] });
-      if (ok) { userKnownAdd([name]); if (!quiet) msg.textContent = `Benutzer „${name}“ gespeichert.`; else { clearTimeout(tm); msg.textContent = "Gespeichert."; } }
+      if (ok) { exists = true; paintStat(); userKnownAdd([name]); if (!quiet) msg.textContent = `Benutzer „${name}“ gespeichert.`; else { clearTimeout(tm); msg.textContent = "Gespeichert."; } }
       else msg.textContent = "Konnte nicht gespeichert werden (offline oder Benutzer mit Passwort geschützt).";
       return ok;
     }
     async function loadUser() {
       const name = userCleanName(nm.value);
       const r = name ? await fetchUser(name, "") : { state: "none" };
-      if (r.state === "ok" && !r.none && Object.keys(r.presets).length) { draft = normPresets(r.presets); msg.textContent = `Benutzer „${name}“ geladen.`; }
+      exists = r.state === "ok" && !r.none && Object.keys(r.presets).length > 0;
+      if (exists) { draft = normPresets(r.presets); msg.textContent = `Benutzer „${name}“ geladen.`; }
       else if (r.state === "locked") { draft = await fresh(); msg.textContent = "Dieser Benutzer ist mit Passwort geschützt – bitte einen anderen Namen wählen."; }
       else { draft = await fresh(); msg.textContent = `Benutzer „${name}“ gibt es noch nicht – Vorschlag aus „Standard“; mit „Benutzer speichern“ anlegen.`; }
-      paintRows();
+      paintStat(); paintRows();
     }
     function sync() { rowsBox.style.opacity = on.checked ? "1" : ".55"; }
     nm.onchange = () => { nm.value = userCleanName(nm.value); loadUser(); prof.user = nm.value; save(); };
     bStd.onclick = async () => { const std = await sysData("standard"); draft.vals = { ...draft.vals, ...std.vals }; paintRows(); msg.textContent = "Werte aus „Standard“ kopiert (Haken unverändert). Zum Sichern „Benutzer speichern“."; };
-    bPro.onclick = async () => { draft = await fresh(); Object.assign(draft.vals, PRO_VALS); SKIN_ROWS.forEach((k) => { draft.on[k] = true; }); paintRows(); msg.textContent = "Empfehlung eingetragen. Zum Sichern „Benutzer speichern“."; };
+    bPro.onclick = async () => {
+      const rec = recOf(t); draft = await fresh();
+      Object.assign(draft.vals, rec.vals);
+      PRESETS.forEach((p) => { draft.on[p.id] = false; });
+      Object.keys(rec.vals).forEach((k) => { if (REC_ROWS[k]) draft.on[REC_ROWS[k]] = true; });
+      paintRows(); msg.textContent = `Empfehlung eingetragen – ${rec.txt} Zum Sichern „Benutzer speichern“.`;
+    };
     bSave.onclick = () => persist(false);
     sync();
     await loadUser();
@@ -155,14 +179,17 @@
     COLS.forEach(([k, n]) => {
       const l = el$("label", "sk-col"); l.append(document.createTextNode(n));
       const i = el$("input"); i.type = "color"; i.value = hex(cols[k]); inputs[k] = i;
-      i.oninput = () => { cols[k] = i.value; preview(cols); };
+      i.oninput = () => { cols[k] = i.value; preview(cols, pv); };
       l.append(i); cr.append(l);
     });
-    body.append(cr);
+    const pv = el$("div", "sk-prev");
+    pv.innerHTML = '<div class="sk-prev-bar"><b>Vorschau</b><span>Lied 117</span></div><div class="sk-prev-body"><p>Karaoke-Text in der Textfarbe</p><p class="sk-prev-m">Zweite Zeile, gedämpft</p><button type="button">Akzent</button> <button type="button" class="sk-prev-2">Akzent 2</button></div>';
+    preview(cols, pv);
+    body.append(cr, pv);
     const nrow = el$("label", "set-row"); nrow.append(document.createTextNode("Name des Designs "));
     const dn = el$("input"); dn.type = "text"; dn.maxLength = 28; dn.value = t.custom ? t.name : `${t.name} eigen`;
     nrow.append(dn); body.append(nrow);
-    const cm = el$("small", "set-hint", "Die Farben sind eine Vorschau, bis du speicherst. Designs mit fest eingebauten Farben (z. B. blaue Leiste bei Bibliothek) folgen nur teilweise.");
+    const cm = el$("small", "set-hint", "Die Farben sind nur in diesem Fenster als Vorschau sichtbar; das aktuelle Design bleibt unverändert, bis du ein neues Design speicherst. Designs mit fest eingebauten Farben (z. B. blaue Leiste bei Bibliothek) folgen nur teilweise.");
     const cb = el$("div", "sk-ed-btns");
     const bNew = el$("button", "chip", "Als neues Design speichern"); bNew.type = "button";
     cb.append(bNew);
@@ -172,8 +199,7 @@
       const nid = "u-" + Date.now().toString(36);
       const a = customList(); a.push({ id: nid, name: (dn.value.trim() || "Eigenes Design").slice(0, 28), base, colors: { ...cols } });
       writeList(a); lss("themeMode", "manual"); lss("theme", nid);
-      document.documentElement.style.cssText = document.documentElement.style.cssText; /* Vorschau-Variablen bleiben bis apply */
-      clearPreview(); T.apply(true); cm.textContent = "Neues Design gespeichert und eingeschaltet."; box.remove(); refreshList();
+            T.apply(true); cm.textContent = "Neues Design gespeichert und eingeschaltet."; box.remove(); refreshList();
     };
     if (t.custom) {
       const bUp = el$("button", "chip", "Änderungen speichern"); bUp.type = "button";
@@ -191,6 +217,114 @@
     card.append(x);
     document.body.append(box);
   }
+
+  /* ---------- Benutzername-Vorschlag im Feld „Benutzername“ (Voreinstellungen) ---------- */
+  function wireUserName() {
+    const inp = document.getElementById("userName"), box = document.getElementById("userNew");
+    if (!inp || !box || inp._skinWired) return;
+    inp._skinWired = true;
+    const st = document.createElement("small"); st.id = "userNameState"; st.className = "set-hint un-state";
+    inp.parentElement.append(st);
+    let tm = 0, seq = 0;
+    const suggest = () => { try { const t = T.byId(T.resolve().id); return t ? skinUserName(t) : ""; } catch { return ""; } };
+    const check = () => {
+      clearTimeout(tm);
+      tm = setTimeout(async () => {
+        const name = userCleanName(inp.value), my = ++seq;
+        inp.classList.remove("un-new", "un-ex");
+        if (name.length < 2) { st.textContent = ""; return; }
+        if (typeof SYS !== "undefined" && SYS[name]) { st.textContent = "Voreinstellung (gemeinsam für alle)."; return; }
+        const r = await fetchUser(name, "");
+        if (my !== seq) return;
+        if (r.state === "none") { inp.classList.add("un-new"); st.textContent = "Neu – wird nach einer Rückfrage angelegt."; }
+        else if (r.state === "ok" || r.state === "locked") { inp.classList.add("un-ex"); st.textContent = r.state === "locked" ? "Vorhanden (mit Passwort geschützt) – wird bearbeitet." : "Vorhanden – wird bearbeitet."; }
+        else st.textContent = "Server nicht erreichbar.";
+      }, 350);
+    };
+    inp.addEventListener("input", check);
+    const fill = () => { if (!box.hidden && !inp.value.trim()) { inp.value = suggest(); check(); } };
+    new MutationObserver(fill).observe(box, { attributes: true, attributeFilter: ["hidden"] });
+    inp.addEventListener("focus", fill);
+    fill();
+  }
+  wireUserName();
+  document.addEventListener("click", () => setTimeout(wireUserName, 0), true);
+
+  /* ---------- Verwalten: alle Designs (umbenennen, löschen) und Benutzer (Liste, löschen) ---------- */
+  const namesMap = () => { const o = j("themeNames", {}); return o && typeof o === "object" && !Array.isArray(o) ? o : {}; };
+  async function openManage() {
+    document.getElementById("skinMan")?.remove();
+    const box = el$("div", "theme-picker"); box.id = "skinMan";
+    const card = el$("div", "theme-picker-card sk-ed"); box.append(card);
+    const close = () => { box.remove(); refreshList(); };
+    box.addEventListener("click", (e) => { if (e.target === box) close(); });
+    card.append(el$("p", "theme-picker-title", "Designs und Benutzer verwalten"));
+    const body = el$("div", "sk-ed-body"); card.append(body);
+    const paint = () => {
+      body.replaceChildren();
+      body.append(el$("p", "ap-title", "Alle Designs"));
+      body.append(el$("small", "set-hint", "Namen ändern (leer = Originalname). ⚙ öffnet Benutzer und Farben. Eigene Designs lassen sich löschen."));
+      const nm = namesMap();
+      T.THEMES.forEach((t) => {
+        const row = el$("div", "sk-man-row");
+        const sw = el$("span", "theme-sw"); t.sw.forEach((c) => { const i = el$("i"); i.style.background = c; sw.append(i); });
+        const inp = el$("input"); inp.type = "text"; inp.maxLength = 28; inp.value = t.name; inp.setAttribute("aria-label", "Name");
+        inp.onchange = () => {
+          const v = inp.value.trim().slice(0, 28);
+          if (t.custom) lss("themeCustom", JSON.stringify(customList().map((c) => (c.id === t.id ? { ...c, name: v || c.name } : c))));
+          else { const o = namesMap(); if (!v || v === t.orig) delete o[t.id]; else o[t.id] = v; lss("themeNames", JSON.stringify(o)); }
+          T.apply(true); paint();
+        };
+        const pr = profOf(t.id);
+        const tag = el$("small", "sk-man-tag", pr && pr.on ? `Benutzer: ${pr.user}` : t.custom ? "eigen" : "");
+        const g = el$("button", "chip", "⚙"); g.type = "button"; g.onclick = () => { box.remove(); openEditor(t.id); };
+        row.append(sw, inp, tag, g);
+        if (t.custom) { const d = el$("button", "chip danger", "Löschen"); d.type = "button"; d.onclick = () => { if (lsv("theme", "") === t.id) lss("theme", t.base); const o = profAll(); delete o[t.id]; lss("skinProf", JSON.stringify(o)); lss("themeCustom", JSON.stringify(customList().filter((c) => c.id !== t.id))); T.apply(true); paint(); }; row.append(d); }
+        body.append(row);
+      });
+      body.append(el$("p", "ap-title sk-ed-sep", "Benutzer"));
+      const msg = el$("small", "set-hint", "Die Liste aller Benutzer auf dem Server braucht das Schreib-Passwort.");
+      const ub = el$("div", "sk-man-users");
+      const load = el$("button", "chip", "Benutzerliste laden"); load.type = "button";
+      load.onclick = async () => {
+        const key = await askKey("Benutzerliste");
+        if (!key) return;
+        msg.textContent = "Bitte warten …";
+        try {
+          const r = await fetch(`${SYNC_BASE}/api/users`, { headers: { "x-write-key": key } });
+          const d = await r.json().catch(() => ({}));
+          if (!r.ok || !d.ok) { msg.textContent = d.fehler || `Fehler ${r.status}`; return; }
+          ub.replaceChildren();
+          const mine = new Set(Object.values(profAll()).map((p) => p.user));
+          d.benutzer.forEach((u) => {
+            const row = el$("div", "sk-man-row");
+            row.append(el$("span", "sk-man-name", u.name + (u.system ? " (Voreinstellung)" : "")), el$("small", "sk-man-tag", (u.passwort ? "Passwort · " : "") + (mine.has(u.name) ? "Design-Benutzer" : "")));
+            if (!u.system) {
+              const del = el$("button", "chip danger", "Löschen"); del.type = "button";
+              del.onclick = async () => {
+                if (!(await uiConfirm({ eyebrow: "Benutzer", title: `„${u.name}“ löschen?`, lines: ["Der Benutzer und seine Voreinstellungen werden auf dem Server gelöscht."], ok: "Löschen", danger: true }))) return;
+                try {
+                  const rr = await fetch(`${SYNC_BASE}/user/${encodeURIComponent(u.name)}`, { method: "DELETE", headers: { "x-write-key": key } });
+                  if (!rr.ok) { msg.textContent = rr.status === 401 ? "Schlüssel falsch." : "Löschen fehlgeschlagen."; return; }
+                } catch { msg.textContent = "Server nicht erreichbar."; return; }
+                lss("userList", JSON.stringify(userKnown().filter((n) => n !== u.name)));
+                const o = profAll(); Object.keys(o).forEach((k) => { if (o[k].user === u.name) o[k].on = false; }); lss("skinProf", JSON.stringify(o));
+                row.remove(); msg.textContent = `„${u.name}“ gelöscht.`;
+              };
+              row.append(del);
+            }
+            ub.append(row);
+          });
+          msg.textContent = `${d.anzahl} Benutzer.`;
+        } catch { msg.textContent = "Server nicht erreichbar."; }
+      };
+      body.append(load, msg, ub);
+    };
+    paint();
+    const x = el$("button", "theme-pick-close", "Schließen"); x.type = "button"; x.onclick = close; card.append(x);
+    document.body.append(box);
+  }
+  T.onManage = openManage;
   T.onGear = openEditor;
   window.SKINPROF = { open: openEditor, profOf, setProf };
 })();

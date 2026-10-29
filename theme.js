@@ -113,12 +113,16 @@
   }
   let customSig = "";
   function loadCustom() {
-    const raw = get("themeCustom", "");
-    if (raw === customSig) return;
-    customSig = raw;
+    const raw0 = get("themeCustom", "");
+    const sig = raw0 + "|" + get("themeNames", "");
+    if (sig === customSig) return;
+    customSig = sig;
+    const raw = raw0;
+    const nmap = getJ("themeNames", {});
+    THEMES.forEach((x) => { if (!x.custom) { if (x.orig === undefined) x.orig = x.name; x.name = String((nmap && nmap[x.id]) || x.orig).slice(0, 28); } });
     for (let i = THEMES.length - 1; i >= 0; i--) if (THEMES[i].custom) THEMES.splice(i, 1);
     FAMILIES.forEach((f) => { f.ids = f.ids.filter((x) => !String(x).startsWith("u-")); });
-    let a = []; try { a = JSON.parse(raw) || []; } catch { a = []; }
+    let a = []; try { a = JSON.parse(get("themeCustom", "")) || []; } catch { a = []; }
     if (!Array.isArray(a)) a = [];
     a.forEach((c) => {
       const base = THEMES.find((x) => x.id === c.base && !x.custom);
@@ -388,7 +392,8 @@
       return;
     }
     if (sub === "alle") {
-      root.append(h("small", "set-hint", "Alle Designs ansehen: Tippen wählt das Design sofort (Wechsel auf „Fest“)."));
+      root.append(h("small", "set-hint", "Alle Designs ansehen: Tippen wählt das Design sofort (Wechsel auf „Fest“). ⚙ am Design: Benutzer und Farben."));
+      if (typeof api.onManage === "function") { const mb = h("button", "chip", "Designs und Benutzer verwalten …"); mb.type = "button"; mb.addEventListener("click", () => api.onManage()); root.append(mb); }
       const holder = h("div", "theme-picker-holder theme-embedded"); root.append(holder);
       const inner = buildPicker(holder, { gear: true, onPick: () => { inner.paint(); } });
       return;
@@ -579,7 +584,7 @@
     const cur = (cfg().mode === "manual" ? cfg().theme : "");
     const curTh = byId(cur);
     const TL = tabsList();
-    let tab = curTh ? tabOf(curTh) : (get("themeTab", "") || "normal");
+    let tab = opts.tab || (curTh ? tabOf(curTh) : (get("themeTab", "") || "normal"));
     if (!TL.some((x) => x[0] === tab)) tab = TL[0][0];
     const tabs = h("div", "theme-tabs"); tabs.setAttribute("role", "tablist");
     const body = h("div", "theme-picker-body");
@@ -597,6 +602,15 @@
     paint();
     return { paint };
   }
+  /* Standard-Reiter je nach Gerät: Tesla → Tesla, Handy → Handy, sonst Normal (Reiter muss existieren) */
+  function deviceTab() {
+    let k = "normal";
+    try {
+      if (typeof isTesla === "function" && isTesla()) k = "tesla";
+      else if (window.matchMedia && matchMedia("(pointer: coarse)").matches && Math.min(screen.width, screen.height) < 600) k = "handy";
+    } catch { /* egal */ }
+    return tabsList().some((x) => x[0] === k) ? k : "";
+  }
   function openPicker() {
     let box = document.getElementById("themePicker");
     if (box) box.remove();
@@ -605,14 +619,14 @@
     card.append(h("p", "theme-picker-title", "Design wählen"));
     const close = () => box.remove();
     const holder = h("div", "theme-picker-holder"); card.append(holder);
-    let inner = buildPicker(holder, { onPick: close });
+    let inner = buildPicker(holder, { onPick: close, tab: deviceTab() });
     const ed = h("button", "chip theme-pick-edit", "✎ Reiter und Reihenfolge bearbeiten"); ed.type = "button";
     let editing = false;
     ed.addEventListener("click", () => {
       editing = !editing;
       ed.textContent = editing ? "✔ Fertig" : "✎ Reiter und Reihenfolge bearbeiten";
       holder.replaceChildren();
-      if (editing) mountShown(holder); else inner = buildPicker(holder, { onPick: close });
+      if (editing) mountShown(holder); else inner = buildPicker(holder, { onPick: close, tab: deviceTab() });
     });
     card.append(ed);
     const x = h("button", "theme-pick-close", "Schließen"); x.type = "button";
@@ -623,7 +637,7 @@
     document.body.append(box);
   }
 
-  const api = { THEMES, FAMILIES, byId, famOf, shortName, customVars, loadCustom, onGear: null, repaint: null, REC, REC_SHOWN, shownIds, mountShown, resolve, apply, cycle, mountUi, sunTimes, cfg, openPicker, onChange: null };
+  const api = { THEMES, FAMILIES, byId, famOf, shortName, customVars, loadCustom, onGear: null, onManage: null, repaint: null, REC, REC_SHOWN, shownIds, mountShown, resolve, apply, cycle, mountUi, sunTimes, cfg, openPicker, onChange: null };
   window.THEME = api;
 
   loadCustom();

@@ -99,7 +99,11 @@
         const done = () => { try { a.pause(); a.muted = false; a.removeAttribute("src"); a.load(); } catch { /* egal */ } };
         if (p && p.then) p.then(done).catch(() => { a.muted = false; }); else done();
       } else if (a.paused) {
-        const p = a.play(); if (p && p.then) p.then(() => { if (!state.wantPlay) a.pause(); }).catch(() => {});
+        /* Lied bleibt wie es ist (Pause bleibt Pause, Position bleibt): nur stumm kurz antippen, damit der Browser späteres Abspielen erlaubt */
+        const pos = a.currentTime || 0;
+        a.muted = true;
+        const back = () => { try { a.pause(); a.muted = false; if (Math.abs((a.currentTime || 0) - pos) > 0.3) a.currentTime = pos; } catch { /* egal */ } };
+        const p = a.play(); if (p && p.then) p.then(back).catch(() => { a.muted = false; }); else back();
       }
     } catch { /* egal */ }
   }
@@ -345,7 +349,7 @@
     const sk = (d) => (typeof skipSec === "function" ? skipSec(d) : 15);
     tr.append(
       mk("rcPrev", "⏮", () => send("prev")), mk("rcBack", `−${sk(-1)}`, () => send("skip", -sk(-1))),
-      mk("rcPlay", "▶", () => send(R.last && R.last.playing ? "pause" : "play"), "rc-play"),
+      mk("rcPlay", "▶", () => { const will = !(R.last && R.last.playing); send(will ? "play" : "pause"); startLocal(will); }, "rc-play"),
       mk("rcFwd", `+${sk(1)}`, () => send("skip", sk(1))), mk("rcNext", "⏭", () => send("next")));
     const tr2 = h("div", "rc-tr rc-tr2");
     const lis = mk("rcListen", "🔊 Mithören", () => setListen(!R.listen), "rc-listen" + (R.listen ? " on" : "")); lis.setAttribute("aria-pressed", String(!!R.listen)); lis.title = "Dasselbe Lied auch auf diesem Gerät synchron abspielen";
@@ -378,14 +382,36 @@
       Promise.resolve(typeof pickSource === "function" ? pickSource(song, ver) : null).then((src) => {
         if (!src || tok !== R.ltok || !R.listen) return;
         R.la.src = src.url; R.la.load();
+        R.lwait = !!(s.playing || R.lwant);
+        if (R.lwait && R.la) R.la.addEventListener("loadedmetadata", () => { if (R.lwait && R.last) { const st = R.last; const cur = st.playing ? R.pos.v + (Date.now() - R.pos.at) / 1000 : R.pos.v; R.lwait = false; try { R.la.currentTime = Math.max(0, cur + 0.4); } catch { /* egal */ } if (st.playing || R.lwant) { const p = R.la.play(); if (p && p.catch) p.catch(() => {}); } } }, { once: true });
       }).catch(() => {});
       return;
     }
     const a = R.la;
     if (!a.getAttribute("src") || a.readyState < 1) return;
+    if (startMode()) {
+      /* ruckelfrei: nur beim Liedwechsel einmal nachziehen, sonst läuft das Mithören frei weiter (Start/Pause über die Play-Taste) */
+      if (R.lwait) { R.lwait = false; try { a.currentTime = Math.max(0, pos + 0.4); } catch { /* egal */ } if (s.playing) { const p = a.play(); if (p && p.catch) p.catch(() => {}); } }
+      return;
+    }
     if (Math.abs((a.currentTime || 0) - pos) > 1.2) { try { a.currentTime = Math.max(0, pos + (s.playing ? 0.25 : 0)); } catch { /* egal */ } }
     if (s.playing && a.paused) { const p = a.play(); if (p && p.catch) p.catch(() => { const b = $("rcListen"); if (b) b.title = "Zum Mithören einmal tippen"; }); }
     else if (!s.playing && !a.paused) a.pause();
+  }
+  const startMode = () => { try { return localStorage.getItem("rcListenStart") === "1"; } catch { return false; } };
+  /* Modus „nur beim Drücken auf Play“: einmal zum aktuellen Stand springen und frei weiterspielen bzw. pausieren */
+  function startLocal(will) {
+    if (!R.listen || !startMode() || R.role !== "controller") return;
+    if (!R.la) { R.la = new Audio(); R.la.preload = "auto"; }
+    const a = R.la;
+    if (!will) { R.lwant = false; try { a.pause(); } catch { /* egal */ } return; }
+    R.lwant = true;
+    const s = R.last; if (!s) return;
+    const cur = () => (s.playing ? R.pos.v + (Date.now() - R.pos.at) / 1000 : R.pos.v);
+    if (a.getAttribute("src") && a.readyState >= 1) {
+      try { a.currentTime = Math.max(0, cur() + 0.4); } catch { /* egal */ }
+      const p = a.play(); if (p && p.catch) p.catch(() => {});
+    } else { R.lkey = ""; R.lwait = true; syncListen(Object.assign({}, s, { playing: true }), cur()); try { const p = a.play(); if (p && p.catch) p.catch(() => {}); } catch { /* egal */ } }
   }
   function setListen(on) {
     R.listen = !!on;

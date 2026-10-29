@@ -201,7 +201,7 @@
 
   /* ---------- Galerie ---------- */
   let gal = null;
-  const G = { view: lsv("coverView", "grid"), size: Number(lsv("coverSize", "170")) || 170, q: "", only: lsv("coverOnly", "0") === "1", fav: false, cat: "", sort: "num" };
+  const G = { view: lsv("coverView", "grid"), size: Number(lsv("coverSize", "170")) || 170, q: "", only: lsv("coverOnly", "0") === "1", fav: false, mark: lsv("coverFavMark", "0") === "1", next: lsv("coverNext", "off"), fromGal: false, cat: "", sort: "num" };
   function openGallery() {
     if (gal) return;
     load(true);
@@ -215,7 +215,7 @@
     const seg = h("div", "cg-seg"); seg.setAttribute("role", "group");
     [["grid", ic.grid, "Raster"], ["list", ic.list, "Liste"], ["flow", ic.flow, "Karussell"]].forEach(([k, svg, name]) => {
       const b = svgBtn("cg-segbtn", svg, name); b.dataset.v = k; b.setAttribute("aria-pressed", String(G.view === k));
-      b.addEventListener("click", () => { G.view = k; lss("coverView", k); seg.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.v === k))); paintGallery(true); });
+      b.addEventListener("click", () => { G.view = k; lss("coverView", k); seg.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.v === k))); paintGallery(true); scrollNow(); });
       seg.append(b);
     });
     const fsb = svgBtn("cg-btn", ic.full, "Browser-Vollbild"); fsb.addEventListener("click", () => fsToggle(gal));
@@ -224,7 +224,12 @@
     const tools = h("div", "cg-tools");
     const chip = (label, get, set) => { const b = h("button", "cg-chip", label); b.type = "button"; b.setAttribute("aria-pressed", String(get())); b.addEventListener("click", () => { set(!get()); b.setAttribute("aria-pressed", String(get())); paintGallery(); }); return b; };
     const cOnly = chip("Nur mit neuem Cover", () => G.only, (v) => { G.only = v; lss("coverOnly", v ? "1" : "0"); });
-    const cFav = chip("★ Favoriten", () => G.fav, (v) => { G.fav = v; });
+    const cFav = chip("★ Nur Favoriten", () => G.fav, (v) => { G.fav = v; });
+    const cMark = chip("★ Favoriten zeigen", () => G.mark, (v) => { G.mark = v; lss("coverFavMark", v ? "1" : "0"); gal.classList.toggle("fav-mark", v); });
+    cMark.title = "Favoriten bekommen einen goldenen Rahmen";
+    const nxt = document.createElement("select"); nxt.className = "cg-sel"; nxt.setAttribute("aria-label", "Danach spielen");
+    [["off", "Danach: nichts extra"], ["order", "Danach: Reihenfolge"], ["rand", "Danach: Zufall"]].forEach(([v, n]) => nxt.append(new Option(n, v))); nxt.value = G.next;
+    nxt.addEventListener("change", () => { G.next = nxt.value; lss("coverNext", G.next); if (G.next === "off") G.fromGal = false; });
     const cat = document.createElement("select"); cat.className = "cg-sel"; cat.setAttribute("aria-label", "Kategorie");
     const cats = [...new Set(state.songs.map((s) => s.category).filter(Boolean))];
     cat.append(new Option("Alle Kategorien", "")); cats.forEach((c) => cat.append(new Option(c, c))); cat.value = G.cat;
@@ -237,13 +242,14 @@
     sz.addEventListener("input", () => { G.size = Number(sz.value); lss("coverSize", String(G.size)); gal.style.setProperty("--cg-size", G.size + "px"); });
     size.append(sz);
     const cnt = h("span", "cg-count"); cnt.id = "cgCount";
-    tools.append(cOnly, cFav, cat, srt, size, cnt);
+    tools.append(cOnly, cFav, cMark, cat, srt, nxt, size, cnt);
+    gal.classList.toggle("fav-mark", G.mark);
 
     const body = h("div", "cg-body"); body.id = "cgBody";
     const mini = h("div", "cg-mini"); mini.id = "cgMini";
     gal.append(top, tools, body, mini);
     gal.style.setProperty("--cg-size", G.size + "px");
-    gal._r = { body, mini, cnt, size, last: "" };
+    gal._r = { body, mini, cnt, size, cOnly, last: "" };
     document.body.append(gal); document.body.classList.add("cg-open");
     document.addEventListener("keydown", galKey, true);
     paintGallery(true);
@@ -275,14 +281,39 @@
     else l.sort((a, b) => numOf(a) - numOf(b));
     return l;
   }
+  function scrollNow() {
+    setTimeout(() => {
+      if (!gal) return;
+      const a = gal._r.body.querySelector(".cg-card.on, .cg-row.on");
+      if (a && a.scrollIntoView) a.scrollIntoView({ block: "center", inline: "center" });
+    }, 40);
+  }
+  function favToggle(s) {
+    if (state.favorites.has(s.id)) state.favorites.delete(s.id); else state.favorites.add(s.id);
+    saveFavorites(); try { renderList(); } catch { /* egal */ }
+    if (gal) { gal.querySelectorAll(`[data-sid="${s.id}"]`).forEach((n) => { n.classList.toggle("isfav", state.favorites.has(s.id)); const f = n.querySelector(".cg-fv, .cg-star"); if (f) f.textContent = state.favorites.has(s.id) ? "★" : "☆"; }); if (G.fav) paintGallery(true); }
+  }
+  /* nach Liedende: in der Reihenfolge der Galerie weiterspielen oder zufällig (nur wenn die Option gewählt und ein Lied aus der Galerie gestartet wurde) */
+  function galleryNext() {
+    if (G.next === "off" || !G.fromGal) return false;
+    const list = songsFiltered(); if (!list.length) return false;
+    const now = cur(); const i = now ? list.findIndex((x) => x.id === now.id) : -1;
+    let nx;
+    if (G.next === "rand") { if (list.length === 1) nx = list[0]; else { do { nx = list[Math.floor(Math.random() * list.length)]; } while (now && nx.id === now.id); } }
+    else nx = list[(i + 1) % list.length];
+    const k = idxOf(nx); if (k < 0) return false;
+    selectSong(k, true); return true;
+  }
   const idxOf = (s) => { const k = state.songs.indexOf(s); return k >= 0 ? k : state.songs.findIndex((x) => x.id === s.id); };
   function pickSong(s, autoplay) {
+    G.fromGal = true;
     const i = idxOf(s); if (i < 0) return;
     if (state.index === i) { if (autoplay) togglePlay(); return; }
     selectSong(i, autoplay);
   }
   /* Cover antippen: Lied starten (falls es nicht schon läuft) und den Player öffnen */
   function pickOpen(s) {
+    G.fromGal = true;
     const i = idxOf(s);
     if (i < 0) return;
     if (state.index !== i) selectSong(i, true);
@@ -300,7 +331,6 @@
     const r = gal._r, list = songsFiltered(), now = cur();
     const withCover = state.songs.filter(has).length;
     r.cnt.textContent = `${list.length} Lieder · ${withCover} mit Cover`;
-    r.size.hidden = G.view !== "grid";
     gal.dataset.view = G.view;
     const sig = G.view + "|" + list.map((s) => s.id).join(",") + "|" + Object.keys(map).length;
     if (!force && sig === r.last) { markNow(); paintMini(); return; }
@@ -311,13 +341,14 @@
     if (G.view === "grid") {
       const g = h("div", "cg-grid");
       list.forEach((s) => {
-        const c = h("div", "cg-card" + (now === s ? " on" : "") + (has(s) ? "" : " nocover")); c.dataset.sid = s.id;
+        const c = h("div", "cg-card" + (now === s ? " on" : "") + (has(s) ? "" : " nocover") + (state.favorites.has(s.id) ? " isfav" : "")); c.dataset.sid = s.id;
         const wrap = h("button", "cg-art"); wrap.type = "button"; wrap.setAttribute("aria-label", `${s.id} ${s.title} abspielen`);
         wrap.append(coverImg(s));
         const pl = h("span", "cg-pl"); pl.innerHTML = (now === s && playing()) ? ic.pause : ic.play; wrap.append(pl);
+        const fv = h("span", "cg-fv", state.favorites.has(s.id) ? "★" : "☆"); fv.setAttribute("role", "button"); fv.setAttribute("aria-label", "Favorit"); wrap.append(fv);
         if (now === s) wrap.append(eq());
         if (!has(s)) wrap.append(h("span", "cg-tag", "altes Bild"));
-        wrap.addEventListener("click", (e) => { if (e.target.closest && e.target.closest(".cg-pl")) { pickSong(s, true); return; } pickOpen(s); });
+        wrap.addEventListener("click", (e) => { if (e.target.closest && e.target.closest(".cg-fv")) { favToggle(s); return; } if (e.target.closest && e.target.closest(".cg-pl")) { pickSong(s, true); return; } pickOpen(s); });
         const t = h("button", "cg-meta"); t.type = "button";
         t.append(h("b", "", `${s.id} · ${s.title}`), h("small", "", s.category || ""));
         t.addEventListener("click", () => { pickOpen(s); });
@@ -327,14 +358,14 @@
     } else if (G.view === "list") {
       const ul = h("div", "cg-list");
       list.forEach((s) => {
-        const row = h("div", "cg-row" + (now === s ? " on" : "") + (has(s) ? "" : " nocover")); row.dataset.sid = s.id;
+        const row = h("div", "cg-row" + (now === s ? " on" : "") + (has(s) ? "" : " nocover") + (state.favorites.has(s.id) ? " isfav" : "")); row.dataset.sid = s.id;
         const n = h("span", "cg-n", s.id);
         const th = h("button", "cg-thumb"); th.type = "button"; th.append(coverImg(s, "cg-img")); th.setAttribute("aria-label", "Cover groß");
         th.addEventListener("click", () => { pickOpen(s); });
         const tx = h("button", "cg-rowtxt"); tx.type = "button"; tx.append(h("b", "", s.title), h("small", "", s.category || ""));
         tx.addEventListener("click", () => pickSong(s, true));
         const st = h("button", "cg-star", state.favorites.has(s.id) ? "★" : "☆"); st.type = "button"; st.setAttribute("aria-label", "Favorit");
-        st.addEventListener("click", () => { const i = state.songs.indexOf(s); if (i >= 0 && state.favorites.has(s.id) !== undefined) { if (state.favorites.has(s.id)) state.favorites.delete(s.id); else state.favorites.add(s.id); saveFavorites(); renderList(); paintGallery(true); } });
+        st.addEventListener("click", () => favToggle(s));
         const pb = svgBtn("cg-rowplay", now === s && playing() ? ic.pause : ic.play, "Abspielen"); pb.addEventListener("click", () => pickSong(s, true));
         row.append(n, th, tx, st, pb);
         if (now === s) row.append(eq());
@@ -345,12 +376,13 @@
       const wrap = h("div", "cg-flowwrap");
       const fl = h("div", "cg-flow"); fl.tabIndex = 0;
       const items = list.map((s) => {
-        const it = h("button", "cg-fl" + (now === s ? " on" : "") + (has(s) ? "" : " nocover")); it.type = "button"; it.dataset.sid = s.id;
+        const it = h("button", "cg-fl" + (now === s ? " on" : "") + (has(s) ? "" : " nocover") + (state.favorites.has(s.id) ? " isfav" : "")); it.type = "button"; it.dataset.sid = s.id;
         it.append(coverImg(s)); it._s = s; fl.append(it); return it;
       });
       const cap = h("div", "cg-cap"); const cn = h("p", "cg-capn"); const ct = h("h3", "cg-capt"); const cc = h("p", "cg-capc");
       const play = svgBtn("cg-bigplay", ic.play, "Abspielen");
-      cap.append(cn, ct, cc, play);
+      const fvb = h("button", "cg-capfav", "☆"); fvb.type = "button"; fvb.setAttribute("aria-label", "Favorit");
+      cap.append(cn, ct, cc, play, fvb);
       const prev = svgBtn("cg-arrow l", ic.prev, "Vorheriges"), next = svgBtn("cg-arrow r", ic.next, "Nächstes");
       wrap.append(prev, fl, next, cap);
       r.body.append(wrap);
@@ -361,24 +393,29 @@
         items.forEach((it, i) => { const d = (it.offsetLeft + it.clientWidth / 2 - mid) / (it.clientWidth || 1); it.style.setProperty("--d", d.toFixed(2)); it.style.setProperty("--a", Math.min(1, Math.abs(d)).toFixed(2)); if (Math.abs(d) < bd) { bd = Math.abs(d); best = i; } });
         if (best !== cIdx || !cn.textContent) { cIdx = best; const s = items[best] && items[best]._s; if (s) { cn.textContent = `Lied ${s.id}`; ct.textContent = s.title; cc.textContent = s.category || ""; } }
         play.innerHTML = (items[cIdx] && items[cIdx]._s === cur() && playing()) ? ic.pause : ic.play;
+        fvb.textContent = items[cIdx] && state.favorites.has(items[cIdx]._s.id) ? "★" : "☆";
       };
       fl.addEventListener("scroll", () => requestAnimationFrame(upd));
       items.forEach((it, i) => it.addEventListener("click", () => { if (i === cIdx) { pickOpen(it._s); } else center(i, true); }));
       prev.addEventListener("click", () => center(Math.max(0, cIdx - 1), true));
       next.addEventListener("click", () => center(Math.min(items.length - 1, cIdx + 1), true));
       play.addEventListener("click", () => { const it = items[cIdx]; if (it) pickSong(it._s, true); });
+      fvb.addEventListener("click", () => { const it = items[cIdx]; if (it) { favToggle(it._s); it.classList.toggle("isfav", state.favorites.has(it._s.id)); upd(); } });
       ct.addEventListener("click", () => { const it = items[cIdx]; if (it) { pickOpen(it._s); } });
       fl.addEventListener("keydown", (e) => { if (e.key === "ArrowRight") { e.preventDefault(); center(Math.min(items.length - 1, cIdx + 1), true); } else if (e.key === "ArrowLeft") { e.preventDefault(); center(Math.max(0, cIdx - 1), true); } });
       requestAnimationFrame(() => { center(cIdx, false); upd(); });
     }
     if (G.view !== "flow") r.body.scrollTop = keep;
     paintMini();
+    clearTimeout(r.chk);
+    r.chk = setTimeout(() => { if (!gal) return; const all = state.songs.length && Object.keys(map).length && state.songs.filter((x) => numOf(x) > 0).every(has); r.cOnly.hidden = !!all; if (all && G.only) { G.only = false; lss("coverOnly", "0"); } }, 1500);
   }
   /* aktuelles Lied markieren, ohne die Galerie neu aufzubauen (Bildlauf bleibt stehen) */
   function markNow() {
     if (!gal) return;
     const now = cur();
     gal.querySelectorAll(".cg-card.on, .cg-row.on, .cg-fl.on").forEach((x) => { x.classList.remove("on"); const e = x.querySelector(".cg-eq"); if (e) e.remove(); });
+    gal.querySelectorAll(".cg-pl, .cg-rowplay").forEach((x) => { x.innerHTML = ic.play; delete x.dataset.p; });
     if (!now) return;
     const x = [...gal.querySelectorAll("[data-sid]")].find((n) => n.dataset.sid === now.id);
     if (x) { x.classList.add("on"); (x.querySelector(".cg-art") || x).append(eq()); }
@@ -400,11 +437,14 @@
       pv.addEventListener("click", () => { if (typeof stepAllowed !== "function" || stepAllowed()) step(-1); });
       nx.addEventListener("click", () => { if (typeof stepAllowed !== "function" || stepAllowed()) step(1); });
       pl.addEventListener("click", () => togglePlay());
-      const bar = h("div", "cg-minibar"); bar.append(h("i"));
+      const bar = document.createElement("input"); bar.type = "range"; bar.className = "cg-minibar"; bar.min = "0"; bar.max = "1000"; bar.value = "0"; bar.setAttribute("aria-label", "Position");
+      bar.addEventListener("pointerdown", () => { m._drag = true; });
+      ["pointerup", "pointercancel", "change"].forEach((e) => bar.addEventListener(e, () => { m._drag = false; }));
+      bar.addEventListener("input", () => { const d = el.audio.duration; if (d && isFinite(d)) el.audio.currentTime = d * (Number(bar.value) / 1000); });
       m.append(th, tx, pv, pl, nx, bar);
     }
     const d = el.audio.duration, c = el.audio.currentTime || 0;
-    const bar = m.querySelector(".cg-minibar i"); if (bar) bar.style.width = d && isFinite(d) ? `${Math.min(100, (c / d) * 100)}%` : "0%";
+    const bar = m.querySelector(".cg-minibar"); if (bar && !m._drag) { const v = d && isFinite(d) ? Math.round(Math.min(1, c / d) * 1000) : 0; bar.value = String(v); bar.style.setProperty("--p", v / 10 + "%"); }
     /* Raster/Liste: Abspiel-Symbol und Equalizer mitführen */
     gal.querySelectorAll(".cg-card.on .cg-pl, .cg-row.on .cg-rowplay").forEach((x) => { const want = p ? ic.pause : ic.play; if (x.dataset.p !== String(p)) { x.dataset.p = String(p); x.innerHTML = want; } });
     gal.classList.toggle("is-playing", p);
@@ -420,6 +460,6 @@
     setInterval(() => { const s = cur(); const k = s ? s.id : ""; if (boot.k !== k) { boot.k = k; paintThumb(); if (gal) paintGallery(); } if (gal) paintMini(); }, 500);
     window.addEventListener("pagehide", () => { /* nichts */ });
   }
-  window.COVERS = { src, has, newUrl, artwork, load, mode, refresh: changed, openGallery, closeGallery, openNow, closeNow, get map() { return map; } };
+  window.COVERS = { galleryNext, src, has, newUrl, artwork, load, mode, refresh: changed, openGallery, closeGallery, openNow, closeNow, get map() { return map; } };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 })();
