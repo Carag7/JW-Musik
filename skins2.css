@@ -350,3 +350,26 @@ html[data-theme="sk-atelier-kupfer"] { --bg: #0d0807; --panel: #140d0b; --panel-
 html[data-theme="sk-atelier-elfenbein"] { --bg: #f5f0e6; --panel: #efe8da; --panel-2: #e8dfce; --text: #211d16; --muted: #6f675a; --ink-rgb: 33, 29, 22; --accent: #8a6420; --accent-rgb: 138, 100, 32; --accent-2: #3f6f60; --accent2-rgb: 63, 111, 96; --accent3: #6b4c14; --on-accent: #fffaf0; --on-accent-2: #f3fbf7; --lyric-active: #120f09; --sel-bg: rgba(138,100,32,.12); --sel-text: #120f09; --strong: #120f09; --glow1: rgba(138,100,32,.10); --glow2: rgba(63,111,96,.06); --at-shadow: rgba(60,45,20,.35); color-scheme: light; }
 html[data-theme="sk-atelier-elfenbein"] body { background: radial-gradient(1200px 520px at 50% -18%, rgba(138,100,32,.10), transparent 62%), #f5f0e6; }
 html[data-theme^="sk-atelier"]:not([data-theme="sk-atelier"]) body { background-color: var(--bg); }
+
+/* ===== Schwebend (sk-pro-flug*): Aufbau wie Aurora Pro, aber alle Elemente schweben als eigene Karten ===== */
+html[data-theme="sk-pro-flug"] { --pro-bg: #07080d; --accent: #8b7cff; --accent-rgb: 139, 124, 255; --accent-2: #35e0c2; --accent2-rgb: 53, 224, 194; --accent3: #ff8fb8; --accent3-rgb: 255, 143, 184; --on-accent: #0b0820; --on-accent-2: #04231d; --pro-l1: #b9b0ff; --pro-l2: #8ff0dd; }
+html[data-theme="sk-pro-flug-gold"] { --pro-bg: #0a0805; --accent: #f2c36b; --accent-rgb: 242, 195, 107; --accent-2: #ff9a4d; --accent2-rgb: 255, 154, 77; --accent3: #ffe3a6; --accent3-rgb: 255, 227, 166; --on-accent: #1d1303; --on-accent-2: #2a1203; --pro-l1: #ffe2a3; --pro-l2: #ffb77a; --info: #f2c36b; }
+html[data-theme="sk-pro-flug-ozean"] { --pro-bg: #040a12; --accent: #3da8ff; --accent-rgb: 61, 168, 255; --accent-2: #2ee8ff; --accent2-rgb: 46, 232, 255; --accent3: #7c8bff; --accent3-rgb: 124, 139, 255; --on-accent: #02101f; --on-accent-2: #021a20; --pro-l1: #a8d6ff; --pro-l2: #9ff3ff; --info: #3da8ff; }
+html[data-theme^="sk-pro-flug"] { --flug-card: rgba(18,20,32,.58); --flug-bd: 1px solid rgba(255,255,255,.12); --flug-sh: 0 22px 60px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.1); --flug-blur: blur(26px) saturate(170%); --flyer-h: 136px; }
+html[data-theme^="sk-pro-flug"] .topbar { margin: 10px 12px 0; height: calc(var(--topbar) - 12px) !important; min-height: 0; border: var(--flug-bd); border-radius: 30px; background: var(--flug-card); backdrop-filter: var(--flug-blur); -webkit-backdrop-filter: var(--flug-blur); box-shadow: var(--flug-sh); }
+html[data-theme^="sk-pro-flug"] .sidebar { margin: 10px 0 0 12px; border: var(--flug-bd); border-radius: 28px; background: var(--flug-card); box-shadow: var(--flug-sh); }
+html[data-theme^="sk-pro-flug"] .stage { padding: 10px 12px 0 14px; display: flex; flex-direction: column; gap: 12px; box-sizing: border-box; }
+html[data-theme^="sk-pro-flug"] .now { margin: 0; padding: 16px 22px 14px; border: var(--flug-bd); border-radius: 28px; background: var(--flug-card); backdrop-filter: var(--flug-blur); -webkit-backdrop-filter: var(--flug-blur); box-shadow: var(--flug-sh); flex: 0 0 auto; }
+html[data-theme^="sk-pro-flug"] .version-bar { margin: 0 auto; align-self: center; padding: 6px 10px; border: var(--flug-bd); border-radius: 999px; background: var(--flug-card); backdrop-filter: var(--flug-blur); -webkit-backdrop-filter: var(--flug-blur); box-shadow: var(--flug-sh); flex: 0 0 auto; }
+html[data-theme^="sk-pro-flug"] body:not(.edit-mode) .lyrics { margin: 0; flex: 1 1 auto; min-height: 0; border: var(--flug-bd); border-radius: 28px; background: var(--flug-card); backdrop-filter: var(--flug-blur); -webkit-backdrop-filter: var(--flug-blur); box-shadow: var(--flug-sh); padding: 14px 18px !important; height: auto !important; }
+html[data-theme^="sk-pro-flug"] .flyer { box-shadow: 0 30px 80px rgba(0,0,0,.7), var(--flug-sh); }
+/* Verschiebe-Modus */
+html[data-theme^="sk-pro-flug"] { --fx: 0px; --fy: 0px; }
+html[data-theme^="sk-pro-flug"] .flug-mv { translate: var(--fx, 0px) var(--fy, 0px); }
+body.flug-move .flug-mv { outline: 2px dashed var(--accent); outline-offset: 3px; }
+.flug-grip { position: fixed; z-index: 640; padding: 6px 12px; border-radius: 999px; background: var(--accent, #8b7cff); color: var(--on-accent, #111); font-weight: 800; font-size: 13px; cursor: grab; touch-action: none; user-select: none; box-shadow: 0 6px 20px rgba(0,0,0,.5); }
+.flug-grip:active { cursor: grabbing; }
+.flug-ctl { position: fixed; right: 10px; top: 50%; transform: translateY(-50%); z-index: 645; display: none; flex-direction: column; gap: 6px; }
+html[data-theme^="sk-pro-flug"] .flug-ctl { display: flex; }
+.flug-ctl button { min-width: 44px; min-height: 44px; border-radius: 22px; border: 1px solid rgba(255,255,255,.25); background: rgba(18,20,32,.8); color: #fff; font-size: 18px; padding: 0 12px; backdrop-filter: blur(10px); }
+.flug-ctl button.on { background: var(--accent); color: var(--on-accent); font-weight: 800; }

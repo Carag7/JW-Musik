@@ -129,7 +129,7 @@
           "Die Prüfung läuft sonst automatisch einmal pro Woche (montags). Das Ergebnis erscheint nach ca. 1–3 Minuten hier."
         ], title: "Aktion: Prüfung starten", cls: "dlg-action" }
       ],
-      check: { label: "Hinweis zeigen, wenn die wöchentliche Prüfung etwas Neues findet", value: opt("fehlNotify", false), onChange: (v) => setOpt("fehlNotify", v) },
+      check: { label: "Hinweis zeigen, wenn die wöchentliche Prüfung etwas Neues findet", value: opt("fehlNotify", true), onChange: (v) => setOpt("fehlNotify", v) },
       buttons: [{ value: "ok", kind: "primary", label: "Jetzt prüfen" }, { value: null, kind: "cancel", label: "Abbrechen" }]
     });
     if (go !== "ok") return;
@@ -414,7 +414,47 @@
     if (sc) sc.scrollTop = top;
   }
 
-  /* Pop-up beim Öffnen der Seite: neue, auf jw.org veröffentlichte Dateien, die in R2 noch fehlen (nur wenn eingeschaltet) */
+  /* Pop-up „Neue Lieder“: Liste der neu auf jw.org veröffentlichten Dateien mit ▶ zum sofortigen Anhören */
+  let nlAudio = null;
+  function popup(keys, intro) {
+    document.getElementById("newSongs")?.remove();
+    if (nlAudio) { try { nlAudio.pause(); } catch { /* egal */ } }
+    nlAudio = new Audio(); nlAudio.preload = "none";
+    const box = h("div", "theme-picker nl-pop"); box.id = "newSongs";
+    const card = h("div", "theme-picker-card nl-card"); box.append(card);
+    card.append(h("p", "theme-picker-title", "Neue Lieder gefunden"));
+    card.append(h("p", "set-hint", intro || `Die wöchentliche Prüfung hat ${keys.length} neue Datei${keys.length === 1 ? "" : "en"} auf jw.org gefunden.`));
+    const list = h("div", "nl-list"); card.append(list);
+    let playing = null;
+    keys.forEach((k) => {
+      const [ns, t] = k.split(":"), n = +ns, ty = TYPES.find((x) => x.id === t); if (!ty) return;
+      const rec = data && data.lieder && data.lieder[n] && data.lieder[n][t];
+      const row = h("div", "nl-row");
+      const b = h("button", "chip nl-play", t === "video" ? "↗" : "▶"); b.type = "button"; b.setAttribute("aria-label", t === "video" ? "Video öffnen" : "Anhören");
+      b.disabled = !(rec && rec.url);
+      b.onclick = () => {
+        if (!rec || !rec.url) return;
+        if (t === "video") { window.open(rec.url, "_blank", "noopener"); return; }
+        if (playing === b) { nlAudio.pause(); b.textContent = "▶"; playing = null; return; }
+        if (playing) playing.textContent = "▶";
+        playing = b; nlAudio.src = rec.url; b.textContent = "⏸";
+        const p = nlAudio.play(); if (p && p.catch) p.catch(() => { b.textContent = "▶"; playing = null; });
+        nlAudio.onended = () => { b.textContent = "▶"; playing = null; };
+      };
+      const title = (data.lieder[n] && data.lieder[n].titel) || `Lied ${n}`;
+      const tx = h("span", "nl-txt"); tx.append(h("b", "", `${pad(n)} · ${title}`), h("small", "", ty.name));
+      row.append(b, tx); list.append(row);
+    });
+    const bt = h("div", "nl-btns");
+    const go = h("button", "chip", "Zu „Fehlend“"); go.type = "button";
+    const cl = h("button", "chip", "Schließen"); cl.type = "button";
+    const close = () => { try { nlAudio.pause(); } catch { /* egal */ } box.remove(); };
+    go.onclick = () => { close(); if (window.syncFavorites) window.syncFavorites("fehlend"); };
+    cl.onclick = close; box.addEventListener("click", (e) => { if (e.target === box) close(); });
+    bt.append(go, cl); card.append(bt);
+    document.body.append(box);
+  }
+  /* beim Öffnen der Seite: neue, auf jw.org veröffentlichte Dateien, die in R2 noch fehlen */
   async function checkNew() {
     try {
       await loadData();
@@ -426,17 +466,26 @@
       try { seenStand = localStorage.getItem("fehlStand"); seen = JSON.parse(localStorage.getItem("fehlSeen") || "null"); } catch { /* egal */ }
       if (seenStand === data.stand) return;
       const fresh = seen ? nowKeys.filter((k) => !seen.includes(k)) : [];
-      try { localStorage.setItem("fehlStand", data.stand); localStorage.setItem("fehlSeen", JSON.stringify(nowKeys)); } catch { /* egal */ }
-      if (!opt("fehlNotify", false) || !fresh.length) return;
-      const byType = {};
-      fresh.forEach((k) => { const t = k.split(":")[1]; byType[t] = (byType[t] || 0) + 1; });
-      const lines = [`Die wöchentliche Prüfung hat ${fresh.length} neue Datei${fresh.length === 1 ? "" : "en"} auf jw.org gefunden, die bei dir noch fehlen${fresh.length === 1 ? "" : "."}`];
-      TYPES.forEach((t) => { if (byType[t.id]) lines.push(`${t.name}: ${byType[t.id]}`); });
-      lines.push("Beispiele: " + fresh.slice(0, 5).map((k) => { const [n, t] = k.split(":"); return `${pad(+n)} ${TYPES.find((x) => x.id === t).name}`; }).join(", "));
-      const go = await uiDialog({ eyebrow: "Fehlende Lieder", title: "Neues gefunden", lines, buttons: [{ value: "go", kind: "primary", label: "Zu „Fehlend“" }, { value: null, kind: "cancel", label: "Später" }] });
-      if (go === "go" && window.syncFavorites) window.syncFavorites("fehlend");
+      try { localStorage.setItem("fehlStand", data.stand); localStorage.setItem("fehlSeen", JSON.stringify(nowKeys)); if (fresh.length) localStorage.setItem("fehlLast", JSON.stringify(fresh)); } catch { /* egal */ }
+      if (!opt("fehlNotify", true) || !fresh.length) return;
+      popup(fresh);
     } catch { /* still */ }
   }
+  /* aus den Einstellungen: den Hinweis noch einmal zeigen (zuletzt Gefundenes, sonst alles Veröffentlichte, das noch fehlt) */
+  async function showLast() {
+    await loadData();
+    if (!data || !data.stand) { try { await uiDialog({ eyebrow: "Neue Lieder", title: "Noch keine Prüfung", lines: ["Die wöchentliche Prüfung hat noch kein Ergebnis geliefert."], buttons: [{ value: null, kind: "cancel", label: "OK" }] }); } catch { /* egal */ } return; }
+    let last = null; try { last = JSON.parse(localStorage.getItem("fehlLast") || "null"); } catch { /* egal */ }
+    let keys = Array.isArray(last) ? last : [];
+    let intro = "Zuletzt gefundene neue Dateien.";
+    if (!keys.length && state.media) {
+      const m = model(); keys = [];
+      m.rows.forEach((r) => TYPES.forEach((t) => { if (!m.has[t.id](r.n) && m.published(r.n, t.id)) keys.push(`${r.n}:${t.id}`); }));
+      intro = "Bisher wurde nichts Neues gemeldet. Hier die auf jw.org veröffentlichten Dateien, die bei dir noch fehlen.";
+    }
+    if (!keys.length) { try { await uiDialog({ eyebrow: "Neue Lieder", title: "Nichts Neues", lines: ["Es gibt keine neuen Lieder, die bei dir fehlen."], buttons: [{ value: null, kind: "cancel", label: "OK" }] }); } catch { /* egal */ } return; }
+    popup(keys, intro);
+  }
 
-  window.FEHLEND = { mount, checkNew };
+  window.FEHLEND = { mount, checkNew, showLast };
 })();

@@ -37,6 +37,9 @@
     { id: "an-disco", name: "Disco ✦ animiert", bar: "#12002b", light: false, skin: true, anim: true, grp: "Animiert", sw: ["#12002b", "#2c1066", "#ff2ea6"], hint: "Animiert: tanzende Farben, hüpfende Tasten" },
     { id: "an-aquarium", name: "Aquarium ✦ animiert", bar: "#021b33", light: false, skin: true, anim: true, grp: "Animiert", sw: ["#021b33", "#0a3a66", "#2ee6c5"], hint: "Animiert: Blasen, Wellen, schwimmender Fisch" },
     { id: "an-weltall", name: "Weltall ✦ animiert", bar: "#05030f", light: false, skin: true, anim: true, grp: "Animiert", sw: ["#05030f", "#17123a", "#ffb703"], hint: "Animiert: Sterne, Rakete, kreisende Planeten-Taste" },
+    { id: "sk-pro-flug", name: "Schwebend", bar: "#07080d", light: false, skin: true, grp: "Pro", sw: ["#07080d", "#2a2650", "#8b7cff"], hint: "Skin: alle Elemente schweben als eigene Karten, verschiebbar" },
+    { id: "sk-pro-flug-gold", name: "Schwebend Gold", bar: "#0a0805", light: false, skin: true, grp: "Pro", sw: ["#0a0805", "#3a2c12", "#f2c36b"], hint: "Schwebend in Gold und Bernstein" },
+    { id: "sk-pro-flug-ozean", name: "Schwebend Ozean", bar: "#040a12", light: false, skin: true, grp: "Pro", sw: ["#040a12", "#10284a", "#3da8ff"], hint: "Schwebend in Blau und Cyan" },
     { id: "tx-nacht", name: "Tesla Nacht", bar: "#0e0f12", light: false, skin: true, grp: "Tesla", sw: ["#0e0f12", "#22242a", "#e82127"], hint: "Tesla: große Tasten, dunkel, wenig Blendung" },
     { id: "tx-tag", name: "Tesla Tag", bar: "#f2f4f7", light: true, skin: true, grp: "Tesla", sw: ["#f2f4f7", "#e1e5ea", "#1c5fe0"], hint: "Tesla: große Tasten, hell, hoher Kontrast" },
     { id: "tx-kontrast", name: "Tesla Kontrast", bar: "#000000", light: false, skin: true, grp: "Tesla", sw: ["#000000", "#1a1a1a", "#ffd400"], hint: "Tesla: Schwarz-Gelb, extra dicke Balken" },
@@ -87,6 +90,7 @@
   };
   /* Gruppen: Designs mit gleichem Aufbau, die sich nur in der Farbe unterscheiden */
   const FAMILIES = [
+    { id: "f-flug", name: "Schwebend", ids: ["sk-pro-flug", "sk-pro-flug-gold", "sk-pro-flug-ozean"], hint: "Alle Elemente schweben als Karten und lassen sich verschieben – 3 Farben" },
     { id: "f-pro", name: "Aurora Pro", ids: ["sk-pro", "sk-pro-gold", "sk-pro-rose", "sk-pro-ozean", "sk-pro-smaragd", "sk-pro-platin"], hint: "Glas, schwebender Player – 6 Farben" },
     { id: "f-jwl", name: "Bibliothek", ids: ["sk-jwl", "sk-jwl-petrol", "sk-jwl-beere", "sk-jwl-nacht", "sk-jwl-schiefer", "sk-jwl-burgund"], hint: "Flach, Liste mit Trennlinien – 2 weiße und 3 dunkle Varianten" },
     { id: "f-atl", name: "Atelier", ids: ["sk-atelier", "sk-atelier-saphir", "sk-atelier-rose", "sk-atelier-salbei", "sk-atelier-kupfer", "sk-atelier-elfenbein"], hint: "Magazin-Aufbau, Serifenschrift – 6 Farben" },
@@ -139,7 +143,7 @@
     if (!f) return t.name;
     if (f.id === "f-farb") return t.name;
     if (t.name === f.name) return "Original";
-    const base = f.id === "f-pro" ? "Aurora " : f.id === "f-jwl" ? "Bibliothek " : f.id === "f-atl" ? "Atelier " : "Tesla ";
+    const base = f.id === "f-flug" ? "Schwebend " : f.id === "f-pro" ? "Aurora " : f.id === "f-jwl" ? "Bibliothek " : f.id === "f-atl" ? "Atelier " : "Tesla ";
     return t.name.startsWith(base) ? t.name.slice(base.length) : t.name;
   };
   function ordered() {
@@ -243,8 +247,8 @@
           if (doneFam.has(f.id)) return;
           doneFam.add(f.id);
           const d = document.createElement("details"); d.className = "shown-fam";
-          d.open = get("themeFam_" + f.id, "0") === "1";
-          d.addEventListener("toggle", () => put("themeFam_" + f.id, d.open ? "1" : "0"));
+          d.open = allOn() || get("themeFam_" + f.id, "0") === "1";
+          d.addEventListener("toggle", () => { if (!allOn()) put("themeFam_" + f.id, d.open ? "1" : "0"); });
           const s = document.createElement("summary");
           const all = document.createElement("input"); all.type = "checkbox"; all.disabled = allOn(); all.title = "Alle Farben dieser Gruppe vorne anzeigen";
           all.checked = mem.every((x) => shown.has(x.id));
@@ -598,7 +602,7 @@
     TL.forEach(([k, n]) => { const b = h("button", "theme-tab", n); b.type = "button"; b.dataset.k = k; b.setAttribute("role", "tab"); b.addEventListener("click", () => { tab = k; put("themeTab", k); paint(); }); tabs.append(b); });
     const legend = h("small", "set-hint theme-legend", "");
     legend.innerHTML = '<i class="lg-on"></i> farbig hinterlegt = aktiv (wird vorne im Hauptfenster angeboten) &nbsp; <i class="lg-cur"></i> Rahmen = gerade benutzt';
-    card.append(legend, tabs, body);
+    if (opts.gear) card.append(legend, tabs, body); else card.append(tabs, body);
     paint();
     return { paint };
   }

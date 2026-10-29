@@ -155,7 +155,7 @@ body.cg-open, body.np-open { overflow: hidden; }
 .cg-thumb { width: var(--th) !important; max-height: calc(var(--th) * 1.5); }
 .cg-rowtxt b { font-size: clamp(14px, calc(var(--cg-size) * .1), 22px); }
 .cg-fl img { max-width: min(70vw, calc(var(--cg-size) * 2.6)) !important; max-height: min(46vmin, calc(var(--cg-size) * 2.6)) !important; }
-.cg-fv { position: absolute; left: 10px; bottom: 10px; width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; font-size: 22px; line-height: 1; color: var(--accent); background: rgba(0,0,0,.62); opacity: 0; transform: translateY(8px); transition: opacity .18s, transform .18s; cursor: pointer; }
+.cg-fv { position: absolute; left: 10px; top: 10px; width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; font-size: 22px; line-height: 1; color: var(--accent); background: rgba(0,0,0,.62); opacity: 0; transform: translateY(8px); transition: opacity .18s, transform .18s; cursor: pointer; }
 .cg-art:hover .cg-fv, .cg-art:focus-visible .cg-fv { opacity: 1; transform: none; }
 @media (hover: none) { .cg-fv { opacity: .9; transform: none; } }
 .cg.fav-mark .cg-card.isfav .cg-art, .cg.fav-mark .cg-fl.isfav { box-shadow: 0 0 0 4px #f5c542, 0 8px 22px rgba(0,0,0,.45); }

@@ -6,7 +6,7 @@
   "use strict";
   const T = window.THEME;
   if (!T) return;
-  const EXCL = new Set(["theme", "themeMode", "themeDay", "themeNight", "themeShown", "themeTabs", "themeOrder", "themeTabList", "themeCustom", "skinProf", "skinActive", "skinBackup"]);
+  const EXCL = new Set(["theme", "themeMode", "themeDay", "themeNight", "themeShown", "themeTabs", "themeOrder", "themeTabList", "themeCustom", "skinProf", "skinActive", "skinBackup", "themeNames", "flugPos"]);
   const SKIN_ROWS = ["fontkar", "lyricalign", "cover", "fontlist", "sidebar", "verbar"];
   /* Empfehlungen je Art von Design (Werte; nur die zugehörigen Zeilen werden angehakt) */
   const REC_SETS = {
@@ -88,6 +88,40 @@
     delete root.dataset.customSig; T.apply(false);
   }
   function preview(cols, node) { Object.entries(T.customVars(cols).v).forEach(([k, v]) => node.style.setProperty(k, v)); node.style.background = cols.panel; node.style.color = cols.text; }
+
+  /* Vorschau auf dem Hauptbildschirm: Farben ausprobieren, ohne zu speichern; „Vorschau beenden“ führt zurück zum Editor */
+  function mainPreview(t, cols, done) {
+    const root = document.documentElement;
+    const saved = { theme: root.getAttribute("data-theme"), skin: root.getAttribute("data-skin"), light: root.getAttribute("data-light") };
+    const base = t.custom ? t.base : t.id, bt = T.byId(base) || t;
+    const put = () => {
+      const cv = T.customVars(cols);
+      if (base === "klassisch") root.removeAttribute("data-theme"); else root.setAttribute("data-theme", base);
+      if (cv.light) root.setAttribute("data-light", "1"); else root.removeAttribute("data-light");
+      if (bt.skin) root.setAttribute("data-skin", base); else root.removeAttribute("data-skin");
+      Object.entries(cv.v).forEach(([k, v]) => root.style.setProperty(k, v));
+    };
+    put();
+    document.getElementById("skinPv")?.remove();
+    const bar = el$("div", "sk-pvbar"); bar.id = "skinPv";
+    bar.append(el$("b", "", `Vorschau: ${t.name}`));
+    const row = el$("div", "sk-pvcols");
+    COLS.forEach(([k, n]) => {
+      const l = el$("label", "sk-col"); l.append(document.createTextNode(n));
+      const i = el$("input"); i.type = "color"; i.value = hex(cols[k]);
+      i.oninput = () => { cols[k] = i.value; put(); };
+      l.append(i); row.append(l);
+    });
+    const end = el$("button", "chip sk-pvend", "Vorschau beenden"); end.type = "button";
+    end.onclick = () => {
+      bar.remove();
+      PV_KEYS.forEach((k) => root.style.removeProperty(k));
+      ["theme", "skin", "light"].forEach((k) => { const a = "data-" + k; if (saved[k] === null) root.removeAttribute(a); else root.setAttribute(a, saved[k]); });
+      done();
+    };
+    bar.append(row, end);
+    document.body.append(bar);
+  }
 
   async function openEditor(id) {
     const t = T.byId(id); if (!t) return;
@@ -192,7 +226,12 @@
     const cm = el$("small", "set-hint", "Die Farben sind nur in diesem Fenster als Vorschau sichtbar; das aktuelle Design bleibt unverändert, bis du ein neues Design speicherst. Designs mit fest eingebauten Farben (z. B. blaue Leiste bei Bibliothek) folgen nur teilweise.");
     const cb = el$("div", "sk-ed-btns");
     const bNew = el$("button", "chip", "Als neues Design speichern"); bNew.type = "button";
-    cb.append(bNew);
+    const bTry = el$("button", "chip", "👁 Vorschau auf dem Hauptbildschirm"); bTry.type = "button";
+    bTry.onclick = () => {
+      box.style.display = "none";
+      mainPreview(t, cols, () => { COLS.forEach(([k]) => { inputs[k].value = hex(cols[k]); }); preview(cols, pv); box.style.display = ""; });
+    };
+    cb.append(bTry, bNew);
     const base = t.custom ? t.base : t.id;
     const writeList = (a) => lss("themeCustom", JSON.stringify(a));
     bNew.onclick = () => {

@@ -1179,11 +1179,17 @@ function layoutVideo() {
 let fadeTimer = 0;
 function applyFade(peek) {
   const b = document.body;
-  b.classList.toggle("tags-fade", lsv("srcTagsFade", "0") === "1");
-  b.classList.toggle("verbar-fade", lsv("verBarFade", "0") === "1");
+  const vbar = document.getElementById("versionBar");
+  if (vbar && !vbar._fadeWired) { vbar._fadeWired = true; vbar.addEventListener("pointerdown", () => applyFade(true)); }
+  b.classList.toggle("tags-fade", lsv("srcTagsFade", "1") === "1");
+  b.classList.toggle("verbar-fade", lsv("verBarFade", "1") === "1");
+  const sec = Math.max(1, Math.min(60, Math.round(Number(lsv("fadeSec", "4")) || 4)));
+  const vb0 = document.getElementById("versionBar");
+  if (vb0 && !vb0._fadeWired) { vb0._fadeWired = true; vb0.addEventListener("pointerdown", () => applyFade(true)); }
+  document.documentElement.style.setProperty("--fade-sec", `${sec}s`);
   if (peek) {
     b.classList.add("fade-peek"); clearTimeout(fadeTimer);
-    fadeTimer = setTimeout(() => b.classList.remove("fade-peek"), 5000);
+    fadeTimer = setTimeout(() => { b.classList.remove("fade-peek"); try { if (document.activeElement && document.activeElement.closest && document.activeElement.closest("#versionBar")) document.activeElement.blur(); } catch { /* egal */ } }, sec * 1000);
   }
 }
 function updateVersionBar() {
@@ -1459,13 +1465,14 @@ function togglePlay() {
   }
 }
 
+const lyricPos = () => Math.max(0.05, Math.min(0.95, (Number(lsv("lyricPos", "33")) || 33) / 100));
 function centerActive(force) {
   if (state.introActive || state.holdTop || state.karaokeHold) return;
   if (state.userScrolling && !force) return;
   const active = el.lyrics.querySelector(".lyric-line.active");
   if (!active) return;
   state.centering = true;
-  const target = active.offsetTop - (el.lyrics.clientHeight * 0.33) + (active.offsetHeight / 2);
+  const target = active.offsetTop - (el.lyrics.clientHeight * lyricPos()) + (active.offsetHeight / 2);
   el.lyrics.scrollTo({ top: Math.max(0, target), behavior: "smooth" });
   setTimeout(() => { state.centering = false; }, 450);
 }
@@ -2928,7 +2935,7 @@ async function putSync(store, data) {
 }
 
 /* ---- Einstellungen mit abgleichen (optional, pro Schlüssel Drei-Wege-Abgleich) ---- */
-const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBarAlways", "verBarFade", "srcTagsFade", "holdGuard", "holdHint", "eggMode", "eggFall", "eggGif", "startGif", "themeShown", "themeTabs", "themeOrder", "themeTabList", "themeCustom", "themeNames", "skinProf", "coverMode", "coverFlip", "sidebarW", "topOffMain", "topOffSet", "startGif", "ludwtSingle", "listRepeat", "srcTags", "favPlace", "favSeek", "showExtra", "srcFilter", "sync-auto-max", "lyricAlign", "skipSec", "skipBack", "skipFwd", "fehlMode", "fehlNotify", "fehlAll", "fehlHelpSeen", STORAGE.scale, STORAGE.listSize];
+const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBarAlways", "verBarFade", "srcTagsFade", "fadeSec", "lyricPos", "flugPos", "holdGuard", "holdHint", "eggMode", "eggFall", "eggGif", "startGif", "themeShown", "themeTabs", "themeOrder", "themeTabList", "themeCustom", "themeNames", "skinProf", "coverMode", "coverFlip", "sidebarW", "topOffMain", "topOffSet", "startGif", "ludwtSingle", "listRepeat", "srcTags", "favPlace", "favSeek", "showExtra", "srcFilter", "sync-auto-max", "lyricAlign", "skipSec", "skipBack", "skipFwd", "fehlMode", "fehlNotify", "fehlAll", "fehlHelpSeen", STORAGE.scale, STORAGE.listSize];
 const isSettingKey = (k) => SETTING_KEYS.includes(k) || /^fehl[TL]_/.test(k);
 const syncSettingsOn = () => false;   // Einstellungen werden jetzt über den Benutzer gespeichert
 function collectSettings() {
@@ -3270,7 +3277,7 @@ function fillSettingsFields() {
   st.checked = srcTagsOn();
   st.onchange = () => { try { localStorage.setItem("srcTags", st.checked ? "1" : "0"); } catch { /* egal */ } renderList(); };
   const stf = document.getElementById("srcTagsFade");
-  stf.checked = lsv("srcTagsFade", "0") === "1";
+  stf.checked = lsv("srcTagsFade", "1") === "1";
   stf.onchange = () => { lss("srcTagsFade", stf.checked ? "1" : "0"); applyFade(true); };
   document.getElementById("extraBox").hidden = false;
   const ex = document.getElementById("extraSongsOpt");
@@ -3284,8 +3291,12 @@ function fillSettingsFields() {
   const lst = document.getElementById("rcListenStart");
   if (lst) { lst.checked = lsv("rcListenStart", "0") === "1"; lst.onchange = () => lss("rcListenStart", lst.checked ? "1" : "0"); }
   const vbf = document.getElementById("verBarFade");
-  vbf.checked = lsv("verBarFade", "0") === "1";
+  vbf.checked = lsv("verBarFade", "1") === "1";
   vbf.onchange = () => { lss("verBarFade", vbf.checked ? "1" : "0"); applyFade(true); };
+  const fsx = document.getElementById("fadeSec");
+  if (fsx) { fsx.value = lsv("fadeSec", "4"); fsx.onchange = () => { const v = Math.max(1, Math.min(60, Math.round(Number(fsx.value) || 4))); fsx.value = String(v); lss("fadeSec", String(v)); applyFade(true); }; }
+  const vbar = document.getElementById("versionBar");
+  if (vbar && !vbar._fadeWired) { vbar._fadeWired = true; vbar.addEventListener("pointerdown", () => applyFade(true)); }
   const auto = document.getElementById("autoPlayOpt");
   auto.checked = localStorage.getItem("autoStart") === "1";
   auto.onchange = () => { try { localStorage.setItem("autoStart", auto.checked ? "1" : "0"); } catch { /* egal */ } updateAutoIcon(); };
@@ -3596,7 +3607,7 @@ function jumpToActiveLine() {
     return;
   }
   state.centering = true;
-  const target = active.offsetTop - (el.lyrics.clientHeight * 0.33) + (active.offsetHeight / 2);
+  const target = active.offsetTop - (el.lyrics.clientHeight * lyricPos()) + (active.offsetHeight / 2);
   el.lyrics.scrollTo({ top: Math.max(0, target), behavior: "smooth" });
   setTimeout(() => { state.centering = false; }, 450);
 }
@@ -3901,6 +3912,9 @@ function setupAdvBox() {
   topNum("advTopSet", "topOffSet");
   num("advBack", () => skipSec(-1), (v) => { localStorage.setItem("skipBack", String(v)); updateSkipLabels(); }, 1, 300);
   num("advFwd", () => skipSec(1), (v) => { localStorage.setItem("skipFwd", String(v)); updateSkipLabels(); }, 1, 300);
+  num("advLyricPos", () => Number(lsv("lyricPos", "33")) || 33, (v) => { lss("lyricPos", String(v)); try { centerActive(true); } catch { /* egal */ } }, 5, 95);
+  const nsa = document.getElementById("fehlShowAgain");
+  if (nsa) nsa.onclick = () => { if (window.FEHLEND && FEHLEND.showLast) FEHLEND.showLast(); };
   const al = document.getElementById("advAlign");
   if (al) { al.value = lsv("lyricAlign", "skin"); al.onchange = () => { lss("lyricAlign", al.value); applyLyricAlign(); }; }
   const cv = document.getElementById("advCover");
@@ -3922,10 +3936,10 @@ const BOOL = [["1", "ein"], ["0", "aus"]];
 const PRESETS = [
   { id: "auto", label: "Beim Öffnen automatisch abspielen", keys: ["autoStart"], def: { autoStart: "1" }, fields: [{ key: "autoStart", o: BOOL, dv: "0" }] },
   { id: "extra", label: "Weitere Lieder aus anderen Verzeichnissen in der Liste", keys: ["showExtra"], def: { showExtra: "0" }, fields: [{ key: "showExtra", o: BOOL, dv: "0" }] },
-  { id: "tags", label: "Kleine Art-Kennzeichen (K, ♪, ▶, Z) unter den Liedern", keys: ["srcTags", "srcTagsFade"], def: { srcTags: "0" }, fields: [{ key: "srcTags", o: BOOL, dv: "1" }, { key: "srcTagsFade", t: "nur kurz", o: BOOL, dv: "0" }] },
+  { id: "tags", label: "Kleine Art-Kennzeichen (K, ♪, ▶, Z) unter den Liedern", keys: ["srcTags", "srcTagsFade"], def: { srcTags: "0" }, fields: [{ key: "srcTags", o: BOOL, dv: "1" }, { key: "srcTagsFade", t: "nur kurz", o: BOOL, dv: "1" }] },
   { id: "fav", label: "Favoriten-Stern (Ort) und Tesla-Player-Taste", keys: ["favPlace", "favSeek"], def: { favPlace: "both", favSeek: "off" },
     fields: [{ key: "favPlace", t: "Ort", o: [["top", "oben"], ["bottom", "unten"], ["both", "beide"]], dv: "both" }, { key: "favSeek", t: "Taste", o: [["off", "keine"], ["back", "zurück"], ["fwd", "vor"]], dv: "off" }] },
-  { id: "verbar", label: "Art-Buttons immer anzeigen", keys: ["verBarAlways", "verBarFade"], def: { verBarAlways: "0" }, fields: [{ key: "verBarAlways", o: BOOL, dv: "0" }, { key: "verBarFade", t: "nur kurz", o: BOOL, dv: "0" }] },
+  { id: "verbar", label: "Art-Buttons immer anzeigen", keys: ["verBarAlways", "verBarFade", "fadeSec"], def: { verBarAlways: "0" }, fields: [{ key: "verBarAlways", o: BOOL, dv: "0" }, { key: "verBarFade", t: "nur kurz", o: BOOL, dv: "1" }, { key: "fadeSec", t: "Sek.", n: [1, 60], dv: "4" }] },
   { id: "srcfilter", label: "Gewählte Art (Karaoke / Instrumental / Video / Zusammenkünfte)", keys: ["srcFilter"] },
   { id: "hold", label: "Lupe und Player-Symbol nur nach langem Drücken", keys: ["holdGuard", "holdHint"], def: { holdGuard: "1" },
     fields: [{ key: "holdGuard", t: "Schutz", o: BOOL, dv: "0" }, { key: "holdHint", t: "Hinweis", o: BOOL, dv: "0" }] },
@@ -3933,21 +3947,22 @@ const PRESETS = [
     fields: [{ key: "themeMode", o: [["manual", "fest"], ["device", "wie Gerät / Tesla"], ["sun", "Sonnenaufgang"]], dv: "manual" }] },
   { id: "fontkar", label: "Schriftgröße Karaoke-Text", keys: [STORAGE.scale], fields: [{ key: STORAGE.scale, n: [10, 200], dv: "42" }] },
   { id: "lyricalign", label: "Ausrichtung des Karaoke-Textes", keys: ["lyricAlign"], fields: [{ key: "lyricAlign", o: [["skin", "wie Design"], ["left", "links"], ["center", "Mitte"], ["right", "rechts"]], dv: "skin" }] },
+  { id: "lyricpos", label: "Höhe der aktiven Karaoke-Zeile (% von oben)", keys: ["lyricPos"], fields: [{ key: "lyricPos", n: [5, 95], dv: "33" }] },
   { id: "cover", label: "Cover anzeigen (neue Cover oder altes Bild)", keys: ["coverMode", "coverFlip"], fields: [{ key: "coverFlip", t: "Drehen", o: BOOL, dv: "1" }, { key: "coverMode", o: [["neu", "neu"], ["alt", "alt"]], dv: "neu" }] },
   { id: "fontlist", label: "Schriftgröße Auswahlfenster", keys: [STORAGE.listSize], fields: [{ key: STORAGE.listSize, n: [10, 48], dv: "16" }] },
   { id: "sidebar", label: "Breite des Auswahlfensters (px, 0 = am Handy ganze Breite)", keys: ["sidebarW"], fields: [{ key: "sidebarW", n: [0, 1200], dv: "300" }] },
   { id: "topoff", offByDefault: true, label: "Abstand oben (px): Hauptfenster / Einstellungen", keys: ["topOffMain", "topOffSet"], fields: [{ key: "topOffMain", t: "Haupt", n: [0, 300], dv: "0" }, { key: "topOffSet", t: "Einstellungen", n: [0, 300], dv: "0" }] },
   { id: "startgif", label: "Startseite: GIF „Chor“ statt des Bildes", keys: ["startGif"], def: { startGif: "0" }, fields: [{ key: "startGif", o: BOOL, dv: "0" }] },
   { id: "lupeopt", label: "Lupe-Optionen: LuD+WT einzeln (■) / Liste wiederholen (↻)", keys: ["ludwtSingle", "listRepeat"], fields: [{ key: "ludwtSingle", t: "einzeln", o: BOOL, dv: "0" }, { key: "listRepeat", t: "wiederholen", o: BOOL, dv: "1" }] },
-  { id: "themeshown", label: "Designs im Hauptfenster (Auswahl)", keys: ["themeShown", "themeTabs", "themeOrder", "themeTabList", "themeCustom", "themeNames", "skinProf"] },
+  { id: "themeshown", label: "Designs im Hauptfenster (Auswahl)", keys: ["themeShown", "themeTabs", "themeOrder", "themeTabList", "themeCustom", "themeNames", "skinProf", "flugPos"] },
   { id: "skip", label: "Springen zurück / vor (Sekunden)", keys: ["skipSec", "skipBack", "skipFwd"],
     fields: [{ key: "skipBack", t: "zurück", n: [1, 300], dv: "15" }, { key: "skipFwd", t: "vor", n: [1, 300], dv: "15" }] },
-  { id: "fehl", label: "Fehlend: Prüfung, Hinweis und Anzeige", keys: ["fehlMode", "fehlNotify", "fehlAll"], rx: /^fehl[TL]_/, fields: [{ key: "fehlNotify", t: "Hinweis", o: BOOL, dv: "0" }] },
+  { id: "fehl", label: "Fehlend: Prüfung, Hinweis und Anzeige", keys: ["fehlMode", "fehlNotify", "fehlAll"], rx: /^fehl[TL]_/, fields: [{ key: "fehlNotify", t: "Hinweis", o: BOOL, dv: "1" }] },
   { id: "syncmax", label: "Automatisch abgleichen, auch wenn bis zu … Lieder gelöscht wurden", keys: ["sync-auto-max"], def: { "sync-auto-max": "2" }, fields: [{ key: "sync-auto-max", n: [0, 999], dv: "0" }] }
 ];
 /* Standard für neue Benutzer (beste Werte am Desktop); über den Namen „standard“ mit dem Schreib-Passwort änderbar */
 const HANDY_EXTRA = { themeMode: "manual", theme: "hy-amoled", holdGuard: "0", [STORAGE.listSize]: "18", sidebarW: "0" };
-const STD_VALS = { autoStart: "0", showExtra: "1", srcTags: "1", favPlace: "both", favSeek: "off", verBarAlways: "1", holdGuard: "0", holdHint: "0", themeMode: "device", [STORAGE.scale]: "42", [STORAGE.listSize]: "16", sidebarW: "300", skipBack: "15", skipFwd: "15", "sync-auto-max": "2" };
+const STD_VALS = { verBarFade: "1", srcTagsFade: "1", fadeSec: "4", autoStart: "0", showExtra: "1", srcTags: "1", favPlace: "both", favSeek: "off", verBarAlways: "1", holdGuard: "0", holdHint: "0", themeMode: "device", [STORAGE.scale]: "42", [STORAGE.listSize]: "16", sidebarW: "300", skipBack: "15", skipFwd: "15", "sync-auto-max": "2" };
 const SYS = { tesla: "_tesla", standard: "_standard", handy: "_handy" };
 const SYS_LABEL = { tesla: "Tesla", standard: "Standard", handy: "Handy" };
 const TESLA_EXTRA = { eggMode: "auto", eggFall: "0", eggGif: "chor", startGif: "0" };

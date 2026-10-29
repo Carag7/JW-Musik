@@ -349,11 +349,12 @@
     const sk = (d) => (typeof skipSec === "function" ? skipSec(d) : 15);
     tr.append(
       mk("rcPrev", "⏮", () => send("prev")), mk("rcBack", `−${sk(-1)}`, () => send("skip", -sk(-1))),
-      mk("rcPlay", "▶", () => { const will = !(R.last && R.last.playing); send(will ? "play" : "pause"); startLocal(will); }, "rc-play"),
+      mk("rcPlay", "▶", () => { const will = !(R.last && R.last.playing); send(will ? "play" : "pause"); startLocal(will); if (R.once && !R.listen) { if (will) syncOnce(); else { try { R.la.pause(); } catch { /* egal */ } } } }, "rc-play"),
       mk("rcFwd", `+${sk(1)}`, () => send("skip", sk(1))), mk("rcNext", "⏭", () => send("next")));
     const tr2 = h("div", "rc-tr rc-tr2");
     const lis = mk("rcListen", "🔊 Mithören", () => setListen(!R.listen), "rc-listen" + (R.listen ? " on" : "")); lis.setAttribute("aria-pressed", String(!!R.listen)); lis.title = "Dasselbe Lied auch auf diesem Gerät synchron abspielen";
-    tr2.append(mk("rcFav", "☆", () => send("fav")), lis, mk("rcShuf", "Zufall", () => send("shuffle", !(R.last && R.last.shuffle))));
+    const syo = mk("rcSyncOnce", "⟳", () => syncOnce(), "rc-synconce"); syo.title = "Einmal synchronisieren: dieses Gerät spielt ab der aktuellen Position des anderen Geräts"; syo.setAttribute("aria-label", "Einmal synchronisieren");
+    tr2.append(mk("rcFav", "☆", () => send("fav")), lis, syo, mk("rcShuf", "Zufall", () => send("shuffle", !(R.last && R.last.shuffle))));
     const vers = h("div", "rc-vers");
     [["karaoke", "Karaoke"], ["meeting", "Instrumental"], ["video", "Video"], ["sung", "Zusammenkünfte"]].forEach(([v, t]) => { const b = h("button", "rc-chip", t); b.type = "button"; b.dataset.v = v; b.onclick = () => send("version", v); vers.append(b); });
     const tabs = h("div", "rc-tabs");
@@ -365,12 +366,32 @@
     paintList();
   }
   /* Mithören: Dieses Gerät (Fernbedienung) spielt dasselbe Lied synchron zum gesteuerten Gerät */
+  /* Einmal synchronisieren: dieses Gerät spielt ab der aktuellen Position des anderen Geräts frei weiter (ohne dauerndes Nachziehen) */
+  function syncOnce() {
+    const s = R.last; if (!s || !s.song || R.role !== "controller") return;
+    const song = state.songs.find((x) => x.id === s.song.id); if (!song) return;
+    if (!R.la) { R.la = new Audio(); R.la.preload = "auto"; }
+    const a = R.la, ver = s.cur || s.ver || "karaoke", key = song.id + "|" + ver;
+    const cur = () => { const st = R.last || s; return st.playing ? R.pos.v + (Date.now() - R.pos.at) / 1000 : R.pos.v; };
+    R.once = true;
+    const go = () => { try { a.currentTime = Math.max(0, cur() + 0.4); } catch { /* egal */ } if (!R.last || R.last.playing) { const p = a.play(); if (p && p.catch) p.catch(() => {}); } };
+    const b = $("rcSyncOnce"); if (b) { b.classList.add("on"); setTimeout(() => b.classList.remove("on"), 1500); }
+    if (R.lkey === key && a.getAttribute("src") && a.readyState >= 1) { go(); return; }
+    R.lkey = key; const tok = (R.ltok = (R.ltok || 0) + 1);
+    try { a.pause(); } catch { /* egal */ }
+    Promise.resolve(typeof pickSource === "function" ? pickSource(song, ver) : null).then((src) => {
+      if (!src || tok !== R.ltok) return;
+      a.src = src.url; a.load();
+      a.addEventListener("loadedmetadata", () => { if (tok === R.ltok) go(); }, { once: true });
+    }).catch(() => {});
+  }
   function stopListen() {
+    R.once = false;
     if (R.la) { try { R.la.pause(); R.la.removeAttribute("src"); R.la.load(); } catch { /* egal */ } }
     R.lkey = ""; R.ltok = (R.ltok || 0) + 1;
   }
   function syncListen(s, pos) {
-    if (!R.listen || !s || !s.song) { if (R.lkey) stopListen(); return; }
+    if (!R.listen || !s || !s.song) { if (R.lkey && !R.once) stopListen(); return; }
     if (!R.la) { R.la = new Audio(); R.la.preload = "auto"; }
     const song = state.songs.find((x) => x.id === s.song.id);
     if (!song) return;
