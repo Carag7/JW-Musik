@@ -1587,3 +1587,37 @@ html[data-lalign="right"] { --lal-origin: right center; }
 #advBox .set-row:has(> select#advAlign), #advBox .set-row:has(> select#advCover) { min-height: 46px; }
 body:not(.glass-open) #advBox .set-row:has(> select#advCover) { display: none !important; }
 .topbar .tb-main { min-width: max-content; } .topbar .tb-main > .lieder-toggle { flex-shrink: 0 !important; }
+
+/* Obere Leiste: die drei Hauptbuttons bekommen eine feste Breite passend zum Auswahlfenster – so können sie nie unter/über die folgenden Buttons rutschen, auch wenn das Auswahlfenster breit gezogen ist */
+@media (min-width: 701px), (orientation: landscape) {
+  .topbar .tb-main { flex: 0 0 auto; width: calc(var(--sidebar, 300px) - 20px); min-width: 0; max-width: calc(100vw - 20px); box-sizing: border-box; overflow: visible; }
+  .topbar .tb-main > .lieder-toggle { flex: 1 1 0 !important; min-width: 0; width: auto; box-sizing: border-box; padding-left: 4px !important; padding-right: 4px !important; overflow: hidden; text-overflow: ellipsis; }
+  .topbar .tb-tools, .topbar > .tb-tools > * { position: relative; z-index: 1; }
+}
+.rc-btn.rc-listen.on { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.login-gate { padding-bottom: var(--kb, 0px); box-sizing: border-box; }
+body:not(.glass-open) #advBox .cover-flip-row { display: none !important; }
+
+/* aktive (vorne angebotene) Designs farbig hinterlegt */
+.theme-pick.is-shown, .theme-chip.is-shown { background: rgba(var(--accent-rgb), .22) !important; border-color: rgba(var(--accent-rgb), .6) !important; }
+.theme-fam.has-shown { background: rgba(var(--accent-rgb), .08); border-color: rgba(var(--accent-rgb), .45); }
+.theme-pick[aria-pressed="true"], .theme-chip[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--accent); }
+.theme-legend i { display: inline-block; width: 14px; height: 14px; border-radius: 4px; vertical-align: -2px; border: 1px solid var(--line); }
+.theme-legend .lg-on { background: rgba(var(--accent-rgb), .35); }
+.theme-legend .lg-cur { box-shadow: 0 0 0 2px var(--accent); }
+.shown-row2:has(input:checked) { background: rgba(var(--accent-rgb), .12); border-radius: 10px; }
+
+/* Skin-Einstellungen (⚙ in „Alle Designs“) */
+.theme-gear { margin-left: 6px; padding: 0 6px; border-radius: 8px; opacity: .6; cursor: pointer; display: inline-block; }
+.theme-gear:hover, .theme-gear:focus-visible { opacity: 1; background: rgba(128,128,128,.25); }
+.theme-gear.on { opacity: 1; color: var(--accent); }
+.theme-pick .theme-gear { position: absolute; top: 6px; right: 8px; margin: 0; }
+.theme-pick { position: relative; }
+.sk-ed { width: min(96vw, 620px); }
+.sk-ed-body { overflow: auto; display: grid; gap: 8px; align-content: start; }
+.sk-ed-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.sk-ed-rows { display: grid; gap: 4px; }
+.sk-ed-sep { margin-top: 14px; }
+.sk-ed-cols { display: flex; flex-wrap: wrap; gap: 12px; }
+.sk-col { display: grid; gap: 4px; justify-items: center; font-size: 13px; }
+.sk-col input[type=color] { width: 54px; height: 40px; padding: 0; border: 1px solid var(--line); border-radius: 8px; background: transparent; }

@@ -66,7 +66,7 @@
     Object.values(R.t).forEach((t) => { clearInterval(t); clearTimeout(t); });
     R.t = {};
     const code = R.code;
-    R.role = ""; R.ctrl = ""; R.last = null;
+    R.role = ""; R.ctrl = ""; R.last = null; R.listen = false; stopListen();
     paintBadge(); closePanel(); closeModal();
     if (notify) {
       if (role === "controller") await api(`${code}/cmd`, "PUT", { cid: R.cid, bye: true, ping: Date.now(), cmds: [] });
@@ -348,7 +348,8 @@
       mk("rcPlay", "▶", () => send(R.last && R.last.playing ? "pause" : "play"), "rc-play"),
       mk("rcFwd", `+${sk(1)}`, () => send("skip", sk(1))), mk("rcNext", "⏭", () => send("next")));
     const tr2 = h("div", "rc-tr rc-tr2");
-    tr2.append(mk("rcFav", "☆", () => send("fav")), mk("rcShuf", "Zufall", () => send("shuffle", !(R.last && R.last.shuffle))));
+    const lis = mk("rcListen", "🔊 Mithören", () => setListen(!R.listen), "rc-listen" + (R.listen ? " on" : "")); lis.setAttribute("aria-pressed", String(!!R.listen)); lis.title = "Dasselbe Lied auch auf diesem Gerät synchron abspielen";
+    tr2.append(mk("rcFav", "☆", () => send("fav")), lis, mk("rcShuf", "Zufall", () => send("shuffle", !(R.last && R.last.shuffle))));
     const vers = h("div", "rc-vers");
     [["karaoke", "Karaoke"], ["meeting", "Instrumental"], ["video", "Video"], ["sung", "Zusammenkünfte"]].forEach(([v, t]) => { const b = h("button", "rc-chip", t); b.type = "button"; b.dataset.v = v; b.onclick = () => send("version", v); vers.append(b); });
     const tabs = h("div", "rc-tabs");
@@ -359,10 +360,48 @@
     p.append(top, now, bar, tr, tr2, vers, tabs, q, list);
     paintList();
   }
+  /* Mithören: Dieses Gerät (Fernbedienung) spielt dasselbe Lied synchron zum gesteuerten Gerät */
+  function stopListen() {
+    if (R.la) { try { R.la.pause(); R.la.removeAttribute("src"); R.la.load(); } catch { /* egal */ } }
+    R.lkey = ""; R.ltok = (R.ltok || 0) + 1;
+  }
+  function syncListen(s, pos) {
+    if (!R.listen || !s || !s.song) { if (R.lkey) stopListen(); return; }
+    if (!R.la) { R.la = new Audio(); R.la.preload = "auto"; }
+    const song = state.songs.find((x) => x.id === s.song.id);
+    if (!song) return;
+    const ver = s.cur || s.ver || "karaoke";
+    const key = song.id + "|" + ver;
+    if (R.lkey !== key) {
+      R.lkey = key; const tok = (R.ltok = (R.ltok || 0) + 1);
+      try { R.la.pause(); } catch { /* egal */ }
+      Promise.resolve(typeof pickSource === "function" ? pickSource(song, ver) : null).then((src) => {
+        if (!src || tok !== R.ltok || !R.listen) return;
+        R.la.src = src.url; R.la.load();
+      }).catch(() => {});
+      return;
+    }
+    const a = R.la;
+    if (!a.getAttribute("src") || a.readyState < 1) return;
+    if (Math.abs((a.currentTime || 0) - pos) > 1.2) { try { a.currentTime = Math.max(0, pos + (s.playing ? 0.25 : 0)); } catch { /* egal */ } }
+    if (s.playing && a.paused) { const p = a.play(); if (p && p.catch) p.catch(() => { const b = $("rcListen"); if (b) b.title = "Zum Mithören einmal tippen"; }); }
+    else if (!s.playing && !a.paused) a.pause();
+  }
+  function setListen(on) {
+    R.listen = !!on;
+    try { localStorage.setItem("rcListen", on ? "1" : "0"); } catch { /* egal */ }
+    if (on) {
+      if (!R.la) { R.la = new Audio(); R.la.preload = "auto"; }
+      try { R.la.src = SILENT; R.la.muted = true; const p = R.la.play(); const done = () => { try { R.la.pause(); R.la.muted = false; R.la.removeAttribute("src"); } catch { /* egal */ } }; if (p && p.then) p.then(done).catch(() => { R.la.muted = false; }); else done(); } catch { /* egal */ }
+      R.lkey = "";
+    } else stopListen();
+    const b = $("rcListen"); if (b) { b.classList.toggle("on", R.listen); b.setAttribute("aria-pressed", String(R.listen)); }
+  }
   function tickPos() {
     const s = R.last; if (!s || R.role !== "controller") return;
     const cur = s.playing ? R.pos.v + (Date.now() - R.pos.at) / 1000 : R.pos.v;
     const pos = s.dur ? Math.min(cur, s.dur) : cur;
+    try { syncListen(s, pos); } catch { /* egal */ }
     const t1 = $("rcT1"); if (t1) t1.textContent = fmt(pos);
     const bf = $("rcBufFill"), bt = $("rcBufTxt");
     if (bt && !s.dur) bt.textContent = s.blocked ? "Auf dem anderen Gerät einmal tippen (Wiedergabe freigeben)" : s.wait ? "Puffer: lädt …" : "Puffer: –";

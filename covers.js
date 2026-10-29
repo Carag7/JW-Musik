@@ -39,7 +39,7 @@
     thumb = document.createElement("button"); thumb.id = "coverThumb"; thumb.type = "button"; thumb.className = "cover-thumb"; thumb.hidden = true;
     thumb.setAttribute("aria-label", "Cover groß anzeigen");
     const im = document.createElement("img"); im.alt = ""; im.decoding = "async"; thumb.append(im);
-    thumb.addEventListener("click", () => openNow());
+    thumb.addEventListener("click", () => openNowFlip());
     row.append(thumb);
     return thumb;
   }
@@ -127,10 +127,12 @@
     art.addEventListener("pointerup", (e) => {
       const dx = e.clientX - sx, dy = e.clientY - sy;
       if (Date.now() - st > 800) return;
-      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) { closeNow(); return; }   // Antippen: zurück zum Karaoke-Text (das kleine Cover öffnet wieder)
+      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) { if (lsv("coverFlip", "1") === "1") flipToText(); return; }   // Antippen: mit Drehung zurück zum Karaoke-Text (das kleine Cover öffnet wieder)
       if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy)) { if (typeof stepAllowed !== "function" || stepAllowed()) step(dx < 0 ? 1 : -1); }
       else if (dy > 90 && Math.abs(dy) > Math.abs(dx)) closeNow();
     });
+    np.classList.add("flip-in");
+    setTimeout(() => { if (np) np.classList.remove("flip-in"); }, 420);
     document.body.append(np);
     document.body.classList.add("np-open");
     document.addEventListener("keydown", npKey, true);
@@ -143,6 +145,22 @@
     if (e.key === "Escape") { e.stopPropagation(); closeNow(); }
     else if (e.key === "ArrowRight") { e.preventDefault(); if (typeof stepAllowed !== "function" || stepAllowed()) step(1); }
     else if (e.key === "ArrowLeft") { e.preventDefault(); if (typeof stepAllowed !== "function" || stepAllowed()) step(-1); }
+  }
+  /* Cover antippen: Drehung um 180° (Cover → Karaoke-Text) – und das kleine Cover dreht zurück */
+  function flipToText() {
+    if (!np) return;
+    np.classList.add("flip-out");
+    const st = document.querySelector(".stage");
+    setTimeout(() => {
+      closeNow(); closeGallery();
+      if (st) { st.classList.add("flip-in"); setTimeout(() => st.classList.remove("flip-in"), 450); }
+    }, 230);
+  }
+  function openNowFlip() {
+    const st = document.querySelector(".stage");
+    if (!st) { openNow(); return; }
+    st.classList.add("flip-out");
+    setTimeout(() => { st.classList.remove("flip-out"); openNow(); }, 200);
   }
   function closeNow() {
     if (!np) return;
@@ -257,10 +275,18 @@
     else l.sort((a, b) => numOf(a) - numOf(b));
     return l;
   }
+  const idxOf = (s) => { const k = state.songs.indexOf(s); return k >= 0 ? k : state.songs.findIndex((x) => x.id === s.id); };
   function pickSong(s, autoplay) {
-    const i = state.songs.indexOf(s); if (i < 0) return;
+    const i = idxOf(s); if (i < 0) return;
     if (state.index === i) { if (autoplay) togglePlay(); return; }
     selectSong(i, autoplay);
+  }
+  /* Cover antippen: Lied starten (falls es nicht schon läuft) und den Player öffnen */
+  function pickOpen(s) {
+    const i = idxOf(s);
+    if (i < 0) return;
+    if (state.index !== i) selectSong(i, true);
+    openNow();
   }
   function eq() { const e = h("span", "cg-eq"); e.innerHTML = "<i></i><i></i><i></i>"; return e; }
   function coverImg(s, cls) {
@@ -276,8 +302,8 @@
     r.cnt.textContent = `${list.length} Lieder · ${withCover} mit Cover`;
     r.size.hidden = G.view !== "grid";
     gal.dataset.view = G.view;
-    const sig = G.view + "|" + list.map((s) => s.id).join(",") + "|" + Object.keys(map).length + "|" + (now ? now.id : "") + "|" + state.favorites.size;
-    if (!force && sig === r.last) { paintMini(); return; }
+    const sig = G.view + "|" + list.map((s) => s.id).join(",") + "|" + Object.keys(map).length;
+    if (!force && sig === r.last) { markNow(); paintMini(); return; }
     const keep = r.body.scrollTop;
     r.last = sig; r.body.replaceChildren();
     r.body.className = "cg-body v-" + G.view;
@@ -285,26 +311,26 @@
     if (G.view === "grid") {
       const g = h("div", "cg-grid");
       list.forEach((s) => {
-        const c = h("div", "cg-card" + (now === s ? " on" : "") + (has(s) ? "" : " nocover"));
+        const c = h("div", "cg-card" + (now === s ? " on" : "") + (has(s) ? "" : " nocover")); c.dataset.sid = s.id;
         const wrap = h("button", "cg-art"); wrap.type = "button"; wrap.setAttribute("aria-label", `${s.id} ${s.title} abspielen`);
         wrap.append(coverImg(s));
         const pl = h("span", "cg-pl"); pl.innerHTML = (now === s && playing()) ? ic.pause : ic.play; wrap.append(pl);
         if (now === s) wrap.append(eq());
         if (!has(s)) wrap.append(h("span", "cg-tag", "altes Bild"));
-        wrap.addEventListener("click", () => pickSong(s, true));
+        wrap.addEventListener("click", (e) => { if (e.target.closest && e.target.closest(".cg-pl")) { pickSong(s, true); return; } pickOpen(s); });
         const t = h("button", "cg-meta"); t.type = "button";
         t.append(h("b", "", `${s.id} · ${s.title}`), h("small", "", s.category || ""));
-        t.addEventListener("click", () => { pickSong(s, false); openNow(); });
+        t.addEventListener("click", () => { pickOpen(s); });
         c.append(wrap, t); g.append(c);
       });
       r.body.append(g);
     } else if (G.view === "list") {
       const ul = h("div", "cg-list");
       list.forEach((s) => {
-        const row = h("div", "cg-row" + (now === s ? " on" : "") + (has(s) ? "" : " nocover"));
+        const row = h("div", "cg-row" + (now === s ? " on" : "") + (has(s) ? "" : " nocover")); row.dataset.sid = s.id;
         const n = h("span", "cg-n", s.id);
         const th = h("button", "cg-thumb"); th.type = "button"; th.append(coverImg(s, "cg-img")); th.setAttribute("aria-label", "Cover groß");
-        th.addEventListener("click", () => { pickSong(s, false); openNow(); });
+        th.addEventListener("click", () => { pickOpen(s); });
         const tx = h("button", "cg-rowtxt"); tx.type = "button"; tx.append(h("b", "", s.title), h("small", "", s.category || ""));
         tx.addEventListener("click", () => pickSong(s, true));
         const st = h("button", "cg-star", state.favorites.has(s.id) ? "★" : "☆"); st.type = "button"; st.setAttribute("aria-label", "Favorit");
@@ -319,7 +345,7 @@
       const wrap = h("div", "cg-flowwrap");
       const fl = h("div", "cg-flow"); fl.tabIndex = 0;
       const items = list.map((s) => {
-        const it = h("button", "cg-fl" + (now === s ? " on" : "") + (has(s) ? "" : " nocover")); it.type = "button";
+        const it = h("button", "cg-fl" + (now === s ? " on" : "") + (has(s) ? "" : " nocover")); it.type = "button"; it.dataset.sid = s.id;
         it.append(coverImg(s)); it._s = s; fl.append(it); return it;
       });
       const cap = h("div", "cg-cap"); const cn = h("p", "cg-capn"); const ct = h("h3", "cg-capt"); const cc = h("p", "cg-capc");
@@ -337,16 +363,25 @@
         play.innerHTML = (items[cIdx] && items[cIdx]._s === cur() && playing()) ? ic.pause : ic.play;
       };
       fl.addEventListener("scroll", () => requestAnimationFrame(upd));
-      items.forEach((it, i) => it.addEventListener("click", () => { if (i === cIdx) pickSong(it._s, true); else center(i, true); }));
+      items.forEach((it, i) => it.addEventListener("click", () => { if (i === cIdx) { pickOpen(it._s); } else center(i, true); }));
       prev.addEventListener("click", () => center(Math.max(0, cIdx - 1), true));
       next.addEventListener("click", () => center(Math.min(items.length - 1, cIdx + 1), true));
       play.addEventListener("click", () => { const it = items[cIdx]; if (it) pickSong(it._s, true); });
-      ct.addEventListener("click", () => { const it = items[cIdx]; if (it) { pickSong(it._s, false); openNow(); } });
+      ct.addEventListener("click", () => { const it = items[cIdx]; if (it) { pickOpen(it._s); } });
       fl.addEventListener("keydown", (e) => { if (e.key === "ArrowRight") { e.preventDefault(); center(Math.min(items.length - 1, cIdx + 1), true); } else if (e.key === "ArrowLeft") { e.preventDefault(); center(Math.max(0, cIdx - 1), true); } });
       requestAnimationFrame(() => { center(cIdx, false); upd(); });
     }
     if (G.view !== "flow") r.body.scrollTop = keep;
     paintMini();
+  }
+  /* aktuelles Lied markieren, ohne die Galerie neu aufzubauen (Bildlauf bleibt stehen) */
+  function markNow() {
+    if (!gal) return;
+    const now = cur();
+    gal.querySelectorAll(".cg-card.on, .cg-row.on, .cg-fl.on").forEach((x) => { x.classList.remove("on"); const e = x.querySelector(".cg-eq"); if (e) e.remove(); });
+    if (!now) return;
+    const x = [...gal.querySelectorAll("[data-sid]")].find((n) => n.dataset.sid === now.id);
+    if (x) { x.classList.add("on"); (x.querySelector(".cg-art") || x).append(eq()); }
   }
   function paintMini() {
     if (!gal) return;

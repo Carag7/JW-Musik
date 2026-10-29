@@ -1907,7 +1907,28 @@ function setupNumberSteppers() {
   new MutationObserver(() => enhanceNumbers(document)).observe(document.body, { childList: true, subtree: true });
 }
 
-/* Eingabeleiste: Tippst du auf ein Eingabefeld, erscheint es als Leiste direkt über der Tastatur (Handy, iPad; nicht im Tesla) */
+/* Handy/iPad: Das Eingabefeld bleibt im sichtbaren Bereich (keine zusätzliche Eingabezeile) */
+function setupKeepVisible() {
+  if (!window.matchMedia || !matchMedia("(pointer: coarse)").matches) return;
+  try { if (isTesla()) return; } catch { /* egal */ }
+  const vv = window.visualViewport;
+  const root = document.documentElement;
+  const isField = (t) => t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) && !/^(checkbox|radio|range|button|submit|file|color)$/i.test(t.type || "");
+  const show = () => {
+    const t = document.activeElement;
+    if (!isField(t)) return;
+    try { t.scrollIntoView({ block: "center", inline: "nearest", behavior: "smooth" }); } catch { try { t.scrollIntoView(); } catch { /* egal */ } }
+  };
+  const kb = () => {
+    const h = vv ? Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop)) : 0;
+    root.style.setProperty("--kb", `${h}px`);
+    if (h > 80) setTimeout(show, 60);
+  };
+  if (vv) { vv.addEventListener("resize", kb); vv.addEventListener("scroll", kb); }
+  document.addEventListener("focusin", (e) => { if (isField(e.target)) { setTimeout(show, 350); setTimeout(show, 800); } });
+}
+
+/* (alt, nicht mehr verwendet) Eingabeleiste: Tippst du auf ein Eingabefeld, erscheint es als Leiste direkt über der Tastatur (Handy, iPad; nicht im Tesla) */
 function setupKbBar() {
   if (!window.matchMedia || !matchMedia("(pointer: coarse)").matches) return;
   try { if (isTesla()) return; } catch { /* egal */ }
@@ -2058,7 +2079,7 @@ const isTesla = () => /Tesla/i.test(navigator.userAgent);
 function bind() {
   setupViewport();
   setupNet();
-  setupKbBar();
+  setupKeepVisible();
   setupNumberSteppers();
   applyTopOffsets();
   try {
@@ -2893,7 +2914,7 @@ async function putSync(store, data) {
 }
 
 /* ---- Einstellungen mit abgleichen (optional, pro Schlüssel Drei-Wege-Abgleich) ---- */
-const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBarAlways", "holdGuard", "holdHint", "eggMode", "eggFall", "eggGif", "startGif", "themeShown", "themeTabs", "themeOrder", "themeTabList", "coverMode", "sidebarW", "topOffMain", "topOffSet", "startGif", "ludwtSingle", "listRepeat", "srcTags", "favPlace", "favSeek", "showExtra", "srcFilter", "sync-auto-max", "lyricAlign", "skipSec", "skipBack", "skipFwd", "fehlMode", "fehlNotify", "fehlAll", "fehlHelpSeen", STORAGE.scale, STORAGE.listSize];
+const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBarAlways", "holdGuard", "holdHint", "eggMode", "eggFall", "eggGif", "startGif", "themeShown", "themeTabs", "themeOrder", "themeTabList", "themeCustom", "skinProf", "coverMode", "coverFlip", "sidebarW", "topOffMain", "topOffSet", "startGif", "ludwtSingle", "listRepeat", "srcTags", "favPlace", "favSeek", "showExtra", "srcFilter", "sync-auto-max", "lyricAlign", "skipSec", "skipBack", "skipFwd", "fehlMode", "fehlNotify", "fehlAll", "fehlHelpSeen", STORAGE.scale, STORAGE.listSize];
 const isSettingKey = (k) => SETTING_KEYS.includes(k) || /^fehl[TL]_/.test(k);
 const syncSettingsOn = () => false;   // Einstellungen werden jetzt über den Benutzer gespeichert
 function collectSettings() {
@@ -3860,6 +3881,8 @@ function setupAdvBox() {
   const al = document.getElementById("advAlign");
   if (al) { al.value = lsv("lyricAlign", "skin"); al.onchange = () => { lss("lyricAlign", al.value); applyLyricAlign(); }; }
   const cv = document.getElementById("advCover");
+  const cf = document.getElementById("advCoverFlip");
+  if (cf) { cf.checked = lsv("coverFlip", "1") === "1"; cf.onchange = () => lss("coverFlip", cf.checked ? "1" : "0"); }
   if (cv) { cv.value = lsv("coverMode", "neu") === "alt" ? "alt" : "neu"; cv.onchange = () => { lss("coverMode", cv.value); if (window.COVERS) COVERS.refresh(); }; }
   const hold = document.getElementById("advHold");
   hold.checked = holdOn();
@@ -3887,13 +3910,13 @@ const PRESETS = [
     fields: [{ key: "themeMode", o: [["manual", "fest"], ["device", "wie Gerät / Tesla"], ["sun", "Sonnenaufgang"]], dv: "manual" }] },
   { id: "fontkar", label: "Schriftgröße Karaoke-Text", keys: [STORAGE.scale], fields: [{ key: STORAGE.scale, n: [10, 200], dv: "42" }] },
   { id: "lyricalign", label: "Ausrichtung des Karaoke-Textes", keys: ["lyricAlign"], fields: [{ key: "lyricAlign", o: [["skin", "wie Design"], ["left", "links"], ["center", "Mitte"], ["right", "rechts"]], dv: "skin" }] },
-  { id: "cover", label: "Cover anzeigen (neue Cover oder altes Bild)", keys: ["coverMode"], fields: [{ key: "coverMode", o: [["neu", "neu"], ["alt", "alt"]], dv: "neu" }] },
+  { id: "cover", label: "Cover anzeigen (neue Cover oder altes Bild)", keys: ["coverMode", "coverFlip"], fields: [{ key: "coverFlip", t: "Drehen", o: BOOL, dv: "1" }, { key: "coverMode", o: [["neu", "neu"], ["alt", "alt"]], dv: "neu" }] },
   { id: "fontlist", label: "Schriftgröße Auswahlfenster", keys: [STORAGE.listSize], fields: [{ key: STORAGE.listSize, n: [10, 48], dv: "16" }] },
   { id: "sidebar", label: "Breite des Auswahlfensters (px, 0 = am Handy ganze Breite)", keys: ["sidebarW"], fields: [{ key: "sidebarW", n: [0, 1200], dv: "300" }] },
   { id: "topoff", offByDefault: true, label: "Abstand oben (px): Hauptfenster / Einstellungen", keys: ["topOffMain", "topOffSet"], fields: [{ key: "topOffMain", t: "Haupt", n: [0, 300], dv: "0" }, { key: "topOffSet", t: "Einstellungen", n: [0, 300], dv: "0" }] },
   { id: "startgif", label: "Startseite: GIF „Chor“ statt des Bildes", keys: ["startGif"], def: { startGif: "0" }, fields: [{ key: "startGif", o: BOOL, dv: "0" }] },
   { id: "lupeopt", label: "Lupe-Optionen: LuD+WT einzeln (■) / Liste wiederholen (↻)", keys: ["ludwtSingle", "listRepeat"], fields: [{ key: "ludwtSingle", t: "einzeln", o: BOOL, dv: "0" }, { key: "listRepeat", t: "wiederholen", o: BOOL, dv: "1" }] },
-  { id: "themeshown", label: "Designs im Hauptfenster (Auswahl)", keys: ["themeShown", "themeTabs", "themeOrder", "themeTabList"] },
+  { id: "themeshown", label: "Designs im Hauptfenster (Auswahl)", keys: ["themeShown", "themeTabs", "themeOrder", "themeTabList", "themeCustom", "skinProf"] },
   { id: "skip", label: "Springen zurück / vor (Sekunden)", keys: ["skipSec", "skipBack", "skipFwd"],
     fields: [{ key: "skipBack", t: "zurück", n: [1, 300], dv: "15" }, { key: "skipFwd", t: "vor", n: [1, 300], dv: "15" }] },
   { id: "fehl", label: "Fehlend: Prüfung, Hinweis und Anzeige", keys: ["fehlMode", "fehlNotify", "fehlAll"], rx: /^fehl[TL]_/, fields: [{ key: "fehlNotify", t: "Hinweis", o: BOOL, dv: "0" }] },
@@ -4169,6 +4192,7 @@ function buildPresetRows(rows, o) {
   rows.replaceChildren();
   const data = o.get();
   PRESETS.forEach((p) => {
+    if (o.skip && o.skip.includes(p.id)) return;
     const wrap = document.createElement("div");
     wrap.className = "preset-row";
     const l = document.createElement("label");

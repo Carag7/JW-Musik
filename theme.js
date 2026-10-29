@@ -93,6 +93,43 @@
     { id: "f-txk", name: "Tesla Kacheln", ids: ["tx-blau", "tx-karte", "tx-energie"], hint: "Tesla-Bildschirm-Look – 3 Farben" },
     { id: "f-farb", name: "Farbdesigns", ids: ["klassisch", "graphit", "tag", "amber", "mitternacht", "wald", "rubin", "himmel", "sand"], hint: "gleiches Aussehen, nur andere Farben" }
   ];
+
+  /* Eigene Farb-Skins: Kopie eines vorhandenen Designs mit selbst gewählten Farben (Liste „themeCustom“, wird mit dem Benutzer gesichert) */
+  const hex2rgb = (h) => { const m = /^#?([0-9a-f]{6})$/i.exec(String(h || "")); if (!m) return [0, 0, 0]; const n = parseInt(m[1], 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
+  const rgb2hex = (a) => "#" + a.map((v) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, "0")).join("");
+  const mix = (a, b, p) => { const x = hex2rgb(a), y = hex2rgb(b); return rgb2hex(x.map((v, i) => v + (y[i] - v) * p)); };
+  const lum = (h) => { const [r, g, b] = hex2rgb(h).map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+  function customVars(c) {
+    const bg = c.bg, panel = c.panel, text = c.text, ac = c.accent, ac2 = c.accent2;
+    const light = lum(bg) > 0.4;
+    const v = {
+      "--bg": bg, "--panel": panel, "--panel-2": mix(panel, text, 0.07), "--text": text, "--muted": mix(text, bg, 0.42), "--strong": text,
+      "--accent": ac, "--accent-rgb": hex2rgb(ac).join(", "), "--accent-2": ac2, "--accent2-rgb": hex2rgb(ac2).join(", "),
+      "--on-accent": lum(ac) > 0.45 ? "#14110a" : "#ffffff", "--on-accent-2": lum(ac2) > 0.45 ? "#14110a" : "#ffffff",
+      "--ink-rgb": hex2rgb(text).join(", "), "--line": `rgba(${hex2rgb(text).join(",")},${light ? .14 : .12})`,
+      "--sel-bg": mix(bg, ac, light ? 0.18 : 0.22), "--sel-text": text, "--lyric-active": ac, "--bar-bg": mix(bg, ac, light ? 0.1 : 0.08), "--pro-bg": bg, "--info": ac
+    };
+    return { v, light };
+  }
+  let customSig = "";
+  function loadCustom() {
+    const raw = get("themeCustom", "");
+    if (raw === customSig) return;
+    customSig = raw;
+    for (let i = THEMES.length - 1; i >= 0; i--) if (THEMES[i].custom) THEMES.splice(i, 1);
+    FAMILIES.forEach((f) => { f.ids = f.ids.filter((x) => !String(x).startsWith("u-")); });
+    let a = []; try { a = JSON.parse(raw) || []; } catch { a = []; }
+    if (!Array.isArray(a)) a = [];
+    a.forEach((c) => {
+      const base = THEMES.find((x) => x.id === c.base && !x.custom);
+      if (!base || !c.id || !c.colors) return;
+      const cv = customVars(c.colors);
+      THEMES.push({ ...base, id: c.id, name: c.name || "Eigenes Design", bar: c.colors.bg, light: cv.light, custom: true, base: base.id, colors: c.colors, grp: base.grp,
+        sw: [c.colors.bg, c.colors.panel, c.colors.accent], hint: `Eigene Farben auf Basis „${base.name}“` });
+      const f = FAMILIES.find((x) => x.ids.includes(base.id));
+      if (f) f.ids.push(c.id);
+    });
+  }
   const famOf = (t) => FAMILIES.find((f) => f.ids.includes(t.id));
   const shortName = (t, f) => {
     if (!f) return t.name;
@@ -288,14 +325,18 @@
 
   let current = null;
   function apply(fade) {
+    loadCustom();
     const r = resolve();
     const t = byId(r.id);
     const root = document.documentElement;
-    if (current === r.id) return r;
+    if (current === r.id && !(t.custom && root.dataset.customSig !== JSON.stringify(t.colors))) return r;
     if (fade) { root.classList.add("theme-fade"); setTimeout(() => root.classList.remove("theme-fade"), 450); }
-    if (r.id === "klassisch") root.removeAttribute("data-theme"); else root.setAttribute("data-theme", r.id);
+    const tid = t.custom ? t.base : r.id;
+    if (tid === "klassisch") root.removeAttribute("data-theme"); else root.setAttribute("data-theme", tid);
     if (t.light) root.setAttribute("data-light", "1"); else root.removeAttribute("data-light");
-    if (t.skin) root.setAttribute("data-skin", t.id); else root.removeAttribute("data-skin");
+    if (t.skin) root.setAttribute("data-skin", tid); else root.removeAttribute("data-skin");
+    Object.keys(customVars({ bg: "#000000", panel: "#000000", text: "#ffffff", accent: "#ffffff", accent2: "#ffffff" }).v).forEach((k) => root.style.removeProperty(k));
+    if (t.custom) { Object.entries(customVars(t.colors).v).forEach(([k, v]) => root.style.setProperty(k, v)); root.dataset.customSig = JSON.stringify(t.colors); } else delete root.dataset.customSig;
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute("content", t.bar);
     current = r.id;
@@ -349,7 +390,7 @@
     if (sub === "alle") {
       root.append(h("small", "set-hint", "Alle Designs ansehen: Tippen wählt das Design sofort (Wechsel auf „Fest“)."));
       const holder = h("div", "theme-picker-holder theme-embedded"); root.append(holder);
-      const inner = buildPicker(holder, { onPick: () => { inner.paint(); } });
+      const inner = buildPicker(holder, { gear: true, onPick: () => { inner.paint(); } });
       return;
     }
     const modes = h("div", "theme-modes");
@@ -479,8 +520,20 @@
     prev.append(card2, bar, dot, txt);
     return prev;
   }
+  /* ⚙ am Design (nur im Reiter „Alle Designs“): öffnet die Skin-Einstellungen (Benutzer, Farben) */
+  let gearOn = false;
+  function gearFor(btn, th) {
+    if (!gearOn || typeof api.onGear !== "function") return;
+    const g = h("span", "theme-gear", "⚙"); g.setAttribute("role", "button"); g.tabIndex = 0; g.title = "Skin-Einstellungen: Benutzer und Farben";
+    const hasProf = (() => { try { const p = JSON.parse(get("skinProf", "{}"))[th.id]; return !!(p && p.on); } catch { return false; } })();
+    if (hasProf) g.classList.add("on");
+    const go = (e) => { e.preventDefault(); e.stopPropagation(); api.onGear(th.id); };
+    g.addEventListener("click", go); g.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") go(e); });
+    btn.append(g);
+  }
   function famCard(f, mem, cur, pick) {
-    const card = h("div", "theme-fam");
+    const shownSet = new Set(shownIds());
+    const card = h("div", "theme-fam" + (mem.some((x) => shownSet.has(x.id)) ? " has-shown" : ""));
     const active = mem.find((x) => x.id === cur) || mem[0];
     const head = h("div", "theme-fam-head");
     head.append(preview(active), (() => { const w = h("span", "theme-fam-txt"); w.append(h("b", "", f.name), h("small", "", f.hint + (mem.some((x) => x.id === cur) ? ` · aktiv: ${shortName(active, f)}` : ""))); return w; })());
@@ -489,9 +542,11 @@
     mem.forEach((x) => {
       const b = h("button", "theme-chip"); b.type = "button"; b.title = x.hint;
       if (x.id === cur) b.setAttribute("aria-pressed", "true");
+      if (shownSet.has(x.id)) b.classList.add("is-shown");
       const sw = h("span", "theme-sw"); x.sw.forEach((col) => { const i = h("i"); i.style.background = col; sw.append(i); });
       b.append(sw, document.createTextNode(shortName(x, f)));
       b.addEventListener("click", () => pick(x));
+      gearFor(b, x);
       chips.append(b);
     });
     card.append(chips);
@@ -500,6 +555,7 @@
   function renderThemeList(body, tab, cur, pick) {
     const list = ordered().filter((t) => tabOf(t) === tab);
     const done = new Set(); let last = "";
+    const shownNow = new Set(shownIds());
     if (!list.length) body.append(h("p", "set-hint", "In diesem Reiter sind noch keine Designs. Unter „Anzeigen & Reiter“ kannst du Designs hierher verschieben."));
     list.forEach((th) => {
       const f = famOf(th);
@@ -510,8 +566,10 @@
       if (grouped) { done.add(f.id); body.append(famCard(f, mem, cur, pick)); return; }
       const b = h("button", "theme-pick"); b.type = "button";
       if (th.id === cur) b.setAttribute("aria-pressed", "true");
+      if (shownNow.has(th.id)) b.classList.add("is-shown");
       b.append(preview(th), h("span", "theme-pick-name", th.name), h("small", "theme-pick-hint", th.hint));
       b.addEventListener("click", () => pick(th));
+      gearFor(b, th);
       body.append(b);
     });
   }
@@ -525,6 +583,7 @@
     if (!TL.some((x) => x[0] === tab)) tab = TL[0][0];
     const tabs = h("div", "theme-tabs"); tabs.setAttribute("role", "tablist");
     const body = h("div", "theme-picker-body");
+    gearOn = !!opts.gear;
     const pick = (th) => { put("themeMode", "manual"); put("theme", th.id); apply(true); if (opts.onPick) opts.onPick(th); };
     const paint = () => {
       tabs.querySelectorAll("button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.k === tab)));
@@ -532,7 +591,9 @@
       renderThemeList(body, tab, cfg().mode === "manual" ? cfg().theme : "", pick);
     };
     TL.forEach(([k, n]) => { const b = h("button", "theme-tab", n); b.type = "button"; b.dataset.k = k; b.setAttribute("role", "tab"); b.addEventListener("click", () => { tab = k; put("themeTab", k); paint(); }); tabs.append(b); });
-    card.append(tabs, body);
+    const legend = h("small", "set-hint theme-legend", "");
+    legend.innerHTML = '<i class="lg-on"></i> farbig hinterlegt = aktiv (wird vorne im Hauptfenster angeboten) &nbsp; <i class="lg-cur"></i> Rahmen = gerade benutzt';
+    card.append(legend, tabs, body);
     paint();
     return { paint };
   }
@@ -562,9 +623,10 @@
     document.body.append(box);
   }
 
-  const api = { THEMES, REC, REC_SHOWN, shownIds, mountShown, resolve, apply, cycle, mountUi, sunTimes, cfg, openPicker, onChange: null };
+  const api = { THEMES, FAMILIES, byId, famOf, shortName, customVars, loadCustom, onGear: null, repaint: null, REC, REC_SHOWN, shownIds, mountShown, resolve, apply, cycle, mountUi, sunTimes, cfg, openPicker, onChange: null };
   window.THEME = api;
 
+  loadCustom();
   apply(false);
   setInterval(() => apply(true), 60000);
   document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") apply(true); });
