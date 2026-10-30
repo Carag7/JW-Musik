@@ -30,8 +30,51 @@ const CORS = {
   "access-control-allow-headers": "content-type,x-write-key,x-user-hash,x-store-hash,x-store-set"
 };
 
-export default {
+/* Protokoll (Cloudflare-Logs): standardmäßig aus. Über die Einstellungen (nur mit WRITE_KEY) für einige Stunden/Tage einschaltbar;
+   danach schaltet es sich selbst wieder ab. Gespeichert in R2 unter _sys/logmode.json ({"until": ms}). Nur dann schreibt der Worker Zeilen ins Protokoll. */
+let logCache = { at: 0, until: 0 };
+async function logUntil(env) {
+  const now = Date.now();
+  if (now - logCache.at < 60000) return logCache.until;
+  let until = 0;
+  try { const o = await env.MUSIK.get("_sys/logmode.json"); if (o) until = Number((await o.json()).until) || 0; } catch { /* aus */ }
+  logCache = { at: now, until };
+  return until;
+}
+async function handleLogMode(request, env) {
+  if (request.method === "OPTIONS") return new Response(null, { headers: CORS });
+  const keyOk = !!env.WRITE_KEY && request.headers.get("x-write-key") === env.WRITE_KEY;
+  if (request.method === "GET") {
+    logCache.at = 0;
+    const until = await logUntil(env);
+    return json({ ok: true, until: until > Date.now() ? until : 0, now: Date.now() }, CORS);
+  }
+  if (request.method === "PUT" || request.method === "POST") {
+    if (!env.WRITE_KEY) return json({ ok: false, fehler: "In Cloudflare fehlt das Secret WRITE_KEY." }, CORS, 403);
+    if (!keyOk) return json({ ok: false, fehler: "Schlüssel falsch." }, CORS, 401);
+    let body = {}; try { body = await request.json(); } catch { /* leer */ }
+    const hours = Math.max(0, Math.min(24 * 14, Number(body.hours) || 0));
+    const until = hours > 0 ? Date.now() + hours * 3600000 : 0;
+    await env.MUSIK.put("_sys/logmode.json", JSON.stringify({ until }), { httpMetadata: { contentType: "application/json" } });
+    logCache = { at: Date.now(), until };
+    return json({ ok: true, until, now: Date.now() }, CORS);
+  }
+  return new Response("method not allowed", { status: 405, headers: CORS });
+}
+
+const app = {
   async fetch(request, env) {
+    const path0 = new URL(request.url).pathname;
+    if (path0 === "/api/logmode") return handleLogMode(request, env);
+    const res = await app.handle(request, env);
+    try {
+      if (path0.startsWith("/api/") || path0.startsWith("/user/") || path0.startsWith("/sync/") || path0.startsWith("/remote/") || path0.startsWith("/media/")) {
+        if ((await logUntil(env)) > Date.now()) console.log(JSON.stringify({ m: request.method, p: path0.replace(/^(\/(?:user|sync|remote)\/)[^/]+/, "$1…"), s: res.status }));
+      }
+    } catch { /* Protokoll darf nie stören */ }
+    return res;
+  },
+  async handle(request, env) {
     const url = new URL(request.url);
     const path = url.pathname;
 
@@ -66,6 +109,7 @@ export default {
     return env.ASSETS ? env.ASSETS.fetch(request) : new Response("Not Found", { status: 404 });
   }
 };
+export default { fetch: (request, env, ctx) => app.fetch(request, env, ctx) };
 
 /* ---------- Dateien aus R2 ausliefern ---------- */
 
