@@ -92,7 +92,8 @@
   /* Vorschau auf dem Hauptbildschirm: Farben ausprobieren, ohne zu speichern; „Vorschau beenden“ führt zurück zum Editor */
   function mainPreview(t, cols, done) {
     const root = document.documentElement;
-    const saved = { theme: root.getAttribute("data-theme"), skin: root.getAttribute("data-skin"), light: root.getAttribute("data-light") };
+    document.getElementById("skinPv")?.remove();
+    const orig = { ...cols };   /* Stand vor der Vorschau (für „Abbrechen“) */
     const base = t.custom ? t.base : t.id, bt = T.byId(base) || t;
     const put = () => {
       const cv = T.customVars(cols);
@@ -100,34 +101,43 @@
       if (cv.light) root.setAttribute("data-light", "1"); else root.removeAttribute("data-light");
       if (bt.skin) root.setAttribute("data-skin", base); else root.removeAttribute("data-skin");
       Object.entries(cv.v).forEach(([k, v]) => root.style.setProperty(k, v));
+      paintSample();
     };
-    put();
-    document.getElementById("skinPv")?.remove();
     const bar = el$("div", "sk-pvbar"); bar.id = "skinPv";
     bar.append(el$("b", "", `Vorschau: ${t.name}`));
+    const sample = el$("div", "sk-pvsample");
+    sample.innerHTML = '<p class="sk-s1">Karaoke-Text in der Textfarbe</p><p class="sk-s2">Zweite Zeile, gedämpft</p>';
+    const paintSample = () => { sample.style.background = cols.panel; sample.style.borderColor = cols.accent; sample.querySelector(".sk-s1").style.color = cols.text; sample.querySelector(".sk-s2").style.color = T.customVars(cols).v["--muted"]; };
     const row = el$("div", "sk-pvcols");
+    const inps = {};
     COLS.forEach(([k, n]) => {
       const l = el$("label", "sk-col"); l.append(document.createTextNode(n));
-      const i = el$("input"); i.type = "color"; i.value = hex(cols[k]);
+      const i = el$("input"); i.type = "color"; i.value = hex(cols[k]); inps[k] = i;
       i.oninput = () => { cols[k] = i.value; put(); };
       l.append(i); row.append(l);
     });
     const tools = el$("div", "sk-pvtools");
     const tb = (txt, label, fn) => { const b = el$("button", "chip", txt); b.type = "button"; b.setAttribute("aria-label", label); b.onclick = fn; return b; };
+    const side = () => bar.classList.toggle("right", lsv("skPvSide", "bottom") === "right");
     tools.append(
       tb("A−", "Karaoke-Text kleiner", () => document.getElementById("smallerBtn") && document.getElementById("smallerBtn").click()),
       tb("A+", "Karaoke-Text größer", () => document.getElementById("largerBtn") && document.getElementById("largerBtn").click()),
       tb("⇆", "Leiste auf die andere Seite", () => { lss("skPvSide", lsv("skPvSide", "bottom") === "right" ? "bottom" : "right"); side(); }));
-    const side = () => bar.classList.toggle("right", lsv("skPvSide", "bottom") === "right");
-    side();
-    const end = el$("button", "chip sk-pvend", "Vorschau beenden"); end.type = "button";
-    end.onclick = () => {
+    /* Vorschau komplett beenden: Leiste weg, Hauptbildschirm wieder im ursprünglichen Design, zurück in den Editor */
+    const finish = () => {
       bar.remove();
       PV_KEYS.forEach((k) => root.style.removeProperty(k));
-      ["theme", "skin", "light"].forEach((k) => { const a = "data-" + k; if (saved[k] === null) root.removeAttribute(a); else root.setAttribute(a, saved[k]); });
+      delete root.dataset.customSig;
+      try { T.reapply(); } catch { /* egal */ }
       done();
     };
-    bar.append(tools, row, end);
+    const end = el$("button", "chip sk-pvend", "Vorschau beenden"); end.type = "button"; end.onclick = finish;
+    const cancel = el$("button", "chip", "Abbrechen (zurück zum Stand vorher)"); cancel.type = "button";
+    cancel.onclick = () => { Object.assign(cols, orig); COLS.forEach(([k]) => { inps[k].value = hex(orig[k]); }); finish(); };
+    const reset = el$("button", "chip", "Zurücksetzen"); reset.type = "button";
+    reset.onclick = () => { Object.assign(cols, orig); COLS.forEach(([k]) => { inps[k].value = hex(orig[k]); }); put(); };
+    bar.append(sample, tools, row, reset, cancel, end);
+    side(); put();
     document.body.append(bar);
   }
 

@@ -2922,7 +2922,7 @@ async function putSync(store, data) {
 }
 
 /* ---- Einstellungen mit abgleichen (optional, pro Schlüssel Drei-Wege-Abgleich) ---- */
-const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBarAlways", "verBarFade", "srcTagsFade", "fadeSec", "lyricPos", "flugPos", "holdGuard", "holdHint", "eggMode", "eggFall", "eggGif", "startGif", "themeShown", "themeTabs", "themeOrder", "themeTabList", "themeCustom", "themeNames", "skinProf", "coverMode", "coverFlip", "sidebarW", "topOffMain", "topOffSet", "startGif", "ludwtSingle", "listRepeat", "srcTags", "favPlace", "favSeek", "showExtra", "srcFilter", "sync-auto-max", "lyricAlign", "skipSec", "skipBack", "skipFwd", "fehlMode", "fehlNotify", "fehlAll", "fehlHelpSeen", STORAGE.scale, STORAGE.listSize];
+const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBarAlways", "verBarFade", "srcTagsFade", "fadeSec", "lyricPos", "flugPos", "rcIdleSec", "holdGuard", "holdHint", "eggMode", "eggFall", "eggGif", "startGif", "themeShown", "themeTabs", "themeOrder", "themeTabList", "themeCustom", "themeNames", "skinProf", "coverMode", "coverFlip", "sidebarW", "topOffMain", "topOffSet", "startGif", "ludwtSingle", "listRepeat", "srcTags", "favPlace", "favSeek", "showExtra", "srcFilter", "sync-auto-max", "lyricAlign", "skipSec", "skipBack", "skipFwd", "fehlMode", "fehlNotify", "fehlAll", "fehlHelpSeen", STORAGE.scale, STORAGE.listSize];
 const isSettingKey = (k) => SETTING_KEYS.includes(k) || /^fehl[TL]_/.test(k);
 const syncSettingsOn = () => false;   // Einstellungen werden jetzt über den Benutzer gespeichert
 function collectSettings() {
@@ -3899,6 +3899,7 @@ function setupAdvBox() {
   topNum("advTopSet", "topOffSet");
   num("advBack", () => skipSec(-1), (v) => { localStorage.setItem("skipBack", String(v)); updateSkipLabels(); }, 1, 300);
   num("advFwd", () => skipSec(1), (v) => { localStorage.setItem("skipFwd", String(v)); updateSkipLabels(); }, 1, 300);
+  num("advRcIdle", () => Number(lsv("rcIdleSec", "10")) || 10, (v) => lss("rcIdleSec", String(v)), 2, 60);
   num("advLyricPos", () => Number(lsv("lyricPos", "33")) || 33, (v) => { lss("lyricPos", String(v)); try { centerActive(true); } catch { /* egal */ } }, 5, 95);
   const al = document.getElementById("advAlign");
   if (al) { al.value = lsv("lyricAlign", "skin"); al.onchange = () => { lss("lyricAlign", al.value); applyLyricAlign(); }; }
@@ -3932,6 +3933,7 @@ const PRESETS = [
     fields: [{ key: "themeMode", o: [["manual", "fest"], ["device", "wie Gerät / Tesla"], ["sun", "Sonnenaufgang"]], dv: "manual" }] },
   { id: "fontkar", label: "Schriftgröße Karaoke-Text", keys: [STORAGE.scale], fields: [{ key: STORAGE.scale, n: [10, 200], dv: "42" }] },
   { id: "lyricalign", label: "Ausrichtung des Karaoke-Textes", keys: ["lyricAlign"], fields: [{ key: "lyricAlign", o: [["skin", "wie Design"], ["left", "links"], ["center", "Mitte"], ["right", "rechts"]], dv: "skin" }] },
+  { id: "rcidle", label: "Fernsteuerung: Abfrage im Ruhezustand (Sekunden)", keys: ["rcIdleSec"], fields: [{ key: "rcIdleSec", n: [2, 60], dv: "10" }] },
   { id: "lyricpos", label: "Höhe der aktiven Karaoke-Zeile (% von oben)", keys: ["lyricPos"], fields: [{ key: "lyricPos", n: [5, 95], dv: "33" }] },
   { id: "cover", label: "Cover anzeigen (neue Cover oder altes Bild)", keys: ["coverMode", "coverFlip"], fields: [{ key: "coverFlip", t: "Drehen", o: BOOL, dv: "1" }, { key: "coverMode", o: [["neu", "neu"], ["alt", "alt"]], dv: "neu" }] },
   { id: "fontlist", label: "Schriftgröße Auswahlfenster", keys: [STORAGE.listSize], fields: [{ key: STORAGE.listSize, n: [10, 48], dv: "16" }] },
@@ -4300,6 +4302,28 @@ async function resetToProfile(name) {
   document.getElementById("userMsg").textContent = `Auf „${label}“ zurückgesetzt.`;
 }
 
+/* Cloudflare-Protokoll (Logs): standardmäßig aus; für einige Stunden/Tage einschaltbar, danach schaltet es sich selbst wieder ab */
+function wireLogMode() {
+  const sel = document.getElementById("logModeSel"), btn = document.getElementById("logModeSet"), st = document.getElementById("logModeState");
+  if (!sel || !btn || !st || btn._w) return; btn._w = true;
+  const fmt = (u) => new Intl.DateTimeFormat("de-AT", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }).format(new Date(u));
+  const show = async () => {
+    try { const r = await fetch(`${SYNC_BASE}/api/logmode`, { cache: "no-store" }); const j = await r.json(); st.textContent = j.until ? `Protokoll ist eingeschaltet bis ${fmt(j.until)} und schaltet sich dann selbst ab.` : "Protokoll ist aus."; }
+    catch { st.textContent = "Status nicht abrufbar (Server nicht erreichbar)."; }
+  };
+  btn.onclick = async () => {
+    const key = await askKey("Protokoll (Logs) umschalten");
+    if (!key) return;
+    try {
+      const r = await fetch(`${SYNC_BASE}/api/logmode`, { method: "PUT", headers: { "content-type": "application/json", "x-write-key": key }, body: JSON.stringify({ hours: Number(sel.value) }) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok || !j.ok) { st.textContent = j.fehler || `Fehler ${r.status}`; return; }
+      await show();
+    } catch { st.textContent = "Server nicht erreichbar."; }
+  };
+  document.getElementById("adminToggle").addEventListener("click", () => setTimeout(show, 50));
+}
+
 /* Dieses Gerät auf Werkszustand: als würde man sich mit einem neuen Browser anmelden (zwei Sicherheitsabfragen) */
 async function factoryReset() {
   const first = await uiDialog({
@@ -4493,6 +4517,7 @@ function setupPresetBox() {
   document.getElementById("stdReset").onclick = () => resetToProfile("standard");
   document.getElementById("teslaReset").onclick = () => resetToProfile("tesla");
   document.getElementById("factoryReset").onclick = factoryReset;
+  wireLogMode();
   document.getElementById("userLink").onclick = async () => {
     const me = userName();
     if (!me) return;

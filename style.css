@@ -1690,3 +1690,9 @@ body.verbar-fade:not(.fade-peek) .version-bar { opacity: 0; }
 .sk-pvbar.right { left: auto; right: 8px; top: 70px; bottom: auto; width: 150px; flex-direction: column; align-items: stretch; max-height: calc(100vh - 90px); overflow: auto; }
 .sk-pvbar.right .sk-pvcols { flex-direction: row; flex-wrap: wrap; }
 .sk-pvbar.right .sk-pvend { margin-left: 0; }
+.sk-pvsample { padding: 8px 12px; border-radius: 10px; background: var(--panel); color: var(--text); flex: 1 1 180px; }
+.sk-pvsample p { margin: 2px 0; color: var(--text); } .sk-pvsample .m { color: var(--muted); }
+
+.sk-pvsample { flex: 1 1 200px; padding: 8px 12px; border-radius: 10px; border: 2px solid; }
+.sk-pvsample p { margin: 2px 0; font-weight: 600; }
+.sk-pvbar.right .sk-pvsample { flex: 0 0 auto; }

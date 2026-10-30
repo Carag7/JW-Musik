@@ -644,7 +644,8 @@
     document.body.append(box);
   }
 
-  const api = { THEMES, FAMILIES, byId, famOf, shortName, customVars, loadCustom, onGear: null, onManage: null, repaint: null, REC, REC_SHOWN, shownIds, mountShown, resolve, apply, cycle, mountUi, sunTimes, cfg, openPicker, onChange: null };
+  function reapply() { current = null; return apply(false); }
+  const api = { reapply, THEMES, FAMILIES, byId, famOf, shortName, customVars, loadCustom, reapply: () => { current = null; apply(false); }, onGear: null, onManage: null, repaint: null, REC, REC_SHOWN, shownIds, mountShown, resolve, apply, cycle, mountUi, sunTimes, cfg, openPicker, onChange: null };
   window.THEME = api;
 
   loadCustom();

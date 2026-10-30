@@ -371,6 +371,13 @@
           <p class="ap-title">Dieses Gerät auf Werkszustand</p>
           <small class="set-hint">Löscht alles auf diesem Gerät (Einstellungen, Anmeldung, lokale Favoriten, Zwischenspeicher), als wäre es ein neuer Browser. Es kommen zwei Sicherheitsabfragen.</small>
           <div class="adv-btns"><button id="factoryReset" class="chip danger" type="button">Gerät zurücksetzen …</button></div>
+          <p class="ap-title">Cloudflare-Protokoll (Logs)</p>
+          <small class="set-hint">Standardmäßig aus (spart Cloudflare-Kontingent). Bei Bedarf für einige Stunden oder Tage einschalten – danach schaltet es sich selbst wieder ab. Braucht das Schreib-Passwort (WRITE_KEY).</small>
+          <div class="adv-btns">
+            <select id="logModeSel" aria-label="Dauer"><option value="0">aus</option><option value="2">2 Stunden</option><option value="6">6 Stunden</option><option value="24">1 Tag</option><option value="72">3 Tage</option><option value="168">7 Tage</option></select>
+            <button id="logModeSet" class="chip" type="button">Übernehmen</button>
+          </div>
+          <small id="logModeState" class="set-hint"></small>
           <p class="ap-title">Benutzer</p>
           <div class="adv-btns"><button id="userDel" class="chip danger" type="button">Benutzer löschen</button></div>
           <small class="set-hint">Standard und Tesla ändern: oben im Feld „Neuer Benutzer“ den Namen „standard“, „handy“ oder „tesla“ eingeben und das Schreib-Passwort (WRITE_KEY) eingeben.</small>
@@ -384,6 +391,7 @@
         <label class="set-row">Schriftgröße Karaoke-Text <input id="advScale" type="number" min="10" max="200" inputmode="numeric" /></label>
         <label class="set-row">Ausrichtung Karaoke-Text (Design = wie vom Design vorgegeben) <select id="advAlign"><option value="skin">Design</option><option value="left">links</option><option value="center">Mitte</option><option value="right">rechts</option></select></label>
         <button id="flugResetBtn" class="chip" type="button" hidden>Schwebend: Positionen und Größen zurücksetzen</button>
+        <label class="set-row">Fernsteuerung: Abfrage im Ruhezustand (Sekunden, Standard 10; nach einer Bedienung kurz schnell) <input id="advRcIdle" type="number" min="2" max="60" inputmode="numeric" /></label>
         <label class="set-row">Höhe der aktiven Karaoke-Zeile (% von oben, Standard 33) <input id="advLyricPos" type="number" min="5" max="95" inputmode="numeric" /></label>
         <label class="set-row">Cover anzeigen <select id="advCover"><option value="neu">Neu</option><option value="alt">Alt</option></select></label>
         <label class="set-row check cover-flip-row"><input id="advCoverFlip" type="checkbox" /> Tippen auf das Cover im Player wechselt (mit Drehung) zum Karaoke-Text</label>

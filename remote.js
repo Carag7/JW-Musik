@@ -201,7 +201,7 @@
     const c = r.json;
     if (c.bye) { end(false, "Das andere Gerät hat die Verbindung beendet."); return; }
     if (c.hello && !R.ctrl) {
-      R.ctrl = c.cid; paintBadge();
+      R.ctrl = c.cid; wake(); paintBadge();
       api("inbox/latest", "DELETE");
       try { showToast("Fernbedienung verbunden."); } catch { /* egal */ }
       closeModal(); postState();
@@ -210,7 +210,7 @@
     if (c.ping) R.peerTs = c.ping;
     let did = false;
     (c.cmds || []).forEach((cmd) => { if (cmd.id > R.lastCmd) { R.lastCmd = cmd.id; try { exec(cmd); } catch { /* egal */ } did = true; } });
-    if (did) { setTimeout(postState, 250); if (["playlist", "all", "ludwt", "next", "prev"].some((t) => (c.cmds || []).some((x) => x.t === t && x.id === R.lastCmd))) { R.wantedPlay = true; checkBlocked(); } }
+    if (did) { wake(); if (R.kick && R.kick.poll) { /* weiter schnell */ } setTimeout(postState, 250); if (["playlist", "all", "ludwt", "next", "prev"].some((t) => (c.cmds || []).some((x) => x.t === t && x.id === R.lastCmd))) { R.wantedPlay = true; checkBlocked(); } }
   }
   async function startPlayer() {
     if (R.role) return;
@@ -221,8 +221,9 @@
     await api(`${R.code}/cmd`, "DELETE");
     await api(`${R.code}/state`, "PUT", buildState());
     await api("inbox/latest", "PUT", { code: R.code, ts: Date.now() });
-    R.t.poll = setInterval(pollCmd, 1000);
-    R.t.beat = setInterval(postState, 3000);
+    wake();
+    loop("poll", pollCmd, 1000, idleMs);
+    loop("beat", postState, 3000, () => Math.max(3000, idleMs()));
     ["play", "pause", "ended", "loadedmetadata", "seeked", "emptied", "waiting", "canplay"].forEach((n) => el.audio.addEventListener(n, onAudio));
     paintBadge();
     showModal("player");
@@ -231,6 +232,20 @@
   function onAudio() { if (R.role !== "player" || audioT) return; audioT = setTimeout(() => { audioT = 0; postState(); }, 400); }
 
   /* ---------- Fernbedienung (steuert) ---------- */
+  /* Abfragen: im Ruhezustand nur alle „rcIdleSec“ Sekunden (Standard 10), nach einer Aktion 45 s lang schnell – spart Cloudflare-Anfragen */
+  const idleMs = () => { let v = 10; try { v = Number(localStorage.getItem("rcIdleSec")); } catch { /* egal */ } if (!isFinite(v) || v <= 0) v = 10; return Math.max(2, Math.min(60, v)) * 1000; };
+  const isFast = () => Date.now() < (R.fastUntil || 0);
+  const wake = () => { R.fastUntil = Date.now() + 45000; };
+  function loop(name, fn, fastMs, idleFn) {
+    const tick = async () => {
+      if (!R.role) return;
+      try { await fn(); } catch { /* egal */ }
+      if (!R.role) return;
+      R.t[name] = setTimeout(tick, isFast() ? fastMs : Math.max(fastMs, idleFn()));
+    };
+    R.t[name] = setTimeout(tick, fastMs);
+    R.kick = R.kick || {}; R.kick[name] = () => { clearTimeout(R.t[name]); R.t[name] = setTimeout(tick, 400); };
+  }
   let flushBusy = false, flushAgain = false;
   async function putCmd() {
     if (R.role !== "controller") return;
@@ -240,7 +255,7 @@
     flushBusy = false;
     if (flushAgain) { flushAgain = false; putCmd(); }
   }
-  function send(t, a) { R.cmds.push({ id: ++R.cmdSeq, t, a }); putCmd(); }
+  function send(t, a) { R.cmds.push({ id: ++R.cmdSeq, t, a }); wake(); putCmd(); if (R.kick && R.kick.poll) R.kick.poll(); }
   async function pollState() {
     if (R.role !== "controller") return;
     const r = await api(`${R.code}/state`);
@@ -272,8 +287,9 @@
     }
     if (!ok) { R.role = ""; R.ctrl = ""; paintBadge(); msg.textContent = "Das andere Gerät hat nicht geantwortet. Ist dort „Wird gesteuert“ noch offen?"; return; }
     try { el.audio.pause(); } catch { /* lokal nicht abspielen */ }
-    R.t.poll = setInterval(pollState, 1200);
-    R.t.ping = setInterval(putCmd, 5000);
+    wake();
+    loop("poll", pollState, 1200, idleMs);
+    loop("ping", putCmd, 5000, () => Math.max(5000, idleMs()));
     R.t.tick = setInterval(tickPos, 500);
     closeModal(); openPanel(); paintBadge(); paintPanel();
   }
@@ -475,7 +491,7 @@
     $("rcFav").textContent = fav ? "★" : "☆"; $("rcFav").classList.toggle("on", !!fav);
     $("rcShuf").classList.toggle("on", !!s.shuffle);
     document.querySelectorAll("#remotePanel .rc-vers .rc-chip").forEach((b) => b.classList.toggle("on", b.dataset.v === (s.cur || s.ver)));
-    const stale = Date.now() - (s.ts || 0) > 20000;
+    const stale = Date.now() - (s.ts || 0) > Math.max(20000, idleMs() * 2.5);
     $("rcPeer").textContent = stale ? "Gerät antwortet nicht …" : "verbunden";
     $("rcPeer").classList.toggle("warn", stale);
     tickPos(); paintList(true);
@@ -545,6 +561,6 @@
     setInterval(paintBadge, 1000);
     window.addEventListener("pagehide", () => { if (R.role === "player") { try { navigator.sendBeacon(`${BASE()}/remote/${R.code}/state`, new Blob([JSON.stringify({ phase: "closed", ts: Date.now() })], { type: "application/json" })); } catch { /* egal */ } } });
   }
-  window.REMOTE = { R, send, end, post: postState };
+  window.REMOTE = { R, send, end, post: postState, start: startPlayer };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
 })();
