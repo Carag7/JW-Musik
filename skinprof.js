@@ -106,8 +106,10 @@
     const bar = el$("div", "sk-pvbar"); bar.id = "skinPv";
     bar.append(el$("b", "", `Vorschau: ${t.name}`));
     const sample = el$("div", "sk-pvsample");
-    sample.innerHTML = '<p class="sk-s1">Karaoke-Text in der Textfarbe</p><p class="sk-s2">Zweite Zeile, gedämpft</p>';
-    const paintSample = () => { sample.style.background = cols.panel; sample.style.borderColor = cols.accent; sample.querySelector(".sk-s1").style.color = cols.text; sample.querySelector(".sk-s2").style.color = T.customVars(cols).v["--muted"]; };
+    sample.innerHTML = '<p class="sk-s1">Karaoke-Text in der Textfarbe</p><p class="sk-s2">Zweite Zeile, gedämpft</p><div class="sk-sb"><button type="button" class="sk-b1">Akzent</button> <button type="button" class="sk-b2">Akzent 2</button></div>';
+    const paintSample = () => { sample.style.background = cols.panel; sample.style.borderColor = cols.accent; sample.querySelector(".sk-s1").style.color = cols.text; sample.querySelector(".sk-s2").style.color = T.customVars(cols).v["--muted"];
+      const v = T.customVars(cols).v, b1 = sample.querySelector(".sk-b1"), b2 = sample.querySelector(".sk-b2");
+      b1.style.background = cols.accent; b1.style.color = v["--on-accent"]; b2.style.background = cols.accent2; b2.style.color = v["--on-accent-2"]; };
     const row = el$("div", "sk-pvcols");
     const inps = {};
     COLS.forEach(([k, n]) => {
@@ -116,6 +118,8 @@
       i.oninput = () => { cols[k] = i.value; put(); };
       l.append(i); row.append(l);
     });
+    sample.querySelector(".sk-b1").onclick = () => inps.accent.click();
+    sample.querySelector(".sk-b2").onclick = () => inps.accent2.click();
     const tools = el$("div", "sk-pvtools");
     const tb = (txt, label, fn) => { const b = el$("button", "chip", txt); b.type = "button"; b.setAttribute("aria-label", label); b.onclick = fn; return b; };
     const side = () => bar.classList.toggle("right", lsv("skPvSide", "bottom") === "right");

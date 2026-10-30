@@ -1696,3 +1696,4 @@ body.verbar-fade:not(.fade-peek) .version-bar { opacity: 0; }
 .sk-pvsample { flex: 1 1 200px; padding: 8px 12px; border-radius: 10px; border: 2px solid; }
 .sk-pvsample p { margin: 2px 0; font-weight: 600; }
 .sk-pvbar.right .sk-pvsample { flex: 0 0 auto; }
+.sk-sb { display: flex; gap: 8px; margin-top: 6px; } .sk-sb button { border: 0; border-radius: 10px; padding: 8px 14px; font-weight: 700; }
