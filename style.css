@@ -1625,9 +1625,6 @@ body:not(.glass-open) #advBox .cover-flip-row { display: none !important; }
 .src-tags, .version-bar { transition: opacity .5s; }
 body.tags-fade:not(.fade-peek) .src-tags { opacity: 0; }
 body.tags-fade #songList li:hover .src-tags, body.tags-fade .src-tags:hover, body.tags-fade li:hover .src-tags { opacity: 1; }
-body.verbar-fade:not(.fade-peek):not(.glass-open) .version-bar:not(:hover) { opacity: 0; }
-body.verbar-fade .version-bar, body.tags-fade .src-tags { transition: opacity .5s ease; }
-body.verbar-fade:not(.fade-peek):not(.glass-open) .version-bar:not(:hover) * { pointer-events: auto; }
 #userName.un-new { border-color: #f59e0b !important; background: rgba(245,158,11,.14) !important; }
 #userName.un-ex { border-color: #22c55e !important; background: rgba(34,197,94,.14) !important; }
 .un-state { display: block; min-height: 1em; }
@@ -1674,3 +1671,22 @@ body.verbar-fade:not(.fade-peek):not(.glass-open) .version-bar:not(:hover) * { p
 .nl-play { min-width: 44px; min-height: 40px; }
 .nl-btns { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
 .nl-pop { z-index: 600; }
+
+/* Art-Buttons und Kennzeichen: nach der eingestellten Zeit ausblenden (auch bei aktiver Lupe); Maus darüber oder Antippen blendet sie wieder ein */
+body.verbar-fade .version-bar, body.tags-fade .src-tags { transition: opacity .5s ease; }
+body.verbar-fade:not(.fade-peek) .version-bar { opacity: 0; }
+@media (hover: hover) { body.verbar-fade .version-bar:hover { opacity: 1; } }
+
+/* Fenster und Auswahllisten immer undurchsichtig (gut lesbar, auch in Glas-Designs) */
+.login-card, .theme-picker-card, .dlg-card, .rm-card, .nl-card, .sk-ed, #codeModal .login-card, #ludwtPopup .login-card {
+  background-color: var(--bg, #0b0e16) !important; background-image: linear-gradient(var(--panel, #101826), var(--panel, #101826)) !important;
+  backdrop-filter: none !important; -webkit-backdrop-filter: none !important; opacity: 1 !important;
+}
+.theme-picker { background-color: rgba(0,0,0,.62) !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+.theme-picker-card .theme-pick, .theme-picker-card .theme-fam, .theme-picker-card .theme-chip { background-color: var(--panel-2, #172235); }
+.login-gate .preset-row, .login-gate .set-row { background-color: transparent; }
+
+.sk-pvtools { display: flex; gap: 6px; }
+.sk-pvbar.right { left: auto; right: 8px; top: 70px; bottom: auto; width: 150px; flex-direction: column; align-items: stretch; max-height: calc(100vh - 90px); overflow: auto; }
+.sk-pvbar.right .sk-pvcols { flex-direction: row; flex-wrap: wrap; }
+.sk-pvbar.right .sk-pvend { margin-left: 0; }

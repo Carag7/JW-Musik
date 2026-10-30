@@ -90,20 +90,22 @@
   }
   /* Wiedergabe freischalten: Browser (v. a. Safari/Tesla) erlauben Ton erst nach einem Tipp auf diesem Gerät */
   const SILENT = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=";
+  try { el.audio.addEventListener("playing", () => { if (!el.audio.muted) R.unlockedOnce = true; }); } catch { /* egal */ }
   function unlockAudio() {
     const a = el.audio;
+    /* Der Wiedergabezustand bleibt, wie er war: spielt etwas, spielt es weiter; ist Pause, bleibt Pause */
+    const wp = state.wantPlay, wasPaused = a.paused, pos0 = a.currentTime || 0, hadSrc = !!a.getAttribute("src");
+    const restore = () => { state.wantPlay = wp; };
     try {
-      if (!a.getAttribute("src")) {
+      if (!hadSrc) {
         a.src = SILENT; a.muted = true;
         const p = a.play();
-        const done = () => { try { a.pause(); a.muted = false; a.removeAttribute("src"); a.load(); } catch { /* egal */ } };
-        if (p && p.then) p.then(done).catch(() => { a.muted = false; }); else done();
-      } else if (a.paused) {
-        /* Lied bleibt wie es ist (Pause bleibt Pause, Position bleibt): nur stumm kurz antippen, damit der Browser späteres Abspielen erlaubt */
-        const pos = a.currentTime || 0;
+        const done = () => { try { a.pause(); a.muted = false; a.removeAttribute("src"); a.load(); } catch { /* egal */ } restore(); };
+        if (p && p.then) p.then(done).catch(() => { a.muted = false; restore(); }); else done();
+      } else if (wasPaused && R.needUnlock) {
         a.muted = true;
-        const back = () => { try { a.pause(); a.muted = false; if (Math.abs((a.currentTime || 0) - pos) > 0.3) a.currentTime = pos; } catch { /* egal */ } };
-        const p = a.play(); if (p && p.then) p.then(back).catch(() => { a.muted = false; }); else back();
+        const back = () => { try { a.pause(); a.muted = false; if (Math.abs((a.currentTime || 0) - pos0) > 0.3) a.currentTime = pos0; } catch { /* egal */ } restore(); setTimeout(restore, 300); };
+        const p = a.play(); if (p && p.then) p.then(back).catch(() => { a.muted = false; restore(); }); else back();
       }
     } catch { /* egal */ }
   }
@@ -212,6 +214,7 @@
   }
   async function startPlayer() {
     if (R.role) return;
+    R.needUnlock = !R.unlockedOnce;
     unlockAudio();
     R.role = "player"; R.ctrl = ""; R.lastCmd = 0; R.code = await freeCode();
     try { if (window.LUDWT) LUDWT.ensureLoaded().then(() => postState()); } catch { /* egal */ }

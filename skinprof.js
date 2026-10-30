@@ -112,6 +112,14 @@
       i.oninput = () => { cols[k] = i.value; put(); };
       l.append(i); row.append(l);
     });
+    const tools = el$("div", "sk-pvtools");
+    const tb = (txt, label, fn) => { const b = el$("button", "chip", txt); b.type = "button"; b.setAttribute("aria-label", label); b.onclick = fn; return b; };
+    tools.append(
+      tb("A−", "Karaoke-Text kleiner", () => document.getElementById("smallerBtn") && document.getElementById("smallerBtn").click()),
+      tb("A+", "Karaoke-Text größer", () => document.getElementById("largerBtn") && document.getElementById("largerBtn").click()),
+      tb("⇆", "Leiste auf die andere Seite", () => { lss("skPvSide", lsv("skPvSide", "bottom") === "right" ? "bottom" : "right"); side(); }));
+    const side = () => bar.classList.toggle("right", lsv("skPvSide", "bottom") === "right");
+    side();
     const end = el$("button", "chip sk-pvend", "Vorschau beenden"); end.type = "button";
     end.onclick = () => {
       bar.remove();
@@ -119,7 +127,7 @@
       ["theme", "skin", "light"].forEach((k) => { const a = "data-" + k; if (saved[k] === null) root.removeAttribute(a); else root.setAttribute(a, saved[k]); });
       done();
     };
-    bar.append(row, end);
+    bar.append(tools, row, end);
     document.body.append(bar);
   }
 

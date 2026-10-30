@@ -1183,6 +1183,7 @@ function applyFade(peek) {
   if (vbar && !vbar._fadeWired) { vbar._fadeWired = true; vbar.addEventListener("pointerdown", () => applyFade(true)); }
   b.classList.toggle("tags-fade", lsv("srcTagsFade", "1") === "1");
   b.classList.toggle("verbar-fade", lsv("verBarFade", "1") === "1");
+  if (!applyFade.obs) { applyFade.obs = true; let g = document.body.classList.contains("glass-open"); new MutationObserver(() => { const n = document.body.classList.contains("glass-open"); if (n !== g) { g = n; if (n) applyFade(true); } }).observe(document.body, { attributes: true, attributeFilter: ["class"] }); }
   const sec = Math.max(1, Math.min(60, Math.round(Number(lsv("fadeSec", "4")) || 4)));
   const vb0 = document.getElementById("versionBar");
   if (vb0 && !vb0._fadeWired) { vb0._fadeWired = true; vb0.addEventListener("pointerdown", () => applyFade(true)); }
@@ -1932,19 +1933,26 @@ function setupKeepVisible() {
   try { if (isTesla()) return; } catch { /* egal */ }
   const vv = window.visualViewport;
   const root = document.documentElement;
-  const isField = (t) => t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) && !/^(checkbox|radio|range|button|submit|file|color)$/i.test(t.type || "");
+  /* nur Felder mit Tastatur (Text, Zahl, Suche); Auswahllisten und Haken öffnen keine Tastatur und werden nie verschoben */
+  const isField = (t) => t && ((t.tagName === "TEXTAREA") || (t.tagName === "INPUT" && /^(text|search|number|password|email|url|tel)$/i.test(t.type || "text")));
+  const scroller = (e) => { for (let p = e.parentElement; p; p = p.parentElement) { const o = getComputedStyle(p).overflowY; if ((o === "auto" || o === "scroll") && p.scrollHeight > p.clientHeight + 2) return p; } return null; };
+  /* Feld nur dann ein Stück verschieben, wenn es hinter der Tastatur oder über dem Rand läge – sonst bleibt alles stehen */
   const show = () => {
     const t = document.activeElement;
     if (!isField(t)) return;
-    try { t.scrollIntoView({ block: "nearest", inline: "nearest" }); } catch { try { t.scrollIntoView(); } catch { /* egal */ } }
+    const vh = vv ? vv.height : window.innerHeight, top = vv ? vv.offsetTop : 0;
+    const r = t.getBoundingClientRect(), sc = scroller(t);
+    if (!sc) return;
+    if (r.bottom > top + vh - 12) sc.scrollTop += r.bottom - (top + vh - 12);
+    else if (r.top < top + 60) sc.scrollTop -= (top + 60) - r.top;
   };
   const kb = () => {
     const h = vv ? Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop)) : 0;
     root.style.setProperty("--kb", `${h}px`);
-    if (h > 80) setTimeout(show, 60);
+    if (h > 80) { clearTimeout(kb.t); kb.t = setTimeout(show, 120); }
   };
-  if (vv) { vv.addEventListener("resize", kb); vv.addEventListener("scroll", kb); }
-  document.addEventListener("focusin", (e) => { if (isField(e.target)) { setTimeout(show, 350); setTimeout(show, 800); } });
+  if (vv) vv.addEventListener("resize", kb);
+  document.addEventListener("focusin", (e) => { if (isField(e.target)) { clearTimeout(kb.f); kb.f = setTimeout(show, 450); } });
 }
 
 /* (alt, nicht mehr verwendet) Eingabeleiste: Tippst du auf ein Eingabefeld, erscheint es als Leiste direkt über der Tastatur (Handy, iPad; nicht im Tesla) */
@@ -2023,28 +2031,7 @@ function setupViewport() {
     if (safe < 28) root.style.setProperty("--safe-top", "28px");
   }
   const vv = window.visualViewport;
-  const sync = () => {
-    if (!vv) return;
-    /* Fenster bleiben immer vollflächig (kein schwarzer Streifen über der Tastatur); nur das Eingabefeld wird sichtbar gehalten */
-    root.style.removeProperty("--vvh"); root.style.removeProperty("--vvtop");
-    const ae = document.activeElement;
-    if (ae && ae.matches && ae.matches("input, textarea, select")) {
-      setTimeout(() => ae.scrollIntoView({ block: "center", behavior: "smooth" }), 80);
-    }
-  };
-  if (vv) { vv.addEventListener("resize", sync); vv.addEventListener("scroll", () => { if (root.style.getPropertyValue("--vvh")) root.style.setProperty("--vvtop", `${Math.round(vv.offsetTop)}px`); }); sync(); }
-  /* Eingabefeld bleibt sichtbar, wenn die Tastatur aufgeht (auch nach dem Aufklappen der Tastatur) */
-  document.addEventListener("focusin", (e) => {
-    const t = e.target;
-    if (!t || !t.matches || !t.matches("input:not([type=checkbox]):not([type=radio]):not([type=range]), textarea, select")) return;
-    [250, 600].forEach((ms) => setTimeout(() => { if (document.activeElement === t) t.scrollIntoView({ block: "center", behavior: "smooth" }); }, ms));
-  });
-  document.addEventListener("focusin", (e) => {
-    const t = e.target;
-    if (t && t.matches && t.matches("input, textarea") && t.closest(".login-gate")) {
-      setTimeout(() => t.scrollIntoView({ block: "center", behavior: "smooth" }), 350);
-    }
-  });
+  root.style.removeProperty("--vvh"); root.style.removeProperty("--vvtop");
 }
 
 /* „Welle“-Button rechtsbündig genau über der Endzeit des Liedes */
@@ -3913,8 +3900,6 @@ function setupAdvBox() {
   num("advBack", () => skipSec(-1), (v) => { localStorage.setItem("skipBack", String(v)); updateSkipLabels(); }, 1, 300);
   num("advFwd", () => skipSec(1), (v) => { localStorage.setItem("skipFwd", String(v)); updateSkipLabels(); }, 1, 300);
   num("advLyricPos", () => Number(lsv("lyricPos", "33")) || 33, (v) => { lss("lyricPos", String(v)); try { centerActive(true); } catch { /* egal */ } }, 5, 95);
-  const nsa = document.getElementById("fehlShowAgain");
-  if (nsa) nsa.onclick = () => { if (window.FEHLEND && FEHLEND.showLast) FEHLEND.showLast(); };
   const al = document.getElementById("advAlign");
   if (al) { al.value = lsv("lyricAlign", "skin"); al.onchange = () => { lss("lyricAlign", al.value); applyLyricAlign(); }; }
   const cv = document.getElementById("advCover");

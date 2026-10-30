@@ -40,6 +40,9 @@
     { id: "sk-pro-flug", name: "Schwebend", bar: "#07080d", light: false, skin: true, grp: "Pro", sw: ["#07080d", "#2a2650", "#8b7cff"], hint: "Skin: alle Elemente schweben als eigene Karten, verschiebbar" },
     { id: "sk-pro-flug-gold", name: "Schwebend Gold", bar: "#0a0805", light: false, skin: true, grp: "Pro", sw: ["#0a0805", "#3a2c12", "#f2c36b"], hint: "Schwebend in Gold und Bernstein" },
     { id: "sk-pro-flug-ozean", name: "Schwebend Ozean", bar: "#040a12", light: false, skin: true, grp: "Pro", sw: ["#040a12", "#10284a", "#3da8ff"], hint: "Schwebend in Blau und Cyan" },
+    { id: "sk-pro-flug-rose", name: "Schwebend Rosé", bar: "#0c0509", light: false, skin: true, grp: "Pro", sw: ["#0c0509", "#3a1226", "#ff5d9e"], hint: "Schwebend in Rosé und Pfirsich" },
+    { id: "sk-pro-flug-smaragd", name: "Schwebend Smaragd", bar: "#040c09", light: false, skin: true, grp: "Pro", sw: ["#040c09", "#0f3322", "#2fe08a"], hint: "Schwebend in Grün und Limette" },
+    { id: "sk-pro-flug-platin", name: "Schwebend Platin", bar: "#08090b", light: false, skin: true, grp: "Pro", sw: ["#08090b", "#2a2e38", "#d9dde6"], hint: "Schwebend in Silber und Stahlblau" },
     { id: "tx-nacht", name: "Tesla Nacht", bar: "#0e0f12", light: false, skin: true, grp: "Tesla", sw: ["#0e0f12", "#22242a", "#e82127"], hint: "Tesla: große Tasten, dunkel, wenig Blendung" },
     { id: "tx-tag", name: "Tesla Tag", bar: "#f2f4f7", light: true, skin: true, grp: "Tesla", sw: ["#f2f4f7", "#e1e5ea", "#1c5fe0"], hint: "Tesla: große Tasten, hell, hoher Kontrast" },
     { id: "tx-kontrast", name: "Tesla Kontrast", bar: "#000000", light: false, skin: true, grp: "Tesla", sw: ["#000000", "#1a1a1a", "#ffd400"], hint: "Tesla: Schwarz-Gelb, extra dicke Balken" },
@@ -90,7 +93,7 @@
   };
   /* Gruppen: Designs mit gleichem Aufbau, die sich nur in der Farbe unterscheiden */
   const FAMILIES = [
-    { id: "f-flug", name: "Schwebend", ids: ["sk-pro-flug", "sk-pro-flug-gold", "sk-pro-flug-ozean"], hint: "Alle Elemente schweben als Karten und lassen sich verschieben – 3 Farben" },
+    { id: "f-flug", name: "Schwebend", ids: ["sk-pro-flug", "sk-pro-flug-gold", "sk-pro-flug-ozean", "sk-pro-flug-rose", "sk-pro-flug-smaragd", "sk-pro-flug-platin"], hint: "Alle Elemente schweben als Karten und lassen sich verschieben und vergrößern – 6 Farben" },
     { id: "f-pro", name: "Aurora Pro", ids: ["sk-pro", "sk-pro-gold", "sk-pro-rose", "sk-pro-ozean", "sk-pro-smaragd", "sk-pro-platin"], hint: "Glas, schwebender Player – 6 Farben" },
     { id: "f-jwl", name: "Bibliothek", ids: ["sk-jwl", "sk-jwl-petrol", "sk-jwl-beere", "sk-jwl-nacht", "sk-jwl-schiefer", "sk-jwl-burgund"], hint: "Flach, Liste mit Trennlinien – 2 weiße und 3 dunkle Varianten" },
     { id: "f-atl", name: "Atelier", ids: ["sk-atelier", "sk-atelier-saphir", "sk-atelier-rose", "sk-atelier-salbei", "sk-atelier-kupfer", "sk-atelier-elfenbein"], hint: "Magazin-Aufbau, Serifenschrift – 6 Farben" },

@@ -224,6 +224,9 @@
     info.addEventListener("click", () => manual(root));
     head.append(info);
     root.append(head);
+    const again = h("button", "chip", "Hinweis „Neue Lieder“ noch einmal anzeigen"); again.type = "button";
+    again.addEventListener("click", () => showLast());
+    root.append(again);
 
     // Status: Punkt (grau/orange/grün/rot) + Meldung
     const st = h("div", "ls-line fl-status");

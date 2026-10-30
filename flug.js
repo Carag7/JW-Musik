@@ -16,8 +16,8 @@
       const e = document.querySelector(sel); if (!e) return;
       e.classList.toggle("flug-mv", on);
       const p = pos[id];
-      if (on && Array.isArray(p)) { e.style.setProperty("--fx", `${Math.round(p[0])}px`); e.style.setProperty("--fy", `${Math.round(p[1])}px`); }
-      else { e.style.removeProperty("--fx"); e.style.removeProperty("--fy"); }
+      if (on && Array.isArray(p)) { e.style.setProperty("--fx", `${Math.round(p[0])}px`); e.style.setProperty("--fy", `${Math.round(p[1])}px`); e.style.setProperty("--fs", String(p[2] || 1)); }
+      else { e.style.removeProperty("--fx"); e.style.removeProperty("--fy"); e.style.removeProperty("--fs"); }
     });
   }
   function placeGrips() {
@@ -35,11 +35,14 @@
     clearGrips();
     PARTS.forEach(([id, sel, name]) => {
       const e = document.querySelector(sel); if (!e) return;
-      const g = document.createElement("div"); g.className = "flug-grip"; g.textContent = `✥ ${name}`; g._sel = sel; g._id = id;
+      const g = document.createElement("div"); g.className = "flug-grip"; g._sel = sel; g._id = id;
+      const lab = document.createElement("span"); lab.textContent = `✥ ${name}`; g.append(lab);
+      const sz = (d) => { const o = posAll(); const p = o[id] || [0, 0, 1]; const ns = Math.max(0.5, Math.min(1.6, Math.round(((p[2] || 1) + d) * 10) / 10)); o[id] = [p[0] || 0, p[1] || 0, ns]; lsSet("flugPos", JSON.stringify(o)); e.style.setProperty("--fs", String(ns)); placeGrips(); };
+      [["−", -0.1, "kleiner"], ["+", 0.1, "größer"]].forEach(([t, d, n]) => { const b = document.createElement("button"); b.type = "button"; b.textContent = t; b.setAttribute("aria-label", `${name} ${n}`); b.addEventListener("pointerdown", (ev) => ev.stopPropagation()); b.addEventListener("click", () => sz(d)); g.append(b); });
       let sx = 0, sy = 0, bx = 0, by = 0, drag = false;
       g.addEventListener("pointerdown", (ev) => {
         ev.preventDefault(); g.setPointerCapture(ev.pointerId); drag = true; sx = ev.clientX; sy = ev.clientY;
-        const p = posAll()[id] || [0, 0]; bx = p[0]; by = p[1];
+        const p = posAll()[id] || [0, 0, 1]; bx = p[0]; by = p[1];
       });
       g.addEventListener("pointermove", (ev) => {
         if (!drag) return;
@@ -55,7 +58,7 @@
       const end = (ev) => {
         if (!drag) return; drag = false;
         const fx = parseFloat(e.style.getPropertyValue("--fx")) || 0, fy = parseFloat(e.style.getPropertyValue("--fy")) || 0;
-        const o = posAll(); o[id] = [fx, fy]; lsSet("flugPos", JSON.stringify(o));
+        const o = posAll(); o[id] = [fx, fy, (o[id] && o[id][2]) || 1]; lsSet("flugPos", JSON.stringify(o));
       };
       g.addEventListener("pointerup", end); g.addEventListener("pointercancel", end);
       document.body.append(g); grips.push(g);
@@ -69,6 +72,7 @@
     if (moving) makeGrips(); else clearGrips();
   }
   function reset() { lsSet("flugPos", "{}"); applyPos(); placeGrips(); }
+  document.addEventListener("click", (e) => { const b = e.target.closest && e.target.closest("#flugResetBtn"); if (b) { reset(); b.textContent = "Zurückgesetzt ✔"; setTimeout(() => { b.textContent = "Schwebend: Positionen und Größen zurücksetzen"; }, 1800); } });
   function build() {
     if (document.getElementById("flugCtl")) return;
     const box = document.createElement("div"); box.className = "flug-ctl"; box.id = "flugCtl";
@@ -78,8 +82,16 @@
     rs.onclick = reset;
     box.append(mv, rs); document.body.append(box);
   }
-  function sync() { build(); applyPos(); if (!isFlug() && moving) setMove(false); }
+  const lupe = () => document.body.classList.contains("glass-open");
+  function sync() {
+    build(); applyPos();
+    if (moving && (!isFlug() || !lupe())) setMove(false);
+    const rb = document.getElementById("flugResetBtn"); if (rb) rb.hidden = !isFlug();
+  }
   new MutationObserver(sync).observe(root, { attributes: true, attributeFilter: ["data-theme"] });
+  new MutationObserver(sync).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+  const bo = () => { new MutationObserver(sync).observe(document.body, { attributes: true, attributeFilter: ["class"] }); };
+  if (document.body) bo(); else document.addEventListener("DOMContentLoaded", bo);
   window.addEventListener("resize", () => { if (moving) placeGrips(); });
   window.addEventListener("storage", (e) => { if (e.key === "flugPos") applyPos(); });
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", sync); else sync();

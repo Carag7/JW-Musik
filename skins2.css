@@ -365,11 +365,17 @@ html[data-theme^="sk-pro-flug"] body:not(.edit-mode) .lyrics { margin: 0; flex: 
 html[data-theme^="sk-pro-flug"] .flyer { box-shadow: 0 30px 80px rgba(0,0,0,.7), var(--flug-sh); }
 /* Verschiebe-Modus */
 html[data-theme^="sk-pro-flug"] { --fx: 0px; --fy: 0px; }
-html[data-theme^="sk-pro-flug"] .flug-mv { translate: var(--fx, 0px) var(--fy, 0px); }
+html[data-theme^="sk-pro-flug"] .flug-mv { translate: var(--fx, 0px) var(--fy, 0px); scale: var(--fs, 1); }
 body.flug-move .flug-mv { outline: 2px dashed var(--accent); outline-offset: 3px; }
 .flug-grip { position: fixed; z-index: 640; padding: 6px 12px; border-radius: 999px; background: var(--accent, #8b7cff); color: var(--on-accent, #111); font-weight: 800; font-size: 13px; cursor: grab; touch-action: none; user-select: none; box-shadow: 0 6px 20px rgba(0,0,0,.5); }
 .flug-grip:active { cursor: grabbing; }
 .flug-ctl { position: fixed; right: 10px; top: 50%; transform: translateY(-50%); z-index: 645; display: none; flex-direction: column; gap: 6px; }
-html[data-theme^="sk-pro-flug"] .flug-ctl { display: flex; }
+html[data-theme^="sk-pro-flug"] body.glass-open .flug-ctl { display: flex; }
 .flug-ctl button { min-width: 44px; min-height: 44px; border-radius: 22px; border: 1px solid rgba(255,255,255,.25); background: rgba(18,20,32,.8); color: #fff; font-size: 18px; padding: 0 12px; backdrop-filter: blur(10px); }
 .flug-ctl button.on { background: var(--accent); color: var(--on-accent); font-weight: 800; }
+
+html[data-theme="sk-pro-flug-rose"] { --pro-bg: #0c0509; --accent: #ff5d9e; --accent-rgb: 255, 93, 158; --accent-2: #ffa24d; --accent2-rgb: 255, 162, 77; --accent3: #c58bff; --accent3-rgb: 197, 139, 255; --on-accent: #2a0414; --on-accent-2: #2a1203; --pro-l1: #ffb3d1; --pro-l2: #ffc990; --info: #ff8fbf; }
+html[data-theme="sk-pro-flug-smaragd"] { --pro-bg: #040c09; --accent: #2fe08a; --accent-rgb: 47, 224, 138; --accent-2: #c6f25a; --accent2-rgb: 198, 242, 90; --accent3: #3ad7d0; --accent3-rgb: 58, 215, 208; --on-accent: #02180d; --on-accent-2: #1a2203; --pro-l1: #a6f5c9; --pro-l2: #e0fa9a; --info: #2fe08a; }
+html[data-theme="sk-pro-flug-platin"] { --pro-bg: #08090b; --accent: #d9dde6; --accent-rgb: 217, 221, 230; --accent-2: #8fa0bd; --accent2-rgb: 143, 160, 189; --accent3: #ffffff; --accent3-rgb: 255, 255, 255; --on-accent: #0c0e12; --on-accent-2: #0c0e12; --pro-l1: #ffffff; --pro-l2: #b9c4d8; --info: #b9c4d8; }
+.flug-grip { display: flex; align-items: center; gap: 6px; }
+.flug-grip button { min-width: 28px; min-height: 28px; border-radius: 50%; border: 0; background: rgba(0,0,0,.28); color: inherit; font-weight: 900; font-size: 16px; line-height: 1; padding: 0; }
