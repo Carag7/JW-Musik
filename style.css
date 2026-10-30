@@ -1697,3 +1697,17 @@ body.verbar-fade:not(.fade-peek) .version-bar { opacity: 0; }
 .sk-pvsample p { margin: 2px 0; font-weight: 600; }
 .sk-pvbar.right .sk-pvsample { flex: 0 0 auto; }
 .sk-sb { display: flex; gap: 8px; margin-top: 6px; } .sk-sb button { border: 0; border-radius: 10px; padding: 8px 14px; font-weight: 700; }
+
+/* Vorschau-Leiste rechts: feste, schmale Breite – nichts ragt über den Rand */
+.sk-pvbar { box-sizing: border-box; max-width: calc(100vw - 16px); }
+.sk-pvbar.right { left: auto !important; right: 8px; width: min(190px, calc(100vw - 16px)); overflow-x: hidden; overflow-y: auto; }
+.sk-pvbar.right > * { min-width: 0; max-width: 100%; box-sizing: border-box; }
+.sk-pvbar.right .sk-pvsample { flex: 0 0 auto; width: 100%; }
+.sk-pvbar.right .sk-pvsample p { overflow-wrap: anywhere; }
+.sk-pvbar.right .sk-sb { flex-wrap: wrap; }
+.sk-pvbar.right .sk-sb button { flex: 1 1 70px; padding: 8px 6px; }
+.sk-pvbar.right .sk-pvtools { flex-wrap: wrap; }
+.sk-pvbar.right .sk-pvcols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.sk-pvbar.right .sk-col { min-width: 0; font-size: 11px; text-align: center; }
+.sk-pvbar.right .sk-col input[type=color] { width: 100%; max-width: 54px; }
+.sk-pvbar.right .chip { white-space: normal; text-align: center; }
