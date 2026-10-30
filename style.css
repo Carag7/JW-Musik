@@ -1711,3 +1711,7 @@ body.verbar-fade:not(.fade-peek) .version-bar { opacity: 0; }
 .sk-pvbar.right .sk-col { min-width: 0; font-size: 11px; text-align: center; }
 .sk-pvbar.right .sk-col input[type=color] { width: 100%; max-width: 54px; }
 .sk-pvbar.right .chip { white-space: normal; text-align: center; }
+
+/* v113: Beispiel-Box in der Vorschau nur so breit wie nötig */
+.sk-pvbar .sk-pvsample { flex: 0 1 auto; width: fit-content; max-width: 100%; }
+.sk-pvbar.right .sk-pvsample { width: 100%; }
