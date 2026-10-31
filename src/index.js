@@ -81,7 +81,7 @@ const app = {
     if (request.method === "OPTIONS" && (path.startsWith("/api/") || path.startsWith("/sync/") || path.startsWith("/remote/") || path.startsWith("/media/"))) {
       return new Response(null, { headers: CORS });
     }
-    if (path === "/api/covers") return handleCovers(env);
+    if (path === "/api/covers") return handleCovers(env, url);
     if (path === "/api/covers-admin") return handleCoversAdmin(request, env, url);
     if (path === "/api/refresh") return handleRefresh(request, env);
     if (path === "/api/users") return handleUsers(request, env);
@@ -95,7 +95,7 @@ const app = {
 
     if (path.startsWith("/media/")) {
       const key = decodeURIComponent(path.slice(7));
-      const isCover = /^covers_edel\/[^/]+\.(jpe?g|png|webp|gif)$/i.test(key);
+      const isCover = /^covers_(edel|edel_eng|modern_engl)\/[^/]+\.(jpe?g|png|webp|gif)$/i.test(key);
       if (/^(favoriten|sync)\//.test(key) || key.includes("..") || key.split("/").some((p) => p.startsWith("_")) || (!isCover && !/\.(mp3|m4a|aac|wav|mp4|m4v|webm|mov|lrc)$/i.test(key))) return new Response("Not Found", { status: 404, headers: CORS });
       return serveR2(env, [key], request);
     }
@@ -687,30 +687,37 @@ async function handleRefresh(request, env) {
 
 const COVER_DIR = "covers_edel/";
 const COVER_OK = /^covers_edel\/0*(\d{1,3})\.(jpe?g|png|webp)$/i;
-let coverCache = { t: 0, data: null };
 
-async function listCovers(env) {
+async function listCovers(env, dir = COVER_DIR) {
   const out = []; let cursor;
   do {
-    const r = await env.MUSIK.list({ prefix: COVER_DIR, cursor, limit: 1000 });
+    const r = await env.MUSIK.list({ prefix: dir, cursor, limit: 1000 });
     out.push(...r.objects); cursor = r.truncated ? r.cursor : undefined;
   } while (cursor);
   return out;
 }
 
-/* öffentlich: Nummer → Schlüssel, nur ordentlich benannte Dateien (003.jpg) */
-async function handleCovers(env) {
+/* Cover-Ordner: edel = Goldrahmen Deutsch, edel_eng = Goldrahmen Englisch, modern = modern Englisch */
+const COVER_SETS = { edel: "covers_edel/", edel_eng: "covers_edel_eng/", modern: "covers_modern_engl/" };
+const coverCaches = {};
+
+/* öffentlich: Nummer → Schlüssel, nur ordentlich benannte Dateien (003.jpg); ?set=edel|edel_eng|modern */
+async function handleCovers(env, url) {
   try {
-    if (!coverCache.data || Date.now() - coverCache.t > 60000) {
-      const objs = await listCovers(env);
+    const set = url && COVER_SETS[url.searchParams.get("set")] ? url.searchParams.get("set") : "edel";
+    const dir = COVER_SETS[set];
+    const re = new RegExp("^" + dir.replace("/", "\\/") + "0*(\\d{1,3})\\.(jpe?g|png|webp)$", "i");
+    let c = coverCaches[set];
+    if (!c || !c.data || Date.now() - c.t > 60000) {
+      const objs = await listCovers(env, dir);
       const map = {}; let other = 0;
       for (const o of objs) {
-        const m = COVER_OK.exec(o.key);
-        if (m) map[String(parseInt(m[1], 10))] = o.key; else if (o.key !== COVER_DIR) other++;
+        const m = re.exec(o.key);
+        if (m) map[String(parseInt(m[1], 10))] = o.key; else if (o.key !== dir) other++;
       }
-      coverCache = { t: Date.now(), data: { ok: true, anzahl: Object.keys(map).length, nichtBenannt: other, map } };
+      c = coverCaches[set] = { t: Date.now(), data: { ok: true, set, anzahl: Object.keys(map).length, nichtBenannt: other, map } };
     }
-    return new Response(JSON.stringify(coverCache.data), { headers: { ...CORS, "content-type": "application/json; charset=utf-8", "cache-control": "public, max-age=60" } });
+    return new Response(JSON.stringify(c.data), { headers: { ...CORS, "content-type": "application/json; charset=utf-8", "cache-control": "public, max-age=60" } });
   } catch (err) {
     return json({ ok: false, fehler: String(err && err.message || err) }, CORS, 500);
   }
@@ -763,6 +770,6 @@ async function handleCoversAdmin(request, env, url) {
     await env.MUSIK.delete(from);
     used.delete(from); used.add(to); done.push({ from, to });
   }
-  coverCache = { t: 0, data: null };
+  for (const k of Object.keys(coverCaches)) delete coverCaches[k];
   return reply({ ok: true, umbenannt: done.length, fehler: failed, done });
 }
