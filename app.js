@@ -1619,8 +1619,14 @@ function stepAllowed() {
   return true;
 }
 
-function step(delta) {
-  const pool = playPool();
+const karaokeOnlyOn = () => lsv("karaokeOnly", "0") === "1";
+/* auto = automatischer Wechsel am Liedende; nur dann gilt „nur Karaoke-Lieder“ (Tasten und Auswahl von Hand bleiben frei) */
+function step(delta, auto) {
+  let pool = playPool();
+  if (auto && karaokeOnlyOn() && state.mode !== "ludwt") {
+    pool = pool.filter((song) => !song.extra);
+    if (!pool.length) { el.status.textContent = "Keine Karaoke-Lieder in der Liste"; return; }
+  }
   if (!pool.length) {
     el.status.textContent = state.playFavorites ? "Keine Favoriten markiert" : "Keine Lieder";
     return;
@@ -1639,6 +1645,12 @@ function step(delta) {
   }
   const current = state.songs[state.index];
   let at = pool.indexOf(current);
+  if (at < 0 && auto && delta > 0) {   // aktuelles Lied ist kein Karaoke-Lied: nächstes Karaoke-Lied danach
+    const full = playPool(), ci = full.indexOf(current);
+    const nx = (ci >= 0 ? full.slice(ci + 1).find((x) => pool.includes(x)) : null) || pool[0];
+    selectSong(state.songs.indexOf(nx), true);
+    return;
+  }
   if (at < 0) at = delta > 0 ? -1 : 0;
   const next = pool[(at + delta + pool.length) % pool.length];
   selectSong(state.songs.indexOf(next), playing || delta !== 0);
@@ -2596,7 +2608,7 @@ function bind() {
       return;
     }
     if ((el.audio.duration || 0) < 2 || !stepAllowed()) return;   // leere/defekte Datei oder Wechsel-Schleife
-    step(1);
+    step(1, true);
   });
   el.audio.addEventListener("error", () => {
     const song = state.songs[state.index];
@@ -2922,7 +2934,7 @@ async function putSync(store, data) {
 }
 
 /* ---- Einstellungen mit abgleichen (optional, pro Schlüssel Drei-Wege-Abgleich) ---- */
-const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBarAlways", "verBarFade", "srcTagsFade", "fadeSec", "lyricPos", "flugPos", "rcIdleSec", "holdGuard", "holdHint", "eggMode", "eggFall", "eggGif", "startGif", "themeShown", "themeTabs", "themeOrder", "themeTabList", "themeCustom", "themeNames", "skinProf", "coverMode", "coverFlip", "sidebarW", "topOffMain", "topOffSet", "startGif", "ludwtSingle", "listRepeat", "srcTags", "favPlace", "favSeek", "showExtra", "srcFilter", "sync-auto-max", "lyricAlign", "skipSec", "skipBack", "skipFwd", "fehlMode", "fehlNotify", "fehlAll", "fehlHelpSeen", STORAGE.scale, STORAGE.listSize];
+const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBarAlways", "verBarFade", "srcTagsFade", "fadeSec", "lyricPos", "flugPos", "rcIdleSec", "holdGuard", "holdHint", "eggMode", "eggFall", "eggGif", "startGif", "themeShown", "themeTabs", "themeOrder", "themeTabList", "themeCustom", "themeNames", "skinProf", "coverMode", "coverFlip", "sidebarW", "topOffMain", "topOffSet", "startGif", "ludwtSingle", "listRepeat", "srcTags", "favPlace", "favSeek", "showExtra", "karaokeOnly", "srcFilter", "sync-auto-max", "lyricAlign", "skipSec", "skipBack", "skipFwd", "fehlMode", "fehlNotify", "fehlAll", "fehlHelpSeen", STORAGE.scale, STORAGE.listSize];
 const isSettingKey = (k) => SETTING_KEYS.includes(k) || /^fehl[TL]_/.test(k);
 const syncSettingsOn = () => false;   // Einstellungen werden jetzt über den Benutzer gespeichert
 function collectSettings() {
@@ -3284,6 +3296,8 @@ function fillSettingsFields() {
   if (fsx) { fsx.value = lsv("fadeSec", "4"); fsx.onchange = () => { const v = Math.max(1, Math.min(60, Math.round(Number(fsx.value) || 4))); fsx.value = String(v); lss("fadeSec", String(v)); applyFade(true); }; }
   const vbar = document.getElementById("versionBar");
   if (vbar && !vbar._fadeWired) { vbar._fadeWired = true; vbar.addEventListener("pointerdown", () => applyFade(true)); }
+  const kar = document.getElementById("karaokeOnlyOpt");
+  if (kar) { kar.checked = karaokeOnlyOn(); kar.onchange = () => lss("karaokeOnly", kar.checked ? "1" : "0"); }
   const auto = document.getElementById("autoPlayOpt");
   auto.checked = localStorage.getItem("autoStart") === "1";
   auto.onchange = () => { try { localStorage.setItem("autoStart", auto.checked ? "1" : "0"); } catch { /* egal */ } updateAutoIcon(); };
@@ -3839,6 +3853,7 @@ function applyStartGif() {
 
 function setupAdvBox() {
   document.getElementById("advBox").hidden = false;
+  document.querySelectorAll(".adv-part").forEach((n) => { n.hidden = false; });
   const caragToggle = () => {
     const box = document.getElementById("caragBox");
     box.hidden = !box.hidden;
@@ -3921,6 +3936,7 @@ function setupAdvBox() {
 const BOOL = [["1", "ein"], ["0", "aus"]];
 const PRESETS = [
   { id: "auto", label: "Beim Öffnen automatisch abspielen", keys: ["autoStart"], def: { autoStart: "1" }, fields: [{ key: "autoStart", o: BOOL, dv: "0" }] },
+  { id: "karonly", label: "Automatisch nur Karaoke-Lieder spielen", keys: ["karaokeOnly"], def: { karaokeOnly: "1" }, fields: [{ key: "karaokeOnly", o: BOOL, dv: "0" }] },
   { id: "extra", label: "Weitere Lieder aus anderen Verzeichnissen in der Liste", keys: ["showExtra"], def: { showExtra: "0" }, fields: [{ key: "showExtra", o: BOOL, dv: "0" }] },
   { id: "tags", label: "Kleine Art-Kennzeichen (K, ♪, ▶, Z) unter den Liedern", keys: ["srcTags", "srcTagsFade"], def: { srcTags: "0" }, fields: [{ key: "srcTags", o: BOOL, dv: "1" }, { key: "srcTagsFade", t: "nur kurz", o: BOOL, dv: "1" }] },
   { id: "fav", label: "Favoriten-Stern (Ort) und Tesla-Player-Taste", keys: ["favPlace", "favSeek"], def: { favPlace: "both", favSeek: "off" },
@@ -3947,9 +3963,24 @@ const PRESETS = [
   { id: "fehl", label: "Fehlend: Prüfung, Hinweis und Anzeige", keys: ["fehlMode", "fehlNotify", "fehlAll"], rx: /^fehl[TL]_/, fields: [{ key: "fehlNotify", t: "Hinweis", o: BOOL, dv: "1" }] },
   { id: "syncmax", label: "Automatisch abgleichen, auch wenn bis zu … Lieder gelöscht wurden", keys: ["sync-auto-max"], def: { "sync-auto-max": "2" }, fields: [{ key: "sync-auto-max", n: [0, 999], dv: "0" }] }
 ];
+/* Themen für die Voreinstellungen: Überschrift, Zeilen und ein ganz kurzer Hinweis je Zeile */
+const PRESET_GROUPS = [
+  ["Wiedergabe", ["auto", "karonly", "skip", "lupeopt", "rcidle"]],
+  ["Liste und Auswahl", ["extra", "tags", "verbar", "srcfilter", "fav", "fontlist", "sidebar"]],
+  ["Karaoke-Text und Cover", ["fontkar", "lyricalign", "lyricpos", "cover", "startgif"]],
+  ["Design und Anzeige", ["theme", "hold", "topoff", "themeshown"]],
+  ["Abgleich", ["fehl", "syncmax"]]
+];
+const PRESET_TIP = {
+  auto: "Startet beim Öffnen von selbst.", karonly: "Automatisch weiter nur mit Karaoke-Liedern.", skip: "Sekunden pro Tipp auf −/+.", lupeopt: "Einzeln spielen, Liste wiederholen.", rcidle: "Wie oft das Gerät im Ruhezustand nachfragt.",
+  extra: "Instrumental, Zusammenkünfte, Video in der Liste.", tags: "Kleine Buchstaben unter den Liedern.", verbar: "Art-Buttons und ihr Ausblenden.", srcfilter: "Welche Arten gerade gezeigt werden.", fav: "Wo der Stern erscheint.", fontlist: "Schrift in der Liste.", sidebar: "Breite der Liste.",
+  fontkar: "Schrift des Karaoke-Textes.", lyricalign: "Links, Mitte oder rechts.", lyricpos: "Wo die aktive Zeile steht.", cover: "Neue oder alte Cover.", startgif: "Chor-GIF auf der Startseite.",
+  theme: "Welches Design und wann.", hold: "Lupe nur nach langem Drücken.", topoff: "Platz oben (z. B. für Tesla).", themeshown: "Welche Designs im Hauptfenster stehen.",
+  fehl: "Prüfung auf fehlende Lieder.", syncmax: "Automatisch abgleichen bis zu dieser Anzahl gelöschter Lieder."
+};
 /* Standard für neue Benutzer (beste Werte am Desktop); über den Namen „standard“ mit dem Schreib-Passwort änderbar */
 const HANDY_EXTRA = { themeMode: "manual", theme: "hy-amoled", holdGuard: "0", [STORAGE.listSize]: "18", sidebarW: "0" };
-const STD_VALS = { verBarFade: "1", srcTagsFade: "1", fadeSec: "4", autoStart: "0", showExtra: "1", srcTags: "1", favPlace: "both", favSeek: "off", verBarAlways: "1", holdGuard: "0", holdHint: "0", themeMode: "device", [STORAGE.scale]: "42", [STORAGE.listSize]: "16", sidebarW: "300", skipBack: "15", skipFwd: "15", "sync-auto-max": "2" };
+const STD_VALS = { karaokeOnly: "0", verBarFade: "1", srcTagsFade: "1", fadeSec: "4", autoStart: "0", showExtra: "1", srcTags: "1", favPlace: "both", favSeek: "off", verBarAlways: "1", holdGuard: "0", holdHint: "0", themeMode: "device", [STORAGE.scale]: "42", [STORAGE.listSize]: "16", sidebarW: "300", skipBack: "15", skipFwd: "15", "sync-auto-max": "2" };
 const SYS = { tesla: "_tesla", standard: "_standard", handy: "_handy" };
 const SYS_LABEL = { tesla: "Tesla", standard: "Standard", handy: "Handy" };
 const TESLA_EXTRA = { eggMode: "auto", eggFall: "0", eggGif: "chor", startGif: "0" };
@@ -4062,16 +4093,18 @@ async function sysData(n) {
   return r.state === "ok" && !r.none && Object.keys(r.presets).length ? normPresets(r.presets) : sysDefault(n);
 }
 const teslaData = () => sysData("tesla");
+/* Merken, welche Voreinstellung zuletzt angewendet wurde (gilt, bis von Hand etwas geändert wird) */
+function markPreset(name) { state.presetStamp = Date.now(); lss("presetActive", name); try { renderPresetBox(); } catch { /* egal */ } }
 /* Handy- und Standard-Voreinstellung anwenden (vollständige Werte des Profils) */
 async function applyProfilePreset(name, silent) {
   const ok = await applyWithPreview(presetTarget(await sysData(name), "user"), `${SYS_LABEL[name]}-Voreinstellung anwenden?`, silent);
-  if (ok) lss(name + "Preset", "1");
+  if (ok) { lss(name + "Preset", "1"); markPreset(name); }
   return ok;
 }
 /* Tesla-Voreinstellung anwenden (mit Vorschau der Änderungen, sofern nicht silent) */
 async function applyTeslaPreset(silent) {
   const ok = await applyWithPreview(presetTarget(await teslaData(), "tesla"), "Tesla-Voreinstellung anwenden?", silent);
-  if (ok) lss("teslaPreset", "1");
+  if (ok) { lss("teslaPreset", "1"); markPreset("tesla"); }
   return ok;
 }
 /* Speichern auf dem Server: normale Benutzer mit ihrem Passwort-Hash, „tesla“/„standard“ mit dem Schreib-Passwort */
@@ -4107,7 +4140,7 @@ async function userPush(n, d) {
 }
 
 /* Anmelden: zuerst wird geprüft, ob der Benutzer existiert. Neue Namen werden erst nach Rückfrage angelegt (Tippfehler!). */
-async function userLogin(rawName, pass) {
+async function userLogin(rawName, pass, firstTime) {
   const name = userCleanName(rawName);
   if (name.length < 2 || name.startsWith("_")) return { ok: false, msg: "Benutzername: mindestens 2 Zeichen, nicht mit _ beginnen." };
   if (SYS[name]) return { ok: false, sys: name, msg: "" };
@@ -4118,7 +4151,7 @@ async function userLogin(rawName, pass) {
     if (!pass) {
       const pw = await uiPrompt({ eyebrow: "Benutzer", title: `Passwort für „${name}“`, type: "password", ok: "Anmelden" });
       if (!pw) return { ok: false, msg: "Abgebrochen." };
-      return userLogin(name, pw);
+      return userLogin(name, pw, firstTime);
     }
     return { ok: false, msg: "Passwort stimmt nicht.", locked: true };
   }
@@ -4130,11 +4163,12 @@ async function userLogin(rawName, pass) {
     if (!(await putUser(name, hash, { presets: data, hash, links: [] }))) return { ok: false, msg: "Anlegen fehlgeschlagen." };
     created = true;
   } else { data = normPresets(r.presets); links = r.links; }
+  try { localStorage.removeItem("presetActive"); } catch { /* egal */ }
   lss("userName", name); lss("userHash", hash); userSaveLocal(data); userBaseSet(data); userDirtySet(false);
   userKnownAdd([name, ...links]);
   if (sameNameOn() || !lsv("sync-code", "")) lss("sync-code", name);
   userSyncOk = true;
-  const applied = await applyWithPreview(presetTarget(data, "user"), `Einstellungen von „${name}“ übernehmen?`, created);
+  const applied = await applyWithPreview(presetTarget(data, "user"), `Einstellungen von „${name}“ übernehmen?`, created || !!firstTime);
   return { ok: true, created, applied, msg: created ? `Neuer Benutzer „${name}“ angelegt.` : `Angemeldet als „${name}“.` };
 }
 function userLogout() { ["userName", "userHash", "userPresets", "userBase", "userDirty"].forEach((k) => { try { localStorage.removeItem(k); } catch { /* egal */ } }); }
@@ -4172,7 +4206,9 @@ async function askKey(title) {
 function renderPresetBox() {
   const name = userName();
   const code = lsv("sync-code", "");
-  document.getElementById("userLine").textContent = name ? `Angemeldet: ${name}` : (code ? `Favoriten-Abgleich: ${code} (kein Benutzer angemeldet)` : "Kein Benutzer angemeldet");
+  const pa = lsv("presetActive", "");
+  const preLine = !name && SYS_LABEL[pa] ? `Voreinstellung: ${SYS_LABEL[pa]} (kein Benutzer angemeldet)` : "";
+  document.getElementById("userLine").textContent = name ? `Angemeldet: ${name}` : (preLine ? (code ? `${preLine} · Favoriten-Abgleich: ${code}` : preLine) : (code ? `Favoriten-Abgleich: ${code} (kein Benutzer angemeldet)` : "Kein Benutzer angemeldet"));
   document.getElementById("userOut").hidden = !name;
   { /* Gibt es schon einen Benutzer mit demselben Namen wie der Favoriten-Abgleich, genügt ein kurzer Text statt des Hakens */
     const same = !!name && !SYS[name] && lsv("sync-code", "") === name;
@@ -4216,8 +4252,14 @@ function refreshPresetRows() {
 function buildPresetRows(rows, o) {
   rows.replaceChildren();
   const data = o.get();
-  PRESETS.forEach((p) => {
+  const used = new Set();
+  const ordered = [];
+  PRESET_GROUPS.forEach(([g, ids]) => ids.forEach((id) => { const p = PRESETS.find((x) => x.id === id); if (p) { used.add(id); ordered.push([g, p]); } }));
+  PRESETS.forEach((p) => { if (!used.has(p.id)) ordered.push(["Weitere", p]); });
+  let lastGroup = "";
+  ordered.forEach(([grp, p]) => {
     if (o.skip && o.skip.includes(p.id)) return;
+    if (grp !== lastGroup) { lastGroup = grp; const h = document.createElement("p"); h.className = "pr-group"; h.textContent = grp; rows.append(h); }
     const wrap = document.createElement("div");
     wrap.className = "preset-row";
     const l = document.createElement("label");
@@ -4227,6 +4269,7 @@ function buildPresetRows(rows, o) {
     c.type = "checkbox"; c.checked = data.on[p.id] !== false;
     const sp = document.createElement("span");
     sp.textContent = p.label;
+    if (PRESET_TIP[p.id]) { const tp = document.createElement("small"); tp.className = "pr-tip"; tp.textContent = PRESET_TIP[p.id]; sp.append(document.createElement("br"), tp); }
     l.append(c, sp);
     wrap.append(l);
     const fb = document.createElement("div");
@@ -4437,6 +4480,7 @@ async function userSaveSettings() {
     if (this !== localStorage) return;
     try {
       if (!state.applyingPreset && PRESETS.some((p) => p.keys.includes(k) || (p.rx && p.rx.test(k)))) {
+        if (Date.now() - (state.presetStamp || 0) > 3000 && localStorage.getItem("presetActive")) { localStorage.removeItem("presetActive"); setTimeout(() => { try { renderPresetBox(); } catch { /* egal */ } }, 0); }
         clearTimeout(rt);
         rt = setTimeout(() => { try { const pb = document.getElementById("presetBox"); if (pb && !pb.hidden && !document.getElementById("codeModal").hidden && !(document.activeElement && document.activeElement.closest && document.activeElement.closest("#presetRows"))) refreshPresetRows(); } catch { /* egal */ } }, 300);
       }
@@ -4590,6 +4634,7 @@ function openCode(title, onSubmit, kind) {
   document.getElementById("verBarBox").hidden = true;
   document.getElementById("tagsBox").hidden = true;
   document.getElementById("advBox").hidden = true;
+  document.querySelectorAll(".adv-part").forEach((n) => { n.hidden = true; });
   document.getElementById("caragBox").hidden = true;
   document.getElementById("presetBox").hidden = true;
   document.getElementById("subTabs").hidden = true;
@@ -4694,13 +4739,14 @@ async function loginExtras() {
   const un = document.getElementById("loginUser").value.trim();
   const up = document.getElementById("loginUserPass").value;
   const reopened = !document.getElementById("loginBack").hidden;
+  const firstTime = lsv("autoPresetDone", "") === "";   // allererster Login auf diesem Gerät: keine Rückfragen beim Anwenden
   let created = false;
-  if (reopened && !sameNameOn()) {
+  if (!sameNameOn()) {
     const sn = document.getElementById("loginSyncName").value.trim().toLowerCase().replace(/[^a-z0-9-]/g, "");
     if (sn.length >= 3) { try { const m = await syncWithPass(sn, document.getElementById("loginSyncPass").value); if (m) showToast(`Favoriten-Abgleich: ${m}`); } catch { /* egal */ } document.getElementById("loginSyncPass").value = ""; }
   }
   if (un) {
-    const r = await userLogin(un, up);
+    const r = await userLogin(un, up, firstTime);
     if (r.sys) { await syncFavorites("allgemein"); state.sub = "vor"; showSetTab("allgemein"); await openSysEditor(r.sys); }
     else {
       showToast(r.msg);
@@ -4709,8 +4755,8 @@ async function loginExtras() {
     created = !!r.created;
   }
   /* neue Benutzer bekommen die Werte ohne Rückfrage, sonst werden Änderungen vorher gezeigt */
-  if (preset === "tesla") { if (await applyTeslaPreset(created)) showToast("Tesla-Voreinstellung angewendet"); }
-  else if (preset) { if (await applyProfilePreset(preset, created)) showToast(`${SYS_LABEL[preset]}-Voreinstellung angewendet`); }
+  if (preset === "tesla") { if (await applyTeslaPreset(created || firstTime)) showToast("Tesla-Voreinstellung angewendet"); }
+  else if (preset) { if (await applyProfilePreset(preset, created || firstTime)) showToast(`${SYS_LABEL[preset]}-Voreinstellung angewendet`); }
   document.getElementById("loginUserPass").value = "";
   if (!reopened || preset) lss("autoPresetDone", "1");
 }
@@ -4726,14 +4772,26 @@ function deviceKind() {
 function setupLoginAuto() {
   const kind = deviceKind(), row = document.getElementById("loginAutoRow"), cb = document.getElementById("loginAuto");
   const first = lsv("autoPresetDone", "") === "";
-  const ico = document.getElementById("loginAutoIcon");
-  if (kind === "tesla") { const im = document.createElement("img"); im.src = "tesla-icon.png"; im.alt = ""; im.width = 26; im.height = 26; ico.append(im); } else ico.textContent = kind === "handy" ? "📱" : "🖥";
-  document.getElementById("loginAutoText").textContent = `${SYS_LABEL[kind]}-Voreinstellung laden`;
-  row.hidden = !first; cb.checked = first;
-  const target = document.querySelector(`.login-preset[data-p="${kind}"]`);
-  const sync = () => { document.querySelectorAll(".login-preset").forEach((o) => { o.checked = o === target && cb.checked; }); };
-  cb.addEventListener("change", sync); sync();
-  target.addEventListener("change", () => { cb.checked = target.checked; });
+  const ico = document.getElementById("loginAutoIcon"), txt = document.getElementById("loginAutoText");
+  const all = [...document.querySelectorAll(".login-preset")];
+  const picked = () => { const c = all.find((o) => o.checked); return c ? c.dataset.p : ""; };
+  /* oben immer die Voreinstellung zeigen, die unten gewählt ist (sonst die des Geräts) */
+  const paint = () => {
+    const p = picked(), k = p || kind;
+    ico.replaceChildren();
+    if (k === "tesla") { const im = document.createElement("img"); im.src = "tesla-icon.png"; im.alt = ""; im.width = 26; im.height = 26; ico.append(im); } else ico.textContent = k === "handy" ? "📱" : "🖥";
+    txt.textContent = `${SYS_LABEL[k]}-Voreinstellung laden`;
+    cb.checked = !!p;
+  };
+  all.forEach((c) => c.addEventListener("change", () => { if (c.checked) all.forEach((o) => { if (o !== c) o.checked = false; }); paint(); }));
+  cb.addEventListener("change", () => {
+    const own = all.find((o) => o.dataset.p === (picked() || kind));
+    all.forEach((o) => { o.checked = cb.checked && o === own; });
+    paint();
+  });
+  row.hidden = !first;
+  if (first) { const t = all.find((o) => o.dataset.p === kind); if (t) t.checked = true; }
+  paint();
   row.dataset.kind = kind;
 }
 function checkLogin() {
@@ -4750,8 +4808,8 @@ function checkLogin() {
   setupLoginAuto();
   /* im Tesla beim allerersten Öffnen gleich aufgeklappt */
   if (isTesla() && lsv("teslaPreset", "") === "") toggleMore(true);
-  document.querySelectorAll(".login-preset").forEach((c) => { c.addEventListener("change", () => { if (c.checked) document.querySelectorAll(".login-preset").forEach((o) => { if (o !== c) o.checked = false; }); }); });
   bindSameName();
+  { const sn = document.getElementById("loginSyncName"); if (sn && !sn.value) sn.value = lsv("sync-code", ""); }
   gate.hidden = authed;
   document.getElementById("loginForm").addEventListener("submit", async (event) => {
     event.preventDefault();

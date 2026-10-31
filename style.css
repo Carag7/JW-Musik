@@ -1226,7 +1226,7 @@ body:not(.hold-hint) .hold-guard::after { display: none; }
 .song-list { padding-bottom: 8px !important; }
 .adv-btns { display: flex; flex-wrap: wrap; gap: 8px; }
 .adv-btns .chip { flex: 1 1 200px; min-height: 44px; }
-#advBox .set-row input[type="number"] { width: 84px; }
+:is(#advBox, #advPlay, #advList, #advView) .set-row input[type="number"] { width: 84px; }
 
 /* Tesla-Größen (ca. 800 px breit): Fortschrittsbalken bis zum Rand, Karaoke-Text umbrechen, Kopfzeile enger */
 @media (min-width: 641px) {
@@ -1241,8 +1241,8 @@ body:not(.hold-hint) .hold-guard::after { display: none; }
   .now { padding-top: 6px !important; }
   .stage > .now { margin-top: -4px; }
 }
-#advBox .set-row input[type="number"] { background: var(--panel-2); color: var(--text); border: 1px solid var(--line); border-radius: 10px; min-height: 40px; text-align: center; font-size: 16px; }
-#advBox .set-row { justify-content: space-between; }
+:is(#advBox, #advPlay, #advList, #advView) .set-row input[type="number"] { background: var(--panel-2); color: var(--text); border: 1px solid var(--line); border-radius: 10px; min-height: 40px; text-align: center; font-size: 16px; }
+:is(#advBox, #advPlay, #advList, #advView) .set-row { justify-content: space-between; }
 
 .list-foot { align-items: center; gap: 10px; }
 .foot-toggle { width: 34px; height: 34px; min-height: 0; padding: 0; border-radius: 10px; border: 1px solid var(--line); background: transparent; color: var(--muted); font-size: 18px; line-height: 1; cursor: pointer; opacity: .6; }
@@ -1420,9 +1420,9 @@ input[data-stp] { -moz-appearance: textfield; appearance: textfield; }
 .set-row:has(> input[type="number"]) { flex-wrap: nowrap; justify-content: space-between; }
 .set-row:has(> input[type="number"]) input { flex: 0 0 auto; }
 /* Zahlenfelder: eine saubere Spalte untereinander, Pfeile direkt rechts daneben */
-#advBox .set-row:has(> input[type="number"]) { display: grid; grid-template-columns: minmax(0, 1fr) 88px 36px; column-gap: 6px; align-items: center; }
-#advBox .set-row:has(> input[type="number"]) > input { width: 100%; min-width: 0; box-sizing: border-box; text-align: center; }
-#advBox .set-row:has(> input[type="number"]) .stp { margin-left: 0; }
+:is(#advBox, #advPlay, #advList, #advView) .set-row:has(> input[type="number"]) { display: grid; grid-template-columns: minmax(0, 1fr) 88px 36px; column-gap: 6px; align-items: center; }
+:is(#advBox, #advPlay, #advList, #advView) .set-row:has(> input[type="number"]) > input { width: 100%; min-width: 0; box-sizing: border-box; text-align: center; }
+:is(#advBox, #advPlay, #advList, #advView) .set-row:has(> input[type="number"]) .stp { margin-left: 0; }
 
 /* Die drei Haupt-Buttons sind normale Elemente der Leiste (kein „Kleben“ mehr: sonst verdeckten sie beim Scrollen die anderen Buttons) */
 .topbar .tb-main { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; position: static !important; z-index: auto !important; background: none; padding-right: 0; margin-left: 0; }
@@ -1562,8 +1562,8 @@ html[data-lalign="right"] body:not(.edit-mode) .lyric-line { text-align: right !
 html[data-lalign] body:not(.edit-mode) .lyric-line { transform-origin: var(--lal-origin, center) !important; }
 html[data-lalign="left"] { --lal-origin: left center; }
 html[data-lalign="right"] { --lal-origin: right center; }
-#advBox .set-row:has(> select#advAlign), #advBox .set-row:has(> select#advCover) { display: grid; grid-template-columns: minmax(0, 1fr) 88px 36px; column-gap: 6px; align-items: center; }
-#advBox select#advAlign, #advBox select#advCover { grid-column: 2; width: 100%; min-width: 0; box-sizing: border-box; min-height: 40px; padding: 0 4px; text-align: center; text-align-last: center; }
+:is(#advBox, #advPlay, #advList, #advView) .set-row:has(> select#advAlign), :is(#advBox, #advPlay, #advList, #advView) .set-row:has(> select#advCover) { display: grid; grid-template-columns: minmax(0, 1fr) 88px 36px; column-gap: 6px; align-items: center; }
+:is(#advBox, #advPlay, #advList, #advView) select#advAlign, :is(#advBox, #advPlay, #advList, #advView) select#advCover { grid-column: 2; width: 100%; min-width: 0; box-sizing: border-box; min-height: 40px; padding: 0 4px; text-align: center; text-align-last: center; }
 
 /* ---------- Designs: Gruppen, eigene Reiter, Unterreiter ---------- */
 .theme-subtabs { margin: 6px 0 10px; }
@@ -1583,9 +1583,9 @@ html[data-lalign="right"] { --lal-origin: right center; }
 .tab-manager { margin: 8px 0 12px; }
 .theme-embedded { max-height: none; }
 .theme-seg { display: flex; flex-wrap: wrap; gap: 6px; }
-#advBox select#advAlign, #advBox select#advCover { background: var(--panel-2); color: var(--text); border: 1px solid var(--line); border-radius: 10px; font-size: 16px; }
-#advBox .set-row:has(> select#advAlign), #advBox .set-row:has(> select#advCover) { min-height: 46px; }
-body:not(.glass-open) #advBox .set-row:has(> select#advCover) { display: none !important; }
+:is(#advBox, #advPlay, #advList, #advView) select#advAlign, :is(#advBox, #advPlay, #advList, #advView) select#advCover { background: var(--panel-2); color: var(--text); border: 1px solid var(--line); border-radius: 10px; font-size: 16px; }
+:is(#advBox, #advPlay, #advList, #advView) .set-row:has(> select#advAlign), :is(#advBox, #advPlay, #advList, #advView) .set-row:has(> select#advCover) { min-height: 46px; }
+body:not(.glass-open) :is(#advBox, #advPlay, #advList, #advView) .set-row:has(> select#advCover) { display: none !important; }
 .topbar .tb-main { min-width: max-content; } .topbar .tb-main > .lieder-toggle { flex-shrink: 0 !important; }
 
 /* Obere Leiste: die drei Hauptbuttons bekommen eine feste Breite passend zum Auswahlfenster – so können sie nie unter/über die folgenden Buttons rutschen, auch wenn das Auswahlfenster breit gezogen ist */
@@ -1595,7 +1595,7 @@ body:not(.glass-open) #advBox .set-row:has(> select#advCover) { display: none !i
   .topbar .tb-tools, .topbar > .tb-tools > * { position: relative; z-index: 1; }
 }
 .rc-btn.rc-listen.on { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
-body:not(.glass-open) #advBox .cover-flip-row { display: none !important; }
+body:not(.glass-open) :is(#advBox, #advPlay, #advList, #advView) .cover-flip-row { display: none !important; }
 
 /* aktive (vorne angebotene) Designs farbig hinterlegt */
 .theme-pick.is-shown, .theme-chip.is-shown { background: rgba(var(--accent-rgb), .22) !important; border-color: rgba(var(--accent-rgb), .6) !important; }
@@ -1715,3 +1715,34 @@ body.verbar-fade:not(.fade-peek) .version-bar { opacity: 0; }
 /* v113: Beispiel-Box in der Vorschau nur so breit wie nötig */
 .sk-pvbar .sk-pvsample { flex: 0 1 auto; width: fit-content; max-width: 100%; }
 .sk-pvbar.right .sk-pvsample { width: 100%; }
+
+/* v114: Themen-Überschriften und Kurztexte in den Voreinstellungen, Hilfetext im Anmeldefenster */
+.pr-group { margin: 14px 0 4px; padding-bottom: 3px; border-bottom: 1px solid var(--line); font-weight: 800; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); }
+.pr-group:first-child { margin-top: 4px; }
+.pr-tip { color: var(--muted); font-size: 12px; font-weight: 400; line-height: 1.3; }
+.login-help { display: grid; gap: 2px; padding: 8px 10px; border-radius: 10px; background: var(--panel-2); }
+.login-help .set-hint { margin: 2px 0; font-size: 12.5px; line-height: 1.4; }
+
+/* v114: Themen-Überschriften in den Einstellungen */
+.set-grp { margin: 18px 0 0; padding: 6px 2px 0; font-size: 17px; font-weight: 800; color: var(--text); border-top: 2px solid var(--accent); }
+.set-grp-d { margin: 0 0 4px; color: var(--muted); font-size: 13px; line-height: 1.4; }
+#codeForm .set-grp:first-of-type { margin-top: 6px; }
+
+/* v114: Handy hochkant: Cover oben rechts in der Zeile der Liednummer, Kategorie und Status untereinander */
+@media (max-width: 700px) and (orientation: portrait) {
+  .stage > .now { display: grid !important; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 10px; row-gap: 2px; }
+  .stage > .now > .title-row { grid-column: 1; grid-row: 1; }
+  .stage > .now > h2 { grid-column: 1 / -1; grid-row: 2; }
+  .stage > .now > .meta-row { display: contents; }
+  .stage > .now #currentCategory { grid-column: 1 / -1; grid-row: 3; }
+  .stage > .now #currentStatus { grid-column: 1 / -1; grid-row: 4; }
+  .stage > .now #currentCategory, .stage > .now #currentStatus { justify-self: start; text-align: left; margin: 0; }
+  .stage > .now .cover-thumb { grid-column: 2; grid-row: 1; margin: 0; justify-self: end; align-self: start; }
+  .stage > .now > .version-bar { grid-column: 1 / -1; grid-row: 5; }
+}
+
+/* v114: Anmeldefenster darf höher sein als der Bildschirm und scrollt dann (Hilfetext, zusätzliche Felder) */
+#loginGate { display: flex; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+#loginGate:not([hidden]) { display: flex; }
+#loginGate > .login-card { margin: auto; flex: 0 0 auto; box-sizing: border-box; }
+#loginGate { padding: 12px 0; box-sizing: border-box; }

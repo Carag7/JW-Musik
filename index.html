@@ -48,15 +48,23 @@
         </div>
         <small id="loginStandardText" class="set-hint" hidden>Standard setzt die Grundwerte für Computer und Tablet: nicht automatisch abspielen, weitere Lieder und Art-Kennzeichen an, Favoriten-Stern oben und unten, Design wie Gerät, Schrift 42 (Text) und 16 (Auswahlfenster), Breite 300, Springen 15 Sekunden, Abgleich bis 2 gelöschte Lieder. Dafür ist kein Benutzer nötig.</small>
         <button id="loginApply" class="chip" type="button" hidden>Übernehmen</button>
-        <label id="loginSameRow" class="set-row check" hidden><input class="same-name-chk" type="checkbox" /> <span>Favoriten und Listen unter demselben Namen speichern</span></label>
-        <div id="loginSyncRow" hidden>
-          <label class="stack">Name für den Favoriten-Abgleich <small>(freiwillig)</small><input id="loginSyncName" type="text" autocomplete="off" autocapitalize="off" /></label>
+        <div class="login-help">
+          <p class="ap-title">Wofür ist was?</p>
+          <small class="set-hint"><b>Voreinstellung:</b> setzt die Einstellungen dieses Geräts auf passende Startwerte (Tesla, Handy oder Standard). Dafür brauchst du keinen Namen.</small>
+          <small class="set-hint"><b>Benutzername:</b> speichert deine <b>Einstellungen</b> (Design, Schriftgröße, Schalter …) auf dem Server. Meldest du dich auf einem anderen Gerät mit demselben Namen an, hast du dort dieselben Einstellungen.</small>
+          <small class="set-hint"><b>Favoriten und Listen:</b> deine Sterne und Wiedergabelisten werden getrennt davon unter einem eigenen Namen abgeglichen. Mit dem Haken unten nimmst du für beides denselben Namen, das ist am einfachsten. Ohne Haken kannst du zwei verschiedene Namen wählen, zum Beispiel um Favoriten mit jemandem zu teilen.</small>
+          <small class="set-hint">Alles ist freiwillig. Ohne Eingaben gilt alles nur auf diesem Gerät.</small>
+        </div>
+        <label class="stack">Benutzername <small>(freiwillig, für deine Einstellungen)</small><input id="loginUser" type="text" autocomplete="off" autocapitalize="off" /></label>
+        <button id="loginPwToggle" class="pw-toggle" type="button" aria-expanded="false">▸ Passwort für den Benutzer (freiwillig)</button>
+        <label id="loginPwRow" class="stack" hidden><small>Nur nötig, wenn dein Benutzer ein Passwort hat oder du ihm eines geben möchtest.</small><input id="loginUserPass" type="password" autocomplete="new-password" /></label>
+        <label id="loginSameRow" class="set-row check"><input class="same-name-chk" type="checkbox" /> <span>Favoriten und Listen unter demselben Namen speichern</span></label>
+        <small class="set-hint">Mit Haken wird der Benutzername auch als Name für Favoriten und Listen verwendet.</small>
+        <div id="loginSyncRow">
+          <label class="stack">Name für den Favoriten-Abgleich <small>(freiwillig, für Favoriten und Listen)</small><input id="loginSyncName" type="text" autocomplete="off" autocapitalize="off" /></label>
           <button class="pw-toggle" type="button" data-pw="loginSyncPassRow" aria-expanded="false">▸ Passwort für den Favoriten-Abgleich (freiwillig)</button>
           <label id="loginSyncPassRow" class="stack" hidden><small>Nur nötig, wenn dieser Abgleich ein Passwort hat oder du ihm eines geben möchtest.</small><input id="loginSyncPass" type="password" autocomplete="new-password" /></label>
         </div>
-        <label class="stack">Benutzername <small>(freiwillig)</small><input id="loginUser" type="text" autocomplete="off" autocapitalize="off" /></label>
-        <button id="loginPwToggle" class="pw-toggle" type="button" aria-expanded="false">▸ Passwort für den Benutzer (freiwillig)</button>
-        <label id="loginPwRow" class="stack" hidden><small>Nur nötig, wenn dein Benutzer ein Passwort hat oder du ihm eines geben möchtest.</small><input id="loginUserPass" type="password" autocomplete="new-password" /></label>
       </div>
       <button id="loginBack" class="ghost" type="button" hidden>Zurück</button>
     </form>
@@ -326,8 +334,6 @@
           </div>
           <small id="sysMsg" class="set-hint"></small>
         </div>
-        <button id="themeShownToggle" class="pw-toggle" type="button" aria-expanded="false">▸ Designs im Hauptfenster auswählen</button>
-        <div id="themeShownBox" hidden></div>
         <div id="userArea">
         <p class="ap-title">Benutzer und Voreinstellungen</p>
         <p id="userLine" class="user-line"></p>
@@ -384,31 +390,8 @@
         </div>
         <small class="set-hint">Ein Haken bedeutet: Diese Einstellung gehört zum Benutzer. Ihr aktueller Wert wird automatisch auf dem Server gespeichert und beim Anmelden und bei jedem Start wieder gesetzt. Vorher zeigt ein aufklappbares Fenster, was sich ändert.</small>
         </div>
-      </div>
-      <div id="advBox" data-tab="allgemein" data-sub="einst" class="autoplay-box" hidden>
-        <p class="ap-title">Anzeige und Werkzeuge</p>
-        <label class="set-row">Schriftgröße Auswahlfenster <input id="advListSize" type="number" min="10" max="48" inputmode="numeric" /></label>
-        <label class="set-row">Schriftgröße Karaoke-Text <input id="advScale" type="number" min="10" max="200" inputmode="numeric" /></label>
-        <label class="set-row">Ausrichtung Karaoke-Text (Design = wie vom Design vorgegeben) <select id="advAlign"><option value="skin">Design</option><option value="left">links</option><option value="center">Mitte</option><option value="right">rechts</option></select></label>
-        <button id="flugResetBtn" class="chip" type="button" hidden>Schwebend: Positionen und Größen zurücksetzen</button>
-        <label class="set-row">Fernsteuerung: Abfrage im Ruhezustand (Sekunden, Standard 10; nach einer Bedienung kurz schnell) <input id="advRcIdle" type="number" min="2" max="60" inputmode="numeric" /></label>
-        <label class="set-row">Höhe der aktiven Karaoke-Zeile (% von oben, Standard 33) <input id="advLyricPos" type="number" min="5" max="95" inputmode="numeric" /></label>
-        <label class="set-row">Cover anzeigen <select id="advCover"><option value="neu">Neu</option><option value="alt">Alt</option></select></label>
-        <label class="set-row check cover-flip-row"><input id="advCoverFlip" type="checkbox" /> Tippen auf das Cover im Player wechselt (mit Drehung) zum Karaoke-Text</label>
-        <label class="set-row">Breite Auswahlfenster (px) <input id="advSidebar" type="number" min="180" max="1200" inputmode="numeric" /></label>
-        <label class="set-row two"><span class="lbl">Abstand oben<br>Hauptfenster (px)</span> <input id="advTopMain" type="number" min="0" max="300" inputmode="numeric" /></label>
-        <label class="set-row two"><span class="lbl">Abstand oben<br>Einstellungen (px)</span> <input id="advTopSet" type="number" min="0" max="300" inputmode="numeric" /></label>
-        <label class="set-row">Springen zurück (Sekunden) <input id="advBack" type="number" min="1" max="300" inputmode="numeric" /></label>
-        <label class="set-row">Springen vor (Sekunden) <input id="advFwd" type="number" min="1" max="300" inputmode="numeric" /></label>
-        <label class="set-row check"><input id="startGif" type="checkbox" /> Startseite: GIF „Chor“ statt des Bildes zeigen</label>
-        <label class="set-row check"><input id="advHold" type="checkbox" /> Lupe und Player-Symbol nur nach langem Drücken (ca. 0,7 s)</label>
-        <label class="set-row check"><input id="advHint" type="checkbox" /> Dabei Hinweis „Länger drücken“ und Fortschrittsbalken anzeigen</label>
-        <small id="advInfo" class="set-hint"></small>
-      </div>
-      <div id="autoPlayBox" data-tab="allgemein" data-sub="einst" class="autoplay-box" hidden>
-        <p class="ap-title">Start der Wiedergabe</p>
-        <label class="set-row check"><input id="autoPlayOpt" type="checkbox" /> Beim Öffnen automatisch abspielen</label>
-        <small class="set-hint">Praktisch im Auto: Die Seite startet das zuletzt gehörte Lied von selbst. Mit dem kleinen ⏵ oben rechts kannst du das jederzeit umschalten.</small>
+        <button id="themeShownToggle" class="pw-toggle" type="button" aria-expanded="false">▸ Designs im Hauptfenster auswählen</button>
+        <div id="themeShownBox" hidden></div>
       </div>
       <div id="themeBox" data-tab="design" class="autoplay-box" hidden></div>
       <div id="fehlendBox" data-tab="fehlend" class="fehlend-box"></div>
@@ -418,16 +401,48 @@
         <button id="importFav" class="chip" type="button">Favoriten importieren</button>
         <small class="set-hint">Exportieren: Favoriten und Listen als Code/QR oder mit eigenem Passwort sichern. Importieren: auf einem anderen Gerät laden.</small>
       </div>
+      <h3 class="set-grp" data-tab="allgemein" data-sub="einst">Wiedergabe</h3>
+      <p class="set-grp-d" data-tab="allgemein" data-sub="einst">Wie Lieder starten, weiterlaufen und gesteuert werden.</p>
+      <div id="autoPlayBox" data-tab="allgemein" data-sub="einst" class="autoplay-box" hidden>
+        <p class="ap-title">Start und Weiterspielen</p>
+        <label class="set-row check"><input id="autoPlayOpt" type="checkbox" /> Beim Öffnen automatisch abspielen</label>
+        <small class="set-hint">Die Seite startet das zuletzt gehörte Lied von selbst, sobald du sie öffnest. Praktisch im Auto. Mit dem kleinen ⏵ oben rechts schaltest du das jederzeit um. Manche Browser erlauben den Start erst nach einem Tipp.</small>
+        <label class="set-row check"><input id="karaokeOnlyOpt" type="checkbox" /> Automatisch nur Karaoke-Lieder spielen</label>
+        <small class="set-hint">Mit Haken läuft nach jedem Lied automatisch (in der Reihenfolge der Liste oder im Zufall) nur das nächste Karaoke-Lied weiter. Lieder, zu denen es noch keine Karaoke-MP3 gibt, werden übersprungen; die wählst du von Hand. Ohne Haken laufen auch diese Lieder automatisch mit. Die Tasten ◀ ▶ und die Auswahl in der Liste bleiben immer frei.</small>
+      </div>
+      <div id="advPlay" data-tab="allgemein" data-sub="einst" class="autoplay-box adv-part" hidden>
+        <p class="ap-title">Springen und Fernsteuerung</p>
+        <label class="set-row">Springen zurück (Sekunden) <input id="advBack" type="number" min="1" max="300" inputmode="numeric" /></label>
+        <small class="set-hint">So viele Sekunden springt die Taste links neben Play zurück. Bei aktiver Lupe stellst du die Weite auch durch langes Drücken auf die Taste ein.</small>
+        <label class="set-row">Springen vor (Sekunden) <input id="advFwd" type="number" min="1" max="300" inputmode="numeric" /></label>
+        <small class="set-hint">So viele Sekunden springt die Taste rechts neben Play vor.</small>
+        <label class="set-row">Fernsteuerung: Abfrage im Ruhezustand (Sekunden) <input id="advRcIdle" type="number" min="2" max="60" inputmode="numeric" /></label>
+        <small class="set-hint">Wie oft dieses Gerät beim anderen Gerät nachfragt, wenn gerade nichts bedient wird (Standard 10). Nach einer Bedienung fragt es kurz schneller nach. Kleiner = reagiert schneller, aber mehr Datenverkehr.</small>
+      </div>
+      <div id="listenBox" data-tab="allgemein" data-sub="einst" class="autoplay-box" hidden>
+        <p class="ap-title">Mithören (Sync)</p>
+        <label class="set-row check"><input id="rcListenStart" type="checkbox" /> Mithören ruckelfrei: nur beim Drücken auf Play synchronisieren, dann läuft das Lied hier selbstständig weiter</label>
+        <small class="set-hint">Ohne Haken wird laufend nachgeführt (genauer, kann auf dem Handy stocken). Mit Haken springt dieses Gerät beim Play-Druck und beim Liedwechsel einmal zur richtigen Stelle und spielt dann ohne Eingriffe.</small>
+      </div>
+      <h3 class="set-grp" data-tab="allgemein" data-sub="einst">Liste und Auswahl</h3>
+      <p class="set-grp-d" data-tab="allgemein" data-sub="einst">Was in der Liedliste steht und wie sie aussieht.</p>
       <div id="extraBox" data-tab="allgemein" data-sub="einst" class="autoplay-box" hidden>
         <p class="ap-title">Weitere Lieder</p>
         <label class="set-row check"><input id="extraSongsOpt" type="checkbox" /> Weitere Lieder aus den anderen Verzeichnissen (Instrumental, Zusammenkünfte, Video) in der Liste anzeigen</label>
-        <small class="set-hint">Dann erscheint bei aktiver Lupe eine Auswahl „Karaoke / Instrumental / Video / Zusammenkünfte“. Diese Lieder sind farblich abgesetzt und lassen sich ganz normal in Wiedergabelisten speichern.</small>
+        <small class="set-hint">Normalerweise zeigt die Liste nur Lieder mit Karaoke-MP3. Mit dem Haken kommen auch Lieder dazu, die es nur als Instrumental, Zusammenkünfte-Aufnahme oder Video gibt. Dann erscheint bei aktiver Lupe eine Auswahl „Karaoke / Instrumental / Video / Zusammenkünfte“. Diese Lieder sind farblich abgesetzt und lassen sich ganz normal in Wiedergabelisten speichern.</small>
       </div>
       <div id="tagsBox" data-tab="allgemein" data-sub="einst" class="autoplay-box" hidden>
         <p class="ap-title">Kennzeichen in der Liste</p>
         <label class="set-row check"><input id="srcTagsOpt" type="checkbox" /> Kleine Art-Kennzeichen (K, ♪, ▶, Z) unter den Liedern in der Auswahl anzeigen</label>
         <label class="set-row check"><input id="srcTagsFade" type="checkbox" /> Nur kurz einblenden (beim Start eines Liedes), mit der Maus darüber wieder anzeigen</label>
-        <small class="set-hint">Sie zeigen, bei welchen Arten ein Lied vorhanden ist. Im Tesla kannst du sie ausschalten, wenn sie stören. Sie erscheinen nur, wenn „Weitere Lieder“ aktiv ist.</small>
+        <small class="set-hint">Die kleinen Buchstaben unter dem Liedtitel zeigen, bei welchen Arten ein Lied vorhanden ist. Im Tesla kannst du sie ausschalten, wenn sie stören. Sie erscheinen nur, wenn „Weitere Lieder“ aktiv ist.</small>
+      </div>
+      <div id="verBarBox" data-tab="allgemein" data-sub="einst" class="autoplay-box" hidden>
+        <p class="ap-title">Art-Buttons</p>
+        <label class="set-row check"><input id="verBarOpt" type="checkbox" /> Art-Buttons (Karaoke / Instrumental / Video / Zusammenkünfte) immer anzeigen</label>
+        <label class="set-row check"><input id="verBarFade" type="checkbox" /> Nur kurz einblenden (beim Start eines Liedes), mit der Maus darüber wieder anzeigen</label>
+        <label class="set-row">Ausblenden nach (Sekunden; gilt für Art-Buttons und Kennzeichen) <input id="fadeSec" type="number" min="1" max="60" inputmode="numeric" /></label>
+        <small class="set-hint">Die Art-Buttons wechseln beim aktuellen Lied zwischen Karaoke, Instrumental, Video und Zusammenkünfte. „Nur kurz einblenden“ blendet sie nach der eingestellten Zeit aus, damit sie nicht stören; ein Tipp oder die Maus darüber zeigt sie wieder. Sonst erscheinen sie nur bei aktiven erweiterten Optionen (Lupe) und im Bearbeitungsmodus.</small>
       </div>
       <div id="favBox" data-tab="allgemein" data-sub="einst" class="autoplay-box" hidden>
         <button id="caragOpen" class="carag-open" type="button" aria-label="Weitere Einstellungen"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M3 2.5l5.2 4h7.6l5.2-4V12c0 5.2-4 9.5-9 9.5S3 17.200 3 12zM8.600 11.200a1.100 1.100 0 100 2.200 1.100 1.100 0 000-2.200zm6.800 0a1.100 1.100 0 100 2.200 1.100 1.100 0 000-2.200zM12 15l-1.400 1.200h2.800z"/></svg></button>
@@ -441,18 +456,47 @@
           <select id="favSeekOpt"><option value="off">Keine Taste</option><option value="back">Zurückspringen-Taste = Favorit</option><option value="fwd">Vorspringen-Taste = Favorit</option></select></label>
         <small class="set-hint">Der Tesla-eigene Player erlaubt keine eigenen Tasten. Ein ★ vor dem Titel zeigt dort den Favoriten an. Wenn der Tesla eine Springen-Taste anzeigt, kann sie hier als Favoriten-Taste dienen (dann springt sie nicht mehr).</small>
       </div>
-      <div id="verBarBox" data-tab="allgemein" data-sub="einst" class="autoplay-box" hidden>
-        <p class="ap-title">Art-Buttons</p>
-        <label class="set-row check"><input id="verBarOpt" type="checkbox" /> Art-Buttons (Karaoke / Instrumental / Video / Zusammenkünfte) immer anzeigen</label>
-        <label class="set-row check"><input id="verBarFade" type="checkbox" /> Nur kurz einblenden (beim Start eines Liedes), mit der Maus darüber wieder anzeigen</label>
-        <label class="set-row">Ausblenden nach (Sekunden; gilt für Art-Buttons und Kennzeichen) <input id="fadeSec" type="number" min="1" max="60" inputmode="numeric" /></label>
-        <small class="set-hint">Sonst erscheinen sie nur bei aktiven erweiterten Optionen (Lupe) und im Bearbeitungsmodus.</small>
+      <div id="advList" data-tab="allgemein" data-sub="einst" class="autoplay-box adv-part" hidden>
+        <p class="ap-title">Größe der Liste</p>
+        <label class="set-row">Schriftgröße Auswahlfenster <input id="advListSize" type="number" min="10" max="48" inputmode="numeric" /></label>
+        <small class="set-hint">Größe der Schrift in der Liedliste (10 bis 48). Das geht auch mit A− und A+ über der Liste.</small>
+        <label class="set-row">Breite Auswahlfenster (px) <input id="advSidebar" type="number" min="180" max="1200" inputmode="numeric" /></label>
+        <small class="set-hint">Breite der Liedliste in Pixeln (180 bis 1200). Mit den Pfeilen ← → über der Liste geht es auch. Auf dem Handy füllt die Liste meist die ganze Breite.</small>
       </div>
-      <div id="listenBox" data-tab="allgemein" data-sub="einst" class="autoplay-box" hidden>
-        <p class="ap-title">Mithören (Sync)</p>
-        <label class="set-row check"><input id="rcListenStart" type="checkbox" /> Mithören ruckelfrei: nur beim Drücken auf Play synchronisieren, dann läuft das Lied hier selbstständig weiter</label>
-        <small class="set-hint">Ohne Haken wird laufend nachgeführt (genauer, kann auf dem Handy stocken). Mit Haken springt dieses Gerät beim Play-Druck und beim Liedwechsel einmal zur richtigen Stelle und spielt dann ohne Eingriffe.</small>
+      <h3 class="set-grp" data-tab="allgemein" data-sub="einst">Karaoke-Text und Cover</h3>
+      <p class="set-grp-d" data-tab="allgemein" data-sub="einst">Wie der mitlaufende Text und das Cover aussehen.</p>
+      <div id="advBox" data-tab="allgemein" data-sub="einst" class="autoplay-box" hidden>
+        <p class="ap-title">Text und Cover</p>
+        <label class="set-row">Schriftgröße Karaoke-Text <input id="advScale" type="number" min="10" max="200" inputmode="numeric" /></label>
+        <small class="set-hint">Größe des Textes, der beim Singen mitläuft (10 bis 200). Das geht auch mit A− und A+ oben.</small>
+        <label class="set-row">Ausrichtung Karaoke-Text <select id="advAlign"><option value="skin">Design</option><option value="left">links</option><option value="center">Mitte</option><option value="right">rechts</option></select></label>
+        <small class="set-hint">„Design“ übernimmt die Ausrichtung des gewählten Designs. Sonst steht der Text immer links, in der Mitte oder rechts.</small>
+        <label class="set-row">Höhe der aktiven Karaoke-Zeile (% von oben, Standard 33) <input id="advLyricPos" type="number" min="5" max="95" inputmode="numeric" /></label>
+        <small class="set-hint">Wo die gerade gesungene Zeile auf dem Bildschirm steht, in Prozent von oben. Kleiner = weiter oben, dann siehst du mehr kommende Zeilen.</small>
+        <label class="set-row">Cover anzeigen <select id="advCover"><option value="neu">Neu</option><option value="alt">Alt</option></select></label>
+        <small class="set-hint">„Neu“ zeigt die gestalteten Cover, „Alt“ das ursprüngliche Bild des Liedes. Sichtbar bei aktiver Lupe.</small>
+        <label class="set-row check cover-flip-row"><input id="advCoverFlip" type="checkbox" /> Tippen auf das Cover im Player wechselt (mit Drehung) zum Karaoke-Text</label>
+        <small class="set-hint">Ein Tipp auf das Cover dreht es um und zeigt den Text; noch einmal tippen zeigt wieder das Cover. Sichtbar bei aktiver Lupe.</small>
+        <label class="set-row check"><input id="startGif" type="checkbox" /> Startseite: GIF „Chor“ statt des Bildes zeigen</label>
+        <small class="set-hint">Auf der Startseite, bevor ein Lied läuft, erscheint das animierte Chor-GIF.</small>
+        <button id="flugResetBtn" class="chip" type="button" hidden>Schwebend: Positionen und Größen zurücksetzen</button>
       </div>
+      <h3 class="set-grp" data-tab="allgemein" data-sub="einst">Bedienung und Anzeige</h3>
+      <p class="set-grp-d" data-tab="allgemein" data-sub="einst">Abstände, Schutz vor versehentlichem Tippen und Geräteinfo.</p>
+      <div id="advView" data-tab="allgemein" data-sub="einst" class="autoplay-box adv-part" hidden>
+        <p class="ap-title">Abstände und Schutz</p>
+        <label class="set-row two"><span class="lbl">Abstand oben<br>Hauptfenster (px)</span> <input id="advTopMain" type="number" min="0" max="300" inputmode="numeric" /></label>
+        <small class="set-hint">Zusätzlicher Platz am oberen Rand der Hauptseite. Hilfreich, wenn das Gerät oder der Tesla oben etwas verdeckt.</small>
+        <label class="set-row two"><span class="lbl">Abstand oben<br>Einstellungen (px)</span> <input id="advTopSet" type="number" min="0" max="300" inputmode="numeric" /></label>
+        <small class="set-hint">Dasselbe für dieses Einstellungsfenster.</small>
+        <label class="set-row check"><input id="advHold" type="checkbox" /> Lupe und Player-Symbol nur nach langem Drücken (ca. 0,7 s)</label>
+        <small class="set-hint">Schützt vor versehentlichem Antippen, zum Beispiel beim Fahren: Die Symbole reagieren erst, wenn du sie etwa 0,7 Sekunden hältst.</small>
+        <label class="set-row check"><input id="advHint" type="checkbox" /> Dabei Hinweis „Länger drücken“ und Fortschrittsbalken anzeigen</label>
+        <small class="set-hint">Zeigt beim Halten einen Hinweis und einen Balken, damit du siehst, wie lange noch.</small>
+        <small id="advInfo" class="set-hint"></small>
+      </div>
+      <h3 class="set-grp" data-tab="allgemein" data-sub="einst">Sonstiges</h3>
+      <p class="set-grp-d" data-tab="allgemein" data-sub="einst">Werkzeuge und Zusatzfunktionen.</p>
       <div id="caragBox" data-tab="allgemein" data-sub="einst vor" class="carag-box" hidden>
         <p class="ap-title">Carag</p>
         <label class="set-row">Wiedergabe
@@ -470,7 +514,7 @@
           <button id="advReload" class="chip" type="button">Seite neu laden</button>
           <button id="advStart" class="chip" type="button">Anmeldefenster öffnen</button>
         </div>
-        <small class="set-hint">Erweiterte Optionen sind die Funktionen der Lupe: Textsuche, Art-Buttons, Listen-Werkzeuge. Die Tesla-Voreinstellungen findest du unter „Voreinstellungen“.</small>
+        <small class="set-hint">Erweiterte Optionen ein/aus schaltet die Funktionen der Lupe ein oder aus. Bearbeitungsmodus zeigt Werkzeuge zum Korrigieren der Karaoke-Texte. Seite neu laden holt die neueste Version. Anmeldefenster öffnen ändert Voreinstellung und Benutzer. Erweiterte Optionen sind die Funktionen der Lupe: Textsuche, Art-Buttons, Listen-Werkzeuge. Die Tesla-Voreinstellungen findest du unter „Voreinstellungen“.</small>
       </div>
       <section id="ludwtSync" data-tab="ludwt" class="ludwt-sync" hidden></section>
       <button id="codeCancel" class="ghost" type="button">Abbrechen</button>
