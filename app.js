@@ -2934,7 +2934,7 @@ async function putSync(store, data) {
 }
 
 /* ---- Einstellungen mit abgleichen (optional, pro Schlüssel Drei-Wege-Abgleich) ---- */
-const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBarAlways", "verBarFade", "srcTagsFade", "fadeSec", "lyricPos", "flugPos", "rcIdleSec", "holdGuard", "holdHint", "eggMode", "eggFall", "eggGif", "startGif", "themeShown", "themeTabs", "themeOrder", "themeTabList", "themeCustom", "themeNames", "skinProf", "coverMode", "coverFlip", "sidebarW", "topOffMain", "topOffSet", "startGif", "ludwtSingle", "listRepeat", "srcTags", "favPlace", "favSeek", "showExtra", "karaokeOnly", "srcFilter", "sync-auto-max", "lyricAlign", "skipSec", "skipBack", "skipFwd", "fehlMode", "fehlNotify", "fehlAll", "fehlHelpSeen", STORAGE.scale, STORAGE.listSize];
+const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBarAlways", "verBarFade", "srcTagsFade", "fadeSec", "lyricPos", "flugPos", "rcIdleSec", "holdGuard", "holdHint", "eggMode", "eggFall", "eggGif", "startGif", "themeShown", "themeTabs", "themeOrder", "themeTabList", "themeCustom", "themeNames", "skinProf", "coverMode", "coverFlip", "coverSet", "sidebarW", "topOffMain", "topOffSet", "startGif", "ludwtSingle", "listRepeat", "srcTags", "favPlace", "favSeek", "showExtra", "karaokeOnly", "srcFilter", "sync-auto-max", "lyricAlign", "skipSec", "skipBack", "skipFwd", "fehlMode", "fehlNotify", "fehlAll", "fehlHelpSeen", STORAGE.scale, STORAGE.listSize];
 const isSettingKey = (k) => SETTING_KEYS.includes(k) || /^fehl[TL]_/.test(k);
 const syncSettingsOn = () => false;   // Einstellungen werden jetzt über den Benutzer gespeichert
 function collectSettings() {
@@ -3919,6 +3919,8 @@ function setupAdvBox() {
   const al = document.getElementById("advAlign");
   if (al) { al.value = lsv("lyricAlign", "skin"); al.onchange = () => { lss("lyricAlign", al.value); applyLyricAlign(); }; }
   const cv = document.getElementById("advCover");
+  const cs = document.getElementById("advCoverSet");
+  if (cs) { cs.value = (window.COVERS && COVERS.set) || lsv("coverSet", "edel"); cs.onchange = () => { if (window.COVERS) COVERS.setSet(cs.value); else lss("coverSet", cs.value); }; }
   const cf = document.getElementById("advCoverFlip");
   if (cf) { cf.checked = lsv("coverFlip", "1") === "1"; cf.onchange = () => lss("coverFlip", cf.checked ? "1" : "0"); }
   if (cv) { cv.value = lsv("coverMode", "neu") === "alt" ? "alt" : "neu"; cv.onchange = () => { lss("coverMode", cv.value); if (window.COVERS) COVERS.refresh(); }; }
@@ -4805,6 +4807,8 @@ function checkLogin() {
   const ti = document.getElementById("loginTeslaInfo"), tt = document.getElementById("loginTeslaText");
   ti.addEventListener("click", () => { tt.hidden = !tt.hidden; ti.textContent = tt.hidden ? "▾" : "▴"; ti.setAttribute("aria-expanded", String(!tt.hidden)); });
   document.querySelectorAll(".login-info").forEach((b) => b.addEventListener("click", () => { const t = document.getElementById(b.dataset.for); t.hidden = !t.hidden; b.textContent = t.hidden ? "▾" : "▴"; b.setAttribute("aria-expanded", String(!t.hidden)); }));
+  { const hb = document.getElementById("loginHelpBtn"), hbody = document.getElementById("loginHelpBody");
+    if (hb && hbody) hb.addEventListener("click", () => { hbody.hidden = !hbody.hidden; hb.setAttribute("aria-expanded", String(!hbody.hidden)); hb.querySelector(".help-arrow").textContent = hbody.hidden ? "▸" : "▾"; }); }
   setupLoginAuto();
   /* im Tesla beim allerersten Öffnen gleich aufgeklappt */
   if (isTesla() && lsv("teslaPreset", "") === "") toggleMore(true);

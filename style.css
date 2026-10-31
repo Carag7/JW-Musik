@@ -1730,15 +1730,15 @@ body.verbar-fade:not(.fade-peek) .version-bar { opacity: 0; }
 
 /* v114: Handy hochkant: Cover oben rechts in der Zeile der Liednummer, Kategorie und Status untereinander */
 @media (max-width: 700px) and (orientation: portrait) {
-  .stage > .now { display: grid !important; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 10px; row-gap: 2px; }
-  .stage > .now > .title-row { grid-column: 1; grid-row: 1; }
-  .stage > .now > h2 { grid-column: 1 / -1; grid-row: 2; }
+  .stage > .now { display: grid !important; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; column-gap: 10px; row-gap: 2px; }
+  .stage > .now > .title-row { grid-column: 1; grid-row: 1 / span 2; }
+  .stage > .now > h2 { grid-column: 1 / -1; grid-row: 3; }
   .stage > .now > .meta-row { display: contents; }
-  .stage > .now #currentCategory { grid-column: 1 / -1; grid-row: 3; }
-  .stage > .now #currentStatus { grid-column: 1 / -1; grid-row: 4; }
-  .stage > .now #currentCategory, .stage > .now #currentStatus { justify-self: start; text-align: left; margin: 0; }
-  .stage > .now .cover-thumb { grid-column: 2; grid-row: 1; margin: 0; justify-self: end; align-self: start; }
-  .stage > .now > .version-bar { grid-column: 1 / -1; grid-row: 5; }
+  .stage > .now #currentCategory { grid-column: 2; grid-row: 1; align-self: end; }
+  .stage > .now #currentStatus { grid-column: 2; grid-row: 2; align-self: start; }
+  .stage > .now #currentCategory, .stage > .now #currentStatus { justify-self: start; text-align: left; margin: 0; min-width: 0; overflow-wrap: anywhere; }
+  .stage > .now .cover-thumb { grid-column: 3; grid-row: 1 / span 2; margin: 0; justify-self: end; align-self: start; }
+  .stage > .now > .version-bar { grid-column: 1 / -1; grid-row: 4; }
 }
 
 /* v114: Anmeldefenster darf höher sein als der Bildschirm und scrollt dann (Hilfetext, zusätzliche Felder) */
@@ -1746,3 +1746,14 @@ body.verbar-fade:not(.fade-peek) .version-bar { opacity: 0; }
 #loginGate:not([hidden]) { display: flex; }
 #loginGate > .login-card { margin: auto; flex: 0 0 auto; box-sizing: border-box; }
 #loginGate { padding: 12px 0; box-sizing: border-box; }
+
+/* v115: „Wofür ist was?“ einklappbar, Öffnen-Button auffällig, Cover-Ordner in der Galerie */
+.login-help { padding: 0; overflow: hidden; }
+.login-help .help-head { display: flex; align-items: center; gap: 8px; width: 100%; box-sizing: border-box; min-height: 44px; padding: 8px 12px; border: 0; background: transparent; color: var(--accent); font: inherit; font-size: 1.02em; font-weight: 800; text-align: left; cursor: pointer; }
+.login-help .help-arrow { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: var(--bg, #000); font-size: 13px; }
+.login-help .help-body { display: grid; gap: 2px; padding: 0 12px 10px; }
+.login-help .help-body[hidden] { display: none !important; }
+.login-card .login-open { min-height: 52px; width: 100%; font-size: 1.12em; font-weight: 800; letter-spacing: .04em; background: linear-gradient(180deg, #f8d778, #f0b429) !important; color: #101010 !important; border: 0 !important; border-radius: 14px; box-shadow: 0 4px 16px rgba(240, 180, 41, .45); cursor: pointer; }
+.login-card .login-open:hover, .login-card .login-open:focus-visible { filter: brightness(1.1); }
+.login-card .login-open:active { transform: translateY(1px); }
+.cg-dir { font-weight: 700; border-color: var(--accent); }

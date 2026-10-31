@@ -8,19 +8,33 @@
   const lupe = () => document.body.classList.contains("glass-open");
   const mode = () => (lsv("coverMode", "neu") === "alt" || !lupe() ? "alt" : "neu");
   const numOf = (s) => { const n = parseInt(s && (s.number != null ? s.number : s.id), 10); return n > 0 ? n : 0; };
+  /* Cover-Ordner: edel = Goldrahmen Deutsch, edel_eng = Goldrahmen Englisch, modern = modern Englisch */
+  const SETS = [["edel", "Goldrahmen · Deutsch"], ["edel_eng", "Goldrahmen · Englisch"], ["modern", "Modern · Englisch"]];
+  const setOk = (v) => SETS.some((x) => x[0] === v);
+  let set = lsv("coverSet", "edel"); if (!setOk(set)) set = "edel";
+  const idxKey = () => (set === "edel" ? "coverIdx" : "coverIdx_" + set);
   let map = {};
   let loaded = 0, loading = null;
 
-  try { const c = JSON.parse(lsv("coverIdx", "null")); if (c && c.map) { map = c.map; loaded = c.t || 0; } } catch { /* egal */ }
+  function readIdx() { map = {}; loaded = 0; try { const c = JSON.parse(lsv(idxKey(), "null")); if (c && c.map) { map = c.map; loaded = c.t || 0; } } catch { /* egal */ } }
+  readIdx();
+  function setSet(v, noSave) {
+    if (!setOk(v) || v === set) return;
+    set = v; if (!noSave) lss("coverSet", v);
+    loading = null; readIdx(); lastKey = "";
+    changed(); load(true);
+  }
 
   function load(force) {
     if (loading) return loading;
     if (!force && loaded && Date.now() - loaded < 10 * 60 * 1000) return Promise.resolve(map);
-    loading = fetch(`${base()}/api/covers`, { cache: force ? "reload" : "default" }).then((r) => r.ok ? r.json() : null).then((j) => {
-      if (j && j.ok && j.map) { map = j.map; loaded = Date.now(); try { lss("coverIdx", JSON.stringify({ t: loaded, map })); } catch { /* egal */ } }
+    const mine = set;
+    const p = fetch(`${base()}/api/covers?set=${mine}`, { cache: force ? "reload" : "default" }).then((r) => r.ok ? r.json() : null).then((j) => {
+      if (mine === set && j && j.ok && j.map) { map = j.map; loaded = Date.now(); try { lss(idxKey(), JSON.stringify({ t: loaded, map })); } catch { /* egal */ } }
       return map;
-    }).catch(() => map).finally(() => { loading = null; changed(); });
-    return loading;
+    }).catch(() => map).finally(() => { if (loading === p) loading = null; if (mine === set) changed(); });
+    loading = p;
+    return p;
   }
   const keyOf = (song) => { const n = numOf(song); return n ? map[String(n)] : ""; };
   const imgUrl = (key) => `${base()}/media/${key.split("/").map(encodeURIComponent).join("/")}`;
@@ -52,6 +66,7 @@
     t.hidden = false;
   }
   function changed() {
+    { const v = lsv("coverSet", "edel"); if (setOk(v) && v !== set) { set = v; readIdx(); lastKey = ""; load(true); if (gal && gal._dir) gal._dir.value = set; } }
     paintThumb();
     try { if (state.songs[state.index] && "mediaSession" in navigator && typeof setMediaSession === "function") setMediaSession(state.songs[state.index]); } catch { /* egal */ }
     if (gal) paintGallery();
@@ -230,6 +245,10 @@
     const nxt = document.createElement("select"); nxt.className = "cg-sel"; nxt.setAttribute("aria-label", "Danach spielen");
     [["off", "Danach: nichts extra"], ["order", "Danach: Reihenfolge"], ["rand", "Danach: Zufall"]].forEach(([v, n]) => nxt.append(new Option(n, v))); nxt.value = G.next;
     nxt.addEventListener("change", () => { G.next = nxt.value; lss("coverNext", G.next); if (G.next === "off") G.fromGal = false; });
+    const dirSel = document.createElement("select"); dirSel.className = "cg-sel cg-dir"; dirSel.setAttribute("aria-label", "Cover-Ordner");
+    SETS.forEach(([v, n]) => dirSel.append(new Option(n, v))); dirSel.value = set;
+    dirSel.addEventListener("change", () => setSet(dirSel.value));
+    gal._dir = dirSel;
     const cat = document.createElement("select"); cat.className = "cg-sel"; cat.setAttribute("aria-label", "Kategorie");
     const cats = [...new Set(state.songs.map((s) => s.category).filter(Boolean))];
     cat.append(new Option("Alle Kategorien", "")); cats.forEach((c) => cat.append(new Option(c, c))); cat.value = G.cat;
@@ -242,7 +261,7 @@
     sz.addEventListener("input", () => { G.size = Number(sz.value); lss("coverSize", String(G.size)); gal.style.setProperty("--cg-size", G.size + "px"); });
     size.append(sz);
     const cnt = h("span", "cg-count"); cnt.id = "cgCount";
-    tools.append(cOnly, cFav, cMark, cat, srt, nxt, size, cnt);
+    tools.append(dirSel, cOnly, cFav, cMark, cat, srt, nxt, size, cnt);
     gal.classList.toggle("fav-mark", G.mark);
 
     const body = h("div", "cg-body"); body.id = "cgBody";
@@ -460,6 +479,6 @@
     setInterval(() => { const s = cur(); const k = s ? s.id : ""; if (boot.k !== k) { boot.k = k; paintThumb(); if (gal) paintGallery(); } if (gal) paintMini(); }, 500);
     window.addEventListener("pagehide", () => { /* nichts */ });
   }
-  window.COVERS = { galleryNext, src, has, newUrl, artwork, load, mode, refresh: changed, openGallery, closeGallery, openNow, closeNow, get map() { return map; } };
+  window.COVERS = { setSet, get set() { return set; }, SETS, galleryNext, src, has, newUrl, artwork, load, mode, refresh: changed, openGallery, closeGallery, openNow, closeNow, get map() { return map; } };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 })();
