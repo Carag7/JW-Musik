@@ -22,16 +22,19 @@ from pathlib import Path
 import requests
 
 API = "https://b.jw-cdn.org/apis/pub-media/GETPUBMEDIALINKS"
-LIBRARY = "https://www.jw.org/en/library/music-songs/sing-out-joyfully/"
-LANG = "E"
+# Aufruf: python scrape_verfuegbar.py        -> Englisch (verfuegbar.json)
+#         python scrape_verfuegbar.py de     -> Deutsch  (verfuegbar_de.json, Sprachcode X)
+DE = len(sys.argv) > 1 and sys.argv[1].lower() in ("de", "x")
+LIBRARY = "https://www.jw.org/de/bibliothek/musik-lieder/singt-voller-freude/" if DE else "https://www.jw.org/en/library/music-songs/sing-out-joyfully/"
+LANG = "X" if DE else "E"
 ARTEN = [
     ("karaoke", "sjjc", "MP3"),
     ("instrumental", "sjji", "MP3"),
     ("sung", "sjjm", "MP3"),
     ("video", "sjjm", "MP4"),
 ]
-OUT = Path(__file__).with_name("verfuegbar.json")
-HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; JW-Musik wöchentliche Prüfung)", "Accept-Language": "en"}
+OUT = Path(__file__).with_name("verfuegbar_de.json" if DE else "verfuegbar.json")
+HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; JW-Musik wöchentliche Prüfung)", "Accept-Language": "de" if DE else "en"}
 
 
 def nummer_aus_name(name: str):
@@ -84,7 +87,7 @@ def hole_bibliothek(fehler: list):
         fehler.append(f"Bibliothek: {e}")
         return {}
     out = {}
-    for m in re.finditer(r'href="[^"]*/sing-out-joyfully/(\d{1,3})-([a-z0-9\-]+)/?"[^>]*>(.*?)</a>', r.text, re.S | re.I):
+    for m in re.finditer(r'href="[^"]*/(?:sing-out-joyfully|singt-voller-freude)/(\d{1,3})-([a-z0-9\-]+)/?"[^>]*>(.*?)</a>', r.text, re.S | re.I):
         n = int(m.group(1))
         text = re.sub(r"<[^>]+>", " ", m.group(3))
         text = re.sub(r"\s+", " ", text).strip()
@@ -118,7 +121,7 @@ def main():
         if titel and not eintrag.get("titel"):
             eintrag["titel"] = titel
     if not lieder or not any(gefunden.values()):
-        print("Keine Daten erhalten – verfuegbar.json bleibt unverändert.", *fehler, sep="\n  ")
+        print(f"Keine Daten erhalten – {OUT.name} bleibt unverändert.", *fehler, sep="\n  ")
         sys.exit(1)
     gesamt = max([int(k) for k in lieder] + [max(bib) if bib else 0])
     buch = buch or sorted(int(k) for k in lieder)
@@ -131,7 +134,7 @@ def main():
         "lieder": dict(sorted(lieder.items(), key=lambda kv: int(kv[0]))),
     }
     OUT.write_text(json.dumps(result, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
-    print(f"verfuegbar.json: {len(lieder)} Lieder, gefunden: {gefunden}")
+    print(f"{OUT.name}: {len(lieder)} Lieder, gefunden: {gefunden}")
     for f in fehler:
         print("Warnung:", f)
 

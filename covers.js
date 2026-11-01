@@ -6,10 +6,12 @@
   const $ = (id) => document.getElementById(id);
   const base = () => (typeof SYNC_BASE !== "undefined" ? SYNC_BASE : location.origin);
   const lupe = () => document.body.classList.contains("glass-open");
-  const mode = () => (lsv("coverMode", "neu") === "alt" || !lupe() ? "alt" : "neu");
+  const mode = () => (lsv("coverMode", "neu") === "alt" || lsv("coverSet", "edel") === "alt" || !lupe() ? "alt" : "neu");
   const numOf = (s) => { const n = parseInt(s && (s.number != null ? s.number : s.id), 10); return n > 0 ? n : 0; };
   /* Cover-Ordner: edel = Goldrahmen Deutsch, edel_eng = Goldrahmen Englisch, modern = modern Englisch */
-  const SETS = [["edel", "Goldrahmen · Deutsch"], ["edel_eng", "Goldrahmen · Englisch"], ["modern", "Modern · Englisch"]];
+  const SETS = [["edel", "Goldrahmen · Deutsch"], ["edel_eng", "Goldrahmen · Englisch"], ["modern", "Modern · Englisch"], ["modern_de", "Modern · Deutsch"], ["alt", "Original (altes Bild)"]];
+  const SET_LANG = { edel: "de", edel_eng: "en", modern: "en", modern_de: "de", alt: "" };
+  const SET_PAIR = { edel: "edel_eng", edel_eng: "edel", modern: "modern_de", modern_de: "modern" };   // gleiche Serie in der anderen Sprache
   const setOk = (v) => SETS.some((x) => x[0] === v);
   let set = lsv("coverSet", "edel"); if (!setOk(set)) set = "edel";
   const idxKey = () => (set === "edel" ? "coverIdx" : "coverIdx_" + set);
@@ -25,8 +27,17 @@
     changed(); load(true);
   }
 
+  /* Serie wählen; gehört sie zu einer anderen Sprache als die Musik, fragt V116.guardCover vorher nach (true = übernommen) */
+  async function pick(v) {
+    if (!setOk(v) || v === set) return true;
+    let ok = true;
+    try { if (window.V116) ok = await V116.guardCover(v); } catch { /* egal */ }
+    if (ok) setSet(v);
+    return ok;
+  }
   function load(force) {
     if (loading) return loading;
+    if (set === "alt") { map = {}; return Promise.resolve(map); }
     if (!force && loaded && Date.now() - loaded < 10 * 60 * 1000) return Promise.resolve(map);
     const mine = set;
     const p = fetch(`${base()}/api/covers?set=${mine}`, { cache: force ? "reload" : "default" }).then((r) => r.ok ? r.json() : null).then((j) => {
@@ -36,6 +47,15 @@
     loading = p;
     return p;
   }
+  /* Verzeichnis einer beliebigen Serie (für die Startseite: mehrere Ordner abwechselnd) */
+  const setMaps = {};
+  function loadSetMap(id) {
+    if (id === set) return load(false).then(() => map);
+    if (id === "alt") return Promise.resolve({});
+    if (setMaps[id] && Date.now() - setMaps[id].t < 10 * 60 * 1000) return Promise.resolve(setMaps[id].map);
+    return fetch(`${base()}/api/covers?set=${id}`).then((r) => r.ok ? r.json() : null).then((j) => { const m = (j && j.ok && j.map) || {}; setMaps[id] = { t: Date.now(), map: m }; return m; }).catch(() => ({}));
+  }
+  const urlOfKey = (key) => imgUrl(key);
   const keyOf = (song) => { const n = numOf(song); return n ? map[String(n)] : ""; };
   const imgUrl = (key) => `${base()}/media/${key.split("/").map(encodeURIComponent).join("/")}`;
   /* neues Cover (Adresse) oder leer; immer, auch wenn die Anzeige auf „alt“ steht – für die Galerie */
@@ -107,7 +127,7 @@
     fb.addEventListener("click", () => { npFill = !npFill; lss("coverFill", npFill ? "1" : "0"); np.classList.toggle("fill", npFill); fb.setAttribute("aria-pressed", String(npFill)); });
     const sb = svgBtn("np-btn", '<svg viewBox="0 0 24 24" width="100%" height="100%"><path fill="currentColor" d="M5 5h5v2H7v3H5zm9 0h5v5h-2V7h-3zM5 14h2v3h3v2H5zm12 0h2v5h-5v-2h3z"/></svg>', "Browser-Vollbild");
     sb.addEventListener("click", () => fsToggle(np));
-    tools.append(gb, fb, sb);
+    tools.append(gb, fb, sb, ...(window.V116 ? [V116.langBtn("lang-np")] : []));
     top.append(close, lab, tools);
     const art = h("div", "np-art"); const im = h("img"); im.alt = ""; art.append(im);
     const info = h("div", "np-info");
@@ -234,7 +254,7 @@
       seg.append(b);
     });
     const fsb = svgBtn("cg-btn", ic.full, "Browser-Vollbild"); fsb.addEventListener("click", () => fsToggle(gal));
-    top.append(close, ttl, q, seg, fsb);
+    top.append(close, ttl, q, seg, ...(window.V116 ? [V116.langBtn("lang-gal")] : []), fsb);
 
     const tools = h("div", "cg-tools");
     const chip = (label, get, set) => { const b = h("button", "cg-chip", label); b.type = "button"; b.setAttribute("aria-pressed", String(get())); b.addEventListener("click", () => { set(!get()); b.setAttribute("aria-pressed", String(get())); paintGallery(); }); return b; };
@@ -247,7 +267,7 @@
     nxt.addEventListener("change", () => { G.next = nxt.value; lss("coverNext", G.next); if (G.next === "off") G.fromGal = false; });
     const dirSel = document.createElement("select"); dirSel.className = "cg-sel cg-dir"; dirSel.setAttribute("aria-label", "Cover-Ordner");
     SETS.forEach(([v, n]) => dirSel.append(new Option(n, v))); dirSel.value = set;
-    dirSel.addEventListener("change", () => setSet(dirSel.value));
+    dirSel.addEventListener("change", () => { pick(dirSel.value).then((ok) => { if (!ok) dirSel.value = set; }); });
     gal._dir = dirSel;
     const cat = document.createElement("select"); cat.className = "cg-sel"; cat.setAttribute("aria-label", "Kategorie");
     const cats = [...new Set(state.songs.map((s) => s.category).filter(Boolean))];
@@ -479,6 +499,6 @@
     setInterval(() => { const s = cur(); const k = s ? s.id : ""; if (boot.k !== k) { boot.k = k; paintThumb(); if (gal) paintGallery(); } if (gal) paintMini(); }, 500);
     window.addEventListener("pagehide", () => { /* nichts */ });
   }
-  window.COVERS = { setSet, get set() { return set; }, SETS, galleryNext, src, has, newUrl, artwork, load, mode, refresh: changed, openGallery, closeGallery, openNow, closeNow, get map() { return map; } };
+  window.COVERS = { setSet, pick, setLang: (id) => SET_LANG[id === undefined ? set : id] || "", pairOf: (id) => SET_PAIR[id === undefined ? set : id] || "", loadSetMap, urlOfKey, get set() { return set; }, SETS, galleryNext, src, has, newUrl, artwork, load, mode, refresh: changed, openGallery, closeGallery, openNow, closeNow, get map() { return map; } };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 })();

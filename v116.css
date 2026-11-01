@@ -1,0 +1,58 @@
+/* v116 */
+/* kleiner Sprach-Knopf DE/EN – dezent */
+.lang-mini { flex: 0 0 auto; min-width: 26px; height: 20px; padding: 0 5px; border: 1px solid var(--line); border-radius: 6px; background: transparent; color: var(--muted); font: inherit; font-size: 10px; font-weight: 700; letter-spacing: .06em; line-height: 1; opacity: .55; cursor: pointer; }
+.lang-mini:hover, .lang-mini:focus-visible { opacity: 1; color: var(--text); }
+.filters .lang-filters { margin-left: 6px; align-self: center; }
+.transport .lang-transport { position: absolute; right: 4px; top: 2px; }
+.cg-top .lang-gal { align-self: center; }
+.np-tools .lang-np { align-self: center; color: #fff; border-color: rgba(255,255,255,.35); }
+
+/* Lied zu Wiedergabeliste */
+.pl-add { font-size: 20px; line-height: 1; }
+/* Cast-Knopf nur bei aktiver Lupe */
+.cast-btn { display: none; align-items: center; padding: 2px 8px; min-height: 28px; }
+body.glass-open .cast-btn { display: inline-flex; }
+.cast-btn.on { border-color: var(--accent); color: var(--accent); }
+/* × gedrückt halten: kleines Zeichen, dass etwas passiert */
+#closeSidebar.holding { transform: scale(.88); box-shadow: 0 0 0 3px rgba(var(--accent-rgb, 240,180,41), .45); transition: box-shadow 1s linear; }
+
+/* Auswahlfenster Design: Filter-Symbol rechts oben */
+.theme-picker-card { position: relative; }
+.theme-filter-btn { position: absolute; top: 10px; right: 12px; width: 28px; height: 28px; display: grid; place-items: center; padding: 0; border: 1px solid var(--line); border-radius: 8px; background: transparent; color: var(--muted); cursor: pointer; z-index: 2; }
+.theme-filter-btn[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); }
+
+/* Startseite: Pfeil und Schublade */
+.start-more-btn { align-self: flex-start; width: 34px; height: 22px; padding: 0; border: 0; border-radius: 8px; background: transparent; color: var(--muted); font-size: 14px; line-height: 1; opacity: .55; cursor: pointer; }
+.start-more-btn:hover { opacity: 1; }
+body:not(.glass-open) .start-more-btn, body:not(.glass-open) .start-drawer { display: none !important; }
+.start-drawer { display: grid; gap: 8px; padding: 8px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel-2, rgba(255,255,255,.04)); max-width: 100%; }
+.start-drawer[hidden] { display: none !important; }
+.start-drawer .seg { flex-wrap: wrap; }
+.start-folder { display: flex; align-items: center; gap: 8px; font-size: .9em; color: var(--muted); }
+.start-folder select { min-width: 0; flex: 1 1 auto; }
+.start-pick { display: grid; gap: 4px; padding-left: 8px; }
+.start-pick[hidden] { display: none !important; }
+
+/* Startseite mit Anzeige-Art: füllt das große Fenster, Tasten liegen unten darüber */
+.lyrics:has(> #startPanel.show-on) { position: relative; overflow: hidden !important; padding: 0 !important; height: calc(100vh - var(--topbar, 58px) - var(--flyer-h, 70px) - 64px); min-height: 220px; }
+#startPanel.show-on { position: absolute; inset: 0 0 calc(var(--flyer-h, 70px) + 6px) 0; padding: 0 !important; display: block; }
+#startPanel.show-on > .eyebrow, #startPanel.show-on > .start-image { display: none; }
+#startPanel.show-on .start-actions { position: absolute; left: 10px; bottom: 36px; z-index: 30; }
+#startPanel.show-on .start-more-btn { position: absolute; left: 10px; bottom: 8px; z-index: 30; }
+#startPanel.show-on .start-drawer { position: absolute; left: 10px; top: 10px; z-index: 31; background: var(--panel, #111); box-shadow: 0 8px 30px rgba(0,0,0,.4); }
+#startPanel.show-on .egg { z-index: 30; }
+.start-show { position: absolute; inset: 0; overflow: hidden; }
+.start-show-empty { margin: 40px 16px; color: var(--muted); }
+.start-show img { cursor: pointer; -webkit-user-drag: none; user-select: none; }
+/* Überblenden */
+.ss-fade .sf-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; opacity: 0; transition: opacity var(--sf-ms, 900ms) ease; }
+.ss-fade .sf-img.on { opacity: 1; }
+/* Karussell */
+.ss-carousel { perspective: 1400px; perspective-origin: 50% 50%; }
+.ss-carousel .sc-item { position: absolute; left: 50%; top: 50%; object-fit: cover; border-radius: 3.5%; box-shadow: 0 18px 50px rgba(0,0,0,.55); transition: transform var(--sc-ms, 1000ms) cubic-bezier(.22,.7,.2,1), opacity var(--sc-ms, 1000ms) ease; will-change: transform, opacity; }
+/* Schweben */
+.ss-float { perspective: 900px; perspective-origin: 50% 40%; background: radial-gradient(1000px 600px at 50% 110%, rgba(var(--accent-rgb, 240,180,41), .10), transparent 70%); }
+.ss-float .sw-item { position: absolute; left: 0; top: 0; object-fit: cover; border-radius: 3.5%; box-shadow: 0 14px 38px rgba(0,0,0,.5); transition: opacity 900ms ease; will-change: transform; }
+@media (prefers-reduced-motion: reduce) { .ss-carousel .sc-item, .ss-fade .sf-img { transition-duration: 1ms; } }
+
+.count-wrap { display: inline-flex; align-items: center; gap: 6px; }

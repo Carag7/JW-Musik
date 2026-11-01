@@ -1757,3 +1757,6 @@ body.verbar-fade:not(.fade-peek) .version-bar { opacity: 0; }
 .login-card .login-open:hover, .login-card .login-open:focus-visible { filter: brightness(1.1); }
 .login-card .login-open:active { transform: translateY(1px); }
 .cg-dir { font-weight: 700; border-color: var(--accent); }
+
+/* v116: Handy hochkant: „＋ Liste“ neben dem Stern */
+@media (max-width: 700px) and (orientation: portrait) { .stage > .now > .title-row { display: flex; align-items: center; gap: 6px; } }

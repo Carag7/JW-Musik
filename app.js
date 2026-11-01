@@ -921,6 +921,23 @@ function showLyricLink(song) {
 
 /* Liedtext der gesungenen Karaoke-Fassung (Server -> Browser -> lyrics/ -> GitHub) */
 async function fetchKaraokeLines(song, stale) {
+  state.lyricLang = "en";
+  if (musikLang() === "de") {
+    /* deutscher Karaoketext: erst eigener Speicher (lrcde-<nr>), dann Datei in musik_de/ */
+    try {
+      let text = "";
+      const res = await fetch(`${SYNC_BASE}/sync/lrcde-${song.id}`);
+      if (res.ok) text = await res.text();
+      if (!text.includes("[")) {
+        const k = mediaKey("klrc", song.number);
+        if (k) { const r2 = await fetch(mediaUrl(k)); if (r2.ok) text = await r2.text(); }
+      }
+      if (stale()) return [];
+      if (text.includes("[")) { state.lyricLang = "de"; return parseLrc(text); }
+      const saved = localStorage.getItem(`lrcde-${song.id}`);
+      if (saved) { state.lyricLang = "de"; return JSON.parse(saved); }
+    } catch { /* englischer Text */ }
+  }
   try {
     const res = await fetch(`${SYNC_BASE}/sync/lrc-${song.id}`);
     if (stale()) return [];
@@ -1053,12 +1070,22 @@ async function toggleUnsynced() {
 
 /* ---------- Fassungen: Karaoke / Instrumental / Video (Dateiverzeichnis aus dem Worker) ---------- */
 const mediaUrl = (key) => `${SYNC_BASE}/media/${key.split("/").map(encodeURIComponent).join("/")}`;
+/* Sprache der Musik: "en" (Standard, Ordner karaoke/ + meeting/) oder "de" (R2-Ordner musik_de/, im media-index unter "de") */
+const emptyMedia = () => ({ karaoke: { audio: {}, lrc: {} }, meeting: { audio: {}, video: {}, lrc: {}, sung: {}, sungLrc: {} } });
+const musikLang = () => (lsv("musikLang", "en") === "de" ? "de" : "en");
+function mediaTable(type, m) {
+  if (!m) return {};
+  m.karaoke = m.karaoke || { audio: {}, lrc: {} }; m.meeting = m.meeting || { audio: {}, video: {}, lrc: {}, sung: {}, sungLrc: {} };
+  return type === "karaoke" ? m.karaoke.audio : type === "meeting" ? m.meeting.audio : type === "video" ? m.meeting.video : type === "sung" ? (m.meeting.sung || {}) : type === "lrcs" ? (m.meeting.sungLrc || {}) : type === "klrc" ? (m.karaoke.lrc || {}) : m.meeting.lrc;
+}
 function mediaKey(type, number) {
   const m = state.media;
   if (!m) return null;
-  const table = type === "karaoke" ? m.karaoke.audio : type === "meeting" ? m.meeting.audio : type === "video" ? m.meeting.video : type === "sung" ? (m.meeting.sung || {}) : type === "lrcs" ? (m.meeting.sungLrc || {}) : m.meeting.lrc;
-  return table[String(number)] || null;
+  const src = musikLang() === "de" ? (m.de || emptyMedia()) : m;
+  return mediaTable(type, src)[String(number)] || null;
 }
+/* englische Datei als Ersatz, wenn die deutsche fehlt */
+const mediaKeyEn = (type, number) => (state.media ? mediaTable(type, state.media)[String(number)] || null : null);
 
 async function loadMedia(fresh) {
   try {
@@ -1230,15 +1257,20 @@ function updateVersionBar() {
 
 async function pickSource(song, want) {
   const n = song.number;
-  const video = mediaKey("video", n), meet = mediaKey("meeting", n), sung = mediaKey("sung", n);
+  const de = musikLang() === "de";
+  state.langFallback = false;
+  /* deutsche Datei, sonst (nur bei Deutsch) die englische als Ersatz */
+  const mk = (t) => { const k = mediaKey(t, n); if (k || !de) return k; const e = mediaKeyEn(t, n); if (e) state.langFallback = true; return e; };
+  const video = mk("video"), meet = mk("meeting"), sung = mk("sung");
   if (want === "sung" && sung) return { version: "sung", url: mediaUrl(sung) };
   if (want === "video" && video) return { version: "video", url: mediaUrl(video) };
   if ((want === "video" || want === "meeting") && meet) return { version: "meeting", url: mediaUrl(meet) };
-  const kKey = mediaKey("karaoke", n);
+  const kKey = mk("karaoke");
   if (kKey) return { version: "karaoke", url: mediaUrl(kKey) };
   if (!song.extra) {
     const url = await resolveAudio(song);
     const sameOrigin = !/^https?:/i.test(url) || url.startsWith(`${SYNC_BASE}/`);
+    if (de) state.langFallback = true;
     if (sameOrigin || (!meet && !video && !sung)) return { version: "karaoke", url };
     // Fremde Quelle: kurz prüfen, ob die Datei dort wirklich liegt, sonst Instrumental nehmen
     try {
@@ -1357,6 +1389,7 @@ async function selectSong(index, autoplay) {
     el.status.textContent = "Für dieses Lied gibt es keine Datei.";
     return;
   }
+  if (state.langFallback && musikLang() === "de") showToast("Deutsche Karaoke-Datei fehlt – englische wird gespielt.");
   if (src.fallback) el.status.textContent = src.version === "meeting" ? "Karaoke-MP3 fehlt – Instrumental wird gespielt" : src.version === "sung" ? "Karaoke-MP3 fehlt – Zusammenkünfte-Fassung wird gespielt" : "Karaoke-MP3 fehlt – Video wird gespielt";
   state.currentAudio = url;
   // Beim Weiterschalten nicht pausieren und sofort weiterspielen: sonst springt im Tesla kurz Apple Music ein
@@ -1894,6 +1927,7 @@ function tryAutoStart() {
   Promise.race([state.userReady || Promise.resolve(), new Promise((r) => setTimeout(r, 2500))]).then(tryAutoStartNow);
 }
 function tryAutoStartNow() {
+  try { if (sessionStorage.getItem("noAutoOnce") === "1") { sessionStorage.removeItem("noAutoOnce"); return; } } catch { /* egal */ }
   if (localStorage.getItem("autoStart") !== "1") return;
   if (!document.getElementById("loginGate").hidden || !state.songs.length) return;
   const last = localStorage.getItem("lastSongId");
@@ -2934,7 +2968,7 @@ async function putSync(store, data) {
 }
 
 /* ---- Einstellungen mit abgleichen (optional, pro Schlüssel Drei-Wege-Abgleich) ---- */
-const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBarAlways", "verBarFade", "srcTagsFade", "fadeSec", "lyricPos", "flugPos", "rcIdleSec", "holdGuard", "holdHint", "eggMode", "eggFall", "eggGif", "startGif", "themeShown", "themeTabs", "themeOrder", "themeTabList", "themeCustom", "themeNames", "skinProf", "coverMode", "coverFlip", "coverSet", "sidebarW", "topOffMain", "topOffSet", "startGif", "ludwtSingle", "listRepeat", "srcTags", "favPlace", "favSeek", "showExtra", "karaokeOnly", "srcFilter", "sync-auto-max", "lyricAlign", "skipSec", "skipBack", "skipFwd", "fehlMode", "fehlNotify", "fehlAll", "fehlHelpSeen", STORAGE.scale, STORAGE.listSize];
+const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBarAlways", "verBarFade", "srcTagsFade", "fadeSec", "lyricPos", "flugPos", "rcIdleSec", "holdGuard", "holdHint", "eggMode", "eggFall", "eggGif", "startGif", "themeShown", "themeTabs", "themeOrder", "themeTabList", "themeCustom", "themeNames", "skinProf", "coverMode", "coverFlip", "coverSet", "musikLang", "langWarnOff", "startMode", "startFolders", "startOrder", "startSec", "startFade", "skinOnlyActive", "sidebarW", "topOffMain", "topOffSet", "startGif", "ludwtSingle", "listRepeat", "srcTags", "favPlace", "favSeek", "showExtra", "karaokeOnly", "srcFilter", "sync-auto-max", "lyricAlign", "skipSec", "skipBack", "skipFwd", "fehlMode", "fehlNotify", "fehlAll", "fehlHelpSeen", "fehlLang", "startShow", STORAGE.scale, STORAGE.listSize];
 const isSettingKey = (k) => SETTING_KEYS.includes(k) || /^fehl[TL]_/.test(k);
 const syncSettingsOn = () => false;   // Einstellungen werden jetzt über den Benutzer gespeichert
 function collectSettings() {
@@ -3729,7 +3763,7 @@ async function saveTimecode(skipConfirm) {
     const [m, rest] = t.split(":");
     return `[${m.padStart(2, "0")}:${rest}]${line.text}`;
   }).join("\n");
-  const kind = state.curVersion === "meeting" ? "lrcm" : state.curVersion === "sung" ? "lrcs" : "lrc";
+  const kind = state.curVersion === "meeting" ? "lrcm" : state.curVersion === "sung" ? "lrcs" : (musikLang() === "de" && state.lyricLang === "de" ? "lrcde" : "lrc");
   localStorage.setItem(`${kind}-${song.id}`, JSON.stringify(lines));
   try {
     const res = await fetch(`${SYNC_BASE}/sync/${kind}-${song.id}`, { method: "PUT", headers: { "content-type": "text/plain", "x-write-key": state.writeKey || "" }, body: lrc });
@@ -3920,7 +3954,7 @@ function setupAdvBox() {
   if (al) { al.value = lsv("lyricAlign", "skin"); al.onchange = () => { lss("lyricAlign", al.value); applyLyricAlign(); }; }
   const cv = document.getElementById("advCover");
   const cs = document.getElementById("advCoverSet");
-  if (cs) { cs.value = (window.COVERS && COVERS.set) || lsv("coverSet", "edel"); cs.onchange = () => { if (window.COVERS) COVERS.setSet(cs.value); else lss("coverSet", cs.value); }; }
+  if (cs) { cs.value = (window.COVERS && COVERS.set) || lsv("coverSet", "edel"); cs.onchange = () => { if (window.COVERS) COVERS.pick(cs.value).then((ok) => { if (!ok) cs.value = COVERS.set; }); else lss("coverSet", cs.value); }; }
   const cf = document.getElementById("advCoverFlip");
   if (cf) { cf.checked = lsv("coverFlip", "1") === "1"; cf.onchange = () => lss("coverFlip", cf.checked ? "1" : "0"); }
   if (cv) { cv.value = lsv("coverMode", "neu") === "alt" ? "alt" : "neu"; cv.onchange = () => { lss("coverMode", cv.value); if (window.COVERS) COVERS.refresh(); }; }

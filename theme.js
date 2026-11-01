@@ -43,6 +43,14 @@
     { id: "sk-pro-flug-rose", name: "Schwebend Rosé", bar: "#0c0509", light: false, skin: true, grp: "Pro", sw: ["#0c0509", "#3a1226", "#ff5d9e"], hint: "Schwebend in Rosé und Pfirsich" },
     { id: "sk-pro-flug-smaragd", name: "Schwebend Smaragd", bar: "#040c09", light: false, skin: true, grp: "Pro", sw: ["#040c09", "#0f3322", "#2fe08a"], hint: "Schwebend in Grün und Limette" },
     { id: "sk-pro-flug-platin", name: "Schwebend Platin", bar: "#08090b", light: false, skin: true, grp: "Pro", sw: ["#08090b", "#2a2e38", "#d9dde6"], hint: "Schwebend in Silber und Stahlblau" },
+    { id: "sk-stream", name: "Streaming", bar: "#000000", light: false, skin: true, grp: "Pro", sw: ["#000000", "#121212", "#00ffff"], hint: "Skin: schwarz mit Cyan, Player-Leiste mit Fortschritt oben, große Fettschrift" },
+    { id: "sk-stream-violett", name: "Streaming Violett", bar: "#0e0a14", light: false, skin: true, grp: "Pro", sw: ["#0e0a14", "#1c1428", "#a238ff"], hint: "Streaming in Violett und Pink" },
+    { id: "sk-stream-blau", name: "Streaming Blau", bar: "#06090f", light: false, skin: true, grp: "Pro", sw: ["#06090f", "#101a2a", "#2d8cff"], hint: "Streaming in Blau, Hi-Res-Look" },
+    { id: "sk-stream-hell", name: "Streaming Hell", bar: "#ffffff", light: true, skin: true, grp: "Pro", sw: ["#ffffff", "#f2f2f2", "#ff5500"], hint: "Streaming hell: Weiß mit Orange" },
+    { id: "sk-klang", name: "Klang", bar: "#000000", light: false, skin: true, grp: "Pro", sw: ["#000000", "#181818", "#1ed760"], hint: "Skin: schwarze Seitenleiste, Karten mit Rundungen, Liedtext groß auf Farbfläche, weißer Play-Kreis" },
+    { id: "sk-klang-blau", name: "Klang Blau", bar: "#000000", light: false, skin: true, grp: "Pro", sw: ["#000000", "#16202e", "#4da3ff"], hint: "Klang in Blau" },
+    { id: "sk-klang-rosa", name: "Klang Rosa", bar: "#000000", light: false, skin: true, grp: "Pro", sw: ["#000000", "#2a1520", "#ff5fa2"], hint: "Klang in Rosa" },
+    { id: "sk-klang-orange", name: "Klang Orange", bar: "#000000", light: false, skin: true, grp: "Pro", sw: ["#000000", "#2a1c10", "#ff8a3d"], hint: "Klang in Orange" },
     { id: "tx-nacht", name: "Tesla Nacht", bar: "#0e0f12", light: false, skin: true, grp: "Tesla", sw: ["#0e0f12", "#22242a", "#e82127"], hint: "Tesla: große Tasten, dunkel, wenig Blendung" },
     { id: "tx-tag", name: "Tesla Tag", bar: "#f2f4f7", light: true, skin: true, grp: "Tesla", sw: ["#f2f4f7", "#e1e5ea", "#1c5fe0"], hint: "Tesla: große Tasten, hell, hoher Kontrast" },
     { id: "tx-kontrast", name: "Tesla Kontrast", bar: "#000000", light: false, skin: true, grp: "Tesla", sw: ["#000000", "#1a1a1a", "#ffd400"], hint: "Tesla: Schwarz-Gelb, extra dicke Balken" },
@@ -97,6 +105,8 @@
     { id: "f-pro", name: "Aurora Pro", ids: ["sk-pro", "sk-pro-gold", "sk-pro-rose", "sk-pro-ozean", "sk-pro-smaragd", "sk-pro-platin"], hint: "Glas, schwebender Player – 6 Farben" },
     { id: "f-jwl", name: "Bibliothek", ids: ["sk-jwl", "sk-jwl-petrol", "sk-jwl-beere", "sk-jwl-nacht", "sk-jwl-schiefer", "sk-jwl-burgund"], hint: "Flach, Liste mit Trennlinien – 2 weiße und 3 dunkle Varianten" },
     { id: "f-atl", name: "Atelier", ids: ["sk-atelier", "sk-atelier-saphir", "sk-atelier-rose", "sk-atelier-salbei", "sk-atelier-kupfer", "sk-atelier-elfenbein"], hint: "Magazin-Aufbau, Serifenschrift – 6 Farben" },
+    { id: "f-stream", name: "Streaming", ids: ["sk-stream", "sk-stream-violett", "sk-stream-blau", "sk-stream-hell"], hint: "Player-Leiste mit Fortschritt oben, Fettschrift – 4 Farben" },
+    { id: "f-klang", name: "Klang", ids: ["sk-klang", "sk-klang-blau", "sk-klang-rosa", "sk-klang-orange"], hint: "Karten-Aufbau, Liedtext groß auf Farbfläche – 4 Farben" },
     { id: "f-txk", name: "Tesla Kacheln", ids: ["tx-blau", "tx-karte", "tx-energie"], hint: "Tesla-Bildschirm-Look – 3 Farben" },
     { id: "f-farb", name: "Farbdesigns", ids: ["klassisch", "graphit", "tag", "amber", "mitternacht", "wald", "rubin", "himmel", "sand"], hint: "gleiches Aussehen, nur andere Farben" }
   ];
@@ -146,7 +156,7 @@
     if (!f) return t.name;
     if (f.id === "f-farb") return t.name;
     if (t.name === f.name) return "Original";
-    const base = f.id === "f-flug" ? "Schwebend " : f.id === "f-pro" ? "Aurora " : f.id === "f-jwl" ? "Bibliothek " : f.id === "f-atl" ? "Atelier " : "Tesla ";
+    const base = f.id === "f-flug" ? "Schwebend " : f.id === "f-pro" ? "Aurora " : f.id === "f-jwl" ? "Bibliothek " : f.id === "f-atl" ? "Atelier " : f.id === "f-stream" ? "Streaming " : f.id === "f-klang" ? "Klang " : "Tesla ";
     return t.name.startsWith(base) ? t.name.slice(base.length) : t.name;
   };
   function ordered() {
@@ -564,11 +574,14 @@
     card.append(chips);
     return card;
   }
+  /* kleines Symbol rechts oben im Auswahlfenster: alle Designs zeigen oder nur die aktivierten */
+  const onlyActive = () => get("skinOnlyActive", "0") === "1";
   function renderThemeList(body, tab, cur, pick) {
-    const list = ordered().filter((t) => tabOf(t) === tab);
-    const done = new Set(); let last = "";
     const shownNow = new Set(shownIds());
-    if (!list.length) body.append(h("p", "set-hint", "In diesem Reiter sind noch keine Designs. Unter „Anzeigen & Reiter“ kannst du Designs hierher verschieben."));
+    const only = !gearOn && onlyActive();
+    const list = ordered().filter((t) => tabOf(t) === tab && (!only || shownNow.has(t.id) || t.id === cur));
+    const done = new Set(); let last = "";
+    if (!list.length) body.append(h("p", "set-hint", only ? "In diesem Reiter ist kein Design aktiviert. Mit dem kleinen Symbol oben rechts siehst du alle Designs." : "In diesem Reiter sind noch keine Designs. Unter „Anzeigen & Reiter“ kannst du Designs hierher verschieben."));
     list.forEach((th) => {
       const f = famOf(th);
       const mem = f ? list.filter((x) => famOf(x) === f) : [];
@@ -627,8 +640,13 @@
     const close = () => box.remove();
     const holder = h("div", "theme-picker-holder"); card.append(holder);
     let inner = buildPicker(holder, { onPick: close, tab: deviceTab() });
-    const ed = h("button", "chip theme-pick-edit", "✎ Reiter und Reihenfolge bearbeiten"); ed.type = "button";
+    const flt = h("button", "theme-filter-btn"); flt.type = "button";
+    flt.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M3 5h18l-7 8v6l-4-2v-4z"/></svg>';
+    const fltPaint = () => { const on = onlyActive(); flt.setAttribute("aria-pressed", String(on)); flt.title = on ? "Zeigt nur aktivierte Designs – antippen für alle" : "Zeigt alle Designs – antippen für nur aktivierte"; flt.setAttribute("aria-label", flt.title); };
+    flt.addEventListener("click", () => { put("skinOnlyActive", onlyActive() ? "0" : "1"); fltPaint(); if (!editing) { holder.replaceChildren(); inner = buildPicker(holder, { onPick: close, tab: deviceTab() }); } });
+    fltPaint(); card.append(flt);
     let editing = false;
+    const ed = h("button", "chip theme-pick-edit", "✎ Reiter und Reihenfolge bearbeiten"); ed.type = "button";
     ed.addEventListener("click", () => {
       editing = !editing;
       ed.textContent = editing ? "✔ Fertig" : "✎ Reiter und Reihenfolge bearbeiten";

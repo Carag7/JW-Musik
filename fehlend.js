@@ -18,6 +18,9 @@
   const setOptS = (k, v) => { try { localStorage.setItem(k, v); } catch { /* egal */ } };
   const openCats = new Map();   // Kategorie -> offen? (bleibt beim Umschalten erhalten)
   const pad = (n) => String(n).padStart(3, "0");
+  /* Sprache der Prüfung: en (Ordner karaoke/, meeting/) oder de (Ordner musik_de/) */
+  const lang = () => (optS("fehlLang", "en") === "de" ? "de" : "en");
+  const dataFile = () => (lang() === "de" ? "verfuegbar_de.json" : "verfuegbar.json");
 
   /* wöchentliche Prüfung: montags 05:40 UTC (siehe .github/workflows/verfuegbar.yml) */
   function nextCheck() {
@@ -31,26 +34,30 @@
   let data = null;
   async function loadData() {
     try {
-      const res = await fetch(`verfuegbar.json?t=${Date.now()}`, { cache: "no-store" });
-      if (res.ok) data = await res.json();
+      const res = await fetch(`${dataFile()}?t=${Date.now()}`, { cache: "no-store" });
+      data = res.ok ? await res.json() : null;
     } catch { /* unten */ }
     if (!data) data = { stand: null, lieder: {}, gesamt: 164 };
   }
 
   function model() {
-    const media = state.media || { karaoke: { audio: {}, lrc: {} }, meeting: { audio: {}, video: {}, lrc: {}, sung: {} } };
+    const empty = () => ({ karaoke: { audio: {}, lrc: {} }, meeting: { audio: {}, video: {}, lrc: {}, sung: {}, sungLrc: {} } });
+    const de = lang() === "de";
+    const media0 = state.media || empty();
+    const media = de ? Object.assign(empty(), media0.de || {}) : media0;
+    media.karaoke = media.karaoke || empty().karaoke; media.meeting = media.meeting || empty().meeting;
     const base = new Map(state.songs.filter((s) => !s.extra).map((s) => [s.number, s]));
     const buch = Array.isArray(data.buch) && data.buch.length ? new Set(data.buch) : null;   // nur das aktuelle Liederbuch
     const total = buch ? Math.max(...buch) : Math.max(data.gesamt || 0, ...base.keys(), ...Object.keys(data.lieder).map(Number));
     const has = {
-      karaoke: (n) => base.has(n) || Boolean(media.karaoke.audio[n]),
+      karaoke: (n) => (de ? false : base.has(n)) || Boolean(media.karaoke.audio[n]),
       instrumental: (n) => Boolean(media.meeting.audio[n]),
       sung: (n) => Boolean(media.meeting.sung && media.meeting.sung[n]),
       video: (n) => Boolean(media.meeting.video[n])
     };
     const published = (n, t) => Boolean(data.lieder[n] && data.lieder[n][t] && data.lieder[n][t].url);
     const lrc = {
-      karaoke: (n) => Boolean(media.karaoke.lrc[n] || (base.get(n) && base.get(n).lyrics)),
+      karaoke: (n) => Boolean(media.karaoke.lrc[n] || (!de && base.get(n) && base.get(n).lyrics)),
       meeting: (n) => Boolean(media.meeting.lrc[n]),
       sung: (n) => Boolean(media.meeting.sungLrc && media.meeting.sungLrc[n])
     };
@@ -59,7 +66,7 @@
       if (buch && !buch.has(n)) continue;
       const s = base.get(n);
       rows.push({
-        n, title: (s && s.title) || (data.lieder[n] && data.lieder[n].titel) || `Lied ${n}`,
+        n, title: (de ? (data.lieder[n] && data.lieder[n].titel) || (s && s.title) : (s && s.title) || (data.lieder[n] && data.lieder[n].titel)) || `Lied ${n}`,
         category: (s && s.category) || "Weitere Lieder (nicht in der Liste)"
       });
     }
@@ -78,7 +85,7 @@
     const key = await ensureKey();
     if (!key) return { ok: false, abbruch: true };
     try {
-      const res = await fetch(`${SYNC_BASE}/api/r2-fetch`, { method: "POST", headers: { "content-type": "application/json", "x-write-key": key }, body: JSON.stringify({ typ, nummer: n }) });
+      const res = await fetch(`${SYNC_BASE}/api/r2-fetch`, { method: "POST", headers: { "content-type": "application/json", "x-write-key": key }, body: JSON.stringify({ typ, nummer: n, sprache: lang() }) });
       const body = await res.json().catch(() => ({}));
       if (res.status === 401) state.writeKey = "";
       return { ok: res.ok && body.ok, fehler: body.fehler || `Fehler ${res.status}`, schon: body.schon };
@@ -150,7 +157,7 @@
     clearInterval(poll);
     poll = setInterval(async () => {
       try {
-        const res = await fetch(`verfuegbar.json?t=${Date.now()}`, { cache: "no-store" });
+        const res = await fetch(`${dataFile()}?t=${Date.now()}`, { cache: "no-store" });
         const d = res.ok ? await res.json() : null;
         if (d && d.stand && d.stand !== before) {
           clearInterval(poll); data = d;
@@ -224,6 +231,15 @@
     info.addEventListener("click", () => manual(root));
     head.append(info);
     root.append(head);
+    {   // Sprache umschalten: Englisch (Ordner karaoke/, meeting/) oder Deutsch (Ordner musik_de/)
+      const seg = h("div", "seg fl-lang"); seg.setAttribute("role", "group"); seg.setAttribute("aria-label", "Sprache");
+      [["en", "Englisch"], ["de", "Deutsch"]].forEach(([v, n]) => {
+        const b = h("button", "seg-btn", n); b.type = "button"; b.setAttribute("aria-pressed", String(lang() === v));
+        b.addEventListener("click", async () => { if (lang() === v) return; setOptS("fehlLang", v); await loadData(); render(root); });
+        seg.append(b);
+      });
+      root.append(seg);
+    }
     const again = h("button", "chip", "Hinweis „Neue Lieder“ noch einmal anzeigen"); again.type = "button";
     again.addEventListener("click", () => showLast());
     root.append(again);
