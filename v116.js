@@ -107,26 +107,30 @@
     row.append(b);
   }
 
-  /* ---------- Wiedergabe auf anderes Gerät (Cast / AirPlay), nur bei aktiver Lupe ---------- */
+  /* ---------- Wiedergabe auf anderes Gerät (Cast / AirPlay) ---------- */
+  /* Einstellung „castMode“: off = nie, lupe = nur bei aktiver Lupe, always = immer (Standard) */
+  const castMode = () => { const v = lsv("castMode", "always"); return v === "off" || v === "lupe" ? v : "always"; };
+  function paintCast() { document.body.dataset.cast = castMode(); const s = $("advCastMode"); if (s) s.value = castMode(); }
   function setupCast() {
-    const a = $("audio"); const nav = document.querySelector(".nav-row");
-    if (!a || !nav || $("castBtn")) return;
-    const can = !!(a.remote && a.remote.prompt) || typeof a.webkitShowPlaybackTargetPicker === "function";
-    if (!can) return;
-    const b = h("button", "chip cast-btn"); b.id = "castBtn"; b.type = "button";
-    b.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M21 3H3a2 2 0 0 0-2 2v3h2V5h18v14h-7v2h7a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zM1 18v3h3a3 3 0 0 0-3-3zm0-4v2a5 5 0 0 1 5 5h2a7 7 0 0 0-7-7zm0-4v2a9 9 0 0 1 9 9h2A11 11 0 0 0 1 10z"/></svg>';
+    const a = $("audio"); const row = $("titleRow");
+    if (!a || !row || $("castBtn")) return;
+    const b = h("button", "lang-mini cast-btn"); b.id = "castBtn"; b.type = "button";
+    b.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M21 3H3a2 2 0 0 0-2 2v3h2V5h18v14h-7v2h7a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zM1 18v3h3a3 3 0 0 0-3-3zm0-4v2a5 5 0 0 1 5 5h2a7 7 0 0 0-7-7zm0-4v2a9 9 0 0 1 9 9h2A11 11 0 0 0 1 10z"/></svg>';
     b.title = "Auf anderem Gerät abspielen (Fernseher, Lautsprecher …)"; b.setAttribute("aria-label", b.title);
-    b.addEventListener("click", () => {
+    b.addEventListener("click", (e) => {
+      e.stopPropagation();
       try { a.disableRemotePlayback = false; } catch { /* egal */ }
       if (a.remote && a.remote.prompt) {
-        a.remote.prompt().catch((e) => {
-          const n = e && e.name;
+        a.remote.prompt().catch((err) => {
+          const n = err && err.name;
           showToast(n === "NotFoundError" ? "Kein Gerät im Netzwerk gefunden." : n === "NotSupportedError" ? "Diese Wiedergabe kann nicht auf ein anderes Gerät übertragen werden." : n === "AbortError" ? "" : "Übertragen nicht möglich.");
         });
       } else if (a.webkitShowPlaybackTargetPicker) a.webkitShowPlaybackTargetPicker();
+      else showToast("Dieser Browser kann nicht auf andere Geräte übertragen. In Chrome (Android oder Computer) geht es.");
     });
     try { if (a.remote) { a.remote.addEventListener("connect", () => b.classList.add("on")); a.remote.addEventListener("disconnect", () => b.classList.remove("on")); } } catch { /* egal */ }
-    nav.append(b);
+    row.append(b);
+    paintCast();
   }
 
   /* ---------- lang auf × drücken: zurück zur Startseite ---------- */
@@ -179,6 +183,7 @@
   const secs = () => Math.min(120, Math.max(2, Number(lsv("startSec", "6")) || 6));
   const fadeMs = () => Math.min(5000, Math.max(100, Number(lsv("startFade", "900")) || 900));
   let stopFn = null, runId = 0;
+  const media = () => $("startMedia") || $("startPanel");
   function stopShow() { runId++; if (stopFn) { try { stopFn(); } catch { /* egal */ } stopFn = null; } const b = $("startShow"); if (b) b.remove(); }
   function mkImg(it, cls) { const im = h("img", cls); im.src = it.url; im.alt = ""; im.draggable = false; im.decoding = "async"; im.addEventListener("click", () => playNum(it.n)); return im; }
 
@@ -251,22 +256,36 @@
     if (id !== runId || panel.hidden) return;
     const old = $("startShow"); if (old) old.remove();
     const box = h("div", `start-show ss-${mode}`); box.id = "startShow";
-    if (!items.length) { box.append(h("p", "start-show-empty", "In den gewählten Ordnern liegen noch keine Cover.")); panel.append(box); return; }
-    panel.append(box);
+    if (!items.length) { box.append(h("p", "start-show-empty", "In den gewählten Ordnern liegen noch keine Cover.")); media().append(box); return; }
+    media().append(box);
     stopFn = (mode === "fade" ? runFade : mode === "carousel" ? runCarousel : runFloat)(box, items);
   }
+  /* Größe der einzelnen Ansichten (in Prozent des freien Platzes) */
+  const SZ_DEF = { image: 100, chor: 100, carousel: 100, fade: 100, float: 100 };
+  const SZ_NAME = { image: "Bild", chor: "Video (Chor)", carousel: "Karussell", fade: "Überblenden", float: "Schweben" };
+  const sizes = () => { let o = {}; try { o = JSON.parse(lsv("startSizes", "{}")) || {}; } catch { o = {}; } const r = {}; Object.keys(SZ_DEF).forEach((k) => { const v = Number(o[k]); r[k] = v >= 30 && v <= 100 ? Math.round(v) : SZ_DEF[k]; }); return r; };
+  const sizeOf = () => sizes()[startMode()] || 100;
   function paintDrawer() {
     const d = $("startDrawer"); if (!d) return;
     const m = startMode();
     d.querySelectorAll(".seg-btn").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.m === m)));
     const sel = $("startFolderSel"); if (sel) { const v = lsv("startFolders", "cur"); sel.value = [...sel.options].some((o) => o.value === v) ? v : "list"; }
   }
+  /* Die Startseite nutzt den ganzen freien Platz: Höhe = Fenster − Oberkante − Wiedergabeleiste */
+  function fit() {
+    const panel = $("startPanel"); if (!panel || panel.hidden) return;
+    const fl = document.querySelector(".flyer");
+    const top = panel.getBoundingClientRect().top + window.scrollY;
+    const free = window.innerHeight - (fl ? fl.offsetHeight : 70) - top - 10;
+    panel.style.height = Math.max(300, Math.floor(free)) + "px";
+    const mm = $("startMedia"); if (mm) mm.style.setProperty("--ms", String(sizeOf() / 100));
+  }
   function applyStart() {
     const panel = $("startPanel"); if (!panel) return;
     stopShow();
-    const m = startMode(); const want = lupe() && isShow(m);
+    const m = startMode(); const want = isShow(m);
     document.body.classList.toggle("start-show", want); panel.classList.toggle("show-on", want);
-    paintDrawer();
+    paintDrawer(); fit(); setTimeout(fit, 400); setTimeout(fit, 1500);
     if (want && !panel.hidden) startShow(m);
   }
   function setStartMode(m) {
@@ -275,23 +294,34 @@
     applyStart();
   }
   function setupStart() {
-    const panel = $("startPanel"); if (!panel || $("startMore")) return;
-    const actions = panel.querySelector(".start-actions");
+    const panel = $("startPanel"); const title = $("currentTitle"); if (!panel || !title || $("startMore")) return;
+    /* Bild in einen Rahmen setzen, der den freien Platz füllt; die Anzeige-Art kommt in denselben Rahmen */
+    const media = h("div", "start-media"); media.id = "startMedia";
+    const img = panel.querySelector(".start-image"); if (img) { img.before(media); media.append(img); } else panel.querySelector(".start-actions").before(media);
+    /* Pfeil und Leiste stehen oben neben der Überschrift „Königreichslieder“ */
+    const wrap = h("div", "title-wrap"); wrap.id = "titleWrap"; title.before(wrap); wrap.append(title);
+    const ctl = h("div", "start-ctl"); ctl.id = "startCtl";
     const more = h("button", "start-more-btn", "▾"); more.id = "startMore"; more.type = "button"; more.setAttribute("aria-expanded", "false");
-    more.title = "Weitere Anzeigen für die Startseite"; more.setAttribute("aria-label", more.title);
+    more.title = "Anzeige der Startseite wählen"; more.setAttribute("aria-label", more.title);
     const d = h("div", "start-drawer"); d.id = "startDrawer"; d.hidden = true;
     const seg = h("div", "seg"); seg.setAttribute("role", "group");
     SHOWS.forEach(([v, n]) => { const b = h("button", "seg-btn", n); b.type = "button"; b.dataset.m = v; b.addEventListener("click", () => setStartMode(v)); seg.append(b); });
-    const lab = h("label", "start-folder"); lab.append(h("span", "", "Cover-Ordner"));
-    const sel = document.createElement("select"); sel.id = "startFolderSel";
+    const lab = h("label", "start-folder"); lab.title = "Cover-Ordner für die Startseite";
+    lab.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M10 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-8z"/></svg>';
+    const sel = document.createElement("select"); sel.id = "startFolderSel"; sel.setAttribute("aria-label", "Cover-Ordner für die Startseite");
     sel.append(new Option("Gewählter Ordner", "cur"), new Option("Alle abwechselnd", "all"));
     (C() ? C().SETS : []).filter((x) => x[0] !== "alt").forEach(([id, n]) => sel.append(new Option(n, id)));
     sel.append(new Option("Auswahl aus den Einstellungen", "list"));
     sel.addEventListener("change", () => { if (sel.value !== "list") { lss("startFolders", sel.value); applyStart(); const b = $("advStartFolders"); if (b) bindStartSettings(); } });
     lab.append(sel); d.append(seg, lab);
-    more.addEventListener("click", () => { d.hidden = !d.hidden; more.setAttribute("aria-expanded", String(!d.hidden)); more.textContent = d.hidden ? "▾" : "▴"; });
-    (actions || panel).after(more); more.after(d);
-    new MutationObserver(() => { if (panel.hidden) stopShow(); else applyStart(); }).observe(panel, { attributes: true, attributeFilter: ["hidden"] });
+    more.addEventListener("click", () => { d.hidden = !d.hidden; more.setAttribute("aria-expanded", String(!d.hidden)); more.textContent = d.hidden ? "▾" : "▴"; ctl.classList.toggle("open", !d.hidden); try { lss("startBarOpen", d.hidden ? "0" : "1"); } catch { /* egal */ } });
+    ctl.append(more, d); wrap.append(ctl);
+    if (lsv("startBarOpen", "0") === "1") { d.hidden = false; more.textContent = "▴"; more.setAttribute("aria-expanded", "true"); ctl.classList.add("open"); }
+    const sync = () => { ctl.hidden = panel.hidden; if (panel.hidden) stopShow(); else applyStart(); };
+    new MutationObserver(sync).observe(panel, { attributes: true, attributeFilter: ["hidden"] });
+    sync();
+    window.addEventListener("resize", fit); window.addEventListener("orientationchange", () => setTimeout(fit, 250));
+    try { new ResizeObserver(fit).observe(document.querySelector(".flyer")); } catch { /* egal */ }
   }
   let lastLupe = null;
 
@@ -316,19 +346,27 @@
     const ord = get("advStartOrder"); if (ord) { ord.value = lsv("startOrder", "seq"); ord.onchange = () => { lss("startOrder", ord.value); applyStart(); }; }
     const sc = get("advStartSec"); if (sc) { sc.value = String(secs()); sc.onchange = () => { lss("startSec", String(Math.min(120, Math.max(2, Number(sc.value) || 6)))); applyStart(); }; }
     const fd = get("advStartFade"); if (fd) { fd.value = String(fadeMs()); fd.onchange = () => { lss("startFade", String(Math.min(5000, Math.max(100, Number(fd.value) || 900)))); applyStart(); }; }
+    const sz = sizes();
+    Object.keys(SZ_DEF).forEach((k) => {
+      const inp = get("advSz_" + k); if (!inp) return;
+      inp.value = String(sz[k]);
+      inp.onchange = () => { const cur = sizes(); cur[k] = Math.min(100, Math.max(30, Math.round(Number(inp.value) || SZ_DEF[k]))); lss("startSizes", JSON.stringify(cur)); inp.value = String(cur[k]); fit(); };
+    });
+    const rs = get("advSzReset"); if (rs) rs.onclick = () => { lss("startSizes", JSON.stringify(SZ_DEF)); bindStartSettings(); fit(); showToast("Größen auf die Standardwerte zurückgesetzt."); };
+    const cm = get("advCastMode"); if (cm) { cm.value = castMode(); cm.onchange = () => { lss("castMode", cm.value); paintCast(); }; }
     paintDrawer();
   }
 
   function init() {
     setupPlAdd(); setupCast(); setupHoldX(); setupStart();
     const sc = $("songCount"); if (sc && !document.querySelector(".lang-filters")) { const w = h("span", "count-wrap"); sc.before(w); w.append(sc, langBtn("lang-filters")); }
-    const tr = document.querySelector(".transport"); if (tr && !tr.querySelector(".lang-mini")) tr.append(langBtn("lang-transport"));
+    const tr = $("titleRow"); if (tr && !tr.querySelector(".lang-title")) { const lb = langBtn("lang-title"); const castB = $("castBtn"); if (castB) castB.before(lb); else tr.append(lb); }
     bindStartSettings();
     const cm = $("codeModal"); if (cm) new MutationObserver(() => { if (!cm.hidden) setTimeout(bindStartSettings, 30); }).observe(cm, { attributes: true, attributeFilter: ["hidden"] });
     applyStart();
-    new MutationObserver(() => { const l = lupe(); if (l !== lastLupe) { lastLupe = l; applyStart(); } }).observe(document.body, { attributes: true, attributeFilter: ["class"] });
+    new MutationObserver(() => { const l = lupe(); if (l !== lastLupe) { lastLupe = l; fit(); } }).observe(document.body, { attributes: true, attributeFilter: ["class"] });
     window.addEventListener("storage", () => { paintAllLang(); applyStart(); });
   }
-  window.V116 = { langBtn, switchLang, guardCover, addToPlaylist, toStart, applyStart, paintAllLang };
+  window.V116 = { fit, paintCast, langBtn, switchLang, guardCover, addToPlaylist, toStart, applyStart, paintAllLang };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", () => setTimeout(init, 0)); else setTimeout(init, 0);
 })();

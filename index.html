@@ -485,14 +485,23 @@
         <small class="set-hint">Welche Karaoke-Lieder und Karaoke-Texte gespielt werden. Englisch ist der Standard (R2-Ordner „karaoke“), Deutsch kommt aus dem R2-Ordner „musik_de“. Fehlt eine deutsche Datei, wird die englische gespielt. Schnell umschalten kannst du mit dem kleinen „EN“/„DE“-Knopf neben der Liste, im Player und in der Cover-Galerie.</small>
         <label class="set-row check"><input id="advLangWarn" type="checkbox" /> Warnen, wenn Cover und Musik verschiedene Sprachen haben</label>
         <small class="set-hint">Ein Hinweisfenster erscheint, wenn du ein deutsches Cover mit englischer Musik (oder umgekehrt) kombinierst. Es bietet an, die passende Serie oder Sprache zu wählen.</small>
-        <p class="set-grp-d">Startseite (Anzeige ohne laufendes Lied, bei aktiver Lupe)</p>
+        <p class="set-grp-d">Startseite (Anzeige ohne laufendes Lied)</p>
         <label class="set-row">Anzeige <select id="advStartShow"><option value="image">Bild</option><option value="chor">Video (Chor)</option><option value="carousel">Karussell</option><option value="fade">Überblenden</option><option value="float">Schweben</option></select></label>
-        <small class="set-hint">Was die Startseite zeigt: das Bild, das Chor-Video, ein Karussell mit den Covers, Cover im Wechsel (ein-/ausblenden) oder frei schwebende Covers wie bei einem Bildschirmschoner. Ein Tipp auf ein Cover spielt das Lied. Auf der Startseite selbst erreichst du das auch über den kleinen Pfeil unter den Tasten.</small>
+        <small class="set-hint">Was die Startseite zeigt: das Bild, das Chor-Video, ein Karussell mit den Covers, Cover im Wechsel (ein-/ausblenden) oder frei schwebende Covers wie bei einem Bildschirmschoner. Ein Tipp auf ein Cover spielt das Lied. Auf der Startseite selbst erreichst du das auch über den kleinen Pfeil neben „Königreichslieder“.</small>
         <label class="set-row">Cover-Ordner für die Startseite <select id="advStartFolders"><option value="cur">Nur der gewählte Cover-Ordner</option><option value="all">Alle Ordner abwechselnd</option><option value="list">Bestimmte Ordner …</option></select></label>
         <div id="advStartPick" class="start-pick" hidden></div>
         <label class="set-row">Reihenfolge der Covers <select id="advStartOrder"><option value="seq">nach Liednummer</option><option value="rand">Zufall</option></select></label>
         <label class="set-row">Sekunden bis zum nächsten Cover <input id="advStartSec" type="number" min="2" max="120" inputmode="numeric" /></label>
         <label class="set-row">Dauer des Überblendens (Millisekunden) <input id="advStartFade" type="number" min="100" max="5000" step="100" inputmode="numeric" /></label>
+        <p class="set-grp-d">Größe der Startseiten-Ansichten (30–100 % des freien Platzes)</p>
+        <label class="set-row">Bild <input id="advSz_image" type="number" min="30" max="100" step="5" inputmode="numeric" /></label>
+        <label class="set-row">Video (Chor) <input id="advSz_chor" type="number" min="30" max="100" step="5" inputmode="numeric" /></label>
+        <label class="set-row">Karussell <input id="advSz_carousel" type="number" min="30" max="100" step="5" inputmode="numeric" /></label>
+        <label class="set-row">Überblenden <input id="advSz_fade" type="number" min="30" max="100" step="5" inputmode="numeric" /></label>
+        <label class="set-row">Schweben <input id="advSz_float" type="number" min="30" max="100" step="5" inputmode="numeric" /></label>
+        <button id="advSzReset" type="button" class="chip">Standardwerte wiederherstellen</button>
+        <label class="set-row">Symbol „Auf anderem Gerät abspielen“ (Cast) <select id="advCastMode"><option value="always">Immer anzeigen</option><option value="lupe">Nur bei aktiver Lupe</option><option value="off">Aus</option></select></label>
+        <small class="set-hint">Das Symbol steht in der Titelzeile neben ☆ und ＋. Es erscheint nur, wenn der Browser Übertragen kann (Chrome auf Android/Computer, Safari/AirPlay) – im Tesla-Browser gibt es diese Funktion nicht.</small>
         <small class="set-hint">Gilt für Karussell und Überblenden. Die Reihenfolge und die Ordner gelten für alle drei Anzeigen.</small>
         <label class="set-row check cover-flip-row"><input id="advCoverFlip" type="checkbox" /> Tippen auf das Cover im Player wechselt (mit Drehung) zum Karaoke-Text</label>
         <small class="set-hint">Ein Tipp auf das Cover dreht es um und zeigt den Text; noch einmal tippen zeigt wieder das Cover. Sichtbar bei aktiver Lupe.</small>

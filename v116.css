@@ -3,15 +3,15 @@
 .lang-mini { flex: 0 0 auto; min-width: 26px; height: 20px; padding: 0 5px; border: 1px solid var(--line); border-radius: 6px; background: transparent; color: var(--muted); font: inherit; font-size: 10px; font-weight: 700; letter-spacing: .06em; line-height: 1; opacity: .55; cursor: pointer; }
 .lang-mini:hover, .lang-mini:focus-visible { opacity: 1; color: var(--text); }
 .filters .lang-filters { margin-left: 6px; align-self: center; }
-.transport .lang-transport { position: absolute; right: 4px; top: 2px; }
+#titleRow .lang-title, #titleRow .cast-btn { align-self: center; }
 .cg-top .lang-gal { align-self: center; }
 .np-tools .lang-np { align-self: center; color: #fff; border-color: rgba(255,255,255,.35); }
 
 /* Lied zu Wiedergabeliste */
 .pl-add { font-size: 20px; line-height: 1; }
-/* Cast-Knopf nur bei aktiver Lupe */
-.cast-btn { display: none; align-items: center; padding: 2px 8px; min-height: 28px; }
-body.glass-open .cast-btn { display: inline-flex; }
+/* Cast-Knopf (Einstellung: aus / nur mit Lupe / immer) */
+.cast-btn { display: inline-flex; align-items: center; justify-content: center; opacity: .7; }
+body[data-cast="off"] .cast-btn, body[data-cast="lupe"]:not(.glass-open) .cast-btn { display: none; }
 .cast-btn.on { border-color: var(--accent); color: var(--accent); }
 /* × gedrückt halten: kleines Zeichen, dass etwas passiert */
 #closeSidebar.holding { transform: scale(.88); box-shadow: 0 0 0 3px rgba(var(--accent-rgb, 240,180,41), .45); transition: box-shadow 1s linear; }
@@ -21,27 +21,37 @@ body.glass-open .cast-btn { display: inline-flex; }
 .theme-filter-btn { position: absolute; top: 10px; right: 12px; width: 28px; height: 28px; display: grid; place-items: center; padding: 0; border: 1px solid var(--line); border-radius: 8px; background: transparent; color: var(--muted); cursor: pointer; z-index: 2; }
 .theme-filter-btn[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); }
 
-/* Startseite: Pfeil und Schublade */
-.start-more-btn { align-self: flex-start; width: 34px; height: 22px; padding: 0; border: 0; border-radius: 8px; background: transparent; color: var(--muted); font-size: 14px; line-height: 1; opacity: .55; cursor: pointer; }
-.start-more-btn:hover { opacity: 1; }
-body:not(.glass-open) .start-more-btn, body:not(.glass-open) .start-drawer { display: none !important; }
-.start-drawer { display: grid; gap: 8px; padding: 8px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel-2, rgba(255,255,255,.04)); max-width: 100%; }
+/* Startseite: Pfeil + Leiste oben neben „Königreichslieder“ */
+.title-wrap { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; min-width: 0; }
+.title-wrap > h2 { margin: 0; }
+.start-ctl { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 auto; }
+.start-ctl[hidden] { display: none !important; }
+body:not(.start-on) .start-ctl { }
+.start-more-btn { flex: 0 0 auto; width: 34px; height: 28px; padding: 0; border: 1px solid var(--line); border-radius: 8px; background: transparent; color: var(--muted); font-size: 15px; line-height: 1; cursor: pointer; }
+.start-more-btn:hover, .start-ctl.open .start-more-btn { color: var(--accent); border-color: var(--accent); }
+.start-drawer { display: flex; align-items: center; flex-wrap: nowrap; gap: 8px; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+.start-drawer::-webkit-scrollbar { display: none; }
 .start-drawer[hidden] { display: none !important; }
-.start-drawer .seg { flex-wrap: wrap; }
-.start-folder { display: flex; align-items: center; gap: 8px; font-size: .9em; color: var(--muted); }
-.start-folder select { min-width: 0; flex: 1 1 auto; }
+.start-drawer .seg { display: inline-flex; flex: 0 0 auto; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.start-drawer .seg-btn { flex: 0 0 auto; padding: 5px 11px; border: 0; border-right: 1px solid var(--line); background: transparent; color: var(--muted); font: inherit; font-size: 13px; cursor: pointer; white-space: nowrap; }
+.start-drawer .seg-btn:last-child { border-right: 0; }
+.start-drawer .seg-btn[aria-pressed="true"] { background: var(--accent); color: #111; font-weight: 700; }
+.start-folder { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; padding: 0 4px 0 9px; height: 30px; border: 1px solid var(--line); border-radius: 10px; color: var(--accent); background: rgba(255,255,255,.04); }
+.start-folder select { height: 28px; border: 0; background: transparent; color: var(--text); font: inherit; font-size: 13px; padding: 0 2px; max-width: 190px; cursor: pointer; outline: none; }
+.start-folder select option { color: #111; }
 .start-pick { display: grid; gap: 4px; padding-left: 8px; }
 .start-pick[hidden] { display: none !important; }
 
-/* Startseite mit Anzeige-Art: füllt das große Fenster, Tasten liegen unten darüber */
-.lyrics:has(> #startPanel.show-on) { position: relative; overflow: hidden !important; padding: 0 !important; height: calc(100vh - var(--topbar, 58px) - var(--flyer-h, 70px) - 64px); min-height: 220px; }
-#startPanel.show-on { position: absolute; inset: 0 0 calc(var(--flyer-h, 70px) + 6px) 0; padding: 0 !important; display: block; }
-#startPanel.show-on > .eyebrow, #startPanel.show-on > .start-image { display: none; }
-#startPanel.show-on .start-actions { position: absolute; left: 10px; bottom: 36px; z-index: 30; }
-#startPanel.show-on .start-more-btn { position: absolute; left: 10px; bottom: 8px; z-index: 30; }
-#startPanel.show-on .start-drawer { position: absolute; left: 10px; top: 10px; z-index: 31; background: var(--panel, #111); box-shadow: 0 8px 30px rgba(0,0,0,.4); }
-#startPanel.show-on .egg { z-index: 30; }
-.start-show { position: absolute; inset: 0; overflow: hidden; }
+/* Startseite füllt den freien Platz: Medium oben (wächst), Tasten immer darunter */
+#startPanel:not([hidden]) { display: flex; flex-direction: column; align-items: stretch; gap: 12px; padding-bottom: 0 !important; box-sizing: border-box; overflow: hidden; }
+#startPanel > .eyebrow { display: none; }
+#startPanel .start-media { position: relative; flex: 1 1 0; min-height: 0; display: flex; align-items: center; justify-content: center; }
+#startPanel .start-media > .start-image { width: auto; height: auto; max-width: 100%; max-height: 100%; object-fit: contain; transform: scale(var(--ms, 1)); transform-origin: center; }
+#startPanel .start-media > video { max-width: 100%; max-height: 100%; transform: scale(var(--ms, 1)); }
+#startPanel .start-actions { flex: 0 0 auto; display: flex; flex-wrap: nowrap; gap: 12px; width: 100%; }
+#startPanel .start-actions .chip { flex: 1 1 0; min-width: 0; }
+#startPanel.show-on .start-media > .start-image, #startPanel.show-on .start-media > video { display: none; }
+.start-show { position: absolute; left: 50%; top: 50%; width: calc(100% * var(--ms, 1)); height: calc(100% * var(--ms, 1)); transform: translate(-50%, -50%); overflow: hidden; border-radius: 14px; }
 .start-show-empty { margin: 40px 16px; color: var(--muted); }
 .start-show img { cursor: pointer; -webkit-user-drag: none; user-select: none; }
 /* Überblenden */

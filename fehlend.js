@@ -252,6 +252,9 @@
       : "Noch keine Prüfung gelaufen."));
     root.append(st);
     root.append(h("p", "fl-msg set-hint ls-msg", ""));
+    const leer = data.stand && data.gefunden && !Object.values(data.gefunden).some((n) => n > 0);
+    if (leer) root.append(h("p", "set-hint ls-msg", `Die letzte Prüfung hat auf jw.org keine ${lang() === "de" ? "deutschen " : ""}Lieder gefunden${(data.fehler || []).length ? " (" + data.fehler[0] + ")" : ""}. Bitte später noch einmal prüfen.`));
+    else if (!data.stand && lang() === "de") root.append(h("p", "set-hint ls-msg", "Für Deutsch gibt es noch keine Prüfung. Starte „Verfügbarkeit prüfen“ auf GitHub (Actions) einmal von Hand."));
     root.append(h("p", "set-hint", `Nächste automatische Prüfung auf jw.org: ${nextCheck()}.${data.stand ? "" : " Du kannst sie auch über das „i“ oder auf GitHub unter Actions → „Verfügbarkeit prüfen“ starten."}`));
 
     // Kurze Hilfe (beim ersten Mal offen)

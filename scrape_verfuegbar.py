@@ -121,8 +121,12 @@ def main():
         if titel and not eintrag.get("titel"):
             eintrag["titel"] = titel
     if not lieder or not any(gefunden.values()):
-        print(f"Keine Daten erhalten – {OUT.name} bleibt unverändert.", *fehler, sep="\n  ")
-        sys.exit(1)
+        print(f"Keine Daten erhalten für {OUT.name}.", *fehler, sep="\n  ")
+        if OUT.exists():
+            return   # alter Stand bleibt erhalten
+        # Noch keine Datei: leere Datei mit Fehlertext schreiben, damit die App eine klare Meldung zeigen kann
+        OUT.write_text(json.dumps({"stand": datetime.now(timezone.utc).isoformat(timespec="seconds"), "gesamt": 0, "buch": [], "gefunden": gefunden, "fehler": fehler or ["jw.org lieferte keine Lieder."], "lieder": {}}, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+        return
     gesamt = max([int(k) for k in lieder] + [max(bib) if bib else 0])
     buch = buch or sorted(int(k) for k in lieder)
     result = {
