@@ -7,7 +7,8 @@
  *  - /api/covers-admin   Cover-Dateien zuordnen und umbenennen (nur mit WRITE_KEY)
  *  - /api/media-index    Verzeichnis aller Dateien in R2 (Karaoke-MP3, Meeting-MP3, Videos, LRC)
  *  - /api/r2-plan, /api/r2-run   einmaliges Aufräumen von R2 (nur mit WRITE_KEY)
- *  - /sync/<name>        Favoriten-Speicher und Liedtext-Zeiten (lrc-003, lrcm-003)
+ *  - /sync/<name>        Favoriten-Speicher und Liedtext-Zeiten (lrc-003, lrcm-003, lrcde-003 = deutscher Karaoketext)
+ *  - musik_de/           deutsche Dateien (Karaoke-MP3 sjjc_X_003.mp3, Text 003.lrc), im media-index unter "de"
  *  - /media/<schlüssel>  Datei aus R2 (karaoke/..., meeting/...) mit Range-Unterstützung
  *  - /<datei>.mp3        Karaoke-MP3 (alte Adressen funktionieren weiter)
  *  - alles andere        statische Dateien (Seite)
@@ -95,7 +96,7 @@ const app = {
 
     if (path.startsWith("/media/")) {
       const key = decodeURIComponent(path.slice(7));
-      const isCover = /^covers_(edel|edel_eng|modern_engl)\/[^/]+\.(jpe?g|png|webp|gif)$/i.test(key);
+      const isCover = /^covers_(edel|edel_eng|modern_engl|modern_de)\/[^/]+\.(jpe?g|png|webp|gif)$/i.test(key);
       if (/^(favoriten|sync)\//.test(key) || key.includes("..") || key.split("/").some((p) => p.startsWith("_")) || (!isCover && !/\.(mp3|m4a|aac|wav|mp4|m4v|webm|mov|lrc)$/i.test(key))) return new Response("Not Found", { status: 404, headers: CORS });
       return serveR2(env, [key], request);
     }
@@ -205,6 +206,25 @@ export function classify(key) {
   return null;
 }
 
+/* Deutsche Dateien: R2-Ordner musik_de/ (flach oder mit Unterordnern karaoke/ und meeting/). Art nach Ordner, sonst nach Dateiname (sjjc = Karaoke, sjji = Instrumental, sjjm = Zusammenkünfte/Video) */
+export const DE_DIR = "musik_de/";
+export function classifyDe(key) {
+  const rest = key.slice(DE_DIR.length);
+  const parts = rest.split("/");
+  const name = parts[parts.length - 1];
+  if (!name || name.startsWith("_") || rest.endsWith("/")) return null;
+  const ext = (name.split(".").pop() || "").toLowerCase();
+  const n = numberFromName(name);
+  if (parts.length > 1 && /^(karaoke|meeting|musik)$/i.test(parts[0])) {
+    const c = classify(rest);
+    return c ? { ...c, n: c.n || n } : null;
+  }
+  if (VIDEO_EXT.includes(ext)) return { type: "meeting-video", n };
+  if (AUDIO_EXT.includes(ext)) return { type: /sjjm/i.test(name) ? "meeting-sung" : /sjji/i.test(name) ? "meeting-audio" : "karaoke-audio", n };
+  if (ext === "lrc") return { type: /sjjm/i.test(name) ? "meeting-sunglrc" : /sjji/i.test(name) ? "meeting-lrc" : "karaoke-lrc", n };
+  return null;
+}
+
 async function listAll(env) {
   const out = [];
   let cursor;
@@ -220,13 +240,17 @@ let indexCache = { t: 0, data: null };
 
 async function buildIndex(env) {
   const objects = await listAll(env);
-  const idx = {
+  const mk = () => ({
     karaoke: { audio: {}, lrc: {} },
     meeting: { audio: {}, video: {}, lrc: {}, sung: {}, sungLrc: {} }
-  };
+  });
+  const idx = mk();
+  idx.de = mk();   // deutsche Dateien aus musik_de/
   const score = {};
+  const deB = idx.de;
   const put = (bucket, name, n, key) => {
     const id = String(n);
+    if (bucket === deB.karaoke.audio || bucket === deB.karaoke.lrc || bucket === deB.meeting.audio || bucket === deB.meeting.video || bucket === deB.meeting.lrc || bucket === deB.meeting.sung || bucket === deB.meeting.sungLrc) name = "de" + name;
     const s = /\/(audio|video|lrc)\//.test(key) ? 2 : 1;   // geordnete Ordner haben Vorrang
     const tag = `${name}:${id}`;
     if (score[tag] === undefined || s > score[tag]) { score[tag] = s; bucket[id] = key; }
@@ -241,16 +265,18 @@ async function buildIndex(env) {
   }
   const hoch = { dateien: 0, bytes: 0 };   // Nummern ab 500 (Gebärdensprache/Blindenschrift): nicht anzeigen
   for (const o of objects) {
-    const c = classify(o.key);
+    const isDe = o.key.startsWith(DE_DIR);
+    const c = isDe ? classifyDe(o.key) : classify(o.key);
     if (!c || !c.n) continue;
     if (c.n >= HIGH_MIN && o.key.split("/")[0] !== "sync") { hoch.dateien++; hoch.bytes += o.size || 0; continue; }
-    if (c.type === "karaoke-audio") put(idx.karaoke.audio, "ka", c.n, o.key);
-    else if (c.type === "karaoke-lrc") put(idx.karaoke.lrc, "kl", c.n, o.key);
-    else if (c.type === "meeting-audio") put(idx.meeting.audio, "ma", c.n, o.key);
-    else if (c.type === "meeting-sung") put(idx.meeting.sung, "ms", c.n, o.key);
-    else if (c.type === "meeting-video") put(idx.meeting.video, "mv", c.n, o.key);
-    else if (c.type === "meeting-lrc") put(idx.meeting.lrc, "ml", c.n, o.key);
-    else if (c.type === "meeting-sunglrc") put(idx.meeting.sungLrc, "sl", c.n, o.key);
+    const I = isDe ? idx.de : idx;
+    if (c.type === "karaoke-audio") put(I.karaoke.audio, "ka", c.n, o.key);
+    else if (c.type === "karaoke-lrc") put(I.karaoke.lrc, "kl", c.n, o.key);
+    else if (c.type === "meeting-audio") put(I.meeting.audio, "ma", c.n, o.key);
+    else if (c.type === "meeting-sung") put(I.meeting.sung, "ms", c.n, o.key);
+    else if (c.type === "meeting-video") put(I.meeting.video, "mv", c.n, o.key);
+    else if (c.type === "meeting-lrc") put(I.meeting.lrc, "ml", c.n, o.key);
+    else if (c.type === "meeting-sunglrc") put(I.meeting.sungLrc, "sl", c.n, o.key);
   }
   return {
     ok: true,
@@ -263,7 +289,11 @@ async function buildIndex(env) {
       meeting_video: Object.keys(idx.meeting.video).length,
       meeting_sung: Object.keys(idx.meeting.sung).length,
       meeting_lrc: Object.keys(idx.meeting.lrc).length,
-      meeting_sung_lrc: Object.keys(idx.meeting.sungLrc).length
+      meeting_sung_lrc: Object.keys(idx.meeting.sungLrc).length,
+      de_karaoke_audio: Object.keys(idx.de.karaoke.audio).length,
+      de_meeting_audio: Object.keys(idx.de.meeting.audio).length,
+      de_meeting_video: Object.keys(idx.de.meeting.video).length,
+      de_meeting_sung: Object.keys(idx.de.meeting.sung).length
     },
     ...idx
   };
@@ -285,6 +315,12 @@ async function handleIndex(request, env, url) {
 
 /* ---------- Veröffentlichte Dateien von jw.org nach R2 laden ---------- */
 
+const FETCH_TARGETS_DE = {
+  karaoke: (n, name) => `musik_de/karaoke/audio/${name || `sjjc_X_${String(n).padStart(3, "0")}.mp3`}`,
+  instrumental: (n, name) => `musik_de/meeting/audio/${name || `sjji_X_${String(n).padStart(3, "0")}.mp3`}`,
+  video: (n, name) => `musik_de/meeting/video/${name || `sjjm_X_${String(n).padStart(3, "0")}_r720P.mp4`}`,
+  sung: (n, name) => `musik_de/meeting/sung/${name || `sjjm_X_${String(n).padStart(3, "0")}.mp3`}`
+};
 const FETCH_TARGETS = {
   karaoke: (n, name) => `karaoke/audio/${name || `sjjc_E_${String(n).padStart(3, "0")}.mp3`}`,
   instrumental: (n, name) => `meeting/audio/${name || `sjji_E_${String(n).padStart(3, "0")}.mp3`}`,
@@ -301,18 +337,20 @@ async function handleFetchToR2(request, env, url) {
   const body = await request.json().catch(() => ({}));
   const typ = String(body.typ || "");
   const n = parseInt(body.nummer, 10);
-  if (!FETCH_TARGETS[typ] || !(n > 0 && n < 1000)) return reply({ ok: false, fehler: "Ungültige Anfrage." }, 400);
+  const de = String(body.sprache || "") === "de";
+  const TARGETS = de ? FETCH_TARGETS_DE : FETCH_TARGETS;
+  if (!TARGETS[typ] || !(n > 0 && n < 1000)) return reply({ ok: false, fehler: "Ungültige Anfrage." }, 400);
   // Adresse kommt NUR aus der eigenen verfuegbar.json (nicht vom Browser)
   let info = null;
   try {
-    const res = await env.ASSETS.fetch(new Request(new URL("/verfuegbar.json", url)));
+    const res = await env.ASSETS.fetch(new Request(new URL(de ? "/verfuegbar_de.json" : "/verfuegbar.json", url)));
     const data = await res.json();
     info = data && data.lieder && data.lieder[String(n)] && data.lieder[String(n)][typ];
   } catch { /* unten */ }
   if (!info || !info.url) return reply({ ok: false, fehler: "Diese Datei ist (noch) nicht als veröffentlicht gelistet." }, 404);
   if (!ALLOWED_HOST.test(info.url)) return reply({ ok: false, fehler: "Adresse nicht erlaubt." }, 400);
   const name = String(info.url).split("?")[0].split("/").pop();
-  const key = FETCH_TARGETS[typ](n, /^[\w.\-]+$/.test(name) ? name : null);
+  const key = TARGETS[typ](n, /^[\w.\-]+$/.test(name) ? name : null);
   const existing = await env.MUSIK.head(key);
   if (existing && !body.force) return reply({ ok: true, schon: true, key, groesse: existing.size });
   const res = await fetch(info.url, { headers: { "user-agent": "Mozilla/5.0 (compatible; JW-Musik)" }, redirect: "follow" });
@@ -422,9 +460,10 @@ async function handleMigrate(request, env, url, path) {
 
 /* lrc-003 -> karaoke/lrc/003.lrc, lrcm-003 -> meeting/lrc/003.lrc, lrcs-003 -> meeting/sung/lrc/003.lrc, sonst favoriten/<name>.json (alte Orte werden mitgelesen) */
 export function storeKeys(code) {
-  const m = code.match(/^lrc([ms]?)-([a-z0-9]+)$/);
+  const m = code.match(/^lrc(de|[ms]?)-([a-z0-9]+)$/);
   if (m) {
     const n = m[2];
+    if (m[1] === "de") return { write: `musik_de/karaoke/lrc/${n}.lrc`, read: [`musik_de/karaoke/lrc/${n}.lrc`, `musik_de/${n}.lrc`], lrc: true };
     if (m[1] === "s") return { write: `meeting/sung/lrc/${n}.lrc`, read: [`meeting/sung/lrc/${n}.lrc`], lrc: true };
     return m[1]
       ? { write: `meeting/lrc/${n}.lrc`, read: [`meeting/lrc/${n}.lrc`], lrc: true }
@@ -697,11 +736,11 @@ async function listCovers(env, dir = COVER_DIR) {
   return out;
 }
 
-/* Cover-Ordner: edel = Goldrahmen Deutsch, edel_eng = Goldrahmen Englisch, modern = modern Englisch */
-const COVER_SETS = { edel: "covers_edel/", edel_eng: "covers_edel_eng/", modern: "covers_modern_engl/" };
+/* Cover-Ordner: edel = Goldrahmen Deutsch, edel_eng = Goldrahmen Englisch, modern = modern Englisch, modern_de = modern Deutsch */
+const COVER_SETS = { edel: "covers_edel/", edel_eng: "covers_edel_eng/", modern: "covers_modern_engl/", modern_de: "covers_modern_de/" };
 const coverCaches = {};
 
-/* öffentlich: Nummer → Schlüssel, nur ordentlich benannte Dateien (003.jpg); ?set=edel|edel_eng|modern */
+/* öffentlich: Nummer → Schlüssel, nur ordentlich benannte Dateien (003.jpg); ?set=edel|edel_eng|modern|modern_de */
 async function handleCovers(env, url) {
   try {
     const set = url && COVER_SETS[url.searchParams.get("set")] ? url.searchParams.get("set") : "edel";
