@@ -85,6 +85,7 @@ const app = {
     if (path === "/api/covers") return handleCovers(env, url);
     if (path === "/api/covers-admin") return handleCoversAdmin(request, env, url);
     if (path === "/api/refresh") return handleRefresh(request, env);
+    if (path === "/api/transcribe") return handleTranscribe(request, env);
     if (path === "/api/users") return handleUsers(request, env);
     if (path === "/api/media-index") return handleIndex(request, env, url);
     if (path === "/api/r2-prune") return handlePrune(request, env, url);
@@ -811,4 +812,48 @@ async function handleCoversAdmin(request, env, url) {
   }
   for (const k of Object.keys(coverCaches)) delete coverCaches[k];
   return reply({ ok: true, umbenannt: done.length, fehler: failed, done });
+}
+
+
+/* ---------- KI-Abstimmung: Whisper (Cloudflare Workers AI) liefert Wörter mit Zeiten ---------- */
+
+function b64(bytes) {
+  let s = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  return btoa(s);
+}
+
+async function handleTranscribe(request, env) {
+  if (request.method !== "POST") return new Response("method not allowed", { status: 405, headers: CORS });
+  if (!env.AI) return json({ ok: false, error: "Workers AI ist nicht verbunden (Binding AI fehlt, Worker neu ausspielen)." }, CORS, 501);
+  if (env.WRITE_KEY && request.headers.get("x-write-key") !== env.WRITE_KEY) return json({ ok: false, error: "Passwort abgelehnt." }, CORS, 401);
+  let body;
+  try { body = await request.json(); } catch { return json({ ok: false, error: "Ungültige Anfrage." }, CORS, 400); }
+  const raw = String(body.path || "");
+  let name = "";
+  try { name = decodeURIComponent(new URL(raw, "https://x.invalid").pathname); } catch { name = ""; }
+  let keys;
+  if (name.startsWith("/media/")) keys = [name.slice(7)];
+  else { const f = name.split("/").pop(); keys = [`karaoke/audio/${f}`, `musik/${f}`, f]; }
+  keys = keys.filter((k) => k && !k.includes("..") && !k.split("/").some((p) => p.startsWith("_")) && /\.(mp3|m4a|aac|wav)$/i.test(k) && !/^(favoriten|sync)\//.test(k));
+  let obj = null;
+  for (const k of keys) { obj = await env.MUSIK.get(k); if (obj) break; }
+  if (!obj) return json({ ok: false, error: "Audiodatei nicht gefunden (nur MP3 aus dem Speicher, kein Video)." }, CORS, 404);
+  const buf = new Uint8Array(await obj.arrayBuffer());
+  if (buf.length > 25 * 1024 * 1024) return json({ ok: false, error: "Datei zu groß." }, CORS, 413);
+  const lang = body.lang === "de" ? "de" : "en";
+  const input = { audio: b64(buf), task: "transcribe", language: lang, vad_filter: false };
+  const prompt = String(body.prompt || "").slice(0, 600);
+  if (prompt) input.initial_prompt = prompt;
+  let out;
+  try { out = await env.AI.run("@cf/openai/whisper-large-v3-turbo", input); }
+  catch (e) { return json({ ok: false, error: "KI-Fehler: " + String((e && e.message) || e).slice(0, 200) }, CORS, 502); }
+  const words = [];
+  const segs = [];
+  for (const s of out.segments || []) {
+    segs.push({ start: s.start, end: s.end, text: s.text });
+    for (const x of s.words || []) words.push({ w: String(x.word || "").trim(), s: x.start, e: x.end });
+  }
+  if (!words.length) for (const x of out.words || []) words.push({ w: String(x.word || "").trim(), s: x.start, e: x.end });
+  return json({ ok: true, words, segs, text: out.text || "" }, CORS);
 }
