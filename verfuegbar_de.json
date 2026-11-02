@@ -1,1 +1,2223 @@
-{"stand": null, "gesamt": 164, "gefunden": {}, "fehler": [], "lieder": {}}
+{
+ "stand": "2026-11-02T21:09:19+00:00",
+ "gesamt": 164,
+ "buch": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10,
+  11,
+  12,
+  13,
+  14,
+  15,
+  16,
+  17,
+  18,
+  19,
+  20,
+  21,
+  22,
+  23,
+  24,
+  25,
+  26,
+  27,
+  28,
+  29,
+  30,
+  31,
+  32,
+  33,
+  34,
+  35,
+  36,
+  37,
+  38,
+  39,
+  40,
+  41,
+  42,
+  43,
+  44,
+  45,
+  46,
+  47,
+  48,
+  49,
+  50,
+  51,
+  52,
+  53,
+  54,
+  55,
+  56,
+  57,
+  58,
+  59,
+  60,
+  61,
+  62,
+  63,
+  64,
+  65,
+  66,
+  67,
+  68,
+  69,
+  70,
+  71,
+  72,
+  73,
+  74,
+  75,
+  76,
+  77,
+  78,
+  79,
+  80,
+  81,
+  82,
+  83,
+  84,
+  85,
+  86,
+  87,
+  88,
+  89,
+  90,
+  91,
+  92,
+  93,
+  94,
+  95,
+  96,
+  97,
+  98,
+  99,
+  100,
+  101,
+  102,
+  103,
+  104,
+  105,
+  106,
+  107,
+  108,
+  109,
+  110,
+  111,
+  112,
+  113,
+  114,
+  115,
+  116,
+  117,
+  118,
+  119,
+  120,
+  121,
+  122,
+  123,
+  124,
+  125,
+  126,
+  127,
+  128,
+  129,
+  130,
+  131,
+  132,
+  133,
+  134,
+  135,
+  136,
+  137,
+  138,
+  139,
+  140,
+  141,
+  142,
+  143,
+  144,
+  145,
+  146,
+  147,
+  148,
+  149,
+  150,
+  151,
+  152,
+  153,
+  154,
+  155,
+  156,
+  157,
+  158,
+  159,
+  160,
+  161,
+  162,
+  163,
+  164
+ ],
+ "gefunden": {
+  "karaoke": 57,
+  "instrumental": 3,
+  "sung": 164,
+  "video": 164
+ },
+ "fehler": [],
+ "lieder": {
+  "1": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/094f7c/2/o/sjjm_X_001.mp3",
+    "groesse": 5030485
+   },
+   "titel": "1. Jehovas großartige Eigenschaften",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/d37a20/2/o/sjjm_X_001_r720P.mp4",
+    "groesse": 5841241
+   }
+  },
+  "2": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/211db07/1/o/sjjc_X_002.mp3",
+    "groesse": 6897669
+   },
+   "titel": "2. Jehova ist dein Name",
+   "instrumental": {
+    "url": "https://cfp2.jw-cdn.org/a/7a4b812/1/o/sjji_X_002.mp3",
+    "groesse": 6396491
+   },
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/e27f73/2/o/sjjm_X_002.mp3",
+    "groesse": 6257529
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/46d31a/2/o/sjjm_X_002_r720P.mp4",
+    "groesse": 7453866
+   }
+  },
+  "3": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/8b155a/2/o/sjjc_X_003.mp3",
+    "groesse": 6717500
+   },
+   "titel": "3. Unser Fels, unser Gott, unsre Zuversicht",
+   "instrumental": {
+    "url": "https://cfp2.jw-cdn.org/a/1328c4/1/o/sjji_X_003.mp3",
+    "groesse": 7916864
+   },
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/545e3e/2/o/sjjm_X_003.mp3",
+    "groesse": 6931605
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/16d6150/2/o/sjjm_X_003_r720P.mp4",
+    "groesse": 8409036
+   }
+  },
+  "4": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/aca10a/2/o/sjjm_X_004.mp3",
+    "groesse": 7836615
+   },
+   "titel": "4. „Jehova ist mein Hirte“",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/7e6c63b/2/o/sjjm_X_004_r720P.mp4",
+    "groesse": 9646130
+   }
+  },
+  "5": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/e2224d/2/o/sjjm_X_005.mp3",
+    "groesse": 5486485
+   },
+   "titel": "5. Gottes wunderbare Werke",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/62ef97a/2/o/sjjm_X_005_r720P.mp4",
+    "groesse": 6283387
+   }
+  },
+  "6": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/00897b/2/o/sjjm_X_006.mp3",
+    "groesse": 5071550
+   },
+   "titel": "6. Der Himmel verkündet die Herrlichkeit Jehovas",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/2eafe7/2/o/sjjm_X_006_r720P.mp4",
+    "groesse": 6107686
+   }
+  },
+  "7": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/46d7a4/1/o/sjjc_X_007.mp3",
+    "groesse": 8180495
+   },
+   "titel": "7. Jehova, unsere Stärke und Macht",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/eea99b/2/o/sjjm_X_007.mp3",
+    "groesse": 7034109
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/d98a2d3/2/o/sjjm_X_007_r720P.mp4",
+    "groesse": 8076856
+   }
+  },
+  "8": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/d9085b5/1/o/sjjc_X_008.mp3",
+    "groesse": 6723172
+   },
+   "titel": "8. Jehova ist unsere Zuflucht",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/19851a/2/o/sjjm_X_008.mp3",
+    "groesse": 5210729
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/ae5c87/2/o/sjjm_X_008_r720P.mp4",
+    "groesse": 6533872
+   }
+  },
+  "9": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/19d8f1/2/o/sjjm_X_009.mp3",
+    "groesse": 4907070
+   },
+   "titel": "9. Jehova ist unser König!",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/f5d5a3/2/o/sjjm_X_009_r720P.mp4",
+    "groesse": 5642140
+   }
+  },
+  "10": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/d979753/2/o/sjjm_X_010.mp3",
+    "groesse": 4110029
+   },
+   "titel": "10. Lobt Jehova, unseren Gott!",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/b273cd4/2/o/sjjm_X_010_r720P.mp4",
+    "groesse": 4642089
+   }
+  },
+  "11": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/50305b/2/o/sjjm_X_011.mp3",
+    "groesse": 5750809
+   },
+   "titel": "11. Die Schöpfung spricht von Gottes Herrlichkeit",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/f3c2ce/2/o/sjjm_X_011_r720P.mp4",
+    "groesse": 6691304
+   }
+  },
+  "12": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/c923286/2/o/sjjm_X_012.mp3",
+    "groesse": 4799094
+   },
+   "titel": "12. Unser großer Gott Jehova",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/bd3ce0/2/o/sjjm_X_012_r720P.mp4",
+    "groesse": 5619266
+   }
+  },
+  "13": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/bfe503/1/o/sjjc_X_013.mp3",
+    "groesse": 8746159
+   },
+   "titel": "13. Christus, unser großes Vorbild",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/08b988/2/o/sjjm_X_013.mp3",
+    "groesse": 4038549
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/b54ebfa/2/o/sjjm_X_013_r720P.mp4",
+    "groesse": 4901176
+   }
+  },
+  "14": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/e054ca/1/o/sjjc_X_014.mp3",
+    "groesse": 4494062
+   },
+   "titel": "14. Wir heißen unseren König willkommen!",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/437da4b/1/o/sjjm_X_014.mp3",
+    "groesse": 4461916
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/1205da4/1/o/sjjm_X_014_r720P.mp4",
+    "groesse": 5239240
+   }
+  },
+  "15": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/3f183eb/2/o/sjjc_X_015.mp3",
+    "groesse": 6878790
+   },
+   "titel": "15. Wir ehren Jehovas Erstgeborenen!",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/ffc05d0/1/o/sjjm_X_015.mp3",
+    "groesse": 5158402
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/cf88223/2/o/sjjm_X_015_r720P.mp4",
+    "groesse": 6359123
+   }
+  },
+  "16": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/9a64f0/1/o/sjjm_X_016.mp3",
+    "groesse": 5054148
+   },
+   "titel": "16. Dankt Jehova für seinen Sohn, den Gesalbten",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/086d7c/1/o/sjjm_X_016_r720P.mp4",
+    "groesse": 6540540
+   }
+  },
+  "17": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/d04d08/1/o/sjjc_X_017.mp3",
+    "groesse": 6574110
+   },
+   "titel": "17. „Das will ich“",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/ecd5d4a/1/o/sjjm_X_017.mp3",
+    "groesse": 4914883
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/971569/2/o/sjjm_X_017_r720P.mp4",
+    "groesse": 5346468
+   }
+  },
+  "18": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/b9ae61/1/o/sjjm_X_018.mp3",
+    "groesse": 5649755
+   },
+   "titel": "18. Dankbar für das Lösegeld",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/47ce6f2/2/o/sjjm_X_018_r720P.mp4",
+    "groesse": 6933818
+   }
+  },
+  "19": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/1365391/2/o/sjjm_X_019.mp3",
+    "groesse": 7035559
+   },
+   "titel": "19. Das Abendmahl des Herrn",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/fb9c3a/3/o/sjjm_X_019_r720P.mp4",
+    "groesse": 7971344
+   }
+  },
+  "20": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/e59412/1/o/sjjc_X_020.mp3",
+    "groesse": 7087663
+   },
+   "titel": "20. Du hast uns deinen kostbaren Sohn geschenkt",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/d27839/2/o/sjjm_X_020.mp3",
+    "groesse": 6280378
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/c29fa2/2/o/sjjm_X_020_r720P.mp4",
+    "groesse": 7701045
+   }
+  },
+  "21": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/842bf57/2/o/sjjm_X_021.mp3",
+    "groesse": 4922096
+   },
+   "titel": "21. Setzt das Königreich an die erste Stelle",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/e98dc4a/3/o/sjjm_X_021_r720P.mp4",
+    "groesse": 6344343
+   }
+  },
+  "22": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/d920e4/1/o/sjjc_X_022.mp3",
+    "groesse": 6968875
+   },
+   "titel": "22. Dein Königreich regiert – es komme!",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/236dad/3/o/sjjm_X_022.mp3",
+    "groesse": 5733594
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/d23094/3/o/sjjm_X_022_r720P.mp4",
+    "groesse": 7145403
+   }
+  },
+  "23": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/6e84cb6/1/o/sjjm_X_023.mp3",
+    "groesse": 7361837
+   },
+   "titel": "23. Jehova, der Höchste, regiert!",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/85b66f/1/o/sjjm_X_023_r720P.mp4",
+    "groesse": 8715233
+   }
+  },
+  "24": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/661ef0/2/o/sjjm_X_024.mp3",
+    "groesse": 5862463
+   },
+   "titel": "24. Kommt zum Berg Jehovas",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/8f11fc1/2/o/sjjm_X_024_r720P.mp4",
+    "groesse": 7170554
+   }
+  },
+  "25": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/2b71b84/1/o/sjjm_X_025.mp3",
+    "groesse": 5727946
+   },
+   "titel": "25. Sein besonderes Eigentum",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/578336/2/o/sjjm_X_025_r720P.mp4",
+    "groesse": 7112433
+   }
+  },
+  "26": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/0c7d1b/2/o/sjjc_X_026.mp3",
+    "groesse": 8675764
+   },
+   "titel": "26. Ihr habt es für mich getan",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/8d502ab/1/o/sjjm_X_026.mp3",
+    "groesse": 8942186
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/0bec21/2/o/sjjm_X_026_r720P.mp4",
+    "groesse": 10948003
+   }
+  },
+  "27": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/b86109/2/o/sjjm_X_027.mp3",
+    "groesse": 5015996
+   },
+   "titel": "27. Die Offenbarung der Söhne Gottes",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/29d2f0/2/o/sjjm_X_027_r720P.mp4",
+    "groesse": 6358661
+   }
+  },
+  "28": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/4c5db9a/1/o/sjjc_X_028.mp3",
+    "groesse": 5415547
+   },
+   "titel": "28. Freundschaft mit Jehova",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/d98aef2/1/o/sjjm_X_028.mp3",
+    "groesse": 5069110
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/8e6c0af/1/o/sjjm_X_028_r720P.mp4",
+    "groesse": 6376446
+   }
+  },
+  "29": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/b42ab1/2/o/sjjm_X_029.mp3",
+    "groesse": 5414216
+   },
+   "titel": "29. Gemäß unserem Namen leben",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/11f0310/2/o/sjjm_X_029_r720P.mp4",
+    "groesse": 6190826
+   }
+  },
+  "30": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/c00693/2/o/sjjm_X_030.mp3",
+    "groesse": 5650362
+   },
+   "titel": "30. Mein Vater, mein Gott und Freund",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/3008ee/2/o/sjjm_X_030_r720P.mp4",
+    "groesse": 7234544
+   }
+  },
+  "31": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/3e56d94/1/o/sjjm_X_031.mp3",
+    "groesse": 5923056
+   },
+   "titel": "31. Geh mit Jehova, deinem Gott!",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/4c059aa/1/o/sjjm_X_031_r720P.mp4",
+    "groesse": 7698517
+   }
+  },
+  "32": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/380167/2/o/sjjm_X_032.mp3",
+    "groesse": 7479904
+   },
+   "titel": "32. Komm auf Jehovas Seite!",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/f30852/2/o/sjjm_X_032_r720P.mp4",
+    "groesse": 8764489
+   }
+  },
+  "33": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/6cb7c27/1/o/sjjc_X_033.mp3",
+    "groesse": 8344445
+   },
+   "titel": "33. Wirf deine Last auf Jehova",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/4fa730/2/o/sjjm_X_033.mp3",
+    "groesse": 6358319
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/301202e/2/o/sjjm_X_033_r720P.mp4",
+    "groesse": 7969876
+   }
+  },
+  "34": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/10d7cb/1/o/sjjc_X_034.mp3",
+    "groesse": 7342411
+   },
+   "titel": "34. Jehova ganz ergeben sein",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/b419c4/2/o/sjjm_X_034.mp3",
+    "groesse": 6268179
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/497dc6/2/o/sjjm_X_034_r720P.mp4",
+    "groesse": 7253811
+   }
+  },
+  "35": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/8a1a9ff/2/o/sjjm_X_035.mp3",
+    "groesse": 5709246
+   },
+   "titel": "35. Uns auf wirklich Wichtiges konzentrieren",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/3231e4a/3/o/sjjm_X_035_r720P.mp4",
+    "groesse": 7081825
+   }
+  },
+  "36": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/194ddf/2/o/sjjm_X_036.mp3",
+    "groesse": 5054902
+   },
+   "titel": "36. Wir beschützen unser Herz",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/a5ab16/2/o/sjjm_X_036_r720P.mp4",
+    "groesse": 5756652
+   }
+  },
+  "37": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/692b2a/2/o/sjjm_X_037.mp3",
+    "groesse": 4588942
+   },
+   "titel": "37. Jehova mit ganzem Herzen dienen",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/91f69b/2/o/sjjm_X_037_r720P.mp4",
+    "groesse": 5130744
+   }
+  },
+  "38": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/43e8ae/1/o/sjjc_X_038.mp3",
+    "groesse": 8254624
+   },
+   "titel": "38. Er wird dich stärken",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/82aecd/2/o/sjjm_X_038.mp3",
+    "groesse": 6041228
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/0d2883/2/o/sjjm_X_038_r720P.mp4",
+    "groesse": 7073533
+   }
+  },
+  "39": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/9d2a9f/2/o/sjjm_X_039.mp3",
+    "groesse": 4795724
+   },
+   "titel": "39. Ein Name, der Gott gefällt",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/5cde82/2/o/sjjm_X_039_r720P.mp4",
+    "groesse": 5697922
+   }
+  },
+  "40": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/ae6064d/1/o/sjjc_X_040.mp3",
+    "groesse": 5668979
+   },
+   "titel": "40. Wem möchten wir gehören?",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/340cac/2/o/sjjm_X_040.mp3",
+    "groesse": 4924451
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/c8f714/2/o/sjjm_X_040_r720P.mp4",
+    "groesse": 6407191
+   }
+  },
+  "41": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/b0ded0/1/o/sjjm_X_041.mp3",
+    "groesse": 4380730
+   },
+   "titel": "41. Vater Jehova, bitte hör mein Gebet",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/a72c09/1/o/sjjm_X_041_r720P.mp4",
+    "groesse": 5253273
+   }
+  },
+  "42": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/e1f3f7/1/o/sjjm_X_042.mp3",
+    "groesse": 5891279
+   },
+   "titel": "42. Gebet der Diener Gottes",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/0cf3bd7/2/o/sjjm_X_042_r720P.mp4",
+    "groesse": 6718790
+   }
+  },
+  "43": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/f7e79a2/1/o/sjjm_X_043.mp3",
+    "groesse": 5108436
+   },
+   "titel": "43. Ein Dankgebet",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/95ad8b5/2/o/sjjm_X_043_r720P.mp4",
+    "groesse": 5788162
+   }
+  },
+  "44": {
+   "instrumental": {
+    "url": "https://cfp2.jw-cdn.org/a/c611e7/1/o/sjji_X_044.mp3",
+    "groesse": 8919578
+   },
+   "titel": "44. Gebet eines Niedergedrückten",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/a9ed57/2/o/sjjm_X_044.mp3",
+    "groesse": 5508843
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/031891/3/o/sjjm_X_044_r720P.mp4",
+    "groesse": 6013673
+   }
+  },
+  "45": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/3a0077b/1/o/sjjc_X_045.mp3",
+    "groesse": 5827761
+   },
+   "titel": "45. Die Gedanken meines Herzens",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/1332b64/2/o/sjjm_X_045.mp3",
+    "groesse": 4880481
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/b42b1c/2/o/sjjm_X_045_r720P.mp4",
+    "groesse": 5385326
+   }
+  },
+  "46": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/a9e88b3/2/o/sjjm_X_046.mp3",
+    "groesse": 5947344
+   },
+   "titel": "46. Hab Dank, Herr Jehova!",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/c2c4ef/2/o/sjjm_X_046_r720P.mp4",
+    "groesse": 6913567
+   }
+  },
+  "47": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/2d1eec/2/o/sjjm_X_047.mp3",
+    "groesse": 4552226
+   },
+   "titel": "47. Bete jeden Tag zu Jehova",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/e39cb50/3/o/sjjm_X_047_r720P.mp4",
+    "groesse": 5515390
+   }
+  },
+  "48": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/822034/1/o/sjjc_X_048.mp3",
+    "groesse": 6017101
+   },
+   "titel": "48. Täglich unseren Weg mit Jehova gehen",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/8b9c64/2/o/sjjm_X_048.mp3",
+    "groesse": 5642914
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/9c7c95/2/o/sjjm_X_048_r720P.mp4",
+    "groesse": 6973356
+   }
+  },
+  "49": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/b2cd276/2/o/sjjm_X_049.mp3",
+    "groesse": 4091116
+   },
+   "titel": "49. Jehovas Herz erfreuen",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/28b3d7f/2/o/sjjm_X_049_r720P.mp4",
+    "groesse": 4582976
+   }
+  },
+  "50": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/2f2b70/1/o/sjjc_X_050.mp3",
+    "groesse": 5547022
+   },
+   "titel": "50. Mein Gebet der Hingabe",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/81a3892/1/o/sjjm_X_050.mp3",
+    "groesse": 4422328
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/0cf209f/2/o/sjjm_X_050_r720P.mp4",
+    "groesse": 5781927
+   }
+  },
+  "51": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/12fd9f/1/o/sjjc_X_051.mp3",
+    "groesse": 6728738
+   },
+   "titel": "51. Jehova, dir gehört mein Leben!",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/9cdebbf/1/o/sjjm_X_051.mp3",
+    "groesse": 5241089
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/a7f7532/2/o/sjjm_X_051_r720P.mp4",
+    "groesse": 6582356
+   }
+  },
+  "52": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/c25b6f/1/o/sjjc_X_052.mp3",
+    "groesse": 6676244
+   },
+   "titel": "52. Hingabe und Taufe",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/b8ba834/1/o/sjjm_X_052.mp3",
+    "groesse": 5645262
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/336ec42/2/o/sjjm_X_052_r720P.mp4",
+    "groesse": 6923281
+   }
+  },
+  "53": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/c92a519/2/o/sjjm_X_053.mp3",
+    "groesse": 5715146
+   },
+   "titel": "53. Vor unserem Dienst",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/a625e9d/2/o/sjjm_X_053_r720P.mp4",
+    "groesse": 6641724
+   }
+  },
+  "54": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/654b4d4/3/o/sjjm_X_054.mp3",
+    "groesse": 5521176
+   },
+   "titel": "54. „Das ist der Weg“",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/846939/3/o/sjjm_X_054_r720P.mp4",
+    "groesse": 6623027
+   }
+  },
+  "55": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/7662f5/1/o/sjjc_X_055.mp3",
+    "groesse": 6280870
+   },
+   "titel": "55. Habt keine Angst!",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/08a8ffb/2/o/sjjm_X_055.mp3",
+    "groesse": 6402115
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/e3f79c/2/o/sjjm_X_055_r720P.mp4",
+    "groesse": 8167430
+   }
+  },
+  "56": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/efcbad/1/o/sjjm_X_056.mp3",
+    "groesse": 6551369
+   },
+   "titel": "56. Mache dir die Wahrheit zu eigen",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/9832e4e/1/o/sjjm_X_056_r720P.mp4",
+    "groesse": 7449353
+   }
+  },
+  "57": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/7029287/2/o/sjjm_X_057.mp3",
+    "groesse": 5835532
+   },
+   "titel": "57. Jeder kann ein Freund Jehovas werden",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/04df1b/2/o/sjjm_X_057_r720P.mp4",
+    "groesse": 6790289
+   }
+  },
+  "58": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/8d8494/2/o/sjjm_X_058.mp3",
+    "groesse": 6316273
+   },
+   "titel": "58. Wir suchen Menschen, die den Frieden lieben",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/aa4dbfb/2/o/sjjm_X_058_r720P.mp4",
+    "groesse": 7519530
+   }
+  },
+  "59": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/743deb/2/o/sjjm_X_059.mp3",
+    "groesse": 4445669
+   },
+   "titel": "59. Preist Jah mit mir!",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/dea7816/2/o/sjjm_X_059_r720P.mp4",
+    "groesse": 4945540
+   }
+  },
+  "60": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/8e1d26/1/o/sjjc_X_060.mp3",
+    "groesse": 6149319
+   },
+   "titel": "60. Ihr Leben steht auf dem Spiel",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/a6e294/2/o/sjjm_X_060.mp3",
+    "groesse": 5463795
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/537aa5/2/o/sjjm_X_060_r720P.mp4",
+    "groesse": 6522674
+   }
+  },
+  "61": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/3c6469/1/o/sjjc_X_061.mp3",
+    "groesse": 7131236
+   },
+   "titel": "61. Fest und entschlossen",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/3b71cc/2/o/sjjm_X_061.mp3",
+    "groesse": 5083181
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/20331c/2/o/sjjm_X_061_r720P.mp4",
+    "groesse": 6129348
+   }
+  },
+  "62": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/0a0c18/1/o/sjjm_X_062.mp3",
+    "groesse": 5738278
+   },
+   "titel": "62. Das neue Lied",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/bf97d1/2/o/sjjm_X_062_r720P.mp4",
+    "groesse": 7441252
+   }
+  },
+  "63": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/d6a9703/2/o/sjjm_X_063.mp3",
+    "groesse": 6462367
+   },
+   "titel": "63. Wir sind Jehovas Zeugen",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/c13c114/2/o/sjjm_X_063_r720P.mp4",
+    "groesse": 7472867
+   }
+  },
+  "64": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/334460/1/o/sjjc_X_064.mp3",
+    "groesse": 6210202
+   },
+   "titel": "64. Freudig in der Ernte mitarbeiten",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/6a11839/1/o/sjjm_X_064.mp3",
+    "groesse": 3786318
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/66a601/2/o/sjjm_X_064_r720P.mp4",
+    "groesse": 4583598
+   }
+  },
+  "65": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/c0db4a1/1/o/sjjm_X_065.mp3",
+    "groesse": 4707818
+   },
+   "titel": "65. Fortschritte machen",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/9844550/1/o/sjjm_X_065_r720P.mp4",
+    "groesse": 5597122
+   }
+  },
+  "66": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/12b16b/2/o/sjjm_X_066.mp3",
+    "groesse": 5707718
+   },
+   "titel": "66. Die gute Botschaft bekannt machen",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/bfda4fa/2/o/sjjm_X_066_r720P.mp4",
+    "groesse": 6796820
+   }
+  },
+  "67": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/9dcd41/2/o/sjjm_X_067.mp3",
+    "groesse": 4610902
+   },
+   "titel": "67. „Predige das Wort Gottes“",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/da1aa97/2/o/sjjm_X_067_r720P.mp4",
+    "groesse": 5461021
+   }
+  },
+  "68": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/4d5fa80/2/o/sjjm_X_068.mp3",
+    "groesse": 4267292
+   },
+   "titel": "68. Den Samen vom Königreich säen",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/f14789/2/o/sjjm_X_068_r720P.mp4",
+    "groesse": 4884660
+   }
+  },
+  "69": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/e99133c/2/o/sjjm_X_069.mp3",
+    "groesse": 4669335
+   },
+   "titel": "69. Macht das Königreich weiter bekannt!",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/31b823/2/o/sjjm_X_069_r720P.mp4",
+    "groesse": 5444034
+   }
+  },
+  "70": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/180079/2/o/sjjm_X_070.mp3",
+    "groesse": 4474783
+   },
+   "titel": "70. Findet heraus, wer es verdient",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/fefd10/2/o/sjjm_X_070_r720P.mp4",
+    "groesse": 5215401
+   }
+  },
+  "71": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/c2fea4b/1/o/sjjm_X_071.mp3",
+    "groesse": 6341479
+   },
+   "titel": "71. Wir sind das Heer Jehovas!",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/46cf31/2/o/sjjm_X_071_r720P.mp4",
+    "groesse": 8256850
+   }
+  },
+  "72": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/0a404bc/1/o/sjjc_X_072.mp3",
+    "groesse": 5398315
+   },
+   "titel": "72. Die Königreichswahrheit bekannt machen",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/170aa30/2/o/sjjm_X_072.mp3",
+    "groesse": 4400037
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/72c2cc6/2/o/sjjm_X_072_r720P.mp4",
+    "groesse": 4851011
+   }
+  },
+  "73": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/c0db98/2/o/sjjm_X_073.mp3",
+    "groesse": 5089471
+   },
+   "titel": "73. Schenk uns Mut",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/328c86/2/o/sjjm_X_073_r720P.mp4",
+    "groesse": 6400437
+   }
+  },
+  "74": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/382fb11/1/o/sjjc_X_074.mp3",
+    "groesse": 7012637
+   },
+   "titel": "74. Stimmt ein ins Lied vom Königreich!",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/4a707a/2/o/sjjm_X_074.mp3",
+    "groesse": 5394149
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/43393c6/2/o/sjjm_X_074_r720P.mp4",
+    "groesse": 6332534
+   }
+  },
+  "75": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/368d6d/1/o/sjjm_X_075.mp3",
+    "groesse": 8177297
+   },
+   "titel": "75. „Hier bin ich! Sende mich!“",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/911e0f5/1/o/sjjm_X_075_r720P.mp4",
+    "groesse": 9020788
+   }
+  },
+  "76": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/814c4c/2/o/sjjm_X_076.mp3",
+    "groesse": 6456384
+   },
+   "titel": "76. Von Jehova zu sprechen tut uns gut",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/67f8c73/2/o/sjjm_X_076_r720P.mp4",
+    "groesse": 7053886
+   }
+  },
+  "77": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/85e025/2/o/sjjm_X_077.mp3",
+    "groesse": 5728725
+   },
+   "titel": "77. Licht in der Dunkelheit",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/e0dea67/2/o/sjjm_X_077_r720P.mp4",
+    "groesse": 6733779
+   }
+  },
+  "78": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/03ec23/1/o/sjjc_X_078.mp3",
+    "groesse": 7502251
+   },
+   "titel": "78. Das Wort Gottes lehren",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/084ac3/2/o/sjjm_X_078.mp3",
+    "groesse": 5778859
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/a26e637/2/o/sjjm_X_078_r720P.mp4",
+    "groesse": 7232098
+   }
+  },
+  "79": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/e87d1d6/2/o/sjjm_X_079.mp3",
+    "groesse": 6238399
+   },
+   "titel": "79. Lehrt sie, fest zu Jehova zu stehen",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/5f2592c/2/o/sjjm_X_079_r720P.mp4",
+    "groesse": 7023150
+   }
+  },
+  "80": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/ca6855/2/o/sjjm_X_080.mp3",
+    "groesse": 4312110
+   },
+   "titel": "80. „Schmeckt und seht, dass Jehova gut ist“",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/f5b7bd/2/o/sjjm_X_080_r720P.mp4",
+    "groesse": 4876074
+   }
+  },
+  "81": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/c181fa/1/o/sjjc_X_081.mp3",
+    "groesse": 6000112
+   },
+   "titel": "81. Das Leben eines Pioniers",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/b958d1/2/o/sjjm_X_081.mp3",
+    "groesse": 5927799
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/cea8f6/2/o/sjjm_X_081_r720P.mp4",
+    "groesse": 7127297
+   }
+  },
+  "82": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/8b1513/1/o/sjjm_X_082.mp3",
+    "groesse": 4658198
+   },
+   "titel": "82. „Lasst euer Licht leuchten“",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/910ffe/2/o/sjjm_X_082_r720P.mp4",
+    "groesse": 6043089
+   }
+  },
+  "83": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/d5863d/2/o/sjjm_X_083.mp3",
+    "groesse": 5085487
+   },
+   "titel": "83. „Von Haus zu Haus“",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/493487/2/o/sjjm_X_083_r720P.mp4",
+    "groesse": 5599152
+   }
+  },
+  "84": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/c2d1501/2/o/sjjm_X_084.mp3",
+    "groesse": 6157790
+   },
+   "titel": "84. Jederzeit gern bereit",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/cd9bbf5/3/o/sjjm_X_084_r720P.mp4",
+    "groesse": 7731848
+   }
+  },
+  "85": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/1a4460c/1/o/sjjm_X_085.mp3",
+    "groesse": 4785431
+   },
+   "titel": "85. Heißt euch gegenseitig willkommen",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/08f4b6/1/o/sjjm_X_085_r720P.mp4",
+    "groesse": 5559836
+   }
+  },
+  "86": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/ffe31c/1/o/sjjc_X_086.mp3",
+    "groesse": 4843301
+   },
+   "titel": "86. Kommt und lernt von Jehova!",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/e2f66a/1/o/sjjm_X_086.mp3",
+    "groesse": 4432367
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/36b28c0/1/o/sjjm_X_086_r720P.mp4",
+    "groesse": 5269539
+   }
+  },
+  "87": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/2a6dbd/2/o/sjjm_X_087.mp3",
+    "groesse": 4560888
+   },
+   "titel": "87. Kommt und werdet erfrischt!",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/35db99d/3/o/sjjm_X_087_r720P.mp4",
+    "groesse": 5654396
+   }
+  },
+  "88": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/abe06e/1/o/sjjc_X_088.mp3",
+    "groesse": 6088232
+   },
+   "titel": "88. Lass mich deine Wege erkennen",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/b223ee7/2/o/sjjm_X_088.mp3",
+    "groesse": 4880639
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/cdc7a5d/2/o/sjjm_X_088_r720P.mp4",
+    "groesse": 5606432
+   }
+  },
+  "89": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/862b0e/2/o/sjjc_X_089.mp3",
+    "groesse": 8187127
+   },
+   "titel": "89. Glücklich ist, wer hört und danach lebt",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/7ad277/2/o/sjjm_X_089.mp3",
+    "groesse": 5659563
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/6783e03/2/o/sjjm_X_089_r720P.mp4",
+    "groesse": 6552069
+   }
+  },
+  "90": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/bdf963/2/o/sjjm_X_090.mp3",
+    "groesse": 6241056
+   },
+   "titel": "90. Uns gegenseitig Mut machen",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/71ffa6/2/o/sjjm_X_090_r720P.mp4",
+    "groesse": 6903434
+   }
+  },
+  "91": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/54adbfb/1/o/sjjm_X_091.mp3",
+    "groesse": 6169400
+   },
+   "titel": "91. Mit Liebe gebaut",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/406a310/2/o/sjjm_X_091_r720P.mp4",
+    "groesse": 7308116
+   }
+  },
+  "92": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/1837ac5/1/o/sjjm_X_092.mp3",
+    "groesse": 5784528
+   },
+   "titel": "92. Ein Haus für Jehovas Namen",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/a8e4634/2/o/sjjm_X_092_r720P.mp4",
+    "groesse": 6804579
+   }
+  },
+  "93": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/680e33/1/o/sjjc_X_093.mp3",
+    "groesse": 4040973
+   },
+   "titel": "93. Bitte segne unsere Zusammenkunft",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/4ce7f26/1/o/sjjm_X_093.mp3",
+    "groesse": 3677278
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/24fbc4/1/o/sjjm_X_093_r720P.mp4",
+    "groesse": 4674699
+   }
+  },
+  "94": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/21e01e/2/o/sjjm_X_094.mp3",
+    "groesse": 4701931
+   },
+   "titel": "94. Dankbar für Gottes Wort",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/27fd093/2/o/sjjm_X_094_r720P.mp4",
+    "groesse": 5688045
+   }
+  },
+  "95": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/120be4/2/o/sjjm_X_095.mp3",
+    "groesse": 4896221
+   },
+   "titel": "95. Das Licht wird immer heller",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/4f048a/2/o/sjjm_X_095_r720P.mp4",
+    "groesse": 5654238
+   }
+  },
+  "96": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/9c8efc/3/o/sjjm_X_096.mp3",
+    "groesse": 6080688
+   },
+   "titel": "96. Gottes Buch – ein echter Schatz",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/3abc54/3/o/sjjm_X_096_r720P.mp4",
+    "groesse": 7230466
+   }
+  },
+  "97": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/711f4a2/2/o/sjjm_X_097.mp3",
+    "groesse": 6637411
+   },
+   "titel": "97. Gottes Wort schenkt Leben",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/c0f97b/3/o/sjjm_X_097_r720P.mp4",
+    "groesse": 7228057
+   }
+  },
+  "98": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/887f16e/3/o/sjjm_X_098.mp3",
+    "groesse": 4278156
+   },
+   "titel": "98. Die Heilige Schrift – von Gott inspiriert",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/0bdd63/3/o/sjjm_X_098_r720P.mp4",
+    "groesse": 4832844
+   }
+  },
+  "99": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/4510ba/2/o/sjjm_X_099.mp3",
+    "groesse": 4941424
+   },
+   "titel": "99. Millionen von Brüdern",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/4354e3/2/o/sjjm_X_099_r720P.mp4",
+    "groesse": 6040026
+   }
+  },
+  "100": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/ff62ec4/1/o/sjjm_X_100.mp3",
+    "groesse": 4767440
+   },
+   "titel": "100. Andere gastfreundlich aufnehmen",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/b9569b/2/o/sjjm_X_100_r720P.mp4",
+    "groesse": 5683107
+   }
+  },
+  "101": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/0d7dee/2/o/sjjm_X_101.mp3",
+    "groesse": 4310009
+   },
+   "titel": "101. Harmonisch zusammenarbeiten",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/78010c/2/o/sjjm_X_101_r720P.mp4",
+    "groesse": 5253857
+   }
+  },
+  "102": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/3c70a5/3/o/sjjm_X_102.mp3",
+    "groesse": 5639790
+   },
+   "titel": "102. „Den Schwachen beistehen“",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/ed33b9/3/o/sjjm_X_102_r720P.mp4",
+    "groesse": 6871413
+   }
+  },
+  "103": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/7b20a5/3/o/sjjm_X_103.mp3",
+    "groesse": 6044399
+   },
+   "titel": "103. Hirten – ein Geschenk von Jehova",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/2e1f473/3/o/sjjm_X_103_r720P.mp4",
+    "groesse": 6700128
+   }
+  },
+  "104": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/6cce9c/2/o/sjjm_X_104.mp3",
+    "groesse": 4579336
+   },
+   "titel": "104. Der heilige Geist – ein Geschenk Gottes",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/5696879/3/o/sjjm_X_104_r720P.mp4",
+    "groesse": 5715551
+   }
+  },
+  "105": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/f29c480/1/o/sjjc_X_105.mp3",
+    "groesse": 5954981
+   },
+   "titel": "105. „Gott ist Liebe“",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/4ec1908/1/o/sjjm_X_105.mp3",
+    "groesse": 6208965
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/09ecdd3/1/o/sjjm_X_105_r720P.mp4",
+    "groesse": 6756753
+   }
+  },
+  "106": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/e84edc8/1/o/sjjm_X_106.mp3",
+    "groesse": 4575426
+   },
+   "titel": "106. In der Liebe wachsen",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/cbdacb/1/o/sjjm_X_106_r720P.mp4",
+    "groesse": 5108134
+   }
+  },
+  "107": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/647b672/1/o/sjjc_X_107.mp3",
+    "groesse": 6946571
+   },
+   "titel": "107. So lieben wie Jehova",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/f03c81/1/o/sjjm_X_107.mp3",
+    "groesse": 6269430
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/0d39793/1/o/sjjm_X_107_r720P.mp4",
+    "groesse": 7194968
+   }
+  },
+  "108": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/1bc3869/1/o/sjjc_X_108.mp3",
+    "groesse": 9308913
+   },
+   "titel": "108. Gottes loyale Liebe",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/e15e3e/2/o/sjjm_X_108.mp3",
+    "groesse": 7520924
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/dd648fc/2/o/sjjm_X_108_r720P.mp4",
+    "groesse": 8456150
+   }
+  },
+  "109": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/de603c8/1/o/sjjm_X_109.mp3",
+    "groesse": 4129666
+   },
+   "titel": "109. Liebt einander von ganzem Herzen",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/3268d21/2/o/sjjm_X_109_r720P.mp4",
+    "groesse": 4489329
+   }
+  },
+  "110": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/db11df/2/o/sjjm_X_110.mp3",
+    "groesse": 4872769
+   },
+   "titel": "110. „Jehova schenkt Freude, die stark macht“",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/a6a26bc/2/o/sjjm_X_110_r720P.mp4",
+    "groesse": 5619975
+   }
+  },
+  "111": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/448f82/2/o/sjjm_X_111.mp3",
+    "groesse": 5090975
+   },
+   "titel": "111. Unsere Gründe zur Freude",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/f013bf/2/o/sjjm_X_111_r720P.mp4",
+    "groesse": 5728275
+   }
+  },
+  "112": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/6054df/1/o/sjjm_X_112.mp3",
+    "groesse": 4974652
+   },
+   "titel": "112. Jehova, der Gott des Friedens",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/37033d8/1/o/sjjm_X_112_r720P.mp4",
+    "groesse": 6218781
+   }
+  },
+  "113": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/931875/1/o/sjjm_X_113.mp3",
+    "groesse": 5434193
+   },
+   "titel": "113. Gott schenkt Frieden",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/7eb68f/1/o/sjjm_X_113_r720P.mp4",
+    "groesse": 6700457
+   }
+  },
+  "114": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/6cec03/1/o/sjjc_X_114.mp3",
+    "groesse": 5196187
+   },
+   "titel": "114. „Übt Geduld“",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/44b8d01/2/o/sjjm_X_114.mp3",
+    "groesse": 4919465
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/e89fd58/2/o/sjjm_X_114_r720P.mp4",
+    "groesse": 6093505
+   }
+  },
+  "115": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/fe3ea0d/1/o/sjjc_X_115.mp3",
+    "groesse": 5633335
+   },
+   "titel": "115. Dankbar für Gottes Geduld",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/5217a3/2/o/sjjm_X_115.mp3",
+    "groesse": 4968461
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/fc51f3c/2/o/sjjm_X_115_r720P.mp4",
+    "groesse": 5615334
+   }
+  },
+  "116": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/d85735/3/o/sjjm_X_116.mp3",
+    "groesse": 3902797
+   },
+   "titel": "116. Freundlichkeit bewirkt viel Gutes",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/b2bfa2/3/o/sjjm_X_116_r720P.mp4",
+    "groesse": 4514077
+   }
+  },
+  "117": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/a02e84/3/o/sjjm_X_117.mp3",
+    "groesse": 4779526
+   },
+   "titel": "117. Güte – wie wertvoll!",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/4d19d5f/3/o/sjjm_X_117_r720P.mp4",
+    "groesse": 5732688
+   }
+  },
+  "118": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/a6ff2d7/2/o/sjjm_X_118.mp3",
+    "groesse": 4899665
+   },
+   "titel": "118. „Gib uns mehr Glauben“",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/48fa65/3/o/sjjm_X_118_r720P.mp4",
+    "groesse": 6126814
+   }
+  },
+  "119": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/7364b1/1/o/sjjc_X_119.mp3",
+    "groesse": 7120299
+   },
+   "titel": "119. Wir müssen Glauben haben",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/70369fe/2/o/sjjm_X_119.mp3",
+    "groesse": 4895459
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/ffe5629/3/o/sjjm_X_119_r720P.mp4",
+    "groesse": 6021929
+   }
+  },
+  "120": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/e7e2536/2/o/sjjm_X_120.mp3",
+    "groesse": 4646013
+   },
+   "titel": "120. So sanft und mild wie Jesus werden",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/a10f571/2/o/sjjm_X_120_r720P.mp4",
+    "groesse": 5517790
+   }
+  },
+  "121": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/7ca8f2c/1/o/sjjm_X_121.mp3",
+    "groesse": 4977900
+   },
+   "titel": "121. Wir brauchen Selbstbeherrschung",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/2ff1b2/1/o/sjjm_X_121_r720P.mp4",
+    "groesse": 5847050
+   }
+  },
+  "122": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/8a1f014/2/o/sjjm_X_122.mp3",
+    "groesse": 6426119
+   },
+   "titel": "122. Bleibt standhaft!",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/74c291e/2/o/sjjm_X_122_r720P.mp4",
+    "groesse": 7697667
+   }
+  },
+  "123": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/3bbd83/2/o/sjjm_X_123.mp3",
+    "groesse": 4784284
+   },
+   "titel": "123. Uns loyal der theokratischen Ordnung unterstellen",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/12500e/2/o/sjjm_X_123_r720P.mp4",
+    "groesse": 5824134
+   }
+  },
+  "124": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/b63e70b/1/o/sjjc_X_124.mp3",
+    "groesse": 8301760
+   },
+   "titel": "124. Wahre Liebe ist loyal",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/353e28/2/o/sjjm_X_124.mp3",
+    "groesse": 5057717
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/3f74dc/2/o/sjjm_X_124_r720P.mp4",
+    "groesse": 6485762
+   }
+  },
+  "125": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/0552e5/1/o/sjjc_X_125.mp3",
+    "groesse": 7676880
+   },
+   "titel": "125. „Glücklich sind die Barmherzigen“",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/c05e19/2/o/sjjm_X_125.mp3",
+    "groesse": 5985634
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/3cd1da/2/o/sjjm_X_125_r720P.mp4",
+    "groesse": 6658177
+   }
+  },
+  "126": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/d9696a/2/o/sjjm_X_126.mp3",
+    "groesse": 4713100
+   },
+   "titel": "126. Steh fest im Glauben!",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/16b736/3/o/sjjm_X_126_r720P.mp4",
+    "groesse": 6171207
+   }
+  },
+  "127": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/22217e/1/o/sjjc_X_127.mp3",
+    "groesse": 7689265
+   },
+   "titel": "127. Was für ein Mensch sollte ich sein?",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/56d58bc/2/o/sjjm_X_127.mp3",
+    "groesse": 4642559
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/9dd0ac/2/o/sjjm_X_127_r720P.mp4",
+    "groesse": 5351741
+   }
+  },
+  "128": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/124688/2/o/sjjm_X_128.mp3",
+    "groesse": 4891193
+   },
+   "titel": "128. Bis zum Ende ausharren",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/75f5889/2/o/sjjm_X_128_r720P.mp4",
+    "groesse": 6352466
+   }
+  },
+  "129": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/dd20aa7/2/o/sjjm_X_129.mp3",
+    "groesse": 7399004
+   },
+   "titel": "129. Wir harren weiter aus",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/e9c8ee/2/o/sjjm_X_129_r720P.mp4",
+    "groesse": 9107513
+   }
+  },
+  "130": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/2e77f0/2/o/sjjm_X_130.mp3",
+    "groesse": 5584926
+   },
+   "titel": "130. Gerne verzeihen",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/d7b336/2/o/sjjm_X_130_r720P.mp4",
+    "groesse": 6917634
+   }
+  },
+  "131": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/a769eb/2/o/sjjm_X_131.mp3",
+    "groesse": 3935232
+   },
+   "titel": "131. „Was Gott verbunden hat“",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/53a0f14/3/o/sjjm_X_131_r720P.mp4",
+    "groesse": 4786962
+   }
+  },
+  "132": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/63fa942/1/o/sjjm_X_132.mp3",
+    "groesse": 4699760
+   },
+   "titel": "132. Glücklich vereint",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/2be29b/2/o/sjjm_X_132_r720P.mp4",
+    "groesse": 5528810
+   }
+  },
+  "133": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/59a7ab/2/o/sjjm_X_133.mp3",
+    "groesse": 3564713
+   },
+   "titel": "133. Als junger Mensch Jehova dienen",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/951b74/2/o/sjjm_X_133_r720P.mp4",
+    "groesse": 4259398
+   }
+  },
+  "134": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/a3021c/2/o/sjjm_X_134.mp3",
+    "groesse": 5436246
+   },
+   "titel": "134. Kinder – ein kostbares Geschenk von Jehova",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/f61ddf/2/o/sjjm_X_134_r720P.mp4",
+    "groesse": 6118108
+   }
+  },
+  "135": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/3b1a37/1/o/sjjc_X_135.mp3",
+    "groesse": 6477042
+   },
+   "titel": "135. Jehova bittet: „Sei weise, mein Sohn“",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/303ba72/1/o/sjjm_X_135.mp3",
+    "groesse": 5198846
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/6c5d8f1/1/o/sjjm_X_135_r720P.mp4",
+    "groesse": 6116212
+   }
+  },
+  "136": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/9e672ba/1/o/sjjm_X_136.mp3",
+    "groesse": 6071166
+   },
+   "titel": "136. Ein vollkommener Lohn von Jehova",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/4d420a/2/o/sjjm_X_136_r720P.mp4",
+    "groesse": 7002775
+   }
+  },
+  "137": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/03ff42/2/o/sjjm_X_137.mp3",
+    "groesse": 5816877
+   },
+   "titel": "137. Treue Frauen, unsere Schwestern",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/9a5246f/3/o/sjjm_X_137_r720P.mp4",
+    "groesse": 7379618
+   }
+  },
+  "138": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/dc78dd4/2/o/sjjm_X_138.mp3",
+    "groesse": 6095198
+   },
+   "titel": "138. Graues Haar – eine schöne Krone",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/bffd1a/2/o/sjjm_X_138_r720P.mp4",
+    "groesse": 7223948
+   }
+  },
+  "139": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/c18f569/2/o/sjjm_X_139.mp3",
+    "groesse": 7115679
+   },
+   "titel": "139. Siehst du dich in der neuen Welt?",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/21f8831/2/o/sjjm_X_139_r720P.mp4",
+    "groesse": 8167822
+   }
+  },
+  "140": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/2b7485f/2/o/sjjm_X_140.mp3",
+    "groesse": 5640865
+   },
+   "titel": "140. Endlich ewiges Leben!",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/621d5ab/2/o/sjjm_X_140_r720P.mp4",
+    "groesse": 6855998
+   }
+  },
+  "141": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/daa2f89/2/o/sjjm_X_141.mp3",
+    "groesse": 5179061
+   },
+   "titel": "141. Das Wunder des Lebens",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/019f55a/2/o/sjjm_X_141_r720P.mp4",
+    "groesse": 6122403
+   }
+  },
+  "142": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/2bbb62/2/o/sjjm_X_142.mp3",
+    "groesse": 4048440
+   },
+   "titel": "142. An unserer Hoffnung festhalten",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/2619b1/3/o/sjjm_X_142_r720P.mp4",
+    "groesse": 5155966
+   }
+  },
+  "143": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/cad5b9a/2/o/sjjm_X_143.mp3",
+    "groesse": 5280363
+   },
+   "titel": "143. Bleibe wachsam, beschäftigt und warte",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/449eb6/3/o/sjjm_X_143_r720P.mp4",
+    "groesse": 6743212
+   }
+  },
+  "144": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/ab4efb2/1/o/sjjm_X_144.mp3",
+    "groesse": 4719232
+   },
+   "titel": "144. Schau fest auf das Ziel!",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/60dcd0c/1/o/sjjm_X_144_r720P.mp4",
+    "groesse": 5340818
+   }
+  },
+  "145": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/3bf321d/1/o/sjjm_X_145.mp3",
+    "groesse": 6538705
+   },
+   "titel": "145. Gott hat ein Paradies versprochen",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/3b7e349/2/o/sjjm_X_145_r720P.mp4",
+    "groesse": 7348482
+   }
+  },
+  "146": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/eebd8d/1/o/sjjm_X_146.mp3",
+    "groesse": 7739900
+   },
+   "titel": "146. „Ich mache alles neu“",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/9add922/2/o/sjjm_X_146_r720P.mp4",
+    "groesse": 9544546
+   }
+  },
+  "147": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/84070e/2/o/sjjm_X_147.mp3",
+    "groesse": 5057093
+   },
+   "titel": "147. Bald ewiges Leben!",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/d336bd2/2/o/sjjm_X_147_r720P.mp4",
+    "groesse": 6234904
+   }
+  },
+  "148": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/2bb6434/2/o/sjjm_X_148.mp3",
+    "groesse": 8042263
+   },
+   "titel": "148. Jehova – unser Retter",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/f96e26/3/o/sjjm_X_148_r720P.mp4",
+    "groesse": 9823972
+   }
+  },
+  "149": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/d20c5b7/2/o/sjjm_X_149.mp3",
+    "groesse": 5139677
+   },
+   "titel": "149. Ein Siegeslied",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/a6764c/3/o/sjjm_X_149_r720P.mp4",
+    "groesse": 6459082
+   }
+  },
+  "150": {
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/16e2bb/2/o/sjjm_X_150.mp3",
+    "groesse": 5121374
+   },
+   "titel": "150. Sucht Jehova, damit er euch befreit",
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/6dc599/3/o/sjjm_X_150_r720P.mp4",
+    "groesse": 6595313
+   }
+  },
+  "151": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/5eda532/1/o/sjjc_X_151.mp3",
+    "groesse": 7239779
+   },
+   "titel": "151. Er wird sie rufen",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/ef7a72/1/o/sjjm_X_151.mp3",
+    "groesse": 7996415
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/4dadc6/1/o/sjjm_X_151_r720P.mp4",
+    "groesse": 9577869
+   }
+  },
+  "152": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/fcb39f/1/o/sjjc_X_152.mp3",
+    "groesse": 6151730
+   },
+   "titel": "152. Ein Ort, der dich ehrt und preist",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/927b9a/2/o/sjjm_X_152.mp3",
+    "groesse": 6759925
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/076b93/3/o/sjjm_X_152_r720P.mp4",
+    "groesse": 7740919
+   }
+  },
+  "153": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/e06d8e/1/o/sjjc_X_153.mp3",
+    "groesse": 8524892
+   },
+   "titel": "153. Mach mich mutig!",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/f8b3250/3/o/sjjm_X_153.mp3",
+    "groesse": 8905009
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/b4dc7b9/3/o/sjjm_X_153_r720P.mp4",
+    "groesse": 10311665
+   }
+  },
+  "154": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/5b9493/1/o/sjjc_X_154.mp3",
+    "groesse": 7572245
+   },
+   "titel": "154. Liebe versagt nie",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/c3e9cf46/3/o/sjjm_X_154.mp3",
+    "groesse": 8181993
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/1342d1/3/o/sjjm_X_154_r720P.mp4",
+    "groesse": 10045903
+   }
+  },
+  "155": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/da0e7b/1/o/sjjc_X_155.mp3",
+    "groesse": 8182829
+   },
+   "titel": "155. Jehova – unsere Freude",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/4866a0/2/o/sjjm_X_155.mp3",
+    "groesse": 8793783
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/6cc329/3/o/sjjm_X_155_r720P.mp4",
+    "groesse": 11784729
+   }
+  },
+  "156": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/218486/1/o/sjjc_X_156.mp3",
+    "groesse": 8524218
+   },
+   "titel": "156. Durch Glauben stark",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/19a695/2/o/sjjm_X_156.mp3",
+    "groesse": 9161957
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/8de32ba/4/o/sjjm_X_156_r720P.mp4",
+    "groesse": 10408759
+   }
+  },
+  "157": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/d2b9b5/1/o/sjjc_X_157.mp3",
+    "groesse": 6903367
+   },
+   "titel": "157. Endlich Frieden!",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/31f798e/2/o/sjjm_X_157.mp3",
+    "groesse": 7519444
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/96fa1e/2/o/sjjm_X_157_r720P.mp4",
+    "groesse": 8366784
+   }
+  },
+  "158": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/aa5bb1/1/o/sjjc_X_158.mp3",
+    "groesse": 8030792
+   },
+   "titel": "158. Schenk uns Geduld",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/e4935c2/2/o/sjjm_X_158.mp3",
+    "groesse": 8640479
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/2e4c7a8/2/o/sjjm_X_158_r720P.mp4",
+    "groesse": 10023133
+   }
+  },
+  "159": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/610023a/2/o/sjjc_X_159.mp3",
+    "groesse": 9685019
+   },
+   "titel": "159. Jehova steht alle Ehre zu",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/74b68bc/3/o/sjjm_X_159.mp3",
+    "groesse": 10296517
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/71f23e03/3/o/sjjm_X_159_r720P.mp4",
+    "groesse": 12796151
+   }
+  },
+  "160": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/3acd4c/1/o/sjjc_X_160.mp3",
+    "groesse": 8841039
+   },
+   "titel": "160. Ruft die Botschaft aus!",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/2ae2c8a/2/o/sjjm_X_160.mp3",
+    "groesse": 9473982
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/977e72/2/o/sjjm_X_160_r720P.mp4",
+    "groesse": 10733411
+   }
+  },
+  "161": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/20b005/1/o/sjjc_X_161.mp3",
+    "groesse": 8446235
+   },
+   "titel": "161. Ich lebe nur für dich!",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/5dbdc53/1/o/sjjm_X_161.mp3",
+    "groesse": 9049002
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/00848e/3/o/sjjm_X_161_r720P.mp4",
+    "groesse": 12067510
+   }
+  },
+  "162": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/337593e/2/o/sjjc_X_162.mp3",
+    "groesse": 8067583
+   },
+   "titel": "162. Mit Jehova hat mein Leben Sinn",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/0b1c5f/1/o/sjjm_X_162.mp3",
+    "groesse": 8697399
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/28e7865/1/o/sjjm_X_162_r720P.mp4",
+    "groesse": 11572764
+   }
+  },
+  "163": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/285c61c/2/o/sjjc_X_163.mp3",
+    "groesse": 7462590
+   },
+   "titel": "163. Glücklich ist, wer sieht und versteht",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/d7e6dc/2/o/sjjm_X_163.mp3",
+    "groesse": 8079546
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/82c61c41/3/o/sjjm_X_163_r720P.mp4",
+    "groesse": 9028699
+   }
+  },
+  "164": {
+   "karaoke": {
+    "url": "https://cfp2.jw-cdn.org/a/056b85/1/o/sjjc_X_164.mp3",
+    "groesse": 8047509
+   },
+   "titel": "164. Ich vertrau ganz fest auf dich",
+   "sung": {
+    "url": "https://cfp2.jw-cdn.org/a/6d3926/2/o/sjjm_X_164.mp3",
+    "groesse": 8652549
+   },
+   "video": {
+    "url": "https://cfp2.jw-cdn.org/a/5e61563/2/o/sjjm_X_164_r720P.mp4",
+    "groesse": 10912257
+   }
+  }
+ }
+}
