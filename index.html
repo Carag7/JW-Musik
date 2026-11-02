@@ -399,6 +399,13 @@
         <div id="themeShownBox" hidden></div>
       </div>
       <div id="themeBox" data-tab="design" class="autoplay-box" hidden></div>
+      <div data-tab="design" class="autoplay-box" id="lyrColBox">
+        <h3 class="set-grp">Karaoke-Schriftfarbe</h3>
+        <p class="set-grp-d">Farbe des Liedtexts getrennt vom Design. Ohne eigene Farbe gilt die des Designs.</p>
+        <label class="set-row">Aktive Zeile <input id="advLyrOn" type="color" value="#ffd54a" /></label>
+        <label class="set-row">Übrige Zeilen <input id="advLyrOff" type="color" value="#9a9a9a" /></label>
+        <button id="advLyrReset" type="button" class="chip">Farben vom Design verwenden</button>
+      </div>
       <div id="fehlendBox" data-tab="fehlend" class="fehlend-box"></div>
       <div id="backupBox" data-tab="sichern" class="backup-box">
         <p class="ap-title">Favoriten sichern und übertragen</p>
@@ -532,6 +539,9 @@
         <label class="set-row check"><input id="advHint" type="checkbox" /> Dabei Hinweis „Länger drücken“ und Fortschrittsbalken anzeigen</label>
         <small class="set-hint">Zeigt beim Halten einen Hinweis und einen Balken, damit du siehst, wie lange noch.</small>
         <small id="advInfo" class="set-hint"></small>
+        <button id="advMeasure" type="button" class="chip">Anzeigegröße genau messen</button>
+        <pre id="advMeasureOut" class="set-hint" style="white-space:pre-wrap;user-select:text"></pre>
+        <small class="set-hint">Zeigt die genaue Pixelgröße des sichtbaren Bereichs (ohne Browserleisten) und kopiert das Ergebnis in die Zwischenablage.</small>
       </div>
       <h3 class="set-grp" data-tab="allgemein" data-sub="einst">Sonstiges</h3>
       <p class="set-grp-d" data-tab="allgemein" data-sub="einst">Werkzeuge und Zusatzfunktionen.</p>
