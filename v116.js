@@ -181,6 +181,8 @@
   }
   const playNum = (n) => { const i = state.songs.findIndex((s) => numOf(s) === n); if (i >= 0) selectSong(i, true); };
   const secs = () => Math.min(120, Math.max(2, Number(lsv("startSec", "6")) || 6));
+  const carSecs = () => { const v = Number(lsv("startCarSec", "")); return v >= 1 && v <= 120 ? v : secs(); };
+  const carMs = () => { const v = Number(lsv("startCarMs", "")); return v >= 100 && v <= 5000 ? v : Math.min(1200, fadeMs() + 300); };
   const fadeMs = () => Math.min(5000, Math.max(100, Number(lsv("startFade", "900")) || 900));
   let stopFn = null, runId = 0;
   const media = () => $("startMedia") || $("startPanel");
@@ -214,9 +216,9 @@
       }
       nodes.forEach((nd, i) => { if (Math.abs(i - idx) > 3) { nd.style.opacity = "0"; setTimeout(() => nd.remove(), 900); nodes.delete(i); } });
     }
-    box.style.setProperty("--sc-ms", Math.min(1200, fadeMs() + 300) + "ms");
+    box.style.setProperty("--sc-ms", carMs() + "ms");
     layout();
-    const t = setInterval(() => { if (document.hidden) return; idx++; layout(); }, secs() * 1000);
+    const t = setInterval(() => { if (document.hidden) return; idx++; layout(); }, carSecs() * 1000);
     const ro = new ResizeObserver(layout); ro.observe(box);
     return () => { clearInterval(t); ro.disconnect(); };
   }
@@ -269,7 +271,7 @@
     const d = $("startDrawer"); if (!d) return;
     const m = startMode();
     d.querySelectorAll(".seg-btn").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.m === m)));
-    const sel = $("startFolderSel"); if (sel) { const v = lsv("startFolders", "cur"); sel.value = [...sel.options].some((o) => o.value === v) ? v : "list"; }
+    const sel = $("startFolderSel"); if (sel) { const v = lsv("startFolders", "cur"); sel.value = [...sel.options].some((o) => o.value === v) ? v : "list"; if (sel._paint) sel._paint(); }
   }
   /* Die Startseite nutzt den ganzen freien Platz: Höhe = Fenster − Oberkante − Wiedergabeleiste */
   function fit() {
@@ -312,6 +314,9 @@
     sel.append(new Option("Gewählter Ordner", "cur"), new Option("Alle abwechselnd", "all"));
     (C() ? C().SETS : []).filter((x) => x[0] !== "alt").forEach(([id, n]) => sel.append(new Option(n, id)));
     sel.append(new Option("Auswahl aus den Einstellungen", "list"));
+    const badge = h("span", "sf-badge"); lab.append(badge);
+    const paintBadge = () => { const B = { edel: "G·D", edel_eng: "G·E", modern: "M·E", modern_de: "M·D", all: "alle", list: "Aus." }; let v = sel.value; if (v === "cur") v = (C() && C().set) || "edel"; badge.textContent = B[v] || ""; badge.title = (sel.options[sel.selectedIndex] || {}).text || ""; };
+    sel.addEventListener("change", paintBadge); sel._paint = paintBadge;
     sel.addEventListener("change", () => { if (sel.value !== "list") { lss("startFolders", sel.value); applyStart(); const b = $("advStartFolders"); if (b) bindStartSettings(); } });
     lab.append(sel); d.append(seg, lab);
     more.addEventListener("click", () => { d.hidden = !d.hidden; more.setAttribute("aria-expanded", String(!d.hidden)); more.textContent = d.hidden ? "▾" : "▴"; ctl.classList.toggle("open", !d.hidden); try { lss("startBarOpen", d.hidden ? "0" : "1"); } catch { /* egal */ } });
@@ -346,6 +351,8 @@
     const ord = get("advStartOrder"); if (ord) { ord.value = lsv("startOrder", "seq"); ord.onchange = () => { lss("startOrder", ord.value); applyStart(); }; }
     const sc = get("advStartSec"); if (sc) { sc.value = String(secs()); sc.onchange = () => { lss("startSec", String(Math.min(120, Math.max(2, Number(sc.value) || 6)))); applyStart(); }; }
     const fd = get("advStartFade"); if (fd) { fd.value = String(fadeMs()); fd.onchange = () => { lss("startFade", String(Math.min(5000, Math.max(100, Number(fd.value) || 900)))); applyStart(); }; }
+    const cs = get("advCarSec"); if (cs) { cs.value = String(carSecs()); cs.onchange = () => { lss("startCarSec", String(Math.min(120, Math.max(1, Number(cs.value) || 6)))); applyStart(); }; }
+    const cm2 = get("advCarMs"); if (cm2) { cm2.value = String(carMs()); cm2.onchange = () => { lss("startCarMs", String(Math.min(5000, Math.max(100, Number(cm2.value) || 1000)))); applyStart(); }; }
     const sz = sizes();
     Object.keys(SZ_DEF).forEach((k) => {
       const inp = get("advSz_" + k); if (!inp) return;

@@ -19,6 +19,7 @@
   <link rel="stylesheet" href="skins3.css" />
   <link rel="stylesheet" href="covers.css" />
   <link rel="stylesheet" href="v116.css" />
+  <link rel="stylesheet" href="v118.css" />
   <script src="password.js"></script>
 </head>
 <body>
@@ -503,10 +504,19 @@
         <label class="set-row">Symbol „Auf anderem Gerät abspielen“ (Cast) <select id="advCastMode"><option value="always">Immer anzeigen</option><option value="lupe">Nur bei aktiver Lupe</option><option value="off">Aus</option></select></label>
         <small class="set-hint">Das Symbol steht in der Titelzeile neben ☆ und ＋. Es erscheint nur, wenn der Browser Übertragen kann (Chrome auf Android/Computer, Safari/AirPlay) – im Tesla-Browser gibt es diese Funktion nicht.</small>
         <small class="set-hint">Gilt für Karussell und Überblenden. Die Reihenfolge und die Ordner gelten für alle drei Anzeigen.</small>
+        <label class="set-row">Karussell: Sekunden bis zum nächsten Cover <input id="advCarSec" type="number" min="1" max="120" inputmode="numeric" /></label>
+        <label class="set-row">Karussell: Dauer der Drehung (Millisekunden) <input id="advCarMs" type="number" min="100" max="5000" step="100" inputmode="numeric" /></label>
+        <small class="set-hint">Nur für das Karussell. Kleine Werte = schneller. Ohne eigene Werte gelten die Zeiten von oben.</small>
         <label class="set-row check cover-flip-row"><input id="advCoverFlip" type="checkbox" /> Tippen auf das Cover im Player wechselt (mit Drehung) zum Karaoke-Text</label>
         <small class="set-hint">Ein Tipp auf das Cover dreht es um und zeigt den Text; noch einmal tippen zeigt wieder das Cover. Sichtbar bei aktiver Lupe.</small>
         <label class="set-row check"><input id="startGif" type="checkbox" /> Startseite: GIF „Chor“ statt des Bildes zeigen</label>
         <small class="set-hint">Auf der Startseite, bevor ein Lied läuft, erscheint das animierte Chor-GIF.</small>
+        <label class="set-row">Galerie: Lieder ohne Karaoke <select id="advGalNoKar"><option value="1">Dunkler</option><option value="0">Normal</option></select></label>
+        <label class="set-row">Stärke des Abdunkelns (0–100) <input id="advGalNoKarAmt" type="range" min="0" max="100" step="5" /></label>
+        <small class="set-hint">In der Galerie (Raster, Liste, Karussell) werden Cover von Liedern, die es in der gewählten Sprache nicht als Karaoke gibt, dunkler und blasser gezeigt.</small>
+        <label class="set-row">Galerie: kleines Cover unten <select id="advGalMini"><option value="player">Player</option><option value="none">Nichts</option></select></label>
+        <label class="set-row">Player: Anordnung <select id="advNpLayout"><option value="auto">Auto</option><option value="fill">Im Bild</option><option value="split">Geteilt</option></select></label>
+        <small class="set-hint">„Im Bild“: Titel und Tasten liegen über dem Cover. „Geteilt“ (Bild links, Player rechts): das Cover steht frei links, der Player getrennt rechts (ab ca. 640 px Breite). Die Taste oben im Player wechselt zwischen beiden.</small>
         <button id="flugResetBtn" class="chip" type="button" hidden>Schwebend: Positionen und Größen zurücksetzen</button>
       </div>
       <h3 class="set-grp" data-tab="allgemein" data-sub="einst">Bedienung und Anzeige</h3>
@@ -599,5 +609,6 @@
   <script src="skinprof.js"></script>
   <script src="flug.js"></script>
   <script src="v116.js"></script>
+  <script src="v118.js"></script>
 </body>
 </html>

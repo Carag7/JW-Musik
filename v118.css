@@ -1,0 +1,48 @@
+/* v118 */
+/* Galerie: obere Leiste bricht nicht mehr um (Symbole rechts bleiben sichtbar, z. B. im Tesla) */
+.cg-top > * { flex: 0 0 auto; }
+.cg-top > .cg-title { flex: 0 1 auto; margin-right: 0; }
+.cg-top > .cg-search { flex: 1 1 120px; min-width: 90px; max-width: 420px; }
+@media (min-width: 640px) { .cg-top { flex-wrap: nowrap; } .cg-top > .cg-title { margin-right: auto; } }
+html, body { overscroll-behavior: none; }
+body.cg-open, body.np-open { position: relative; }
+/* Lieder ohne Karaoke dunkler zeigen (Stärke über --nk, 0 … 1) */
+.cg .nokar .cg-img { filter: brightness(calc(1 - var(--nk, .55) * .7)) grayscale(calc(var(--nk, .55) * .9)); opacity: calc(1 - var(--nk, .55) * .25); }
+.cg .nokar .cg-meta b, .cg .nokar .cg-rowtxt b { opacity: calc(1 - var(--nk, .55) * .5); }
+/* Zum aktuellen Lied springen */
+.cg-jump { position: absolute; right: 14px; bottom: 86px; z-index: 5; display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 16px 0 12px; border: 0; border-radius: 999px; background: var(--accent); color: var(--on-accent, #000); font: inherit; font-weight: 700; font-size: 14px; box-shadow: 0 8px 22px rgba(0,0,0,.45); cursor: pointer; }
+.cg-jump svg { width: 22px; height: 22px; flex: 0 0 auto; }
+.cg-jump[hidden] { display: none !important; }
+/* Player: Bild links, Player rechts (getrennt) */
+@media (min-width: 640px) {
+  .np.split .np-body { flex-direction: row; gap: 5vw; padding: 8px 5vw 20px; }
+  .np.split .np-art { max-width: 46vw; } .np.split .np-art img { max-width: 46vw; max-height: 72vh; }
+  .np.split .np-side { width: min(48vw, 520px); }
+}
+/* Einstellungen: alle Auswahl- und Eingabefelder gleich groß wie „Springen zurück (Sekunden)“ */
+:is(#advBox, #advPlay, #advList, #advView) .set-row :is(select, input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"])) { box-sizing: border-box; width: 84px; min-width: 84px; max-width: 84px; flex: 0 0 84px; min-height: 40px; padding: 0 4px; text-align: center; text-align-last: center; font-size: 15px; text-overflow: ellipsis; background: var(--panel-2); color: var(--text); border: 1px solid var(--line); border-radius: 10px; }
+:is(#advBox, #advPlay, #advList, #advView) .set-row input[type="range"] { width: 84px; flex: 0 0 84px; }
+
+/* Fehlend: Ausnahmen und Protokoll */
+.fl-bulk { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0; }
+.fl-bulk .chip { min-height: 34px; font-size: 13px; }
+.fl-skip { min-height: 30px; padding: 0 10px; font-size: 13px; opacity: .6; }
+.fl-skip.on { opacity: 1; border-color: #d9863a; color: #d9863a; }
+.fl-log { margin: 14px 0; }
+.fl-logpre { max-height: 260px; overflow: auto; white-space: pre-wrap; word-break: break-word; font: 12px/1.45 ui-monospace, Menlo, Consolas, monospace; padding: 10px; border: 1px solid var(--line); border-radius: 10px; background: rgba(0,0,0,.25); user-select: text; }
+.fl-inc { margin: 8px 0; }
+
+/* Startseite: Cover-Ordner nur als Symbol + kleines Kürzel (G·D = Goldrahmen Deutsch, M·E = Modern Englisch …) */
+.start-folder { position: relative; gap: 4px; padding: 0 8px; min-width: 34px; justify-content: center; }
+.start-folder select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; max-width: none; cursor: pointer; }
+.start-folder .sf-badge { font-size: 11px; font-weight: 700; letter-spacing: .02em; color: var(--text); white-space: nowrap; pointer-events: none; }
+
+/* Suche in den Einstellungen */
+.set-search { margin: 10px 0 6px; }
+.set-search input { box-sizing: border-box; width: 100%; min-height: 42px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel-2); color: var(--text); font-size: 16px; }
+.set-search-res { margin-top: 6px; max-height: 46vh; overflow: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--panel, #fff); }
+.set-hit { display: flex; flex-direction: column; align-items: flex-start; width: 100%; padding: 9px 12px; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.set-hit b { font-weight: 600; font-size: 14px; }
+.set-hit small { color: var(--muted); font-size: 12px; }
+.set-hit:hover { background: var(--panel-2); }
+.set-flash { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 8px; transition: outline-color .6s; }

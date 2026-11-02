@@ -211,6 +211,15 @@
     root.append(h("small", "set-hint", "Haken = im Hauptfenster (◐) anzeigen. Reiter = in welchem Reiter das Design im Auswahlfenster steht. Mit ▲ ▼ änderst du die Reihenfolge. Gruppen (gleicher Aufbau, andere Farben) lassen sich auf- und zuklappen."));
     if (allOn()) root.append(h("small", "set-hint theme-all-note", "Die Einstellung „alle Designs“ ist an – die Haken gelten erst wieder, wenn er ausgeschaltet ist."));
 
+    /* Filter „nur aktivierte Designs“ im Auswahlfenster */
+    const fr = h("label", "set-row"); fr.append(document.createTextNode("Auswahlfenster: nur aktivierte Designs zeigen "));
+    const fs = document.createElement("select"); fs.setAttribute("aria-label", "Nur aktivierte Designs");
+    [["0", "aus"], ["1", "ein"], ["reset", "bei jedem Öffnen aus"]].forEach(([v, n]) => fs.append(new Option(n, v)));
+    fs.value = onlyMode();
+    fs.addEventListener("change", () => { put("skinOnlyMode", fs.value); if (fs.value !== "reset") put("skinOnlyActive", fs.value); });
+    fr.append(fs); root.append(fr);
+    root.append(h("small", "set-hint", "Das Filter-Symbol oben rechts im Auswahlfenster schaltet zwischen „alle Designs“ und „nur aktivierte“ um. „bei jedem Öffnen aus“ (Standard): das Fenster zeigt beim Öffnen immer alle Designs."));
+
     /* Reiter verwalten */
     const mg = h("div", "tab-manager");
     mg.append(h("p", "ap-title", "Reiter verwalten"));
@@ -576,6 +585,7 @@
   }
   /* kleines Symbol rechts oben im Auswahlfenster: alle Designs zeigen oder nur die aktivierten */
   const onlyActive = () => get("skinOnlyActive", "0") === "1";
+  const onlyMode = () => { const v = get("skinOnlyMode", "reset"); return v === "0" || v === "1" ? v : "reset"; };
   function renderThemeList(body, tab, cur, pick) {
     const shownNow = new Set(shownIds());
     const only = !gearOn && onlyActive();
@@ -634,6 +644,7 @@
   function openPicker() {
     let box = document.getElementById("themePicker");
     if (box) box.remove();
+    if (onlyMode() === "reset") put("skinOnlyActive", "0");
     box = h("div", "theme-picker"); box.id = "themePicker";
     const card = h("div", "theme-picker-card");
     card.append(h("p", "theme-picker-title", "Design wählen"));
@@ -643,7 +654,7 @@
     const flt = h("button", "theme-filter-btn"); flt.type = "button";
     flt.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M3 5h18l-7 8v6l-4-2v-4z"/></svg>';
     const fltPaint = () => { const on = onlyActive(); flt.setAttribute("aria-pressed", String(on)); flt.title = on ? "Zeigt nur aktivierte Designs – antippen für alle" : "Zeigt alle Designs – antippen für nur aktivierte"; flt.setAttribute("aria-label", flt.title); };
-    flt.addEventListener("click", () => { put("skinOnlyActive", onlyActive() ? "0" : "1"); fltPaint(); if (!editing) { holder.replaceChildren(); inner = buildPicker(holder, { onPick: close, tab: deviceTab() }); } });
+    flt.addEventListener("click", () => { put("skinOnlyActive", onlyActive() ? "0" : "1"); if (onlyMode() !== "reset") put("skinOnlyMode", onlyActive() ? "1" : "0"); fltPaint(); if (!editing) { holder.replaceChildren(); inner = buildPicker(holder, { onPick: close, tab: deviceTab() }); } });
     fltPaint(); card.append(flt);
     let editing = false;
     const ed = h("button", "chip theme-pick-edit", "✎ Reiter und Reihenfolge bearbeiten"); ed.type = "button";

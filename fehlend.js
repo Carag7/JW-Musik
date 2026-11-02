@@ -10,7 +10,7 @@
   ];
   const LIMIT = 10 * 1024 ** 3;   // kostenloser R2-Speicher
   const fmtSize = (b) => b >= 1024 ** 3 ? `${(b / 1024 ** 3).toFixed(2)} GB` : b >= 1024 ** 2 ? `${Math.round(b / 1024 ** 2)} MB` : `${Math.max(1, Math.round(b / 1024))} KB`;
-  const sizeOf = (n, t) => (data.lieder[n] && data.lieder[n][t] && data.lieder[n][t].groesse) || 0;
+  const sizeOf = (n, t) => { const d = dataOf(t); return (d && d.lieder[n] && d.lieder[n][t] && d.lieder[n][t].groesse) || 0; };
   const h = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
   const opt = (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : v === "1"; } catch { return d; } };
   const setOpt = (k, v) => { try { localStorage.setItem(k, v ? "1" : "0"); } catch { /* egal */ } };
@@ -31,14 +31,44 @@
     return new Intl.DateTimeFormat("de-AT", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" }).format(d) + " Uhr";
   }
 
-  let data = null;
-  async function loadData() {
-    try {
-      const res = await fetch(`${dataFile()}?t=${Date.now()}`, { cache: "no-store" });
-      data = res.ok ? await res.json() : null;
-    } catch { /* unten */ }
-    if (!data) data = { stand: null, lieder: {}, gesamt: 164 };
+  let data = null, dataEn = null;
+  /* Protokoll (Einstellung „fehlLog“): letzte Einträge, auch nach dem Schließen sichtbar */
+  const logOn = () => opt("fehlLog", true);
+  let LOG = [];
+  try { LOG = JSON.parse(sessionStorage.getItem("fehlLogData") || "[]"); } catch { LOG = []; }
+  function log(msg) {
+    if (!logOn()) return;
+    const t = new Date(); const ts = t.toLocaleTimeString("de-AT") + "." + String(t.getMilliseconds()).padStart(3, "0");
+    LOG.push(`${ts}  ${msg}`); if (LOG.length > 300) LOG = LOG.slice(-300);
+    try { sessionStorage.setItem("fehlLogData", JSON.stringify(LOG)); } catch { /* egal */ }
+    const pre = document.getElementById("fehlLogPre"); if (pre) { pre.textContent = LOG.join("\n"); pre.scrollTop = pre.scrollHeight; }
   }
+  async function getJson(file) {
+    try {
+      const res = await fetch(`${file}?t=${Date.now()}`, { cache: "no-store" });
+      log(`GET ${file} → HTTP ${res.status}`);
+      if (!res.ok) return null;
+      const j = await res.json(); log(`  ${file}: stand ${j.stand || "–"}, gefunden ${JSON.stringify(j.gefunden || {})}, Lieder ${Object.keys(j.lieder || {}).length}${(j.fehler || []).length ? ", Fehler: " + j.fehler.join(" | ") : ""}`);
+      return j;
+    } catch (e) { log(`GET ${file} fehlgeschlagen: ${e.message || e}`); return null; }
+  }
+  async function loadData() {
+    data = await getJson(dataFile());
+    dataEn = lang() === "de" ? await getJson("verfuegbar.json") : null;
+    if (!data) data = { stand: null, lieder: {}, gesamt: 164 };
+    if (!dataEn) dataEn = { stand: null, lieder: {}, gesamt: 164 };
+  }
+  /* Instrumental und Zusammenkünfte sind in Deutsch und Englisch dieselben Dateien */
+  const shared = (t) => lang() === "de" && (t === "instrumental" || t === "sung");
+  const dataOf = (t) => (shared(t) ? dataEn : data);
+  const langOf = (t) => (shared(t) ? "en" : lang());
+  /* Ausnahmen: Art ausschließen (Standard in Deutsch: Video) und einzelne Lieder */
+  const incT = (t) => opt(`fehlInc_${lang()}_${t}`, !(lang() === "de" && t === "video"));
+  let SKIP = new Set(); try { SKIP = new Set(JSON.parse(localStorage.getItem("fehlSkip") || "[]")); } catch { SKIP = new Set(); }
+  const sk = (n, t) => `${langOf(t)}:${n}:${t}`;
+  const skipped = (n, t) => SKIP.has(sk(n, t));
+  const saveSkip = () => { try { localStorage.setItem("fehlSkip", JSON.stringify([...SKIP])); } catch { /* egal */ } };
+  const willLoad = (n, t) => incT(t) && !skipped(n, t);
 
   function model() {
     const empty = () => ({ karaoke: { audio: {}, lrc: {} }, meeting: { audio: {}, video: {}, lrc: {}, sung: {}, sungLrc: {} } });
@@ -51,11 +81,11 @@
     const total = buch ? Math.max(...buch) : Math.max(data.gesamt || 0, ...base.keys(), ...Object.keys(data.lieder).map(Number));
     const has = {
       karaoke: (n) => (de ? false : base.has(n)) || Boolean(media.karaoke.audio[n]),
-      instrumental: (n) => Boolean(media.meeting.audio[n]),
-      sung: (n) => Boolean(media.meeting.sung && media.meeting.sung[n]),
+      instrumental: (n) => Boolean((de ? media0.meeting : media.meeting).audio[n]),
+      sung: (n) => { const mm = de ? media0.meeting : media.meeting; return Boolean(mm && mm.sung && mm.sung[n]); },
       video: (n) => Boolean(media.meeting.video[n])
     };
-    const published = (n, t) => Boolean(data.lieder[n] && data.lieder[n][t] && data.lieder[n][t].url);
+    const published = (n, t) => { const d = dataOf(t); return Boolean(d && d.lieder[n] && d.lieder[n][t] && d.lieder[n][t].url); };
     const lrc = {
       karaoke: (n) => Boolean(media.karaoke.lrc[n] || (!de && base.get(n) && base.get(n).lyrics)),
       meeting: (n) => Boolean(media.meeting.lrc[n]),
@@ -85,11 +115,13 @@
     const key = await ensureKey();
     if (!key) return { ok: false, abbruch: true };
     try {
-      const res = await fetch(`${SYNC_BASE}/api/r2-fetch`, { method: "POST", headers: { "content-type": "application/json", "x-write-key": key }, body: JSON.stringify({ typ, nummer: n, sprache: lang() }) });
+      const res = await fetch(`${SYNC_BASE}/api/r2-fetch`, { method: "POST", headers: { "content-type": "application/json", "x-write-key": key }, body: JSON.stringify({ typ, nummer: n, sprache: langOf(typ) }) });
       const body = await res.json().catch(() => ({}));
+      log(`POST /api/r2-fetch ${typ} ${pad(n)} (${langOf(typ)}) → HTTP ${res.status} ${JSON.stringify(body).slice(0, 300)}`);
       if (res.status === 401) state.writeKey = "";
       return { ok: res.ok && body.ok, fehler: body.fehler || `Fehler ${res.status}`, schon: body.schon };
     } catch (e) {
+      log(`POST /api/r2-fetch ${typ} ${pad(n)} fehlgeschlagen: ${e.message || e}`);
       return { ok: false, fehler: "Server nicht erreichbar." };
     }
   }
@@ -106,6 +138,7 @@
   async function startCheck(pin) {
     const res = await fetch(`${SYNC_BASE}/api/refresh`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ workflow: "verfuegbar", pin: pin || "" }) });
     const body = await res.json().catch(() => ({}));
+    log(`POST /api/refresh (workflow verfuegbar) → HTTP ${res.status} ${JSON.stringify(body).slice(0, 300)}`);
     if (res.status === 401 && body.pin_erforderlich) {
       const p = await uiPrompt({ eyebrow: "Fehlende Lieder", title: "PIN erforderlich", type: "password", placeholder: "PIN", ok: "Prüfen" });
       if (!p) return { abgebrochen: true };
@@ -157,8 +190,7 @@
     clearInterval(poll);
     poll = setInterval(async () => {
       try {
-        const res = await fetch(`${dataFile()}?t=${Date.now()}`, { cache: "no-store" });
-        const d = res.ok ? await res.json() : null;
+        const d = await getJson(dataFile());
         if (d && d.stand && d.stand !== before) {
           clearInterval(poll); data = d;
           const live = document.getElementById("fehlendBox");
@@ -166,7 +198,8 @@
         } else if (Date.now() - t0 > 8 * 60000) {
           clearInterval(poll);
           const live = document.getElementById("fehlendBox");
-          if (live) say(live, "Noch keine Rückmeldung nach 8 Minuten. Bitte später erneut öffnen oder bei GitHub unter Actions nachsehen.", "bad");
+          log("Keine Rückmeldung nach 8 Minuten – die Datei " + dataFile() + " wurde nicht neu geschrieben (GitHub Actions: Ablauf „Verfügbarkeit prüfen“ ansehen).");
+          if (live) say(live, `Noch keine Rückmeldung nach 8 Minuten. ${lang() === "de" ? "Für Deutsch muss der neue GitHub-Ablauf (verfuegbar.yml + scrape_verfuegbar.py) hochgeladen sein. " : ""}Bitte bei GitHub unter Actions nachsehen. Das Protokoll unten zeigt Einzelheiten.`, "bad");
         }
       } catch { /* weiter warten */ }
     }, 15000);
@@ -298,6 +331,17 @@
         checkbox(`fehlL_${t.id}`, false, `LRC bei ${t.name} anzeigen`), h("span", "fl-gv fl-gl", `${lrcN}/${m.total}`));
     });
     root.append(grid);
+    {   // welche Arten bei „Alle laden“ berücksichtigt werden (Ausnahmeregel, z. B. Videos in Deutsch)
+      const ib = h("div", "fl-inc");
+      ib.append(h("small", "set-hint", `Beim automatischen Laden berücksichtigen${lang() === "de" ? " (Deutsch: Instrumental und Zusammenkünfte sind dieselben Dateien wie in Englisch)" : ""}:`));
+      const rowI = h("div", "fl-modes");
+      TYPES.forEach((t) => {
+        const lab = h("label", "fl-mode"); const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = incT(t.id);
+        cb.addEventListener("change", () => { setOpt(`fehlInc_${lang()}_${t.id}`, cb.checked); refresh(root, m, dyn); });
+        lab.append(cb, document.createTextNode(" " + t.name)); rowI.append(lab);
+      });
+      ib.append(rowI); root.append(ib);
+    }
 
     // Anzeige-Modus
     const modes = h("div", "fl-modes");
@@ -313,6 +357,19 @@
 
     root.append(dyn);
     refresh(root, m, dyn);
+    {   // detailliertes Protokoll
+      const lg = h("details", "fl-log"); lg.open = opt("fehlLogOpen", false);
+      lg.append(h("summary", "", "Detailliertes Protokoll"));
+      const lab = h("label", "set-row check"); const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = logOn();
+      cb.addEventListener("change", () => setOpt("fehlLog", cb.checked)); lab.append(cb, document.createTextNode(" Protokoll mitschreiben"));
+      const pre = h("pre", "fl-logpre"); pre.id = "fehlLogPre"; pre.textContent = LOG.length ? LOG.join("\n") : "(noch keine Einträge – starte eine Prüfung oder lade eine Datei)";
+      const bt = h("div", "adv-btns");
+      const cp = h("button", "chip", "Kopieren"); cp.type = "button"; cp.onclick = async () => { try { await navigator.clipboard.writeText(LOG.join("\n")); cp.textContent = "Kopiert ✓"; setTimeout(() => { cp.textContent = "Kopieren"; }, 1500); } catch { const r = document.createRange(); r.selectNodeContents(pre); const s2 = getSelection(); s2.removeAllRanges(); s2.addRange(r); } };
+      const cl = h("button", "chip", "Leeren"); cl.type = "button"; cl.onclick = () => { LOG = []; try { sessionStorage.removeItem("fehlLogData"); } catch { /* egal */ } pre.textContent = ""; };
+      bt.append(cp, cl);
+      lg.addEventListener("toggle", () => setOpt("fehlLogOpen", lg.open));
+      lg.append(lab, pre, bt); root.append(lg);
+    }
     root.append(h("small", "set-hint", "„⬇“ holt die Datei direkt von jw.org auf den Server (R2). Dafür ist das Schreib-Passwort (WRITE_KEY) nötig. Kinderlieder sind nicht enthalten."));
   }
 
@@ -329,11 +386,11 @@
     const downloadable = [];
     const sum = h("div", "fl-sum");
     types.forEach((t) => {
-      let have = 0, miss = 0, pub = 0, bytes = 0;
-      m.rows.forEach((r) => { if (m.has[t.id](r.n)) have++; else { miss++; if (m.published(r.n, t.id)) { pub++; bytes += sizeOf(r.n, t.id); downloadable.push([r.n, t.id]); } } });
+      let have = 0, miss = 0, pub = 0, bytes = 0, exc = 0;
+      m.rows.forEach((r) => { if (m.has[t.id](r.n)) have++; else { miss++; if (m.published(r.n, t.id)) { if (willLoad(r.n, t.id)) { pub++; bytes += sizeOf(r.n, t.id); downloadable.push([r.n, t.id]); } else exc++; } } });
       const b = h("span", "fl-pill");
       b.append(h("b", "", t.name), document.createTextNode(` ${have}/${m.total}`));
-      if (miss) b.append(h("em", "", ` · ${pub} ladbar${bytes ? ` (${fmtSize(bytes)})` : ""}`));
+      if (miss) b.append(h("em", "", ` · ${pub} ladbar${bytes ? ` (${fmtSize(bytes)})` : ""}${exc ? ` · ${exc} ausgeschlossen` : ""}`));
       sum.append(b);
     });
     dyn.append(sum);
@@ -367,6 +424,18 @@
       dyn.append(all);
     }
 
+    {   // ganze Liste auf einmal ausschließen / wieder zulassen (alle angezeigten, noch fehlenden und veröffentlichten)
+      const cand = [];
+      m.rows.forEach((r) => types.forEach((t) => { if (!m.has[t.id](r.n) && m.published(r.n, t.id)) cand.push([r.n, t.id]); }));
+      if (cand.length) {
+        const bar = h("div", "fl-bulk");
+        const ex = h("button", "chip", `Alle ${cand.length} angezeigten vom Laden ausschließen`); ex.type = "button";
+        const inc = h("button", "chip", "Ausnahmen für die angezeigten aufheben"); inc.type = "button";
+        ex.onclick = () => { cand.forEach(([n, t]) => SKIP.add(sk(n, t))); saveSkip(); refresh(root, m, dyn); };
+        inc.onclick = () => { cand.forEach(([n, t]) => SKIP.delete(sk(n, t))); saveSkip(); refresh(root, m, dyn); };
+        bar.append(ex, inc); dyn.append(bar);
+      }
+    }
     // Gruppen nach Kategorie
     const cats = new Map();
     m.rows.forEach((r) => {
@@ -400,6 +469,17 @@
       const dflt = c.rows.filter((x) => x.missing.length).length > 0 && c.rows.length <= 12;
       det.open = openCats.has(cat) ? openCats.get(cat) : dflt;
       det.addEventListener("toggle", () => openCats.set(cat, det.open));
+      {
+        const cc = []; c.rows.forEach((r) => types.forEach((t) => { if (!m.has[t.id](r.n) && m.published(r.n, t.id)) cc.push([r.n, t.id]); }));
+        if (cc.length) {
+          const bb = h("div", "fl-bulk");
+          const e1 = h("button", "chip", "Diese Kategorie: alle ausschließen"); e1.type = "button";
+          const e2 = h("button", "chip", "alle wieder zulassen"); e2.type = "button";
+          e1.onclick = () => { cc.forEach(([n, t]) => SKIP.add(sk(n, t))); saveSkip(); refresh(root, m, dyn); };
+          e2.onclick = () => { cc.forEach(([n, t]) => SKIP.delete(sk(n, t))); saveSkip(); refresh(root, m, dyn); };
+          bb.append(e1, e2); det.append(bb);
+        }
+      }
       c.rows.forEach((r) => {
         const row = h("div", "fl-row");
         row.append(h("b", "fl-n", pad(r.n)), h("span", "fl-t", r.title));
@@ -421,6 +501,10 @@
               refresh(root, live, dyn);
             });
             pair.append(b);
+            const sx = h("button", `chip fl-skip${skipped(r.n, t.id) ? " on" : ""}`, skipped(r.n, t.id) ? "⊘ ausgeschlossen" : "⊘"); sx.type = "button";
+            sx.title = skipped(r.n, t.id) ? "Wieder beim automatischen Laden berücksichtigen" : "Beim automatischen Laden auslassen";
+            sx.onclick = () => { if (skipped(r.n, t.id)) SKIP.delete(sk(r.n, t.id)); else SKIP.add(sk(r.n, t.id)); saveSkip(); refresh(root, m, dyn); };
+            pair.append(sx);
           } else pair.append(h("span", "fl-no", `${t.name}: noch nicht veröffentlicht`));
           if (lrcOn(t)) {
             const has = m.lrc[t.lrc](r.n);

@@ -54,6 +54,8 @@ def hole_dateien(pub: str, fmt: str, fehler: list):
         fehler.append(f"{pub}/{fmt}: {e}")
         return {}
     eintraege = (((data or {}).get("files") or {}).get(LANG) or {}).get(fmt) or []
+    if not eintraege:
+        fehler.append(f"{pub}/{fmt}: jw.org lieferte keine Dateien (Sprache {LANG})")
     best = {}
     for e in eintraege:
         f = e.get("file") or {}

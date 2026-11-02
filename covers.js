@@ -106,16 +106,35 @@
     grid: '<svg viewBox="0 0 24 24" width="100%" height="100%"><path fill="currentColor" d="M3 3h8v8H3zm10 0h8v8h-8zM3 13h8v8H3zm10 0h8v8h-8z"/></svg>',
     list: '<svg viewBox="0 0 24 24" width="100%" height="100%"><path fill="currentColor" d="M3 5h4v4H3zm6 1h12v2H9zM3 10h4v4H3zm6 1h12v2H9zM3 15h4v4H3zm6 1h12v2H9z"/></svg>',
     flow: '<svg viewBox="0 0 24 24" width="100%" height="100%"><path fill="currentColor" d="M2 7h4v10H2zm16 0h4v10h-4zM8 4h8v16H8z"/></svg>',
+    player: '<svg viewBox="0 0 24 24" width="100%" height="100%"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="2"/><path fill="currentColor" d="M10 8v8l6-4z"/></svg>',
+    jump: '<svg viewBox="0 0 24 24" width="100%" height="100%"><path fill="currentColor" d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm-1-6v3.1A7 7 0 0 0 5.1 11H2v2h3.1A7 7 0 0 0 11 18.9V22h2v-3.1a7 7 0 0 0 5.9-5.9H22v-2h-3.1A7 7 0 0 0 13 5.1V2z"/></svg>',
     full: '<svg viewBox="0 0 24 24" width="100%" height="100%"><path fill="currentColor" d="M4 4h6v2H6v4H4zm10 0h6v6h-2V6h-4zM4 14h2v4h4v2H4zm14 0h2v6h-6v-2h4z"/></svg>'
   };
+  /* v118: nur den Container scrollen (scrollIntoView verschob im Tesla-Browser die ganze Seite) */
+  function centerIn(box, node, smooth) {
+    if (!box || !node) return;
+    const b = box.getBoundingClientRect(), n = node.getBoundingClientRect();
+    const dy = (n.top + n.height / 2) - (b.top + b.height / 2), dx = (n.left + n.width / 2) - (b.left + b.width / 2);
+    try { box.scrollBy({ top: dy, left: dx, behavior: smooth ? "smooth" : "auto" }); } catch { box.scrollTop += dy; box.scrollLeft += dx; }
+  }
+  const resetPage = () => { try { window.scrollTo(0, 0); const se = document.scrollingElement; if (se) { se.scrollTop = 0; se.scrollLeft = 0; } document.body.scrollTop = 0; } catch { /* egal */ } };
+  /* Lieder, die es in der gewählten Sprache nicht als Karaoke gibt (nur wenn die Liste vom Server geladen ist) */
+  const noKar = (s) => { try { if (lsv("galNoKar", "1") !== "1") return false; if (s.extra) return true; return !!(state.media && typeof mediaKey === "function" && !mediaKey("karaoke", numOf(s))); } catch { return false; } };
+  const nkAmt = () => { const v = Number(lsv("galNoKarAmt", "55")); return v >= 0 && v <= 100 ? v : 55; };
   const svgBtn = (cls, svg, label) => { const b = h("button", cls); b.type = "button"; b.innerHTML = svg; b.setAttribute("aria-label", label); b.title = label; return b; };
 
   /* ---------- Vollbild „Jetzt läuft“ ---------- */
   let np = null, npTimer = 0, npFill = lsv("coverFill", "0") === "1";
+  function applyLay() {
+    if (!np) return;
+    const lay = lsv("npLayout", "auto");
+    const fill = lay === "fill" || (lay === "auto" && npFill);
+    np.classList.toggle("fill", fill); np.classList.toggle("split", lay === "split");
+  }
   function openNow() {
     if (np) return;
     np = h("div", "np"); np.id = "npOverlay"; np.setAttribute("role", "dialog"); np.setAttribute("aria-label", "Jetzt läuft");
-    np.classList.toggle("fill", npFill);
+    applyLay();
     const bg = h("div", "np-bg");
     const top = h("div", "np-top");
     const close = svgBtn("np-btn", '<svg viewBox="0 0 24 24" width="100%" height="100%"><path fill="currentColor" d="M7 10l5 5 5-5z"/></svg>', "Schließen");
@@ -124,7 +143,7 @@
     const tools = h("div", "np-tools");
     const gb = svgBtn("np-btn", ic.grid, "Galerie"); gb.addEventListener("click", () => { closeNow(); openGallery(); });
     const fb = svgBtn("np-btn", ic.full, "Cover füllt den ganzen Bildschirm"); fb.id = "npFillBtn"; fb.setAttribute("aria-pressed", String(npFill));
-    fb.addEventListener("click", () => { npFill = !npFill; lss("coverFill", npFill ? "1" : "0"); np.classList.toggle("fill", npFill); fb.setAttribute("aria-pressed", String(npFill)); });
+    fb.addEventListener("click", () => { const f = !np.classList.contains("fill"); lss("npLayout", f ? "fill" : "split"); npFill = f; lss("coverFill", f ? "1" : "0"); applyLay(); fb.setAttribute("aria-pressed", String(f)); });
     const sb = svgBtn("np-btn", '<svg viewBox="0 0 24 24" width="100%" height="100%"><path fill="currentColor" d="M5 5h5v2H7v3H5zm9 0h5v5h-2V7h-3zM5 14h2v3h3v2H5zm12 0h2v5h-5v-2h3z"/></svg>', "Browser-Vollbild");
     sb.addEventListener("click", () => fsToggle(np));
     tools.append(gb, fb, sb, ...(window.V116 ? [V116.langBtn("lang-np")] : []));
@@ -254,7 +273,8 @@
       seg.append(b);
     });
     const fsb = svgBtn("cg-btn", ic.full, "Browser-Vollbild"); fsb.addEventListener("click", () => fsToggle(gal));
-    top.append(close, ttl, q, seg, ...(window.V116 ? [V116.langBtn("lang-gal")] : []), fsb);
+    const pbtn = svgBtn("cg-btn cg-playerbtn", ic.player, "Player (Vollbild)"); pbtn.addEventListener("click", () => openNow());
+    top.append(close, ttl, q, seg, pbtn, ...(window.V116 ? [V116.langBtn("lang-gal")] : []), fsb);
 
     const tools = h("div", "cg-tools");
     const chip = (label, get, set) => { const b = h("button", "cg-chip", label); b.type = "button"; b.setAttribute("aria-pressed", String(get())); b.addEventListener("click", () => { set(!get()); b.setAttribute("aria-pressed", String(get())); paintGallery(); }); return b; };
@@ -286,16 +306,38 @@
 
     const body = h("div", "cg-body"); body.id = "cgBody";
     const mini = h("div", "cg-mini"); mini.id = "cgMini";
-    gal.append(top, tools, body, mini);
+    const jump = svgBtn("cg-jump", ic.jump, "Zum aktuellen Lied springen"); jump.hidden = true; jump.append(h("span", "", "Aktuelles Lied"));
+    jump.addEventListener("click", jumpNow);
+    body.addEventListener("scroll", () => updJump(), { passive: true });
+    gal.append(top, tools, body, mini, jump);
+    gal.style.setProperty("--nk", String(nkAmt() / 100));
     gal.style.setProperty("--cg-size", G.size + "px");
-    gal._r = { body, mini, cnt, size, cOnly, last: "" };
+    gal._r = { body, mini, cnt, size, cOnly, jump, last: "" };
     document.body.append(gal); document.body.classList.add("cg-open");
     document.addEventListener("keydown", galKey, true);
     paintGallery(true);
     galTimer = setInterval(paintMini, 400);
-    setTimeout(() => { const a = body.querySelector(".cg-card.on, .cg-row.on, .cg-fl.on"); if (a && a.scrollIntoView) a.scrollIntoView({ block: "center", inline: "center" }); }, 60);
+    resetPage(); settleNow();
   }
   let galTimer = 0;
+  function curNode() {
+    if (!gal) return null; const s = cur(); if (!s) return null;
+    return [...gal.querySelectorAll("[data-sid]")].find((n) => n.dataset.sid === s.id) || null;
+  }
+  function jumpNow() {
+    const n = curNode(); if (!n || !gal) return;
+    const fl = n.closest(".cg-flow");
+    if (fl) fl.scrollTo({ left: n.offsetLeft - (fl.clientWidth - n.clientWidth) / 2, behavior: "smooth" });
+    else centerIn(gal._r.body, n, true);
+  }
+  function updJump() {
+    if (!gal) return;
+    const j = gal._r.jump, n = curNode();
+    if (!n) { j.hidden = true; return; }
+    const box = n.closest(".cg-flow") || gal._r.body, b = box.getBoundingClientRect(), r = n.getBoundingClientRect();
+    const vis = r.bottom > b.top + 8 && r.top < b.bottom - 8 && r.right > b.left + 8 && r.left < b.right - 8;
+    j.hidden = vis;
+  }
   function galKey(e) {
     if (!gal || np) return;
     if (e.key === "Escape" && document.activeElement && document.activeElement.tagName !== "INPUT") { e.stopPropagation(); closeGallery(); }
@@ -304,7 +346,7 @@
     if (!gal) return;
     clearInterval(galTimer); gal.remove(); gal = null;
     document.removeEventListener("keydown", galKey, true);
-    document.body.classList.remove("cg-open");
+    document.body.classList.remove("cg-open"); resetPage();
     if (document.fullscreenElement) { try { document.exitFullscreen(); } catch { /* egal */ } }
   }
   function songsFiltered() {
@@ -320,13 +362,20 @@
     else l.sort((a, b) => numOf(a) - numOf(b));
     return l;
   }
-  function scrollNow() {
-    setTimeout(() => {
-      if (!gal) return;
-      const a = gal._r.body.querySelector(".cg-card.on, .cg-row.on");
-      if (a && a.scrollIntoView) a.scrollIntoView({ block: "center", inline: "center" });
-    }, 40);
+  /* Auf das aktuelle Lied scrollen; Bilder laden nach und verschieben das Layout, deshalb mehrmals nachziehen (bis der Nutzer selbst scrollt) */
+  let settleT = [];
+  function settleNow() {
+    settleT.forEach(clearTimeout); settleT = [];
+    if (!gal) return;
+    const body = gal._r.body; let moved = false;
+    const stop = () => { moved = true; };
+    ["wheel", "touchstart", "pointerdown", "keydown"].forEach((e) => body.addEventListener(e, stop, { once: true, passive: true }));
+    [40, 300, 900, 1800].forEach((ms) => settleT.push(setTimeout(() => {
+      if (!gal || moved) return;
+      const a = gal._r.body.querySelector(".cg-card.on, .cg-row.on"); if (a) centerIn(gal._r.body, a, false);
+    }, ms)));
   }
+  const scrollNow = settleNow;
   function favToggle(s) {
     if (state.favorites.has(s.id)) state.favorites.delete(s.id); else state.favorites.add(s.id);
     saveFavorites(); try { renderList(); } catch { /* egal */ }
@@ -371,7 +420,7 @@
     const withCover = state.songs.filter(has).length;
     r.cnt.textContent = `${list.length} Lieder · ${withCover} mit Cover`;
     gal.dataset.view = G.view;
-    const sig = G.view + "|" + list.map((s) => s.id).join(",") + "|" + Object.keys(map).length;
+    const sig = G.view + "|" + list.map((s) => s.id).join(",") + "|" + Object.keys(map).length + "|" + (state.media ? 1 : 0) + lsv("musikLang", "en") + lsv("galNoKar", "1");
     if (!force && sig === r.last) { markNow(); paintMini(); return; }
     const keep = r.body.scrollTop;
     r.last = sig; r.body.replaceChildren();
@@ -380,7 +429,7 @@
     if (G.view === "grid") {
       const g = h("div", "cg-grid");
       list.forEach((s) => {
-        const c = h("div", "cg-card" + (now === s ? " on" : "") + (has(s) ? "" : " nocover") + (state.favorites.has(s.id) ? " isfav" : "")); c.dataset.sid = s.id;
+        const c = h("div", "cg-card" + (now === s ? " on" : "") + (has(s) ? "" : " nocover") + (noKar(s) ? " nokar" : "") + (state.favorites.has(s.id) ? " isfav" : "")); c.dataset.sid = s.id;
         const wrap = h("button", "cg-art"); wrap.type = "button"; wrap.setAttribute("aria-label", `${s.id} ${s.title} abspielen`);
         wrap.append(coverImg(s));
         const pl = h("span", "cg-pl"); pl.innerHTML = (now === s && playing()) ? ic.pause : ic.play; wrap.append(pl);
@@ -397,7 +446,7 @@
     } else if (G.view === "list") {
       const ul = h("div", "cg-list");
       list.forEach((s) => {
-        const row = h("div", "cg-row" + (now === s ? " on" : "") + (has(s) ? "" : " nocover") + (state.favorites.has(s.id) ? " isfav" : "")); row.dataset.sid = s.id;
+        const row = h("div", "cg-row" + (now === s ? " on" : "") + (has(s) ? "" : " nocover") + (noKar(s) ? " nokar" : "") + (state.favorites.has(s.id) ? " isfav" : "")); row.dataset.sid = s.id;
         const n = h("span", "cg-n", s.id);
         const th = h("button", "cg-thumb"); th.type = "button"; th.append(coverImg(s, "cg-img")); th.setAttribute("aria-label", "Cover groß");
         th.addEventListener("click", () => { pickOpen(s); });
@@ -415,7 +464,7 @@
       const wrap = h("div", "cg-flowwrap");
       const fl = h("div", "cg-flow"); fl.tabIndex = 0;
       const items = list.map((s) => {
-        const it = h("button", "cg-fl" + (now === s ? " on" : "") + (has(s) ? "" : " nocover") + (state.favorites.has(s.id) ? " isfav" : "")); it.type = "button"; it.dataset.sid = s.id;
+        const it = h("button", "cg-fl" + (now === s ? " on" : "") + (has(s) ? "" : " nocover") + (noKar(s) ? " nokar" : "") + (state.favorites.has(s.id) ? " isfav" : "")); it.type = "button"; it.dataset.sid = s.id;
         it.append(coverImg(s)); it._s = s; fl.append(it); return it;
       });
       const cap = h("div", "cg-cap"); const cn = h("p", "cg-capn"); const ct = h("h3", "cg-capt"); const cc = h("p", "cg-capc");
@@ -442,7 +491,10 @@
       fvb.addEventListener("click", () => { const it = items[cIdx]; if (it) { favToggle(it._s); it.classList.toggle("isfav", state.favorites.has(it._s.id)); upd(); } });
       ct.addEventListener("click", () => { const it = items[cIdx]; if (it) { pickOpen(it._s); } });
       fl.addEventListener("keydown", (e) => { if (e.key === "ArrowRight") { e.preventDefault(); center(Math.min(items.length - 1, cIdx + 1), true); } else if (e.key === "ArrowLeft") { e.preventDefault(); center(Math.max(0, cIdx - 1), true); } });
-      requestAnimationFrame(() => { center(cIdx, false); upd(); });
+      const target = cIdx; let userMv = false;
+      ["pointerdown", "wheel", "keydown", "touchstart"].forEach((e) => wrap.addEventListener(e, () => { userMv = true; }, { once: true, passive: true }));
+      requestAnimationFrame(() => { center(target, false); upd(); });
+      [300, 900, 1800].forEach((ms) => setTimeout(() => { if (!userMv && gal && fl.isConnected) { center(target, false); upd(); } }, ms));
     }
     if (G.view !== "flow") r.body.scrollTop = keep;
     paintMini();
@@ -469,9 +521,9 @@
     if (m._sig !== sig) {
       m._sig = sig; m.replaceChildren();
       const th = h("button", "cg-minithumb"); th.type = "button"; const im = h("img"); im.alt = ""; im.src = src(s); th.append(im);
-      th.addEventListener("click", () => openNow());
+      th.addEventListener("click", () => { if (lsv("galMini", "player") === "player") openNow(); });
       const tx = h("button", "cg-minitxt"); tx.type = "button"; tx.append(h("b", "", s.title), h("small", "", `Lied ${s.id}${s.category ? " · " + s.category : ""}`));
-      tx.addEventListener("click", () => openNow());
+      tx.addEventListener("click", () => { if (lsv("galMini", "player") === "player") openNow(); });
       const pv = svgBtn("cg-minibtn", ic.prev, "Vorheriges Lied"), pl = svgBtn("cg-minibtn big", p ? ic.pause : ic.play, p ? "Pause" : "Wiedergabe"), nx = svgBtn("cg-minibtn", ic.next, "Nächstes Lied");
       pv.addEventListener("click", () => { if (typeof stepAllowed !== "function" || stepAllowed()) step(-1); });
       nx.addEventListener("click", () => { if (typeof stepAllowed !== "function" || stepAllowed()) step(1); });
@@ -496,7 +548,7 @@
     const gb = $("coverGalleryBtn"); if (gb) gb.addEventListener("click", openGallery);
     const fg = $("footGallery"); if (fg) fg.addEventListener("click", () => { openGallery(); });
     load(false);
-    setInterval(() => { const s = cur(); const k = s ? s.id : ""; if (boot.k !== k) { boot.k = k; paintThumb(); if (gal) paintGallery(); } if (gal) paintMini(); }, 500);
+    setInterval(() => { const s = cur(); const k = s ? s.id : ""; if (boot.k !== k) { boot.k = k; paintThumb(); if (gal) paintGallery(); } if (gal) { paintMini(); updJump(); } }, 500);
     window.addEventListener("pagehide", () => { /* nichts */ });
   }
   window.COVERS = { setSet, pick, setLang: (id) => SET_LANG[id === undefined ? set : id] || "", pairOf: (id) => SET_PAIR[id === undefined ? set : id] || "", loadSetMap, urlOfKey, get set() { return set; }, SETS, galleryNext, src, has, newUrl, artwork, load, mode, refresh: changed, openGallery, closeGallery, openNow, closeNow, get map() { return map; } };

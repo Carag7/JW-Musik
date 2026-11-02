@@ -1081,8 +1081,12 @@ function mediaTable(type, m) {
 function mediaKey(type, number) {
   const m = state.media;
   if (!m) return null;
-  const src = musikLang() === "de" ? (m.de || emptyMedia()) : m;
-  return mediaTable(type, src)[String(number)] || null;
+  const de = musikLang() === "de";
+  const src = de ? (m.de || emptyMedia()) : m;
+  const k = mediaTable(type, src)[String(number)] || null;
+  /* Instrumental und Zusammenkünfte sind in Deutsch und Englisch dieselben Dateien */
+  if (!k && de && (type === "meeting" || type === "sung")) return mediaTable(type, m)[String(number)] || null;
+  return k;
 }
 /* englische Datei als Ersatz, wenn die deutsche fehlt */
 const mediaKeyEn = (type, number) => (state.media ? mediaTable(type, state.media)[String(number)] || null : null);
@@ -1334,8 +1338,10 @@ function setMediaSession(song) {
     album: song.category || "Karaoke",
     artwork: window.COVERS ? COVERS.artwork(song) : []
   });
-  navigator.mediaSession.setActionHandler("previoustrack", () => { if (stepAllowed()) step(-1); });
-  navigator.mediaSession.setActionHandler("nexttrack", () => { if (stepAllowed()) step(1); });
+  /* Tesla-Tasten: Doppelsignale (<350 ms) ignorieren; die Schutzsperre gegen Endlos-Wechsel gilt nur für automatische Wechsel */
+  const mediaStep = (d) => { const t = Date.now(); if (state.lastMediaKey && t - state.lastMediaKey.t < 350 && state.lastMediaKey.d === d) return; state.lastMediaKey = { t, d }; try { el.status.textContent = d > 0 ? "Taste: nächstes Lied" : "Taste: voriges Lied"; } catch { /* egal */ } step(d); };
+  navigator.mediaSession.setActionHandler("previoustrack", () => mediaStep(-1));
+  navigator.mediaSession.setActionHandler("nexttrack", () => mediaStep(1));
   navigator.mediaSession.setActionHandler("play", togglePlay);
   navigator.mediaSession.setActionHandler("pause", togglePlay);
   const optional = (action, handler) => {
@@ -2968,7 +2974,7 @@ async function putSync(store, data) {
 }
 
 /* ---- Einstellungen mit abgleichen (optional, pro Schlüssel Drei-Wege-Abgleich) ---- */
-const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBarAlways", "verBarFade", "srcTagsFade", "fadeSec", "lyricPos", "flugPos", "rcIdleSec", "holdGuard", "holdHint", "eggMode", "eggFall", "eggGif", "startGif", "themeShown", "themeTabs", "themeOrder", "themeTabList", "themeCustom", "themeNames", "skinProf", "coverMode", "coverFlip", "coverSet", "musikLang", "langWarnOff", "startMode", "startFolders", "startOrder", "startSec", "startFade", "skinOnlyActive", "sidebarW", "topOffMain", "topOffSet", "startGif", "ludwtSingle", "listRepeat", "srcTags", "favPlace", "favSeek", "showExtra", "karaokeOnly", "srcFilter", "sync-auto-max", "lyricAlign", "skipSec", "skipBack", "skipFwd", "fehlMode", "fehlNotify", "fehlAll", "fehlHelpSeen", "fehlLang", "startShow", "startSizes", "castMode", "startBarOpen", STORAGE.scale, STORAGE.listSize];
+const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBarAlways", "verBarFade", "srcTagsFade", "fadeSec", "lyricPos", "flugPos", "rcIdleSec", "holdGuard", "holdHint", "eggMode", "eggFall", "eggGif", "startGif", "themeShown", "themeTabs", "themeOrder", "themeTabList", "themeCustom", "themeNames", "skinProf", "coverMode", "coverFlip", "coverSet", "musikLang", "langWarnOff", "startMode", "startFolders", "startOrder", "startSec", "startFade", "skinOnlyActive", "skinOnlyMode", "sidebarW", "topOffMain", "topOffSet", "startGif", "ludwtSingle", "listRepeat", "srcTags", "favPlace", "favSeek", "showExtra", "karaokeOnly", "srcFilter", "sync-auto-max", "lyricAlign", "skipSec", "skipBack", "skipFwd", "fehlMode", "fehlNotify", "fehlAll", "fehlHelpSeen", "fehlLang", "startShow", "startSizes", "castMode", "startCarSec", "startCarMs", "galNoKar", "galNoKarAmt", "galMini", "npLayout", "skinFilterMode", "fehlSkip", "fehlLog", "startBarOpen", STORAGE.scale, STORAGE.listSize];
 const isSettingKey = (k) => SETTING_KEYS.includes(k) || /^fehl[TL]_/.test(k);
 const syncSettingsOn = () => false;   // Einstellungen werden jetzt über den Benutzer gespeichert
 function collectSettings() {
