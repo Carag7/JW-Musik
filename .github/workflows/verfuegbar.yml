@@ -25,12 +25,17 @@ jobs:
       - name: Abhängigkeiten installieren
         run: pip install requests
 
-      - name: Veröffentlichte Lieder abfragen
+      - name: Veröffentlichte Lieder abfragen (Englisch)
         run: python scrape_verfuegbar.py
+
+      - name: Veröffentlichte Lieder abfragen (Deutsch)
+        continue-on-error: true
+        run: python scrape_verfuegbar.py de
 
       - name: Änderungen committen
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add verfuegbar.json
+          if [ -f verfuegbar_de.json ]; then git add verfuegbar_de.json; fi
           git diff --cached --quiet || (git commit -m "Verfügbarkeit aktualisiert" && git pull --rebase && git push)
