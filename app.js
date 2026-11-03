@@ -166,6 +166,16 @@ function uiDialog(opts) {
         parent.append(g);
         return;
       }
+      if (item.check) {
+        const lb = document.createElement("label");
+        lb.className = "dlg-check";
+        const cb = document.createElement("input");
+        cb.type = "checkbox"; cb.checked = Boolean(item.check.value);
+        cb.addEventListener("change", () => item.check.onChange && item.check.onChange(cb.checked));
+        lb.append(cb, document.createTextNode(" " + item.check.label));
+        parent.append(lb);
+        return;
+      }
       if (item.pre != null) {
         const pr = document.createElement("pre");
         pr.className = "dlg-pre"; pr.textContent = item.pre;
@@ -2991,7 +3001,7 @@ async function putSync(store, data) {
 
 /* ---- Einstellungen mit abgleichen (optional, pro Schlüssel Drei-Wege-Abgleich) ---- */
 const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBarAlways", "verBarFade", "srcTagsFade", "fadeSec", "lyricPos", "flugPos", "rcIdleSec", "holdGuard", "holdHint", "eggMode", "eggFall", "eggGif", "startGif", "themeShown", "themeTabs", "themeOrder", "themeTabList", "themeCustom", "themeNames", "skinProf", "coverMode", "coverFlip", "coverSet", "musikLang", "langWarnOff", "startMode", "startFolders", "startOrder", "startSec", "startFade", "skinOnlyActive", "skinOnlyMode", "sidebarW", "topOffMain", "topOffSet", "startGif", "ludwtSingle", "listRepeat", "srcTags", "favPlace", "favSeek", "showExtra", "karaokeOnly", "srcFilter", "sync-auto-max", "lyricAlign", "skipSec", "skipBack", "skipFwd", "fehlMode", "fehlNotify", "fehlAll", "fehlHelpSeen", "fehlLang", "startShow", "startSizes", "castMode", "startCarSec", "startCarMs", "galNoKar", "galNoKarAmt", "galMini", "npLayout", "lyrColOn", "lyrColOff", "skinFilterMode", "fehlSkip", "fehlLog", "startBarOpen", STORAGE.scale, STORAGE.listSize];
-const isSettingKey = (k) => SETTING_KEYS.includes(k) || /^fehl[TL]_/.test(k);
+const isSettingKey = (k) => SETTING_KEYS.includes(k) || /^fehl(?:[TL]|Hide|Inc)_/.test(k);
 const syncSettingsOn = () => false;   // Einstellungen werden jetzt über den Benutzer gespeichert
 function collectSettings() {
   const out = {};

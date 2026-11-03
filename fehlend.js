@@ -69,6 +69,8 @@
   const skipped = (n, t) => SKIP.has(sk(n, t));
   const saveSkip = () => { try { localStorage.setItem("fehlSkip", JSON.stringify([...SKIP])); } catch { /* egal */ } };
   const willLoad = (n, t) => incT(t) && !skipped(n, t);
+  /* Deutsch: gleiche Dateien wie Englisch ausblenden (Einstellung unter „i“); Texte (LRC) bleiben für alle Arten sichtbar */
+  const hiddenT = (id) => lang() === "de" && (id === "instrumental" || id === "sung") && opt(`fehlHide_${id}`, true);
 
   function model() {
     const empty = () => ({ karaoke: { audio: {}, lrc: {} }, meeting: { audio: {}, video: {}, lrc: {}, sung: {}, sungLrc: {} } });
@@ -164,6 +166,11 @@
       eyebrow: "Fehlende Lieder", title: "Speicher und Prüfung",
       lines: [
         { group: info, title: "Information: Speicher in R2" },
+        ...(lang() === "de" ? [{ group: [
+          { check: { label: "Instrumental in Deutsch ausblenden (gleiche Dateien wie Englisch)", value: hiddenT("instrumental"), onChange: (v) => setOpt("fehlHide_instrumental", v) } },
+          { check: { label: "Zusammenkünfte in Deutsch ausblenden (gleiche Dateien wie Englisch)", value: hiddenT("sung"), onChange: (v) => setOpt("fehlHide_sung", v) } },
+          "Ausgeblendete Arten werden in Deutsch nicht als fehlend gezeigt und nicht automatisch geladen (die Englisch-Dateien gelten). Die Karaoke-Texte (LRC) bleiben für alle Arten sichtbar, weil sie in jeder Sprache anders sind. Nach dem Schließen die Liste neu öffnen."
+        ], title: "Deutsch: gleiche Dateien wie Englisch" }] : []),
         { details: { title: "Detailliertes Protokoll (zum Kopieren bei Problemen)", lines: [{ pre: LOG.length ? LOG.join("\n") : "(noch keine Einträge – starte eine Prüfung oder öffne die Liste)" }] } },
         { group: [
           "Fragt jetzt bei jw.org nach, welche Lieder (Karaoke, Instrumental, Zusammenkünfte, Video) schon veröffentlicht sind.",
@@ -366,10 +373,11 @@
     const sc = scroller(root);
     const top = sc ? sc.scrollTop : 0;
     const mode = optS("fehlMode", opt("fehlAll", false) ? "both" : "missing");
-    const types = TYPES.filter((t) => opt(`fehlT_${t.id}`, true));
-    const lrcOn = (t) => mode === "lrc" || opt(`fehlL_${t.id}`, false);
+    const shown = TYPES.filter((t) => opt(`fehlT_${t.id}`, true));
+    const types = shown.filter((t) => !hiddenT(t.id));
+    const lrcOn = (t) => mode === "lrc" || hiddenT(t.id) || opt(`fehlL_${t.id}`, false);
     dyn.replaceChildren();
-    if (!types.length) { dyn.append(h("p", "set-hint", "Bitte oben mindestens eine Art auswählen.")); if (sc) sc.scrollTop = top; return; }
+    if (!shown.length) { dyn.append(h("p", "set-hint", "Bitte oben mindestens eine Art auswählen.")); if (sc) sc.scrollTop = top; return; }
 
     const downloadable = [];
     const sum = h("div", "fl-sum");
@@ -381,6 +389,7 @@
       if (miss) b.append(h("em", "", ` · ${pub} ladbar${bytes ? ` (${fmtSize(bytes)})` : ""}${exc ? ` · ${exc} ausgeschlossen` : ""}`));
       sum.append(b);
     });
+    shown.filter((t) => hiddenT(t.id)).forEach((t) => { const b = h("span", "fl-pill"); b.append(h("b", "", t.name), h("em", "", " · gleiche Dateien wie Englisch (ausgeblendet)")); sum.append(b); });
     dyn.append(sum);
 
     if (downloadable.length) {
@@ -429,7 +438,7 @@
     m.rows.forEach((r) => {
       const missing = types.filter((t) => !m.has[t.id](r.n));
       const present = types.filter((t) => m.has[t.id](r.n));
-      const lrcMissing = types.filter((t) => !m.lrc[t.lrc](r.n));
+      const lrcMissing = shown.filter((t) => !m.lrc[t.lrc](r.n));
       const show = mode === "lrc" ? lrcMissing.length > 0 : mode === "both" || (mode === "missing" && missing.length) || (mode === "have" && present.length);
       if (!cats.has(r.category)) cats.set(r.category, { all: [], rows: [] });
       const c = cats.get(r.category);
@@ -443,9 +452,9 @@
       const sm = h("summary", "");
       sm.append(h("span", "fl-cat-name", `${cat} (${c.all.length})`));
       const counts = h("span", "fl-cat-counts");
-      types.forEach((t) => {
+      shown.forEach((t) => {
         const have = c.all.filter((r) => m.has[t.id](r.n)).length;
-        const part = h("span", `fl-cc ${have === c.all.length ? "full" : have ? "part" : "none"}`, `${t.short || t.name} ${have}/${c.all.length}`);
+        const part = h("span", `fl-cc ${hiddenT(t.id) ? "part" : have === c.all.length ? "full" : have ? "part" : "none"}`, hiddenT(t.id) ? `${t.short || t.name}` : `${t.short || t.name} ${have}/${c.all.length}`);
         if (lrcOn(t)) {
           const l = c.all.filter((r) => m.lrc[t.lrc](r.n)).length;
           part.append(h("span", "fl-sep", " │ "), h("span", `fl-lrc ${l === c.all.length ? "ok" : "no"}`, `LRC ${l}`));
@@ -472,9 +481,11 @@
         const row = h("div", "fl-row");
         row.append(h("b", "fl-n", pad(r.n)), h("span", "fl-t", r.title));
         const chips = h("span", "fl-chips");
-        types.forEach((t) => {
-          const pair = h("span", `fl-pair ${m.has[t.id](r.n) ? "has" : m.published(r.n, t.id) ? "dl" : "no"}`);
-          if (m.has[t.id](r.n)) pair.append(h("span", "fl-ok", `✓ ${t.name}`));
+        shown.forEach((t) => {
+          const hid = hiddenT(t.id);
+          const pair = h("span", `fl-pair ${hid ? "has" : m.has[t.id](r.n) ? "has" : m.published(r.n, t.id) ? "dl" : "no"}`);
+          if (hid) pair.append(h("span", "fl-ok", `${t.name}: = Englisch`));
+          else if (m.has[t.id](r.n)) pair.append(h("span", "fl-ok", `✓ ${t.name}`));
           else if (m.published(r.n, t.id)) {
             const sz = sizeOf(r.n, t.id);
             const label = `⬇ ${t.name}${sz ? ` (${fmtSize(sz)})` : ""}`;

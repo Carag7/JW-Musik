@@ -64,3 +64,26 @@ body.cg-open, body.np-open { position: relative; }
   .stage > .now > .title-wrap { grid-column: 1 / -1; grid-row: 3; min-width: 0; }
   .stage > .now > .title-wrap > h2 { flex: 1 1 auto; min-width: 0; }
 }
+.dlg-check { display: flex; gap: 8px; align-items: flex-start; margin: 6px 0; font-size: 14px; }
+.dlg-check input { margin-top: 3px; }
+
+/* KI-Sync: Fortschritt, Farben, Auswahl */
+#aiProg { position: fixed; left: 50%; top: 14px; transform: translateX(-50%); z-index: 400; width: min(92vw, 420px); padding: 10px 14px; border-radius: 14px; background: var(--panel, #111); border: 1px solid var(--accent); box-shadow: 0 8px 30px rgba(0,0,0,.45); color: var(--text); }
+#aiProg .ai-prog-t { font-weight: 700; font-size: 14px; margin-bottom: 6px; }
+#aiProg .ai-prog-bar { height: 10px; border-radius: 6px; background: var(--panel-2, #333); overflow: hidden; }
+#aiProg .ai-prog-bar i { display: block; height: 100%; width: 3%; background: var(--accent); border-radius: 6px; transition: width .4s ease; }
+#aiProg .ai-prog-s { display: block; margin-top: 5px; color: var(--muted); font-size: 12px; }
+#aiLegend { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 6px 12px; }
+.ai-chip { padding: 3px 9px; border-radius: 999px; font-size: 12px; font-weight: 700; color: #111; }
+.ai-chip.ai-d0, .lyric-line.ai-d0 { --aic: #5ccf8a; }
+.ai-chip.ai-d1, .lyric-line.ai-d1 { --aic: #f3d44a; }
+.ai-chip.ai-d2, .lyric-line.ai-d2 { --aic: #f19a3e; }
+.ai-chip.ai-d3, .lyric-line.ai-d3 { --aic: #ef5350; }
+.ai-chip.ai-un, .lyric-line.ai-un { --aic: #b07cf0; }
+.ai-chip { background: var(--aic); }
+.lyric-line[class*="ai-d"], .lyric-line.ai-un { position: relative; box-shadow: inset 6px 0 0 var(--aic); background: color-mix(in srgb, var(--aic) 14%, transparent); }
+.lyric-line.ai-un { outline: 2px dashed var(--aic); outline-offset: -3px; }
+.lyric-line .ai-delta { margin-left: 10px; padding: 1px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; color: #111; background: var(--aic); white-space: nowrap; vertical-align: middle; }
+body.ai-pick .lyric-line { position: relative; }
+.lyric-line .ai-pick-cb { position: absolute; left: -38px; top: 50%; transform: translateY(-50%); width: 24px; height: 24px; accent-color: var(--accent); }
+.edit-panel .ai-acc { min-height: 36px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel-2); color: var(--text); font: inherit; }

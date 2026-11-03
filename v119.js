@@ -155,8 +155,19 @@
     }
     inp.addEventListener("input", run);
   }
+  /* Zahlen auf der Startseite wirken schon beim Tippen (nach kurzer Pause), ohne erst das Feld zu verlassen */
+  function liveNumbers() {
+    ["advStartFade", "advStartSec", "advCarSec", "advCarMs"].forEach((id) => {
+      const i = $(id); if (!i || i.dataset.live) return; i.dataset.live = "1";
+      let t = 0;
+      i.addEventListener("input", () => {
+        clearTimeout(t);
+        t = setTimeout(() => { const v = Number(i.value); if (i.value !== "" && v >= Number(i.min || 0) && v <= Number(i.max || Infinity)) i.dispatchEvent(new Event("change", { bubbles: true })); }, 700);
+      });
+    });
+  }
   function init() {
-    buildNav();
+    buildNav(); liveNumbers();
     const o = window.showSetTab;
     if (typeof o === "function" && !o._v119) { const w = function (t) { o(t); sync(); }; w._v119 = true; window.showSetTab = w; }
     new MutationObserver(() => { installSearch(); sync(); }).observe($("codeModal") || document.body, { attributes: true, attributeFilter: ["hidden"] });
