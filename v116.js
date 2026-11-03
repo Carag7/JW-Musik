@@ -180,10 +180,10 @@
     return out;
   }
   const playNum = (n) => { const i = state.songs.findIndex((s) => numOf(s) === n); if (i >= 0) selectSong(i, true); };
-  const secs = () => Math.min(120, Math.max(2, Number(lsv("startSec", "6")) || 6));
-  const carSecs = () => { const v = Number(lsv("startCarSec", "")); return v >= 1 && v <= 120 ? v : secs(); };
-  const carMs = () => { const v = Number(lsv("startCarMs", "")); return v >= 100 && v <= 5000 ? v : Math.min(1200, fadeMs() + 300); };
-  const fadeMs = () => Math.min(5000, Math.max(100, Number(lsv("startFade", "900")) || 900));
+  const secs = () => Math.max(1, Number(lsv("startSec", "6")) || 6);
+  const carSecs = () => { const v = Number(lsv("startCarSec", "")); return v >= 1 ? v : secs(); };
+  const carMs = () => { const v = Number(lsv("startCarMs", "")); return v >= 50 ? v : Math.min(1200, fadeMs() + 300); };
+  const fadeMs = () => Math.max(50, Number(lsv("startFade", "900")) || 900);
   let stopFn = null, runId = 0;
   const media = () => $("startMedia") || $("startPanel");
   function stopShow() { runId++; if (stopFn) { try { stopFn(); } catch { /* egal */ } stopFn = null; } const b = $("startShow"); if (b) b.remove(); }
@@ -265,7 +265,7 @@
   /* Größe der einzelnen Ansichten (in Prozent des freien Platzes) */
   const SZ_DEF = { image: 100, chor: 100, carousel: 100, fade: 100, float: 100 };
   const SZ_NAME = { image: "Bild", chor: "Video (Chor)", carousel: "Karussell", fade: "Überblenden", float: "Schweben" };
-  const sizes = () => { let o = {}; try { o = JSON.parse(lsv("startSizes", "{}")) || {}; } catch { o = {}; } const r = {}; Object.keys(SZ_DEF).forEach((k) => { const v = Number(o[k]); r[k] = v >= 30 && v <= 100 ? Math.round(v) : SZ_DEF[k]; }); return r; };
+  const sizes = () => { let o = {}; try { o = JSON.parse(lsv("startSizes", "{}")) || {}; } catch { o = {}; } const r = {}; Object.keys(SZ_DEF).forEach((k) => { const v = Number(o[k]); r[k] = v >= 10 && v <= 500 ? Math.round(v) : SZ_DEF[k]; }); return r; };
   const sizeOf = () => sizes()[startMode()] || 100;
   function paintDrawer() {
     const d = $("startDrawer"); if (!d) return;
@@ -349,15 +349,15 @@
       });
     }
     const ord = get("advStartOrder"); if (ord) { ord.value = lsv("startOrder", "seq"); ord.onchange = () => { lss("startOrder", ord.value); applyStart(); }; }
-    const sc = get("advStartSec"); if (sc) { sc.value = String(secs()); sc.onchange = () => { lss("startSec", String(Math.min(120, Math.max(2, Number(sc.value) || 6)))); applyStart(); }; }
-    const fd = get("advStartFade"); if (fd) { fd.value = String(fadeMs()); fd.onchange = () => { lss("startFade", String(Math.min(5000, Math.max(100, Number(fd.value) || 900)))); applyStart(); }; }
-    const cs = get("advCarSec"); if (cs) { cs.value = String(carSecs()); cs.onchange = () => { lss("startCarSec", String(Math.min(120, Math.max(1, Number(cs.value) || 6)))); applyStart(); }; }
-    const cm2 = get("advCarMs"); if (cm2) { cm2.value = String(carMs()); cm2.onchange = () => { lss("startCarMs", String(Math.min(5000, Math.max(100, Number(cm2.value) || 1000)))); applyStart(); }; }
+    const sc = get("advStartSec"); if (sc) { sc.value = String(secs()); sc.onchange = async () => { lss("startSec", String(await askLimit(Number(sc.value) || 6, 2, 120))); applyStart(); }; }
+    const fd = get("advStartFade"); if (fd) { fd.value = String(fadeMs()); fd.onchange = async () => { lss("startFade", String(await askLimit(Number(fd.value) || 900, 100, 5000))); applyStart(); }; }
+    const cs = get("advCarSec"); if (cs) { cs.value = String(carSecs()); cs.onchange = async () => { lss("startCarSec", String(await askLimit(Number(cs.value) || 6, 1, 120))); applyStart(); }; }
+    const cm2 = get("advCarMs"); if (cm2) { cm2.value = String(carMs()); cm2.onchange = async () => { lss("startCarMs", String(await askLimit(Number(cm2.value) || 1000, 100, 5000))); applyStart(); }; }
     const sz = sizes();
     Object.keys(SZ_DEF).forEach((k) => {
       const inp = get("advSz_" + k); if (!inp) return;
       inp.value = String(sz[k]);
-      inp.onchange = () => { const cur = sizes(); cur[k] = Math.min(100, Math.max(30, Math.round(Number(inp.value) || SZ_DEF[k]))); lss("startSizes", JSON.stringify(cur)); inp.value = String(cur[k]); fit(); };
+      inp.onchange = async () => { const cur = sizes(); cur[k] = await askLimit(Math.round(Number(inp.value) || SZ_DEF[k]), 30, 100); lss("startSizes", JSON.stringify(cur)); inp.value = String(cur[k]); fit(); };
     });
     const rs = get("advSzReset"); if (rs) rs.onclick = () => { lss("startSizes", JSON.stringify(SZ_DEF)); bindStartSettings(); fit(); showToast("Größen auf die Standardwerte zurückgesetzt."); };
     const cm = get("advCastMode"); if (cm) { cm.value = castMode(); cm.onchange = () => { lss("castMode", cm.value); paintCast(); }; }

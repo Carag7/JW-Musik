@@ -166,6 +166,12 @@ function uiDialog(opts) {
         parent.append(g);
         return;
       }
+      if (item.pre != null) {
+        const pr = document.createElement("pre");
+        pr.className = "dlg-pre"; pr.textContent = item.pre;
+        parent.append(pr);
+        return;
+      }
       if (item.details) {
         const d = document.createElement("details");
         d.className = "dlg-details";
@@ -1951,6 +1957,14 @@ function tryAutoStartNow() {
 }
 
 /* iPhone/iPad-Web-App: Leiste unter Statuszeile/Fenster-Knöpfen; Tastatur: sichtbare Höhe merken */
+/* Wert außerhalb des üblichen Bereichs: Rückfrage, dann erlaubt (sonst auf die Grenze gesetzt) */
+async function askLimit(raw, min, max) {
+  if (raw >= min && raw <= max) return raw;
+  if (raw <= 0 && min > 0) return min;
+  const ok = await uiConfirm({ eyebrow: "Einstellung", title: "Wert außerhalb des üblichen Bereichs", text: `Üblich ist ${min} bis ${max}. Wirklich ${raw} verwenden? Bei sehr großen oder kleinen Werten kann die Anzeige unbrauchbar werden (zurücksetzen geht jederzeit).`, ok: "Trotzdem verwenden" });
+  return ok ? raw : Math.max(min, Math.min(max, raw));
+}
+
 /* Zahlenfelder bekommen kleine Pfeile ▲ ▼ (+1 / −1), weil die Handy-Tastatur keine hat */
 function enhanceNumbers(root) {
   (root || document).querySelectorAll('#codeModal input[type="number"]:not([data-stp])').forEach((inp) => {
@@ -1961,9 +1975,11 @@ function enhanceNumbers(root) {
       const b = document.createElement("button");
       b.type = "button"; b.textContent = txt; b.setAttribute("aria-label", label); b.tabIndex = -1;
       b.addEventListener("pointerdown", (e) => e.preventDefault());   // Tastatur bleibt offen
-      b.addEventListener("click", () => {
+      b.addEventListener("click", async () => {
         const min = inp.min !== "" ? Number(inp.min) : -Infinity, max = inp.max !== "" ? Number(inp.max) : Infinity;
-        const v = Math.max(min, Math.min(max, (Number(inp.value) || 0) + dir));
+        const st = Number(inp.step) > 0 ? Number(inp.step) : 1;
+        const want = (Number(inp.value) || 0) + dir * st;
+        const v = (want > max || want < min) && Number.isFinite(min) && Number.isFinite(max) && (Number(inp.value) || 0) >= min && (Number(inp.value) || 0) <= max ? Math.max(min, Math.min(max, want)) : want;
         inp.value = String(v);
         inp.dispatchEvent(new Event("input", { bubbles: true }));
         inp.dispatchEvent(new Event("change", { bubbles: true }));
@@ -3333,7 +3349,7 @@ function fillSettingsFields() {
   vbf.checked = lsv("verBarFade", "1") === "1";
   vbf.onchange = () => { lss("verBarFade", vbf.checked ? "1" : "0"); applyFade(true); };
   const fsx = document.getElementById("fadeSec");
-  if (fsx) { fsx.value = lsv("fadeSec", "4"); fsx.onchange = () => { const v = Math.max(1, Math.min(60, Math.round(Number(fsx.value) || 4))); fsx.value = String(v); lss("fadeSec", String(v)); applyFade(true); }; }
+  if (fsx) { fsx.value = lsv("fadeSec", "4"); fsx.onchange = async () => { const v = await askLimit(Math.round(Number(fsx.value) || 4), 1, 60); fsx.value = String(v); lss("fadeSec", String(v)); applyFade(true); }; }
   const vbar = document.getElementById("versionBar");
   if (vbar && !vbar._fadeWired) { vbar._fadeWired = true; vbar.addEventListener("pointerdown", () => applyFade(true)); }
   const kar = document.getElementById("karaokeOnlyOpt");
@@ -3929,8 +3945,8 @@ function setupAdvBox() {
   const num = (id, get, set, min, max) => {
     const inp = document.getElementById(id);
     inp.value = String(get());
-    inp.onchange = () => {
-      const v = Math.max(min, Math.min(max, Math.round(Number(inp.value) || get())));
+    inp.onchange = async () => {
+      const v = await askLimit(Math.round(Number(inp.value) || get()), min, max);
       inp.value = String(v);
       set(v);
     };

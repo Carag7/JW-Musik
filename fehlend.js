@@ -164,6 +164,7 @@
       eyebrow: "Fehlende Lieder", title: "Speicher und Prüfung",
       lines: [
         { group: info, title: "Information: Speicher in R2" },
+        { details: { title: "Detailliertes Protokoll (zum Kopieren bei Problemen)", lines: [{ pre: LOG.length ? LOG.join("\n") : "(noch keine Einträge – starte eine Prüfung oder öffne die Liste)" }] } },
         { group: [
           "Fragt jetzt bei jw.org nach, welche Lieder (Karaoke, Instrumental, Zusammenkünfte, Video) schon veröffentlicht sind.",
           "Die Prüfung läuft sonst automatisch einmal pro Woche (montags). Das Ergebnis erscheint nach ca. 1–3 Minuten hier."
@@ -357,19 +358,6 @@
 
     root.append(dyn);
     refresh(root, m, dyn);
-    {   // detailliertes Protokoll
-      const lg = h("details", "fl-log"); lg.open = opt("fehlLogOpen", false);
-      lg.append(h("summary", "", "Detailliertes Protokoll"));
-      const lab = h("label", "set-row check"); const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = logOn();
-      cb.addEventListener("change", () => setOpt("fehlLog", cb.checked)); lab.append(cb, document.createTextNode(" Protokoll mitschreiben"));
-      const pre = h("pre", "fl-logpre"); pre.id = "fehlLogPre"; pre.textContent = LOG.length ? LOG.join("\n") : "(noch keine Einträge – starte eine Prüfung oder lade eine Datei)";
-      const bt = h("div", "adv-btns");
-      const cp = h("button", "chip", "Kopieren"); cp.type = "button"; cp.onclick = async () => { try { await navigator.clipboard.writeText(LOG.join("\n")); cp.textContent = "Kopiert ✓"; setTimeout(() => { cp.textContent = "Kopieren"; }, 1500); } catch { const r = document.createRange(); r.selectNodeContents(pre); const s2 = getSelection(); s2.removeAllRanges(); s2.addRange(r); } };
-      const cl = h("button", "chip", "Leeren"); cl.type = "button"; cl.onclick = () => { LOG = []; try { sessionStorage.removeItem("fehlLogData"); } catch { /* egal */ } pre.textContent = ""; };
-      bt.append(cp, cl);
-      lg.addEventListener("toggle", () => setOpt("fehlLogOpen", lg.open));
-      lg.append(lab, pre, bt); root.append(lg);
-    }
     root.append(h("small", "set-hint", "„⬇“ holt die Datei direkt von jw.org auf den Server (R2). Dafür ist das Schreib-Passwort (WRITE_KEY) nötig. Kinderlieder sind nicht enthalten."));
   }
 

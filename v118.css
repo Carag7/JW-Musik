@@ -46,3 +46,21 @@ body.cg-open, body.np-open { position: relative; }
 .set-hit small { color: var(--muted); font-size: 12px; }
 .set-hit:hover { background: var(--panel-2); }
 .set-flash { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 8px; transition: outline-color .6s; }
+
+.dlg-pre { margin: 6px 0 0; padding: 8px 10px; max-height: 38vh; overflow: auto; white-space: pre-wrap; word-break: break-word; font: 12px/1.35 ui-monospace, Menlo, monospace; background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; user-select: text; }
+
+/* Bearbeiten-Panel: bleibt bedienbar auch bei niedrigem Fenster (Tesla) */
+.edit-panel { overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; -webkit-overflow-scrolling: touch; max-height: calc(100vh - var(--topbar, 56px) - var(--flyer-h, 70px) - 24px); }
+.edit-panel > button.danger, .edit-panel > button:last-child { order: -2; }
+.edit-panel > button.danger { order: -3; }
+@media (max-height: 760px) {
+  .edit-panel { display: grid !important; grid-template-columns: repeat(2, minmax(0, auto)); align-content: start; gap: 6px; max-width: min(46vw, 260px); }
+  .edit-panel > input[type=range], .edit-panel > .offset-wrap { grid-column: 1 / -1; }
+  .edit-panel button { min-height: 40px; }
+}
+
+/* Handy hochkant ohne Lupe: der Titel steckt im Rahmen „title-wrap“ (Startseiten-Leiste) und gehörte nicht zum Raster */
+@media (max-width: 700px) and (orientation: portrait) {
+  .stage > .now > .title-wrap { grid-column: 1 / -1; grid-row: 3; min-width: 0; }
+  .stage > .now > .title-wrap > h2 { flex: 1 1 auto; min-width: 0; }
+}

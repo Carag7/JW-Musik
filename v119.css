@@ -1,0 +1,17 @@
+/* v119: Einstellungen mit Themen links */
+.tp-off { display: none !important; }
+.set-topics { display: flex; gap: 6px; overflow-x: auto; flex-wrap: nowrap; padding: 4px 0; position: sticky; top: 0; z-index: 3; background: var(--panel, #111); }
+.set-topics .topic-btn { flex: 0 0 auto; white-space: nowrap; }
+.set-topics.tab-off { display: none !important; }
+.set-topic-head { margin: 6px 0 2px; font-size: 20px; font-weight: 800; color: var(--text); }
+.set-topic-head[hidden], .set-topic-head.tab-off { display: none !important; }
+@media (min-width: 640px) {
+  #codeForm.topics-on { display: grid !important; grid-template-columns: 178px minmax(0, 1fr); column-gap: 16px; row-gap: 0; align-content: start; width: min(96vw, 960px) !important; max-width: 96vw; }
+  #codeForm.topics-on > * { grid-column: 2; margin-bottom: 10px; }
+  #codeForm.topics-on > :is(#whoBadge, .eyebrow, h2, #setTabs, .set-search, #subTabs, #codeCancel, #codeMessage) { grid-column: 1 / -1; }
+  #codeForm.topics-on > #setTopics { grid-column: 1; grid-row: span 400; flex-direction: column; overflow: visible; align-self: start; position: sticky; top: 0; background: transparent; padding: 0; margin-bottom: 0; }
+  #codeForm.topics-on > #setTopics .topic-btn { width: 100%; justify-content: flex-start; text-align: left; border-radius: 12px; min-height: 42px; }
+  #codeForm.topics-on > #setTopics .topic-btn[data-topic="alle"] { margin-bottom: 8px; border-style: dashed; }
+}
+.set-topics { flex: 0 0 auto; min-height: 48px; }
+.set-topics .topic-btn { min-height: 40px; }

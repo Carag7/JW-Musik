@@ -77,7 +77,16 @@
       const texts = rows.map((r) => ((r.querySelector(".lyric-text") || {}).value || r.textContent || "").trim());
       const lang = typeof musikLang === "function" && musikLang() === "de" && state.lyricLang === "de" ? "de" : "en";
       const base = (typeof SYNC_BASE !== "undefined" ? SYNC_BASE : "");
-      const res = await fetch(`${base}/api/transcribe`, { method: "POST", headers: { "content-type": "application/json", "x-write-key": state.writeKey || "" }, body: JSON.stringify({ path: state.currentAudio, lang, prompt: texts.join(" ").slice(0, 500) }) });
+      const call = (key) => fetch(`${base}/api/transcribe`, { method: "POST", headers: { "content-type": "application/json", "x-write-key": key }, body: JSON.stringify({ path: state.currentAudio, lang, prompt: texts.join(" ").slice(0, 500) }) });
+      let key = ""; try { key = sessionStorage.getItem("aiKey") || ""; } catch { /* egal */ }
+      if (!key) key = state.writeKey || "";
+      let res = await call(key);
+      for (let tries = 0; res.status === 401 && tries < 3; tries++) {
+        const k2 = await uiPrompt({ eyebrow: "KI-Abstimmung", title: "Schreib-Schlüssel", type: "password", placeholder: "WRITE_KEY aus Cloudflare", ok: "Weiter" });
+        if (k2 === null || k2 === "") { await uiAlert("KI-Abstimmung", "Abgebrochen. Der Schreib-Schlüssel ist das Secret WRITE_KEY des Workers (Cloudflare → Worker → Einstellungen → Variablen und Secrets)."); return; }
+        key = k2; res = await call(key);
+      }
+      if (res.ok) { try { sessionStorage.setItem("aiKey", key); } catch { /* egal */ } }
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.ok) { await uiAlert("KI-Abstimmung", data.error || (res.status === 404 ? "Der Worker kennt /api/transcribe noch nicht: neuen Worker ausspielen." : `Fehler ${res.status}`)); return; }
       let words = data.words || [];
