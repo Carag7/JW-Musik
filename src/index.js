@@ -842,12 +842,19 @@ async function handleTranscribe(request, env) {
   const buf = new Uint8Array(await obj.arrayBuffer());
   if (buf.length > 25 * 1024 * 1024) return json({ ok: false, error: "Datei zu groß." }, CORS, 413);
   const lang = body.lang === "de" ? "de" : "en";
-  const input = { audio: b64(buf), task: "transcribe", language: lang, vad_filter: false };
-  const prompt = String(body.prompt || "").slice(0, 600);
+  const level = body.level === "low" || body.level === "high" ? body.level : "normal";
+  const input = { audio: b64(buf), task: "transcribe", language: lang, vad_filter: level === "high" };
+  const prompt = level === "low" ? "" : String(body.prompt || "").slice(0, 600);
   if (prompt) input.initial_prompt = prompt;
   let out;
-  try { out = await env.AI.run("@cf/openai/whisper-large-v3-turbo", input); }
-  catch (e) { return json({ ok: false, error: "KI-Fehler: " + String((e && e.message) || e).slice(0, 200) }, CORS, 502); }
+  try {
+    /* „sehr genau“: zusätzliche Whisper-Einstellungen; kennt das Modell sie nicht, wird ohne sie wiederholt */
+    if (level === "high") {
+      try { out = await env.AI.run("@cf/openai/whisper-large-v3-turbo", { ...input, beam_size: 5, condition_on_previous_text: false }); }
+      catch { out = null; }
+    }
+    if (!out) out = await env.AI.run("@cf/openai/whisper-large-v3-turbo", input);
+  } catch (e) { return json({ ok: false, error: "KI-Fehler: " + String((e && e.message) || e).slice(0, 200) }, CORS, 502); }
   const words = [];
   const segs = [];
   for (const s of out.segments || []) {
