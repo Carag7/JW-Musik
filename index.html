@@ -38,17 +38,17 @@
         <p class="ap-title">Voreinstellung für dieses Gerät <small>(freiwillig)</small></p>
         <div class="tesla-row">
           <label class="set-row check"><input id="loginTesla" class="login-preset" data-p="tesla" type="checkbox" /> <img src="tesla-icon.png" alt="" width="26" height="26" /> <span>Tesla</span></label>
-          <button id="loginTeslaInfo" class="meta-i-small" type="button" aria-expanded="false" aria-label="Erklärung">▾</button>
+          <button id="loginTeslaInfo" class="meta-i-small" type="button" aria-expanded="false" aria-label="Erklärung"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
         </div>
         <small id="loginTeslaText" class="set-hint" hidden>Tesla setzt: automatisch abspielen an, weitere Lieder, Art-Kennzeichen und Art-Buttons aus, Favoriten-Stern oben und unten, Lupe und Player nur nach langem Drücken, Carag aus, Design wie Gerät/Tesla, Abgleich bis 2 gelöschte Lieder. Dafür ist kein Benutzer nötig.</small>
         <div class="tesla-row">
           <label class="set-row check"><input id="loginHandy" class="login-preset" data-p="handy" type="checkbox" /> <span>📱 Handy</span></label>
-          <button id="loginHandyInfo" class="meta-i-small login-info" data-for="loginHandyText" type="button" aria-expanded="false" aria-label="Erklärung">▾</button>
+          <button id="loginHandyInfo" class="meta-i-small login-info" data-for="loginHandyText" type="button" aria-expanded="false" aria-label="Erklärung"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
         </div>
         <small id="loginHandyText" class="set-hint" hidden>Handy setzt die Standardwerte und dazu: Design „Handy AMOLED“, Schrift im Auswahlfenster 18 und das Auswahlfenster in ganzer Breite. Die Werte kann der Verwalter unter dem Benutzernamen „handy“ ändern. Dafür ist kein Benutzer nötig.</small>
         <div class="tesla-row">
           <label class="set-row check"><input id="loginStandard" class="login-preset" data-p="standard" type="checkbox" /> <span>🖥 Standard</span></label>
-          <button id="loginStandardInfo" class="meta-i-small login-info" data-for="loginStandardText" type="button" aria-expanded="false" aria-label="Erklärung">▾</button>
+          <button id="loginStandardInfo" class="meta-i-small login-info" data-for="loginStandardText" type="button" aria-expanded="false" aria-label="Erklärung"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
         </div>
         <small id="loginStandardText" class="set-hint" hidden>Standard setzt die Grundwerte für Computer und Tablet: nicht automatisch abspielen, weitere Lieder und Art-Kennzeichen an, Favoriten-Stern oben und unten, Design wie Gerät, Schrift 42 (Text) und 16 (Auswahlfenster), Breite 300, Springen 15 Sekunden, Abgleich bis 2 gelöschte Lieder. Dafür ist kein Benutzer nötig.</small>
         <button id="loginApply" class="chip" type="button" hidden>Übernehmen</button>
@@ -512,6 +512,7 @@
         <label class="set-row">Symbol „Auf anderem Gerät abspielen“ (Cast) <select id="advCastMode"><option value="always">Immer anzeigen</option><option value="lupe">Nur bei aktiver Lupe</option><option value="off">Aus</option></select></label>
         <small class="set-hint">Das Symbol steht in der Titelzeile neben ☆ und ＋. Es erscheint nur, wenn der Browser Übertragen kann (Chrome auf Android/Computer, Safari/AirPlay) – im Tesla-Browser gibt es diese Funktion nicht.</small>
         <small class="set-hint">Gilt für Karussell und Überblenden. Die Reihenfolge und die Ordner gelten für alle drei Anzeigen.</small>
+        <label class="set-row">Schweben: Geschwindigkeit in % <input id="advFloatSpd" type="number" min="20" max="300" step="10" inputmode="numeric" /></label>
         <label class="set-row">Karussell: Sekunden bis zum nächsten Cover <input id="advCarSec" type="number" min="1" max="120" inputmode="numeric" /></label>
         <label class="set-row">Karussell: Dauer der Drehung (Millisekunden) <input id="advCarMs" type="number" min="100" max="5000" step="100" inputmode="numeric" /></label>
         <small class="set-hint">Nur für das Karussell. Kleine Werte = schneller. Ohne eigene Werte gelten die Zeiten von oben.</small>

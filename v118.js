@@ -66,7 +66,7 @@
     return { times: out, matched, total: n, hit: first.map((v) => v != null) };
   }
   /* ----- Anzeige: Fortschritt, Farben, Auswahl ----- */
-  const AI = { words: null, key: "" };
+  const AI = { words: null, key: "", old: null, neu: null, reverted: new Set(), mode: "ki" };
   const rowsAll = () => [...document.querySelectorAll("#lyrics .lyric-line")];
   const rowText = (r) => ((r.querySelector(".lyric-text") || {}).value || r.textContent || "").trim();
   function prog(show, pct, label) {
@@ -92,6 +92,9 @@
       row.classList.add(cls);
       let b = row.querySelector(".ai-delta"); if (!b) { b = document.createElement("span"); b.className = "ai-delta"; row.append(b); }
       b.textContent = txt;
+      let rv = row.querySelector(".ai-rev");
+      if (!rv) { rv = document.createElement("button"); rv.type = "button"; rv.className = "ai-rev"; row.append(rv); rv.addEventListener("click", (e) => { e.stopPropagation(); revertRow(rowsAll().indexOf(row), row); }); }
+      rv.textContent = "↶ alt"; rv.title = "Alte Zeit dieser Zeile wiederherstellen";
     });
     return cnt;
   }
@@ -101,22 +104,34 @@
     const add = (cls, txt) => { const s = document.createElement("span"); s.className = "ai-chip " + cls; s.textContent = txt; lg.append(s); };
     add("ai-d0", `unverändert ${cnt.d0}`); add("ai-d1", `klein (<0,6 s) ${cnt.d1}`); add("ai-d2", `mittel (<2 s) ${cnt.d2}`); add("ai-d3", `groß (≥2 s) ${cnt.d3}`); add("ai-un", `nicht zugeordnet ${cnt.un}`);
     const pick = document.createElement("button"); pick.type = "button"; pick.className = "chip"; pick.textContent = "Große + nicht zugeordnete wählen";
-    pick.onclick = () => { setPick(true); rowsAll().forEach((r) => { const c = r.querySelector(".ai-pick-cb"); if (c) c.checked = r.classList.contains("ai-d3") || r.classList.contains("ai-un"); }); };
+    pick.onclick = () => { rowsAll().forEach((r) => { const c = r.querySelector(".row-pick"); if (c) c.checked = r.classList.contains("ai-d3") || r.classList.contains("ai-un"); }); };
     const off = document.createElement("button"); off.type = "button"; off.className = "chip"; off.textContent = "Markierung aus";
-    off.onclick = () => { rowsAll().forEach((r) => { ["ai-d0", "ai-d1", "ai-d2", "ai-d3", "ai-un"].forEach((c) => r.classList.remove(c)); const d = r.querySelector(".ai-delta"); if (d) d.remove(); }); lg.remove(); };
-    lg.append(pick, off);
+    off.onclick = () => { rowsAll().forEach((r) => { ["ai-d0", "ai-d1", "ai-d2", "ai-d3", "ai-un"].forEach((c) => r.classList.remove(c)); r.querySelectorAll(".ai-delta,.ai-rev").forEach((d) => d.remove()); }); lg.remove(); };
+    const ab = document.createElement("span"); ab.className = "ai-ab";
+    [["ki", "KI-Zeiten"], ["alt", "Original"]].forEach(([m, n]) => { const b = document.createElement("button"); b.type = "button"; b.className = "chip"; b.dataset.m = m; b.textContent = n; b.setAttribute("aria-pressed", String(m === AI.mode)); b.onclick = () => useTimes(m); ab.append(b); });
+    lg.append(ab, pick, off);
   }
-  function setPick(on) {
-    document.body.classList.toggle("ai-pick", on);
-    rowsAll().forEach((r) => {
-      let c = r.querySelector(".ai-pick-cb");
-      if (on && !c) { c = document.createElement("input"); c.type = "checkbox"; c.className = "ai-pick-cb"; c.addEventListener("click", (e) => e.stopPropagation()); r.prepend(c); }
-      if (!on && c) c.remove();
-    });
-    const b = document.querySelector(".ai-pickbtn"); if (b) b.setAttribute("aria-pressed", String(on));
+  function setPick(on) { document.body.classList.toggle("ai-pick", on); }
+  const picked = () => rowsAll().map((r, k) => (r.querySelector(".row-pick") && r.querySelector(".row-pick").checked ? k : -1)).filter((k) => k >= 0);
+  const setT = (row, t) => { row.dataset.time = String(t); const inp = row.querySelector(".time-edit"); if (inp && typeof formatTime === "function") inp.value = formatTime(t, true); };
+  /* KI-Zeiten <-> Original-Zeiten umschalten (Abspielen nutzt die Zeit der Zeile) */
+  function useTimes(which) {
+    if (!AI.old || !AI.neu) return;
+    rowsAll().forEach((r, k) => { if (AI.neu[k] == null) return; const useNew = which === "ki" && !AI.reverted.has(k); setT(r, useNew ? AI.neu[k] : AI.old[k]); });
+    AI.mode = which; state.editDirty = true;
+    document.querySelectorAll("#aiLegend .ai-ab button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.m === which)));
+  }
+  function revertRow(k, row) {
+    if (!AI.old || AI.old[k] == null) return;
+    const back = !AI.reverted.has(k);
+    if (back) AI.reverted.add(k); else AI.reverted.delete(k);
+    setT(row, back ? AI.old[k] : AI.neu[k]);
+    const b = row.querySelector(".ai-rev"); if (b) { b.textContent = back ? "↷ KI" : "↶ alt"; b.title = back ? "KI-Zeit wieder verwenden" : "Alte Zeit dieser Zeile wiederherstellen"; }
+    state.editDirty = true;
   }
   const level = () => lsv("aiAcc", "normal") === "low" ? "low" : lsv("aiAcc", "normal") === "high" ? "high" : "normal";
 
+  const btnPct = (p) => { const b = document.querySelector(".ai-sync"); if (b) b.textContent = `KI ${Math.round(p)} %`; };
   async function transcribe(texts, lang) {
     const lv = level(), base = (typeof SYNC_BASE !== "undefined" ? SYNC_BASE : "");
     const key0 = state.currentAudio + "|" + lang + "|" + lv;
@@ -129,7 +144,7 @@
     const tick = setInterval(() => {
       const f = (Date.now() - t0) / T, pct = 6 + 86 * (1 - Math.exp(-f * 1.6));
       const left = Math.max(1, Math.round((T - (Date.now() - t0)) / 1000));
-      prog(true, pct, f < 0.12 ? "KI-Abstimmung: Audio wird gesendet …" : "KI hört das Lied ab …");
+      btnPct(pct); prog(true, pct, f < 0.12 ? "KI-Abstimmung: Audio wird gesendet …" : "KI hört das Lied ab …");
       const s = document.querySelector("#aiProg .ai-prog-s"); if (s) s.textContent = f < 1 ? `geschätzt noch ca. ${left} s (Genauigkeit: ${lv === "low" ? "schwach" : lv === "high" ? "sehr genau" : "normal"})` : "dauert etwas länger als geschätzt …";
     }, 400);
     try {
@@ -156,17 +171,32 @@
     if (!rows.length) { await uiAlert("KI-Abstimmung", "Zuerst muss ein Liedtext vorhanden sein (Vorlage oder Zeilen)."); return; }
     if (typeof state === "undefined" || !state.currentAudio) { await uiAlert("KI-Abstimmung", "Es ist keine Audiodatei geladen."); return; }
     if (state.curVersion === "video" || /\.(mp4|m4v|webm|mov)(\?|$)/i.test(state.currentAudio)) { await uiAlert("KI-Abstimmung", "Für Video geht das nicht. Wähle Karaoke-, Instrumental- oder Zusammenkünfte-MP3."); return; }
-    const sel = rows.map((r, k) => (r.querySelector(".ai-pick-cb") && r.querySelector(".ai-pick-cb").checked ? k : -1)).filter((k) => k >= 0);
+    const havePicks = picked().length > 0, haveMarks = rows.some((r) => r.classList.contains("ai-d3") || r.classList.contains("ai-un"));
+    let scope = havePicks ? "pick" : "all", acc = level();
+    const cached = AI.words && AI.key.startsWith(state.currentAudio + "|");
+    const ok = await uiDialog({ eyebrow: "KI-Abstimmung", title: "Zeiten automatisch setzen", cancelValue: false,
+      lines: [
+        { text: "Die KI hört das Lied ab (10–60 Sekunden, bei „sehr genau“ länger). Gespeichert wird erst mit „Speichern“. Danach siehst du farbig, was sich geändert hat, und kannst zwischen KI- und Original-Zeiten umschalten." + (cached ? " Die Wörter der letzten Auswertung werden wiederverwendet (schnell)." : "") },
+        { select: { label: "Genauigkeit:", value: acc, options: [["low", "schwach (schnell)"], ["normal", "normal"], ["high", "sehr genau (langsam)"]], onChange: (x) => { acc = x; } } },
+        { select: { label: "Zeilen:", value: scope, options: [["all", "alle Zeilen"], ["pick", "nur angehakte (☑ links in der Zeile)"], ["bad", "nur große Abweichung / nicht zugeordnet"]], onChange: (x) => { scope = x; } } },
+        ...(haveMarks || havePicks ? [] : [{ text: "Tipp: Vor den Zeilen stehen Haken. Mit ihnen kannst du einzelne Zeilen wählen.", cls: "dlg-hint" }])
+      ],
+      buttons: [{ value: true, kind: "primary", label: "Starten" }, { value: false, kind: "cancel", label: "Abbrechen" }] });
+    if (ok !== true) return;
+    lss("aiAcc", acc);
+    let sel = [];
+    if (scope === "pick") sel = picked();
+    else if (scope === "bad") sel = rows.map((r, k) => (r.classList.contains("ai-d3") || r.classList.contains("ai-un") ? k : -1)).filter((k) => k >= 0);
+    if (scope !== "all" && !sel.length) { await uiAlert("KI-Abstimmung", scope === "pick" ? "Es ist keine Zeile angehakt." : "Es gibt keine markierten Problemzeilen. Zuerst einmal alle Zeilen abstimmen."); return; }
     const only = sel.length > 0 && sel.length < rows.length;
-    const lv = level();
-    const ok = await uiConfirm({ eyebrow: "KI-Abstimmung", title: only ? `${sel.length} gewählte Zeilen neu zuordnen?` : "Zeiten automatisch setzen?", text: only ? (AI.words && AI.key.startsWith(state.currentAudio) ? "Die Wörter der letzten KI-Auswertung werden wiederverwendet (schnell). Nur die gewählten Zeilen ändern sich." : "Die KI hört das Lied einmal ab (etwa 10–60 Sekunden). Nur die gewählten Zeilen ändern sich.") : "Die KI hört das Lied ab (dauert etwa 10–60 Sekunden). Alle Zeiten werden überschrieben, gespeichert wird erst mit „Speichern“. Danach siehst du farbig, was sich wie stark geändert hat.", ok: "Starten" });
-    if (!ok) return;
     const old = btn.textContent; btn.disabled = true; btn.textContent = "KI arbeitet …";
     try {
       const texts = rows.map(rowText);
       const lang = typeof musikLang === "function" && musikLang() === "de" && state.lyricLang === "de" ? "de" : "en";
       const words = await transcribe(texts, lang);
       const olds = rows.map((r) => Number(r.dataset.time));
+      if (!AI.old || AI.old.length !== rows.length) { AI.old = olds.slice(); AI.reverted = new Set(); }
+      const fin = (idxs) => { AI.neu = AI.neu && AI.neu.length === rows.length ? AI.neu : olds.slice(); (idxs || rows.map((_, k) => k)).forEach((k) => { AI.neu[k] = Number(rows[k].dataset.time); AI.reverted.delete(k); }); AI.mode = "ki"; };
       let res, idxs;
       if (only) {
         idxs = sel; res = { hit: rows.map(() => null), matched: 0, total: 0 };
@@ -182,7 +212,7 @@
           res.matched += r.matched; res.total += r.total;
         });
         const cnt = mark(rows.filter((_, k) => sel.includes(k)), sel.map((k) => olds[k]), { hit: sel.map((k) => res.hit[k]) });
-        state.editDirty = true; legend(cnt);
+        fin(sel); state.editDirty = true; legend(cnt);
         await uiAlert("KI-Abstimmung", `${sel.length} Zeilen neu zugeordnet (${res.matched} von ${res.total} Wörtern gefunden). Die Farben zeigen die Änderung.`);
         return;
       }
@@ -194,22 +224,17 @@
         const inp = row.querySelector(".time-edit"); if (inp && typeof formatTime === "function") inp.value = formatTime(t, true);
       });
       const cnt = mark(rows, olds, res);
-      state.editDirty = true; legend(cnt);
-      await uiAlert("KI-Abstimmung", `Fertig: ${res.matched} von ${res.total} Wörtern zugeordnet (${Math.round(100 * res.matched / res.total)} %). Farben: grün/gelb/orange/rot = kleine bis große Änderung, violett = nicht zugeordnet (Zeit nur geschätzt). Zeilen wählen (Haken) und „KI-Sync“ ordnet nur diese neu zu. Gespeichert wird erst mit „Speichern“.`);
+      fin(); state.editDirty = true; legend(cnt);
+      await uiAlert("KI-Abstimmung", `Fertig: ${res.matched} von ${res.total} Wörtern zugeordnet (${Math.round(100 * res.matched / res.total)} %). Farben: grün/gelb/orange/rot = kleine bis große Änderung, violett = nicht zugeordnet (Zeit nur geschätzt). Mit „Original“/„KI-Zeiten“ oben schaltest du um, „↶ alt“ stellt einzelne Zeilen zurück. Haken vor Zeilen + „KI-Sync“ ordnet nur diese neu zu. Gespeichert wird erst mit „Speichern“.`);
     } catch (e) { await uiAlert("KI-Abstimmung", (e && e.message) || String(e)); }
     finally { prog(false); btn.disabled = false; btn.textContent = old; }
   }
   new MutationObserver(() => {
     const p = $("editPanel"); if (!p || p.querySelector(".ai-sync")) return;
-    const b = document.createElement("button"); b.className = "chip ai-sync"; b.type = "button"; b.textContent = "KI-Sync"; b.title = "Zeiten automatisch per KI setzen (bei gesetzten Haken nur für diese Zeilen)";
+    const b = document.createElement("button"); b.className = "chip ai-sync"; b.type = "button"; b.textContent = "KI-Sync"; b.title = "Zeiten automatisch per KI setzen (Optionen im Dialog)";
     b.addEventListener("click", () => aiSync(b));
-    const acc = document.createElement("select"); acc.className = "ai-acc"; acc.title = "Genauigkeit der KI (genauer = langsamer)";
-    [["low", "KI: schwach"], ["normal", "KI: normal"], ["high", "KI: sehr genau"]].forEach(([v, n]) => { const o = document.createElement("option"); o.value = v; o.textContent = n; acc.append(o); });
-    acc.value = level(); acc.onchange = () => lss("aiAcc", acc.value);
-    const pk = document.createElement("button"); pk.className = "chip ai-pickbtn"; pk.type = "button"; pk.textContent = "Zeilen wählen"; pk.setAttribute("aria-pressed", "false"); pk.title = "Haken vor den Zeilen zeigen; KI-Sync wirkt dann nur auf die gewählten";
-    pk.addEventListener("click", () => setPick(!document.body.classList.contains("ai-pick")));
     const save = [...p.querySelectorAll("button")].find((x) => x.textContent === "Speichern");
-    p.insertBefore(acc, save || null); p.insertBefore(pk, save || null); p.insertBefore(b, save || null);
+    p.insertBefore(b, save || null);
   }).observe(document.body, { childList: true });
 
   /* ---------- Karaoke-Schriftfarben getrennt ---------- */

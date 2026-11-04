@@ -176,6 +176,18 @@ function uiDialog(opts) {
         parent.append(lb);
         return;
       }
+      if (item.select) {
+        const lb = document.createElement("label");
+        lb.className = "dlg-select";
+        lb.append(document.createTextNode(item.select.label + " "));
+        const sl = document.createElement("select");
+        item.select.options.forEach(([v, n]) => { const o = document.createElement("option"); o.value = v; o.textContent = n; sl.append(o); });
+        sl.value = item.select.value;
+        sl.addEventListener("change", () => item.select.onChange && item.select.onChange(sl.value));
+        lb.append(sl);
+        parent.append(lb);
+        return;
+      }
       if (item.pre != null) {
         const pr = document.createElement("pre");
         pr.className = "dlg-pre"; pr.textContent = item.pre;
@@ -1983,7 +1995,7 @@ function enhanceNumbers(root) {
     box.className = "stp";
     const mk = (txt, dir, label) => {
       const b = document.createElement("button");
-      b.type = "button"; b.textContent = txt; b.setAttribute("aria-label", label); b.tabIndex = -1;
+      b.type = "button"; b.innerHTML = `<svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="${dir > 0 ? "M5 16l7-8 7 8z" : "M5 8l7 8 7-8z"}" fill="currentColor"/></svg>`; b.setAttribute("aria-label", label); b.tabIndex = -1;
       b.addEventListener("pointerdown", (e) => e.preventDefault());   // Tastatur bleibt offen
       b.addEventListener("click", async () => {
         const min = inp.min !== "" ? Number(inp.min) : -Infinity, max = inp.max !== "" ? Number(inp.max) : Infinity;
@@ -3654,7 +3666,10 @@ function attachTimecodeUi() {
       el.audio.currentTime = t;
       if (el.audio.paused) el.audio.play().catch(() => {});
     });
-    cell.append(input);
+    const pick = document.createElement("input");
+    pick.type = "checkbox"; pick.className = "row-pick"; pick.title = "Zeile für KI-Sync wählen";
+    pick.addEventListener("click", (event) => event.stopPropagation());
+    cell.append(pick, input);
     line.append(cell, now, take, textInput);
   });
 }
@@ -3699,13 +3714,32 @@ function buildEditPanel() {
   jump.title = "Einmalig zur aktuell gespielten Zeile springen";
   jump.addEventListener("click", jumpToActiveLine);
   panel.append(jump);
-  [0.3, 0.5, 0.8, 1, 1.5, 2].forEach((rate) => {
-    const btn = document.createElement("button");
-    btn.className = "chip";
-    btn.textContent = `${rate}x`;
-    btn.addEventListener("click", () => { el.audio.playbackRate = rate; });
-    panel.append(btn);
-  });
+  const tempo = document.createElement("details");
+  tempo.className = "tempo-box";
+  const tsum = document.createElement("summary");
+  tsum.className = "chip";
+  const setRate = (r) => {
+    r = Math.min(4, Math.max(0.1, Math.round(r * 100) / 100));
+    el.audio.playbackRate = r;
+    trange.value = String(Math.min(2, Math.max(0.25, r)));
+    tnum.value = String(r);
+    tsum.textContent = `Tempo ${String(r).replace(".", ",")}x`;
+  };
+  const trange = document.createElement("input");
+  trange.type = "range"; trange.min = "0.25"; trange.max = "2"; trange.step = "0.05"; trange.title = "Abspielgeschwindigkeit";
+  trange.addEventListener("input", () => setRate(Number(trange.value)));
+  const tnum = document.createElement("input");
+  tnum.type = "number"; tnum.min = "0.1"; tnum.max = "4"; tnum.step = "0.05"; tnum.inputMode = "decimal"; tnum.className = "tempo-num"; tnum.title = "Geschwindigkeit eingeben (0,1 bis 4)";
+  tnum.addEventListener("change", () => { const v = Number(String(tnum.value).replace(",", ".")); if (v > 0) setRate(v); });
+  const treset = document.createElement("button");
+  treset.type = "button"; treset.className = "chip"; treset.textContent = "1x";
+  treset.addEventListener("click", () => setRate(1));
+  const trow = document.createElement("div");
+  trow.className = "tempo-row";
+  trow.append(trange, tnum, treset);
+  tempo.append(tsum, trow);
+  panel.append(tempo);
+  setRate(el.audio.playbackRate || 1);
   const zoom = document.createElement("input");
   zoom.type = "range";
   zoom.min = "1";
@@ -4871,8 +4905,8 @@ function checkLogin() {
   const toggleMore = (open) => { extra.hidden = !open; more.setAttribute("aria-expanded", String(open)); more.textContent = (open ? "▾" : "▸") + " Weitere Optionen"; };
   more.addEventListener("click", () => toggleMore(extra.hidden));
   const ti = document.getElementById("loginTeslaInfo"), tt = document.getElementById("loginTeslaText");
-  ti.addEventListener("click", () => { tt.hidden = !tt.hidden; ti.textContent = tt.hidden ? "▾" : "▴"; ti.setAttribute("aria-expanded", String(!tt.hidden)); });
-  document.querySelectorAll(".login-info").forEach((b) => b.addEventListener("click", () => { const t = document.getElementById(b.dataset.for); t.hidden = !t.hidden; b.textContent = t.hidden ? "▾" : "▴"; b.setAttribute("aria-expanded", String(!t.hidden)); }));
+  ti.addEventListener("click", () => { tt.hidden = !tt.hidden; ti.innerHTML = window.CHEV ? CHEV(!tt.hidden) : (tt.hidden ? "▾" : "▴"); ti.setAttribute("aria-expanded", String(!tt.hidden)); });
+  document.querySelectorAll(".login-info").forEach((b) => b.addEventListener("click", () => { const t = document.getElementById(b.dataset.for); t.hidden = !t.hidden; b.innerHTML = window.CHEV ? CHEV(!t.hidden) : (t.hidden ? "▾" : "▴"); b.setAttribute("aria-expanded", String(!t.hidden)); }));
   { const hb = document.getElementById("loginHelpBtn"), hbody = document.getElementById("loginHelpBody");
     if (hb && hbody) hb.addEventListener("click", () => { hbody.hidden = !hbody.hidden; hb.setAttribute("aria-expanded", String(!hbody.hidden)); hb.querySelector(".help-arrow").textContent = hbody.hidden ? "▸" : "▾"; }); }
   setupLoginAuto();

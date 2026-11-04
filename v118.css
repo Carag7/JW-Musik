@@ -85,5 +85,18 @@ body.cg-open, body.np-open { position: relative; }
 .lyric-line.ai-un { outline: 2px dashed var(--aic); outline-offset: -3px; }
 .lyric-line .ai-delta { margin-left: 10px; padding: 1px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; color: #111; background: var(--aic); white-space: nowrap; vertical-align: middle; }
 body.ai-pick .lyric-line { position: relative; }
-.lyric-line .ai-pick-cb { position: absolute; left: -38px; top: 50%; transform: translateY(-50%); width: 24px; height: 24px; accent-color: var(--accent); }
-.edit-panel .ai-acc { min-height: 36px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel-2); color: var(--text); font: inherit; }
+.time-cell .row-pick { flex: 0 0 auto; width: 22px; height: 22px; margin: 0 6px 0 0; accent-color: var(--accent); cursor: pointer; }
+body.edit-mode .time-cell { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: 4px; }
+body.edit-mode .time-cell > .saved-old { grid-column: 1 / -1; }
+.lyric-line .ai-rev { margin-left: 6px; padding: 1px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; border: 1px solid var(--aic); background: transparent; color: var(--text); cursor: pointer; }
+#aiLegend .ai-ab { display: inline-flex; gap: 4px; }
+#aiLegend .ai-ab .chip[aria-pressed="true"] { background: var(--accent); color: var(--on-accent, #000); }
+.dlg-select { display: flex; gap: 8px; align-items: center; justify-content: space-between; margin: 8px 0; font-size: 14px; }
+.dlg-select select { min-height: 38px; max-width: 62%; border-radius: 10px; border: 1px solid var(--line); background: var(--panel-2); color: var(--text); font: inherit; }
+.dlg-hint { color: var(--muted); font-size: 12px; }
+.tempo-box { grid-column: 1 / -1; }
+.tempo-box > summary { list-style: none; cursor: pointer; display: inline-flex; align-items: center; }
+.tempo-box > summary::-webkit-details-marker { display: none; }
+.tempo-row { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+.tempo-row input[type=range] { flex: 1 1 auto; min-width: 70px; }
+.tempo-num { width: 64px; min-height: 36px; text-align: center; border-radius: 10px; border: 1px solid var(--line); background: var(--panel-2); color: var(--text); font: inherit; }

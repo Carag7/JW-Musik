@@ -111,22 +111,38 @@
   /* Einstellung „castMode“: off = nie, lupe = nur bei aktiver Lupe, always = immer (Standard) */
   const castMode = () => { const v = lsv("castMode", "always"); return v === "off" || v === "lupe" ? v : "always"; };
   function paintCast() { document.body.dataset.cast = castMode(); const s = $("advCastMode"); if (s) s.value = castMode(); }
+  /* Pfeil als Zeichnung: Tesla-Schrift hat „▾“ nicht (zeigte ein Rechteck) */
+  const CHEV = (up) => `<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="${up ? "M6 15l6-6 6 6" : "M6 9l6 6 6-6"}" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  window.CHEV = CHEV;
   function setupCast() {
     const a = $("audio"); const row = $("titleRow");
     if (!a || !row || $("castBtn")) return;
     const b = h("button", "lang-mini cast-btn"); b.id = "castBtn"; b.type = "button";
     b.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M21 3H3a2 2 0 0 0-2 2v3h2V5h18v14h-7v2h7a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zM1 18v3h3a3 3 0 0 0-3-3zm0-4v2a5 5 0 0 1 5 5h2a7 7 0 0 0-7-7zm0-4v2a9 9 0 0 1 9 9h2A11 11 0 0 0 1 10z"/></svg>';
     b.title = "Auf anderem Gerät abspielen (Fernseher, Lautsprecher …)"; b.setAttribute("aria-label", b.title);
-    b.addEventListener("click", (e) => {
+    b.addEventListener("click", async (e) => {
       e.stopPropagation();
-      try { a.disableRemotePlayback = false; } catch { /* egal */ }
+      /* ohne geladene Datei kann kein Gerät übernehmen: erst Quelle setzen */
+      let src = ""; try { src = (typeof state !== "undefined" && state.currentAudio) || ""; } catch { /* egal */ }
+      if (!a.currentSrc && !a.getAttribute("src")) {
+        if (!src) { showToast("Zuerst ein Lied auswählen, dann übertragen."); return; }
+        a.src = src; try { a.load(); } catch { /* egal */ }
+      }
+      try { a.disableRemotePlayback = false; a.removeAttribute("disableremoteplayback"); a.setAttribute("x-webkit-airplay", "allow"); } catch { /* egal */ }
+      /* Safari / iPhone / iPad: AirPlay-Auswahl des Systems (die „remote“-Schnittstelle meldet dort oft „nicht übertragbar“) */
+      if (a.webkitShowPlaybackTargetPicker) { try { a.webkitShowPlaybackTargetPicker(); return; } catch { /* weiter mit remote */ } }
       if (a.remote && a.remote.prompt) {
-        a.remote.prompt().catch((err) => {
+        try { await a.remote.prompt(); }
+        catch (err) {
           const n = err && err.name;
-          showToast(n === "NotFoundError" ? "Kein Gerät im Netzwerk gefunden." : n === "NotSupportedError" ? "Diese Wiedergabe kann nicht auf ein anderes Gerät übertragen werden." : n === "AbortError" ? "" : "Übertragen nicht möglich.");
-        });
-      } else if (a.webkitShowPlaybackTargetPicker) a.webkitShowPlaybackTargetPicker();
-      else showToast("Dieser Browser kann nicht auf andere Geräte übertragen. In Chrome (Android oder Computer) geht es.");
+          if (n === "AbortError") return;
+          const chrome = /Chrome|Chromium|Edg/.test(navigator.userAgent);
+          showToast(n === "NotFoundError"
+            ? (chrome ? "Kein Gerät gefunden. Chrome findet nur Chromecast und Google-Geräte, kein AirPlay. Für AirPlay Safari verwenden, oder in Chrome ⋮ → Streamen (Tab übertragen)." : "Kein Gerät im Netzwerk gefunden.")
+            : n === "NotSupportedError" ? "Dieser Browser kann diese Wiedergabe nicht übertragen. Tipp: In Chrome ⋮ → Streamen (Tab übertragen), in Safari das AirPlay-Symbol des Systems nutzen."
+            : "Übertragen nicht möglich.");
+        }
+      } else showToast("Dieser Browser kann nicht auf andere Geräte übertragen. Safari (AirPlay) oder Chrome (Chromecast) verwenden.");
     });
     try { if (a.remote) { a.remote.addEventListener("connect", () => b.classList.add("on")); a.remote.addEventListener("disconnect", () => b.classList.remove("on")); } } catch { /* egal */ }
     row.append(b);
@@ -183,12 +199,36 @@
   const secs = () => Math.max(1, Number(lsv("startSec", "6")) || 6);
   const carSecs = () => { const v = Number(lsv("startCarSec", "")); return v >= 1 ? v : secs(); };
   const carMs = () => { const v = Number(lsv("startCarMs", "")); return v >= 50 ? v : Math.min(1200, fadeMs() + 300); };
+  const floatSpd = () => Math.max(0.1, Math.min(5, (Number(lsv("startFloatSpd", "100")) || 100) / 100));
   const fadeMs = () => Math.max(50, Number(lsv("startFade", "900")) || 900);
   let stopFn = null, runId = 0;
   const media = () => $("startMedia") || $("startPanel");
   function stopShow() { runId++; if (stopFn) { try { stopFn(); } catch { /* egal */ } stopFn = null; } const b = $("startShow"); if (b) b.remove(); }
   function mkImg(it, cls) { const im = h("img", cls); im.src = it.url; im.alt = ""; im.draggable = false; im.decoding = "async"; im.addEventListener("click", () => playNum(it.n)); return im; }
 
+  /* Lange auf Karussell / Überblenden / Schweben drücken: Wechselzeit (bzw. Tempo) eingeben, gleiche Werte wie in den Einstellungen */
+  function longPress(b, v) {
+    if (v !== "carousel" && v !== "fade" && v !== "float") return;
+    let t = 0;
+    const stop = () => { clearTimeout(t); t = 0; };
+    const ask = async () => {
+      b._lp = true; setTimeout(() => { b._lp = false; }, 600);
+      let key, min, max, cur, title, text, id;
+      if (v === "carousel") { key = "startCarSec"; min = 1; max = 120; cur = carSecs(); title = "Karussell: Wechselzeit"; text = "Sekunden bis zum nächsten Cover."; id = "advCarSec"; }
+      else if (v === "fade") { key = "startSec"; min = 2; max = 120; cur = secs(); title = "Überblenden: Wechselzeit"; text = "Sekunden bis zum nächsten Cover."; id = "advStartSec"; }
+      else { key = "startFloatSpd"; min = 20; max = 300; cur = Math.round(floatSpd() * 100); title = "Schweben: Geschwindigkeit"; text = "Tempo in Prozent (100 = normal)."; id = "advFloatSpd"; }
+      const raw = await uiPrompt({ eyebrow: "Startseite", title, text, value: String(cur), type: "number", inputMode: "decimal", ok: "Übernehmen" });
+      if (raw === null || raw === "") return;
+      const n = Number(String(raw).replace(",", ".")); if (!(n > 0)) return;
+      const val = await askLimit(n, min, max);
+      lss(key, String(val)); const f = $(id); if (f) f.value = String(val);
+      if (startMode() !== v) setStartMode(v); else applyStart();
+    };
+    b.addEventListener("pointerdown", () => { stop(); t = setTimeout(() => { t = 0; ask(); }, 700); });
+    ["pointerup", "pointerleave", "pointercancel"].forEach((ev) => b.addEventListener(ev, stop));
+    b.addEventListener("contextmenu", (e) => { e.preventDefault(); stop(); ask(); });
+    b.title = "Tippen: Anzeige wählen – lange drücken: " + (v === "float" ? "Geschwindigkeit" : "Wechselzeit") + " eingeben";
+  }
   function runFade(box, items) {
     let i = 0, a = mkImg(items[0], "sf-img on"), b = mkImg(items[1 % items.length], "sf-img");
     box.style.setProperty("--sf-ms", fadeMs() + "ms"); box.append(a, b);
@@ -242,7 +282,7 @@
       raf = requestAnimationFrame(loop);
       const dt = Math.min(0.05, (now - last) / 1000); last = now; if (document.hidden) return; tt += dt;
       objs.forEach((o) => {
-        o.x += o.vx * dt; o.y += (o.vy + Math.sin(tt * 0.8 + o.ph) * 6) * dt;
+        const fs = floatSpd(); o.x += o.vx * dt * fs; o.y += (o.vy + Math.sin(tt * 0.8 + o.ph) * 6) * dt * fs;
         const w = o.s, hh = o.s * 1.475;
         if (o.x > W() + 40 || o.y > H() + hh * 0.3 || o.y < -hh * 1.1) place(o, false);
         o.im.style.width = w + "px"; o.im.style.height = hh + "px"; o.im.style.zIndex = String(Math.round(o.z + 500));
@@ -303,11 +343,11 @@
     /* Pfeil und Leiste stehen oben neben der Überschrift „Königreichslieder“ */
     const wrap = h("div", "title-wrap"); wrap.id = "titleWrap"; title.before(wrap); wrap.append(title);
     const ctl = h("div", "start-ctl"); ctl.id = "startCtl";
-    const more = h("button", "start-more-btn", "▾"); more.id = "startMore"; more.type = "button"; more.setAttribute("aria-expanded", "false");
+    const more = h("button", "start-more-btn"); more.innerHTML = CHEV(false); more.id = "startMore"; more.type = "button"; more.setAttribute("aria-expanded", "false");
     more.title = "Anzeige der Startseite wählen"; more.setAttribute("aria-label", more.title);
     const d = h("div", "start-drawer"); d.id = "startDrawer"; d.hidden = true;
     const seg = h("div", "seg"); seg.setAttribute("role", "group");
-    SHOWS.forEach(([v, n]) => { const b = h("button", "seg-btn", n); b.type = "button"; b.dataset.m = v; b.addEventListener("click", () => setStartMode(v)); seg.append(b); });
+    SHOWS.forEach(([v, n]) => { const b = h("button", "seg-btn", n); b.type = "button"; b.dataset.m = v; b.addEventListener("click", (e) => { if (b._lp) { b._lp = false; e.preventDefault(); return; } setStartMode(v); }); longPress(b, v); seg.append(b); });
     const lab = h("label", "start-folder"); lab.title = "Cover-Ordner für die Startseite";
     lab.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M10 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-8z"/></svg>';
     const sel = document.createElement("select"); sel.id = "startFolderSel"; sel.setAttribute("aria-label", "Cover-Ordner für die Startseite");
@@ -319,9 +359,9 @@
     sel.addEventListener("change", paintBadge); sel._paint = paintBadge;
     sel.addEventListener("change", () => { if (sel.value !== "list") { lss("startFolders", sel.value); applyStart(); const b = $("advStartFolders"); if (b) bindStartSettings(); } });
     lab.append(sel); d.append(seg, lab);
-    more.addEventListener("click", () => { d.hidden = !d.hidden; more.setAttribute("aria-expanded", String(!d.hidden)); more.textContent = d.hidden ? "▾" : "▴"; ctl.classList.toggle("open", !d.hidden); try { lss("startBarOpen", d.hidden ? "0" : "1"); } catch { /* egal */ } });
+    more.addEventListener("click", () => { d.hidden = !d.hidden; more.setAttribute("aria-expanded", String(!d.hidden)); more.innerHTML = CHEV(!d.hidden); ctl.classList.toggle("open", !d.hidden); try { lss("startBarOpen", d.hidden ? "0" : "1"); } catch { /* egal */ } });
     ctl.append(more, d); wrap.append(ctl);
-    if (lsv("startBarOpen", "0") === "1") { d.hidden = false; more.textContent = "▴"; more.setAttribute("aria-expanded", "true"); ctl.classList.add("open"); }
+    if (lsv("startBarOpen", "0") === "1") { d.hidden = false; more.innerHTML = CHEV(true); more.setAttribute("aria-expanded", "true"); ctl.classList.add("open"); }
     const sync = () => { ctl.hidden = panel.hidden; if (panel.hidden) stopShow(); else applyStart(); };
     new MutationObserver(sync).observe(panel, { attributes: true, attributeFilter: ["hidden"] });
     sync();
@@ -351,6 +391,7 @@
     const ord = get("advStartOrder"); if (ord) { ord.value = lsv("startOrder", "seq"); ord.onchange = () => { lss("startOrder", ord.value); applyStart(); }; }
     const sc = get("advStartSec"); if (sc) { sc.value = String(secs()); sc.onchange = async () => { lss("startSec", String(await askLimit(Number(sc.value) || 6, 2, 120))); applyStart(); }; }
     const fd = get("advStartFade"); if (fd) { fd.value = String(fadeMs()); fd.onchange = async () => { lss("startFade", String(await askLimit(Number(fd.value) || 900, 100, 5000))); applyStart(); }; }
+    const fsp = get("advFloatSpd"); if (fsp) { fsp.value = String(Math.round(floatSpd() * 100)); fsp.onchange = async () => { lss("startFloatSpd", String(await askLimit(Number(fsp.value) || 100, 20, 300))); applyStart(); }; }
     const cs = get("advCarSec"); if (cs) { cs.value = String(carSecs()); cs.onchange = async () => { lss("startCarSec", String(await askLimit(Number(cs.value) || 6, 1, 120))); applyStart(); }; }
     const cm2 = get("advCarMs"); if (cm2) { cm2.value = String(carMs()); cm2.onchange = async () => { lss("startCarMs", String(await askLimit(Number(cm2.value) || 1000, 100, 5000))); applyStart(); }; }
     const sz = sizes();

@@ -15,3 +15,5 @@
 }
 .set-topics { flex: 0 0 auto; min-height: 48px; }
 .set-topics .topic-btn { min-height: 40px; }
+.start-more-btn { display: inline-grid; place-items: center; }
+.stp button { display: inline-grid; place-items: center; }

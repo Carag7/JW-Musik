@@ -20,7 +20,7 @@
     liste: "extraSongsOpt srcTagsOpt srcTagsFade verBarOpt verBarFade fadeSec advListSize advSidebar",
     text: "advScale advAlign advLyricPos advMusikLang advLangWarn",
     cover: "advCover advCoverSet advLangWarn advMusikLang advCoverFlip advGalNoKar advGalNoKarAmt advGalMini",
-    start: "advStartShow advStartFolders advStartOrder advStartSec advStartFade advSz_image advSz_chor advSz_carousel advSz_fade advSz_float advSzReset advCastMode advCarSec advCarMs startGif eggMode eggFall eggGif",
+    start: "advStartShow advStartFolders advStartOrder advStartSec advStartFade advSz_image advSz_chor advSz_carousel advSz_fade advSz_float advSzReset advCastMode advCarSec advCarMs advFloatSpd startGif eggMode eggFall eggGif",
     player: "advNpLayout favSeekOpt advCoverFlip advCastMode flugResetBtn advBack advFwd advHold advHint",
     anz: "advTopMain advTopSet advHold advHint advMeasure advListSize advSidebar advScale advLyricPos",
     sonst: "advAdvanced advEdit advReload advStart"
@@ -157,7 +157,7 @@
   }
   /* Zahlen auf der Startseite wirken schon beim Tippen (nach kurzer Pause), ohne erst das Feld zu verlassen */
   function liveNumbers() {
-    ["advStartFade", "advStartSec", "advCarSec", "advCarMs"].forEach((id) => {
+    ["advStartFade", "advStartSec", "advCarSec", "advCarMs", "advFloatSpd"].forEach((id) => {
       const i = $(id); if (!i || i.dataset.live) return; i.dataset.live = "1";
       let t = 0;
       i.addEventListener("input", () => {
