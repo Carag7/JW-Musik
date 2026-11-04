@@ -128,6 +128,9 @@
         if (!src) { showToast("Zuerst ein Lied auswählen, dann übertragen."); return; }
         a.src = src; try { a.load(); } catch { /* egal */ }
       }
+      /* „preload none“ lässt Safari/Chrome glauben, es gäbe noch nichts zu übertragen: Metadaten laden und kurz warten */
+      if (a.preload !== "metadata" && a.preload !== "auto") { try { a.preload = "metadata"; a.load(); } catch { /* egal */ } }
+      if (a.readyState < 1) { showToast("Verbindung wird vorbereitet …"); await new Promise((res) => { const f = () => { a.removeEventListener("loadedmetadata", f); a.removeEventListener("error", f); res(); }; a.addEventListener("loadedmetadata", f); a.addEventListener("error", f); setTimeout(f, 4000); }); }
       try { a.disableRemotePlayback = false; a.removeAttribute("disableremoteplayback"); a.setAttribute("x-webkit-airplay", "allow"); } catch { /* egal */ }
       /* Safari / iPhone / iPad: AirPlay-Auswahl des Systems (die „remote“-Schnittstelle meldet dort oft „nicht übertragbar“) */
       if (a.webkitShowPlaybackTargetPicker) { try { a.webkitShowPlaybackTargetPicker(); return; } catch { /* weiter mit remote */ } }
