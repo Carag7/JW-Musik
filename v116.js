@@ -207,6 +207,7 @@
   const startTrans = () => { const v = lsv("startTrans", "fade"); return TRANS.some((t) => t[0] === v) ? v : "fade"; };
   const car3d = () => lsv("startCar3d", "1") !== "0";
   const fadeMs = () => Math.max(50, Number(lsv("startFade", "900")) || 900);
+  const animMs = () => Math.max(200, Number(lsv("startAnim", "1800")) || 1800);   // Dauer von Kartenstapel/Schieben/Zoom/Drehen/Mosaik
   let stopFn = null, runId = 0;
   const media = () => $("startMedia") || $("startPanel");
   function stopShow() { runId++; if (stopFn) { try { stopFn(); } catch { /* egal */ } stopFn = null; } const b = $("startShow"); if (b) b.remove(); }
@@ -226,15 +227,28 @@
       let nv = String(cur), tv = startTrans(), cv = car3d() ? "3d" : "2d", sv = startMode();
       const lines = [{ text }, { num: { label: v === "float" ? "Tempo (%)" : "Sekunden", value: cur, min, max, onChange: (x) => { nv = String(x); } } }];
       lines.push({ select: { label: "Anzeige:", value: sv, options: SHOWS.map(([a, b]) => [a, b]), onChange: (x) => { sv = x; } } });
-      if (v === "fade") lines.push({ select: { label: "Übergang:", value: tv, options: TRANS, onChange: (x) => { tv = x; } } });
+      let fd2 = String(fadeMs()), an2 = String(animMs()), cm3 = String(carMs());
+      if (v === "fade") {
+        lines.push({ select: { label: "Übergang:", value: tv, options: TRANS, onChange: (x) => { tv = x; } } });
+        lines.push({ num: { label: "Dauer Überblenden (ms)", value: fadeMs(), min: 100, max: 5000, step: 100, onChange: (x) => { fd2 = String(x); } } });
+        lines.push({ num: { label: "Dauer Kartenstapel, Schieben, Zoom, Drehen, Mosaik (ms)", value: animMs(), min: 300, max: 6000, step: 100, onChange: (x) => { an2 = String(x); } } });
+      }
+      if (v === "carousel") lines.push({ num: { label: "Dauer der Drehung (ms)", value: carMs(), min: 100, max: 5000, step: 100, onChange: (x) => { cm3 = String(x); } } });
       if (v === "carousel") lines.push({ select: { label: "Karussell:", value: cv, options: [["3d", "3D (gedreht, mit Tiefe)"], ["2d", "2D (nur verschoben)"]], onChange: (x) => { cv = x; } } });
       const ok = await uiDialog({ eyebrow: "Startseite", title, cancelValue: false, lines, buttons: [{ value: true, kind: "primary", label: "Übernehmen" }, { value: false, kind: "cancel", label: "Abbrechen" }] });
       if (ok !== true) return;
       const n = Number(String(nv).replace(",", ".")); if (!(n > 0)) return;
       const val = await askLimit(n, min, max);
       lss(key, String(val)); const f = $(id); if (f) f.value = String(val);
-      if (v === "fade") { lss("startTrans", tv); const ts = $("advStartTrans"); if (ts) ts.value = tv; }
-      if (v === "carousel") { lss("startCar3d", cv === "3d" ? "1" : "0"); const cs2 = $("advCar3d"); if (cs2) cs2.value = cv === "3d" ? "1" : "0"; }
+      if (v === "fade") {
+        lss("startTrans", tv); const ts = $("advStartTrans"); if (ts) ts.value = tv;
+        const f1 = Number(fd2) > 0 ? await askLimit(Number(fd2), 100, 5000) : fadeMs(); lss("startFade", String(f1)); const e1 = $("advStartFade"); if (e1) e1.value = String(f1);
+        const f2 = Number(an2) > 0 ? await askLimit(Number(an2), 300, 6000) : animMs(); lss("startAnim", String(f2)); const e2 = $("advStartAnim"); if (e2) e2.value = String(f2);
+      }
+      if (v === "carousel") {
+        lss("startCar3d", cv === "3d" ? "1" : "0"); const cs2 = $("advCar3d"); if (cs2) cs2.value = cv === "3d" ? "1" : "0";
+        const c4 = Number(cm3) > 0 ? await askLimit(Number(cm3), 100, 5000) : carMs(); lss("startCarMs", String(c4)); const e3 = $("advCarMs"); if (e3) e3.value = String(c4);
+      }
       if (sv !== v) { setStartMode(sv); return; }
       if (startMode() !== v) setStartMode(v); else applyStart();
     };
@@ -250,7 +264,7 @@
     box.append(cv); const g = cv.getContext("2d");
     const cols = 10, rows = Math.max(8, Math.round(cols * ih / iw)), tiles = []; for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) tiles.push([c, r]);
     for (let i = tiles.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [tiles[i], tiles[j]] = [tiles[j], tiles[i]]; }
-    const dur = Math.max(600, fadeMs() * 1.4), t0 = performance.now(); let shown = 0;
+    const dur = Math.max(600, animMs()), t0 = performance.now(); let shown = 0;
     const tw = iw / cols, th = ih / rows;
     (function step(now) {
       const f = Math.min(1, (now - t0) / dur), want = Math.floor(f * tiles.length);
@@ -268,7 +282,7 @@
       i = (i + 1) % items.length; const nxt = mkImg(items[i], "sf-img tr-" + tr); nxt._n = items[i].n; busy = true;
       nxt.addEventListener("error", () => { busy = false; }, { once: true });
       nxt.addEventListener("load", () => {
-        const old = a, ms = fadeMs();
+        const old = a, ms = tr === "fade" ? fadeMs() : animMs(); box.style.setProperty("--sf-ms", ms + "ms");
         const fin = () => { setTimeout(() => { old.remove(); busy = false; }, 60); a = nxt; };
         if (tr === "mosaic") {
           nxt.style.opacity = "0"; box.append(nxt);
@@ -371,12 +385,23 @@
     const mm = $("startMedia"); if (mm) mm.style.setProperty("--ms", String(sizeOf() / 100));
   }
   function applyStart() {
+    try { rowsByMode(); } catch { /* egal */ }
     const panel = $("startPanel"); if (!panel) return;
     stopShow();
     const m = startMode(); const want = isShow(m);
     document.body.classList.toggle("start-show", want); panel.classList.toggle("show-on", want);
     paintDrawer(); fit(); setTimeout(fit, 400); setTimeout(fit, 1500);
     if (want && !panel.hidden) startShow(m);
+  }
+  /* In den Einstellungen nur die Felder zeigen, die zur gewählten Anzeige gehören */
+  const MODE_ROWS = { fade: ["advStartSec", "advStartFade", "advStartTrans", "advStartAnim"], carousel: ["advCarSec", "advCarMs", "advCar3d"], float: ["advFloatSpd"] };
+  const MODE_HINTS = [["Gilt für Karussell und Überblenden", ["fade", "carousel"]], ["Übergang gilt für", ["fade"]], ["Nur für das Karussell", ["carousel"]]];
+  function rowsByMode() {
+    const m = startMode();
+    Object.entries(MODE_ROWS).forEach(([mode, ids]) => ids.forEach((id) => { const e = $(id), r = e && e.closest(".set-row"); if (r) r.hidden = mode !== m; }));
+    document.querySelectorAll("#advStartShow ~ small.set-hint, #codeModal small.set-hint").forEach((s) => {
+      const hit = MODE_HINTS.find(([p]) => (s.textContent || "").trim().startsWith(p)); if (hit) s.hidden = !hit[1].includes(m);
+    });
   }
   function setStartMode(m) {
     if (isShow(m)) lss("startShow", m);
@@ -440,10 +465,12 @@
     const sc = get("advStartSec"); if (sc) { sc.value = String(secs()); sc.onchange = async () => { lss("startSec", String(await askLimit(Number(sc.value) || 6, 2, 120))); applyStart(); }; }
     const fd = get("advStartFade"); if (fd) { fd.value = String(fadeMs()); fd.onchange = async () => { lss("startFade", String(await askLimit(Number(fd.value) || 900, 100, 5000))); applyStart(); }; }
     const fsp = get("advFloatSpd"); if (fsp) { fsp.value = String(Math.round(floatSpd() * 100)); fsp.onchange = async () => { lss("startFloatSpd", String(await askLimit(Number(fsp.value) || 100, 20, 300))); applyStart(); }; }
+    const an = get("advStartAnim"); if (an) { an.value = String(animMs()); an.onchange = async () => { lss("startAnim", String(await askLimit(Number(an.value) || 1800, 300, 6000))); applyStart(); }; }
     const tr = get("advStartTrans"); if (tr) { tr.value = startTrans(); tr.onchange = () => { lss("startTrans", tr.value); applyStart(); }; }
     const c3 = get("advCar3d"); if (c3) { c3.value = car3d() ? "1" : "0"; c3.onchange = () => { lss("startCar3d", c3.value); applyStart(); }; }
     const cs = get("advCarSec"); if (cs) { cs.value = String(carSecs()); cs.onchange = async () => { lss("startCarSec", String(await askLimit(Number(cs.value) || 6, 1, 120))); applyStart(); }; }
     const cm2 = get("advCarMs"); if (cm2) { cm2.value = String(carMs()); cm2.onchange = async () => { lss("startCarMs", String(await askLimit(Number(cm2.value) || 1000, 100, 5000))); applyStart(); }; }
+    rowsByMode();
     const sz = sizes();
     Object.keys(SZ_DEF).forEach((k) => {
       const inp = get("advSz_" + k); if (!inp) return;
@@ -457,7 +484,7 @@
 
   function init() {
     setupPlAdd(); setupCast(); setupHoldX(); setupStart();
-    const sc = $("songCount"); if (sc && !document.querySelector(".lang-filters")) { const w = h("span", "count-wrap"); sc.before(w); w.append(sc, langBtn("lang-filters")); }
+    const sc = $("songCount"); if (sc && !document.querySelector(".lang-filters")) { const w = h("span", "count-wrap"); sc.before(w); w.append(sc, langBtn("lang-filters")); const tb = $("tagsBtn"); if (tb) w.append(tb); }
     const tr = $("titleRow"); if (tr && !tr.querySelector(".lang-title")) { const lb = langBtn("lang-title"); const castB = $("castBtn"); if (castB) castB.before(lb); else tr.append(lb); }
     bindStartSettings();
     const cm = $("codeModal"); if (cm) new MutationObserver(() => { if (!cm.hidden) setTimeout(bindStartSettings, 30); }).observe(cm, { attributes: true, attributeFilter: ["hidden"] });

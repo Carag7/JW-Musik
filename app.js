@@ -827,7 +827,12 @@ function renderList() {
     const title = document.createElement("span");
     title.textContent = `${state.favorites.has(song.id) ? "★ " : ""}${song.title}`;
     button.append(number, title);
-    if (showExtraSongs() && srcTagsOn() && state.media) {
+    if (!srcTagsOn()) {   // Icons aus: Platz bleibt frei, damit die Zeilenhöhe gleich bleibt
+      const ghost = document.createElement("span");
+      ghost.className = "src-tags src-off";
+      ghost.append(Object.assign(document.createElement("i"), { textContent: "K" }));
+      button.append(ghost);
+    } else if (srcTagsOn() && state.media) {
       const tags = document.createElement("span");
       tags.className = "src-tags";
       if (!song.extra) tags.append(Object.assign(document.createElement("i"), { className: "t-k", textContent: "K", title: "Karaoke" }));
@@ -1255,9 +1260,12 @@ let fadeTimer = 0;
 function paintTagsBtn() {
   const b = document.getElementById("tagsBtn"); if (!b) return;
   const on = srcTagsOn(), fade = lsv("srcTagsFade", "1") === "1";
-  b.textContent = !on ? "Icons: aus" : fade ? "Icons: kurz" : "Icons: an";
+  const s = !on ? "aus" : fade ? "kurz" : "an";
+  b.className = "lang-mini tags-mini";
+  b.dataset.s = s;
+  if (!b._svg) { b._svg = true; b.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path class="tg" d="M3 12V4h8l10 10-8 8z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="7.5" cy="8.5" r="1.6" fill="currentColor"/><path class="sl" d="M3 21L21 3" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>'; }
   b.setAttribute("aria-pressed", String(on && !fade));
-  b.title = "Kleine Kennzeichen (Icons) bei den Liedern: kurz einblenden → immer sichtbar → aus (antippen zum Wechseln)";
+  b.title = "Kleine Kennzeichen (Icons) bei den Liedern: " + (s === "aus" ? "aus" : s === "kurz" ? "nur kurz sichtbar" : "immer sichtbar") + " – antippen zum Wechseln (kurz → immer → aus)";
 }
 function setupTagsBtn() {
   const b = document.getElementById("tagsBtn"); if (!b || b._w) return; b._w = true;
@@ -1475,7 +1483,18 @@ async function selectSong(index, autoplay) {
       el.play.textContent = "❚❚";
       setStatus("Spielt", "is-play");
       requestWakeLock();
-    }).catch(() => { if (token === state.selectToken) el.status.textContent = "Wiedergabe blockiert. Tippe noch einmal auf Play."; });
+    }).catch((err) => {
+      if (token !== state.selectToken) return;
+      if (err && err.name === "AbortError") {   // neue Datei wurde dazwischen geladen: kein echtes Blockieren, nochmal versuchen
+        el.audio.addEventListener("canplay", () => {
+          if (token !== state.selectToken || !el.audio.paused || state.userPaused) return;
+          el.audio.play().catch(() => { el.status.textContent = "Wiedergabe blockiert. Tippe irgendwo auf die Seite, dann startet das Lied."; armTap(); });
+        }, { once: true });
+        return;
+      }
+      el.status.textContent = "Wiedergabe blockiert. Tippe irgendwo auf die Seite, dann startet das Lied.";
+      armTap();
+    });
   }
   if (resume) el.audio.addEventListener("loadedmetadata", () => { try { el.audio.currentTime = Math.max(0, Math.min(resume, (el.audio.duration || resume + 1) - 0.5)); } catch { /* egal */ } }, { once: true });
   loadLyrics(song, src.version);  // läuft parallel zum Audio-Laden
@@ -1520,7 +1539,8 @@ function setupNet() {
   window.addEventListener("online", () => { netUi(); if (state.wantPlay && (el.audio.paused || state.netErr)) reconnect(); });
   el.audio.addEventListener("playing", () => { state.netErr = false; reconnBusy = false; state.waitSince = 0; clearTimeout(reconnTimer); netUi(); });
   el.audio.addEventListener("play", () => { state.wantPlay = true; });
-  const syncBtn = () => { const on = !el.audio.paused && !el.audio.ended; el.play.textContent = on ? "❚❚" : "▶"; if (on) state.everPlayed = true; };
+  const syncBtn = () => { const on = !el.audio.paused && !el.audio.ended; el.play.textContent = on ? "❚❚" : "▶"; };
+  el.audio.addEventListener("timeupdate", () => { if (!el.audio.paused && el.audio.currentTime > 0.3) state.everPlayed = true; });
   ["play", "playing", "pause", "ended", "emptied"].forEach((n) => el.audio.addEventListener(n, syncBtn));
   const playingCls = () => document.body.classList.toggle("is-playing", !el.audio.paused && !el.audio.ended);
   ["play", "playing", "pause", "ended", "emptied"].forEach((n) => el.audio.addEventListener(n, playingCls));
@@ -2006,6 +2026,19 @@ function bindChrome() {
 }
 
 /* Beim Öffnen automatisch abspielen (letztes Lied, sonst Zufall). Blockiert der Browser das, startet es beim ersten Antippen. */
+/* Browser blockiert Autoplay: der nächste Tipp irgendwo startet die Wiedergabe (abschaltbar per langem Druck auf die Autoplay-Taste) */
+function armTap() {
+  if (state.armed || state.userPaused || state.everPlayed || lsv("autoTap", "1") !== "1") return;
+  state.armed = true;
+  const types = ["pointerdown", "keydown", "touchstart"];
+  const arm = (e) => {
+    types.forEach((type) => document.removeEventListener(type, arm, true));
+    state.armed = false;
+    if (e && e.target && e.target.closest && e.target.closest("#playBtn, #autoStartBtn, #loginGate")) return;   // der Tipp selbst startet/steuert schon
+    if (el.audio.paused && !state.userPaused) togglePlay();
+  };
+  types.forEach((type) => document.addEventListener(type, arm, true));
+}
 function tryAutoStart() {
   Promise.race([state.userReady || Promise.resolve(), new Promise((r) => setTimeout(r, 700))]).then(tryAutoStartNow);
 }
@@ -2017,15 +2050,7 @@ function tryAutoStartNow() {
   const at = state.songs.findIndex((song) => song.id === last);
   if (at >= 0) selectSong(at, true);
   else playRandom(state.favorites.size > 0);
-  setTimeout(() => {
-    if (!el.audio.paused) return;
-    const arm = () => {
-      ["pointerdown", "keydown", "touchstart"].forEach((type) => document.removeEventListener(type, arm, true));
-      if (el.audio.paused && !state.userPaused && !state.everPlayed && lsv("autoTap", "1") === "1") togglePlay();
-    };
-    if (state.userPaused || state.everPlayed) return;
-    ["pointerdown", "keydown", "touchstart"].forEach((type) => document.addEventListener(type, arm, true));
-  }, 2500);
+  setTimeout(() => { if (el.audio.paused) armTap(); }, 2500);
 }
 
 /* iPhone/iPad-Web-App: Leiste unter Statuszeile/Fenster-Knöpfen; Tastatur: sichtbare Höhe merken */
@@ -3685,13 +3710,22 @@ async function openTimecode() {
   startSpectrum();
 }
 
+/* Kopfbereich (Spaltenüberschrift, Auswahl, KI-Leiste) steht über dem Text, nicht im scrollenden Fenster */
+function editHeadBox() {
+  let b = document.getElementById("editHead");
+  if (!b) { b = document.createElement("div"); b.id = "editHead"; const now = document.querySelector(".stage .now") || el.lyrics.parentNode; now.append(b); }
+  return b;
+}
+function curLrcKind(song) {
+  return state.curVersion === "meeting" ? "lrcm" : state.curVersion === "sung" ? "lrcs" : (musikLang() === "de" && state.lyricLang === "de" ? "lrcde" : "lrc");
+}
 function attachTimecodeUi() {
   if (!document.getElementById("colHead")) {
     const head = document.createElement("div");
     head.id = "colHead";
     head.className = "col-head";
     head.innerHTML = '<span class="hd-c1"><input type="checkbox" id="pickAll" title="Alle Zeilen wählen / abwählen"> Timecode</span><span>Player</span><span>Setzen</span><span class="hd-c4">Liedtext <button type="button" class="chip hd-sel" title="Zeilen auswählen: alle, keine, umkehren …">Auswahl ' + (window.CHEV ? window.CHEV(false) : "") + "</button></span>";
-    el.lyrics.prepend(head);
+    editHeadBox().prepend(head);
   }
   el.lyrics.querySelectorAll(".lyric-line").forEach((line) => {
     if (line.querySelector(".time-edit")) return;
@@ -3759,6 +3793,8 @@ function attachTimecodeUi() {
     cell.append(pick, input);
     line.append(cell, now, take, textInput);
   });
+  document.body.classList.add("has-edithead");
+  document.dispatchEvent(new Event("edit-rows"));
 }
 
 function parseTime(value) {
@@ -3886,8 +3922,9 @@ function buildEditPanel() {
     state.editDirty = false;
     state.karaokeHold = false;
     panel.remove();
-    const head = document.getElementById("colHead");
+    const head = document.getElementById("editHead");
     if (head) head.remove();
+    document.body.classList.remove("has-edithead");
     document.getElementById("spectrum").hidden = true;
     if (state.songs[state.index]) loadLyrics(state.songs[state.index]);
   });
@@ -3916,18 +3953,34 @@ async function saveTimecode(skipConfirm) {
     const [m, rest] = t.split(":");
     return `[${m.padStart(2, "0")}:${rest}]${line.text}`;
   }).join("\n");
-  const kind = state.curVersion === "meeting" ? "lrcm" : state.curVersion === "sung" ? "lrcs" : (musikLang() === "de" && state.lyricLang === "de" ? "lrcde" : "lrc");
+  const kind = curLrcKind(song);
   localStorage.setItem(`${kind}-${song.id}`, JSON.stringify(lines));
+  const putOnce = (k) => fetch(`${SYNC_BASE}/sync/${kind}-${song.id}`, { method: "PUT", headers: { "content-type": "text/plain", "x-write-key": k || "" }, body: lrc });
+  const fail = async (why) => {
+    try { localStorage.setItem(`pend-${kind}-${song.id}`, JSON.stringify({ lines, ts: Date.now(), why })); } catch { /* egal */ }
+    document.dispatchEvent(new CustomEvent("pending-changed"));
+    await uiAlert("Nur lokal gespeichert", why + " Die Zeiten bleiben auf diesem Gerät. Beim nächsten Öffnen im Bearbeiten-Modus siehst du einen Hinweis und kannst sie später auf den Server speichern.");
+  };
   try {
-    const res = await fetch(`${SYNC_BASE}/sync/${kind}-${song.id}`, { method: "PUT", headers: { "content-type": "text/plain", "x-write-key": state.writeKey || "" }, body: lrc });
+    let key = ""; try { key = sessionStorage.getItem("aiKey") || ""; } catch { /* egal */ }
+    if (!key) key = state.writeKey || "";
+    let res = await putOnce(key);
+    /* Das Timecode-Passwort und das Server-Secret WRITE_KEY können verschieden sein: nachfragen */
+    for (let tries = 0; res.status === 401 && tries < 3; tries++) {
+      const k2 = await uiPrompt({ eyebrow: "Speichern", title: "Schreib-Schlüssel", text: "Der Server hat das Passwort abgelehnt. Gib den Schreib-Schlüssel ein (das Secret WRITE_KEY des Workers in Cloudflare).", type: "password", placeholder: "WRITE_KEY", ok: "Weiter" });
+      if (k2 === null || k2 === "") break;
+      key = k2; res = await putOnce(key);
+    }
     if (res.ok) {
+      try { sessionStorage.setItem("aiKey", key); } catch { /* egal */ }
+      try { localStorage.removeItem(`pend-${kind}-${song.id}`); } catch { /* egal */ }
+      document.dispatchEvent(new CustomEvent("pending-changed"));
       if (kind === "lrcm" && state.media) state.media.meeting.lrc[String(song.number)] = `meeting/lrc/${song.id}.lrc`;
       if (kind === "lrcs" && state.media) (state.media.meeting.sungLrc = state.media.meeting.sungLrc || {})[String(song.number)] = `meeting/sung/lrc/${song.id}.lrc`;
-      await uiAlert("Gespeichert", kind === "lrcm" ? "Text für die Instrumental-Fassung gespeichert, auf allen Geräten verfügbar." : kind === "lrcs" ? "Text für die Zusammenkünfte-Fassung gespeichert, auf allen Geräten verfügbar." : "Auf allen Geräten verfügbar.");
-    }
-    else await uiAlert("Nur lokal gespeichert", res.status === 401 ? "Der Server hat das Timecode-Passwort abgelehnt (WRITE_KEY in Cloudflare prüfen)." : "Der Server war nicht erreichbar.");
+      await uiAlert("Gespeichert", kind === "lrcm" ? "Text für die Instrumental-Fassung gespeichert, auf allen Geräten verfügbar." : kind === "lrcs" ? "Text für die Zusammenkünfte-Fassung gespeichert, auf allen Geräten verfügbar." : "Auf dem Server gespeichert, auf allen Geräten verfügbar.");
+    } else await fail(res.status === 401 ? "Der Server hat den Schreib-Schlüssel abgelehnt (WRITE_KEY in Cloudflare prüfen)." : `Der Server meldet Fehler ${res.status}.`);
   } catch {
-    await uiAlert("Nur lokal gespeichert", "Der Server war nicht erreichbar.");
+    await fail("Der Server war nicht erreichbar.");
   }
   state.editDirty = false;
   return true;

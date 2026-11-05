@@ -1,0 +1,36 @@
+/* v124 */
+/* Kopfbereich im Bearbeiten-Modus: steht über dem scrollenden Text */
+#editHead { position: relative; z-index: 15; background: var(--panel, var(--bg)); border-bottom: 1px solid var(--line); padding: 0 4px; }
+#editHead .col-head { position: static !important; box-shadow: none; margin: 0; }
+#editHead #aiLegend { position: static !important; padding: 4px 2px !important; border: 0 !important; }
+#aiTools, #pendBar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 4px 2px; }
+#aiTools .chip, #pendBar .chip { min-height: 30px; font-size: 12px; padding: 0 10px; }
+#aiTools .chip:disabled { opacity: .45; }
+#aiTools .ai-sep { font-size: 12px; color: var(--muted); margin-left: 6px; }
+#pendBar { background: color-mix(in srgb, #e8a33d 18%, transparent); border-left: 4px solid #e8a33d; font-size: 13px; padding: 6px 8px; margin: 4px 0; border-radius: 6px; }
+body.edit-mode.has-edithead .lyrics { box-sizing: border-box; height: 100% !important; max-height: 100% !important; min-height: 0; }
+body.edit-mode.has-edithead .stage { overflow: hidden !important; }
+
+.set-row[hidden], small.set-hint[hidden] { display: none !important; }
+
+/* Zahlenfelder mit Schieberegler: Text | Regler | Zahl | Pfeile in EINER Zeile */
+:is(#advBox, #advPlay, #advList, #advView, #codeModal) .set-row:has(> input.num-rng) { display: grid !important; grid-template-columns: minmax(0, 1fr) minmax(50px, 84px) 70px 34px; column-gap: 6px; align-items: center; }
+:is(#advBox, #advPlay, #advList, #advView, #codeModal) .set-row:has(> input.num-rng) > input.num-rng { width: 100% !important; min-width: 0 !important; max-width: none !important; margin: 0 !important; }
+:is(#advBox, #advPlay, #advList, #advView, #codeModal) .set-row:has(> input.num-rng) > input[type="number"] { width: 100% !important; min-width: 0 !important; max-width: none !important; }
+:is(#advBox, #advPlay, #advList, #advView, #codeModal) .set-row:has(> input.num-rng) > .stp { margin: 0; flex-direction: column; }
+@media (max-width: 420px) {
+  :is(#advBox, #advPlay, #advList, #advView, #codeModal) .set-row:has(> input.num-rng) { grid-template-columns: minmax(0, 1fr) minmax(46px, 90px) 64px 34px; column-gap: 4px; }
+}
+
+/* Icons-Knopf: klein und unauffällig neben der Sprache */
+.tags-mini { display: inline-flex; align-items: center; justify-content: center; min-width: 26px; padding: 0 4px; }
+.tags-mini svg .sl { display: none; }
+.tags-mini[data-s="aus"] svg .sl { display: block; }
+.tags-mini[data-s="aus"] { opacity: .55; }
+.tags-mini[data-s="an"] { color: var(--accent); border-color: var(--accent); }
+.tags-mini[data-s="an"] svg .tg { fill: currentColor; fill-opacity: .25; }
+.tags-mini[data-s="kurz"] svg .tg { stroke-dasharray: 3 2.5; }
+/* Icons aus: Platz bleibt frei, damit die Zeilen gleich hoch bleiben */
+.src-tags.src-off { visibility: hidden; }
+.filters .tags-mini { margin-left: 4px; align-self: center; }
+:is(#advBox, #advPlay, #advList, #advView, #codeModal) .set-row[hidden][hidden][hidden][hidden], #codeModal small.set-hint[hidden] { display: none !important; }

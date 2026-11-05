@@ -21,6 +21,7 @@
   <link rel="stylesheet" href="v116.css" />
   <link rel="stylesheet" href="v118.css" />
   <link rel="stylesheet" href="v119.css" />
+  <link rel="stylesheet" href="v124.css" />
   <script src="password.js"></script>
 </head>
 <body>
@@ -174,7 +175,7 @@
       <div id="sourceFilter" class="source-filter" hidden></div>
 
       <div class="filters">
-        <button id="tagsBtn" class="chip" type="button" aria-pressed="false" title="Kleine Kennzeichen (Icons) bei den Liedern: kurz / immer / aus">Icons</button>
+        <button id="tagsBtn" class="lang-mini tags-mini" type="button" aria-pressed="false" title="Kleine Kennzeichen (Icons) bei den Liedern: kurz / immer / aus"></button>
         <button id="favoritesToggle" class="chip" type="button" aria-pressed="false">alle Lieder</button>
         <button id="shuffleBtn" class="chip" type="button" aria-pressed="false">Zufall</button>
         <span id="songCount" class="count">0</span>
@@ -514,6 +515,7 @@
         <small class="set-hint">Das Symbol steht in der Titelzeile neben ☆ und ＋. Es erscheint nur, wenn der Browser Übertragen kann (Chrome auf Android/Computer, Safari/AirPlay) – im Tesla-Browser gibt es diese Funktion nicht.</small>
         <small class="set-hint">Gilt für Karussell und Überblenden. Die Reihenfolge und die Ordner gelten für alle drei Anzeigen.</small>
         <label class="set-row">Überblenden: Übergang <select id="advStartTrans"><option value="fade">Überblenden</option><option value="stack">Kartenstapel</option><option value="slide">Schieben</option><option value="zoom">Zoom</option><option value="flip">Drehen</option><option value="mosaic">Mosaik</option><option value="rand">Zufällig gemischt</option></select></label>
+        <label class="set-row">Überblenden: Dauer von Kartenstapel, Schieben, Zoom, Drehen, Mosaik (Millisekunden) <input id="advStartAnim" type="number" min="300" max="6000" step="100" inputmode="numeric" /></label>
         <label class="set-row">Karussell: Darstellung <select id="advCar3d"><option value="1">3D</option><option value="0">2D (nur verschoben)</option></select></label>
         <small class="set-hint">Übergang gilt für „Überblenden“: Kartenstapel schiebt das oberste Cover zur Seite wie die oberste Karte eines Stapels, Mosaik baut das nächste Cover aus Kacheln auf. Beide Auswahlen erreichst du auch, wenn du auf der Startseite lange auf „Überblenden“ bzw. „Karussell“ drückst.</small>
         <label class="set-row">Schweben: Geschwindigkeit in % <input id="advFloatSpd" type="number" min="20" max="300" step="10" inputmode="numeric" /></label>
@@ -627,5 +629,6 @@
   <script src="v116.js"></script>
   <script src="v118.js"></script>
   <script src="v119.js"></script>
+  <script src="v124.js"></script>
 </body>
 </html>

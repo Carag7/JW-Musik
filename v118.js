@@ -66,7 +66,7 @@
     return { times: out, matched, total: n, hit: first.map((v) => v != null) };
   }
   /* ----- Anzeige: Fortschritt, Farben, Auswahl ----- */
-  const AI = { words: null, key: "", old: null, neu: null, reverted: new Set(), mode: "ki" };
+  const AI = { words: null, key: "", old: null, neu: null, hit: null, reverted: new Set(), mode: "ki", song: "" };
   const rowsAll = () => [...document.querySelectorAll("#lyrics .lyric-line")];
   const rowText = (r) => ((r.querySelector(".lyric-text") || {}).value || r.textContent || "").trim();
   function prog(show, pct, label) {
@@ -98,9 +98,15 @@
     });
     return cnt;
   }
-  function legend(cnt) {
+  function countAll() {
+    const c = { d0: 0, d1: 0, d2: 0, d3: 0, un: 0 };
+    rowsAll().forEach((r) => ["d0", "d1", "d2", "d3", "un"].forEach((k) => { if (r.classList.contains("ai-" + k)) c[k]++; }));
+    return c;
+  }
+  function legend(cnt0) {
+    const cnt = countAll();
     let lg = $("aiLegend"); if (!lg) { lg = document.createElement("div"); lg.id = "aiLegend"; }
-    const hd = $("colHead"); if (hd) hd.after(lg); else { const l = $("lyrics"); l.prepend(lg); }
+    const hd = $("colHead"); if (hd) hd.after(lg); else if (typeof editHeadBox === "function") editHeadBox().append(lg); else { const l = $("lyrics"); l.prepend(lg); }
     lg.innerHTML = "";
     const add = (cls, txt) => { const s = document.createElement("span"); s.className = "ai-chip " + cls; s.textContent = txt; lg.append(s); };
     add("ai-d0", `unverändert ${cnt.d0}`); add("ai-d1", `klein (<0,6 s) ${cnt.d1}`); add("ai-d2", `mittel (<2 s) ${cnt.d2}`); add("ai-d3", `groß (≥2 s) ${cnt.d3}`); add("ai-un", `nicht zugeordnet ${cnt.un}`);
@@ -110,7 +116,8 @@
     off.onclick = () => { rowsAll().forEach((r) => { ["ai-d0", "ai-d1", "ai-d2", "ai-d3", "ai-un"].forEach((c) => r.classList.remove(c)); r.querySelectorAll(".ai-delta,.ai-rev").forEach((d) => d.remove()); }); lg.remove(); };
     const ab = document.createElement("span"); ab.className = "ai-ab";
     [["ki", "KI-Zeiten"], ["alt", "Original"]].forEach(([m, n]) => { const b = document.createElement("button"); b.type = "button"; b.className = "chip"; b.dataset.m = m; b.textContent = n; b.setAttribute("aria-pressed", String(m === AI.mode)); b.onclick = () => useTimes(m); ab.append(b); });
-    lg.prepend(ab); lg.append(pick, off);
+    const ov = document.createElement("button"); ov.type = "button"; ov.className = "chip"; ov.textContent = "Übersicht"; ov.title = "KI-Abstimmung: Tabelle der Änderungen"; ov.onclick = () => report();
+    lg.prepend(ab); lg.append(pick, ov, off);
   }
   function setPick(on) { document.body.classList.toggle("ai-pick", on); }
   const picked = () => rowsAll().map((r, k) => (r.querySelector(".row-pick") && r.querySelector(".row-pick").checked ? k : -1)).filter((k) => k >= 0);
@@ -136,6 +143,57 @@
     setT(row, back ? AI.old[k] : AI.neu[k]);
     paintRev(row, back);
     state.editDirty = true;
+  }
+
+  const songKey = () => { try { const sg = state.songs[state.index]; return curLrcKind(sg) + "-" + sg.id; } catch { return ""; } };
+  const fmtP = (x, n) => (n ? Math.round(100 * x / n) : 0) + " %";
+  function stats() {
+    if (!AI.old || !AI.neu) return null;
+    const n = AI.old.length, b = { d0: 0, d1: 0, d2: 0, d3: 0, un: 0 }; let sum = 0, mx = 0, m = 0;
+    for (let k = 0; k < n; k++) {
+      if (AI.old[k] == null || AI.neu[k] == null) continue;
+      const a = Math.abs(AI.neu[k] - AI.old[k]);
+      if (AI.hit && AI.hit[k] === false) { b.un++; continue; }
+      b[a < 0.15 ? "d0" : a < 0.6 ? "d1" : a < 2 ? "d2" : "d3"]++; sum += a; m++; if (a > mx) mx = a;
+    }
+    return { n, b, avg: m ? sum / m : 0, mx };
+  }
+  async function report(head) {
+    const st = stats();
+    if (!st) { await uiAlert("KI-Abstimmung", "Es gibt noch keine KI-Abstimmung für dieses Lied. „KI-Sync“ starten oder „Letzte KI-Änderung“ laden."); return; }
+    const { n, b } = st, strong = b.d2 + b.d3, weak = b.d0 + b.d1;
+    const f1 = (x) => String(x.toFixed(1)).replace(".", ",");
+    const v = await uiDialog({ eyebrow: "KI-Abstimmung", title: "Übersicht der Änderungen", cancelValue: null,
+      lines: [
+        ...(head ? [head] : []),
+        { text: `Von ${n} Zeilen wurden ${strong} (${fmtP(strong, n)}) deutlich verändert (ab 0,6 s) und ${weak} (${fmtP(weak, n)}) wenig oder gar nicht. ${b.un} Zeilen (${fmtP(b.un, n)}) konnte die KI nicht zuordnen.` },
+        { table: [["Änderung der Startzeit", "Zeilen", "Anteil"],
+          ["unverändert (unter 0,15 s)", b.d0, fmtP(b.d0, n)],
+          ["klein (0,15 – 0,6 s)", b.d1, fmtP(b.d1, n)],
+          ["mittel (0,6 – 2 s)", b.d2, fmtP(b.d2, n)],
+          ["groß (ab 2 s)", b.d3, fmtP(b.d3, n)],
+          ["nicht zugeordnet", b.un, fmtP(b.un, n)],
+          ["Summe", n, "100 %"]], right: true },
+        { text: `Durchschnittliche Verschiebung ${f1(st.avg)} s, größte ${f1(st.mx)} s. Farben in den Zeilen: grün = unverändert, gelb = klein, orange = mittel, rot = groß, violett = nicht zugeordnet.`, cls: "dlg-hint" }
+      ],
+      buttons: [{ value: "bad", kind: "primary", label: "Große + nicht zugeordnete wählen" }, { value: null, kind: "cancel", label: "Schließen" }] });
+    if (v === "bad") rowsAll().forEach((r) => { const c = r.querySelector(".row-pick"); if (c) c.checked = r.classList.contains("ai-d3") || r.classList.contains("ai-un"); });
+    syncPickAll();
+  }
+  /* letzte KI-Änderung pro Lied merken, damit man sie später ohne neues Einlesen wieder abrufen kann */
+  function saveLast() {
+    try { localStorage.setItem("aiLast-" + songKey(), JSON.stringify({ old: AI.old, neu: AI.neu, hit: AI.hit, ts: Date.now() })); } catch { /* egal */ }
+    tools();
+  }
+  const getLast = () => { try { return JSON.parse(localStorage.getItem("aiLast-" + songKey()) || "null"); } catch { return null; } };
+  async function loadLast() {
+    const d = getLast(), rows = rowsAll();
+    if (!d || !d.old || d.old.length !== rows.length) { await uiAlert("KI-Abstimmung", d ? "Die Zeilenzahl des Liedes hat sich seit der letzten KI-Abstimmung geändert, darum kann sie nicht geladen werden." : "Für dieses Lied gibt es noch keine gemerkte KI-Abstimmung."); return; }
+    AI.old = d.old.slice(); AI.neu = d.neu.slice(); AI.hit = d.hit ? d.hit.slice() : rows.map(() => true); AI.reverted = new Set(); AI.song = songKey(); AI.mode = "ki";
+    rows.forEach((r, k) => { if (AI.neu[k] != null) setT(r, AI.neu[k]); });
+    const cnt = mark(rows, AI.old, { hit: AI.hit });
+    state.editDirty = true; legend(cnt);
+    await report("Letzte KI-Abstimmung vom " + new Date(d.ts).toLocaleString("de-AT") + " geladen (ohne neues Einlesen).");
   }
   const level = () => lsv("aiAcc", "normal") === "low" ? "low" : lsv("aiAcc", "normal") === "high" ? "high" : "normal";
 
@@ -203,8 +261,8 @@
       const lang = typeof musikLang === "function" && musikLang() === "de" && state.lyricLang === "de" ? "de" : "en";
       const words = await transcribe(texts, lang);
       const olds = rows.map((r) => Number(r.dataset.time));
-      if (!AI.old || AI.old.length !== rows.length) { AI.old = olds.slice(); AI.reverted = new Set(); }
-      const fin = (idxs) => { AI.neu = AI.neu && AI.neu.length === rows.length ? AI.neu : olds.slice(); (idxs || rows.map((_, k) => k)).forEach((k) => { AI.neu[k] = Number(rows[k].dataset.time); AI.reverted.delete(k); }); AI.mode = "ki"; };
+      if (!AI.old || AI.old.length !== rows.length || AI.song !== songKey()) { AI.old = olds.slice(); AI.neu = null; AI.hit = null; AI.reverted = new Set(); AI.song = songKey(); }
+      const fin = (idxs, hits) => { if (!AI.hit || AI.hit.length !== rows.length) AI.hit = rows.map(() => true); (idxs || rows.map((_, k) => k)).forEach((k) => { AI.hit[k] = hits ? hits[k] !== false : true; }); AI.neu = AI.neu && AI.neu.length === rows.length ? AI.neu : olds.slice(); (idxs || rows.map((_, k) => k)).forEach((k) => { AI.neu[k] = Number(rows[k].dataset.time); AI.reverted.delete(k); }); AI.mode = "ki"; };
       let res, idxs;
       if (only) {
         idxs = sel; res = { hit: rows.map(() => null), matched: 0, total: 0 };
@@ -220,8 +278,8 @@
           res.matched += r.matched; res.total += r.total;
         });
         const cnt = mark(rows.filter((_, k) => sel.includes(k)), sel.map((k) => olds[k]), { hit: sel.map((k) => res.hit[k]) });
-        fin(sel); state.editDirty = true; legend(cnt);
-        await uiAlert("KI-Abstimmung", `${sel.length} Zeilen neu zugeordnet (${res.matched} von ${res.total} Wörtern gefunden). Die Farben zeigen die Änderung.`);
+        fin(sel, res.hit); state.editDirty = true; legend(cnt); saveLast();
+        await report(`${sel.length} Zeilen neu zugeordnet (${res.matched} von ${res.total} Wörtern gefunden).`);
         return;
       }
       res = alignLines(texts, words);
@@ -232,8 +290,8 @@
         const inp = row.querySelector(".time-edit"); if (inp && typeof formatTime === "function") inp.value = formatTime(t, true);
       });
       const cnt = mark(rows, olds, res);
-      fin(); state.editDirty = true; legend(cnt);
-      await uiAlert("KI-Abstimmung", `Fertig: ${res.matched} von ${res.total} Wörtern zugeordnet (${Math.round(100 * res.matched / res.total)} %). Farben: grün/gelb/orange/rot = kleine bis große Änderung, violett = nicht zugeordnet (Zeit nur geschätzt). Mit „Original“/„KI-Zeiten“ oben schaltest du um, „↶ alt“ stellt einzelne Zeilen zurück. Haken vor Zeilen + „KI-Sync“ ordnet nur diese neu zu. Gespeichert wird erst mit „Speichern“.`);
+      fin(null, res.hit); state.editDirty = true; legend(cnt); saveLast();
+      await report(`Fertig: ${res.matched} von ${res.total} Wörtern zugeordnet (${Math.round(100 * res.matched / res.total)} %).`);
     } catch (e) { await uiAlert("KI-Abstimmung", (e && e.message) || String(e)); }
     finally { prog(false); btn.disabled = false; btn.textContent = old; }
   }
@@ -245,6 +303,84 @@
     p.insertBefore(b, save || null);
   }).observe(document.body, { childList: true });
 
+
+
+  /* ----- Werkzeugleiste unter der Kopfzeile (KI-Übersicht, letzte KI, Auswahl-Knöpfe) ----- */
+  const selBarOn = () => lsv("selBar", "0") === "1";
+  function selAction(v) {
+    const c = pickCbs();
+    if (v === "all") c.forEach((x) => { x.checked = true; });
+    else if (v === "none") c.forEach((x) => { x.checked = false; });
+    else if (v === "inv") c.forEach((x) => { x.checked = !x.checked; });
+    else if (v === "bad") c.forEach((x) => { const r = x.closest(".lyric-line"); x.checked = !!r && (r.classList.contains("ai-d3") || r.classList.contains("ai-un")); });
+    else if (v === "ki") useTimes("ki");
+    else if (v === "alt") useTimes("alt");
+    else if (v === "pickalt") { rowsAll().forEach((r, k) => { const cb = r.querySelector(".row-pick"); if (cb && cb.checked && AI.old && AI.old[k] != null && !AI.reverted.has(k)) revertRow(k, r); }); }
+    syncPickAll();
+  }
+  function tools() {
+    const hd = typeof editHeadBox === "function" && $("colHead") ? editHeadBox() : null; if (!hd) return;
+    let t = $("aiTools"); if (!t) { t = document.createElement("div"); t.id = "aiTools"; const lg = $("aiLegend"), ch = $("colHead"); (lg || ch).after(t); }
+    if (t.previousElementSibling !== ($("aiLegend") || $("colHead"))) ($("aiLegend") || $("colHead")).after(t);
+    t.replaceChildren();
+    const mk = (txt, fn, title, dis) => { const b = document.createElement("button"); b.type = "button"; b.className = "chip"; b.textContent = txt; if (title) b.title = title; b.disabled = !!dis; b.onclick = fn; t.append(b); return b; };
+    const hasAI = !!(AI.old && AI.neu), last = getLast();
+    mk("KI-Übersicht", () => report(), "Tabelle: wie viele Zeilen wurden wie stark verändert", !hasAI);
+    mk("Letzte KI-Änderung", () => loadLast(), last ? "Letzte KI-Abstimmung dieses Liedes ohne neues Einlesen wieder laden (" + new Date(last.ts).toLocaleString("de-AT") + ")" : "Noch keine KI-Abstimmung für dieses Lied gespeichert", !last);
+    if (selBarOn()) {
+      const sp = document.createElement("span"); sp.className = "ai-sep"; sp.textContent = "Auswahl:"; t.append(sp);
+      mk("Alle", () => selAction("all")); mk("Keine", () => selAction("none")); mk("Umkehren", () => selAction("inv"));
+      mk("Große + n. z.", () => selAction("bad"), "Große Abweichung und nicht zugeordnete wählen", !hasAI);
+      mk("→ KI-Zeit", () => selAction("ki"), "Alle Zeilen auf KI-Zeit", !hasAI); mk("→ alte Zeit", () => selAction("alt"), "Alle Zeilen auf alte Zeit", !hasAI);
+      mk("Gewählte → alt", () => selAction("pickalt"), "Nur gewählte Zeilen auf alte Zeit", !hasAI);
+    }
+  }
+  /* ----- Lokal gespeicherte, nicht auf dem Server liegende Zeiten ----- */
+  const pendKey = () => "pend-" + songKey();
+  const getPend = () => { try { return JSON.parse(localStorage.getItem(pendKey()) || "null"); } catch { return null; } };
+  function pendCompare(p) {
+    const rows = rowsAll(); if (!p || !p.lines) return null;
+    if (p.lines.length !== rows.length) return { same: false, lenDiff: true, n: p.lines.length, m: rows.length };
+    let diff = 0; rows.forEach((r, k) => { if (Math.abs(Number(r.dataset.time) - Number(p.lines[k].time)) > 0.05 || (p.lines[k].text || "").trim() !== rowText(r)) diff++; });
+    return { same: diff === 0, diff, n: rows.length };
+  }
+  async function pendShow(p) {
+    const rows = rowsAll(), c = pendCompare(p);
+    if (!c || c.lenDiff) { /* Text weicht ab: lokale Fassung komplett laden */
+      if (!(await uiConfirm({ eyebrow: "Lokal gespeichert", title: "Lokale Fassung laden?", text: `Lokal gibt es ${c ? c.n : "?"} Zeilen, auf dem Server ${c ? c.m : "?"}. Die lokale Fassung ersetzt die angezeigten Zeilen (gespeichert wird erst mit „Speichern“).`, ok: "Laden" }))) return false;
+      state.lyrics = p.lines.map((l) => ({ time: Number(l.time), text: l.text })); renderLyrics(state.lyrics); state.editDirty = true; return true;
+    }
+    AI.old = rows.map((r) => Number(r.dataset.time)); AI.neu = p.lines.map((l) => Number(l.time)); AI.hit = rows.map(() => true); AI.reverted = new Set(); AI.song = songKey(); AI.mode = "ki";
+    rows.forEach((r, k) => setT(r, AI.neu[k]));
+    const cnt = mark(rows, AI.old, { hit: AI.hit }); state.editDirty = true; legend(cnt); tools();
+    await report("Vergleich: lokal gespeicherte Zeiten (neu) gegenüber dem Server (alt). Mit „↶/alt“ in der Zeile stellst du einzelne Zeilen auf die Server-Zeit zurück.");
+    return true;
+  }
+  function pendBar() {
+    const hd = typeof editHeadBox === "function" && $("colHead") ? editHeadBox() : null;
+    let bar = $("pendBar"); if (bar) bar.remove();
+    if (!hd) return;
+    const p = getPend(); if (!p) return;
+    const c = pendCompare(p);
+    if (c && c.same) { try { localStorage.removeItem(pendKey()); } catch { /* egal */ } return; }
+    bar = document.createElement("div"); bar.id = "pendBar";
+    const when = new Date(p.ts).toLocaleString("de-AT");
+    const msg = document.createElement("span");
+    msg.textContent = "⚠ Nur lokal gespeichert (" + when + "): " + (c && c.lenDiff ? `Zeilenzahl weicht ab (lokal ${c.n}, Server ${c.m}).` : `${c ? c.diff : "?"} von ${c ? c.n : "?"} Zeilen anders als auf dem Server.`);
+    const mkb = (txt, fn, title) => { const b = document.createElement("button"); b.type = "button"; b.className = "chip"; b.textContent = txt; if (title) b.title = title; b.onclick = fn; return b; };
+    bar.append(msg,
+      mkb("Unterschiede zeigen", async () => { await pendShow(p); }, "Zeigt die Unterschiede wie bei einer KI-Abstimmung"),
+      mkb("Auf Server speichern", async () => { if (await pendShow(p)) { const ok = await saveTimecode(true); if (ok) pendBar(); } }, "Lokale Zeiten übernehmen und auf dem Server speichern"),
+      mkb("Verwerfen", async () => { if (await uiConfirm({ eyebrow: "Lokal gespeichert", title: "Lokale Zeiten verwerfen?", text: "Die nur lokal gespeicherten Zeiten werden gelöscht. Der Server-Stand bleibt.", ok: "Verwerfen" })) { try { localStorage.removeItem(pendKey()); } catch { /* egal */ } pendBar(); } }));
+    const anchor = $("aiTools") || $("aiLegend") || $("colHead"); anchor.after(bar);
+  }
+  function onRows() {
+    const sk = songKey();
+    if (AI.song && AI.song !== sk) { AI.old = AI.neu = AI.hit = null; AI.reverted = new Set(); const lg = $("aiLegend"); if (lg) lg.remove(); }
+    tools(); pendBar();
+  }
+  document.addEventListener("edit-rows", onRows);
+  document.addEventListener("pending-changed", () => { tools(); pendBar(); });
 
   /* ----- Auswahl-Werkzeuge in der Kopfzeile ----- */
   const pickCbs = () => [...document.querySelectorAll("#lyrics .row-pick")];
@@ -268,15 +404,8 @@
       ...(hasAI ? [{ value: "ki", kind: "primary", label: "Alle Zeilen auf KI-Zeit" }, { value: "alt", kind: "primary", label: "Alle Zeilen auf alte Zeit" }, { value: "pickalt", kind: "primary", label: "Nur gewählte Zeilen auf alte Zeit" }] : []),
       { value: null, kind: "cancel", label: "Schließen" }
     ];
-    const v = await uiDialog({ eyebrow: "Bearbeiten", title: "Zeilen auswählen", cancelValue: null, lines: ["Mit den Haken legst du fest, welche Zeilen „KI-Sync“ neu berechnet."], buttons });
-    const c = pickCbs();
-    if (v === "all") c.forEach((x) => { x.checked = true; });
-    else if (v === "none") c.forEach((x) => { x.checked = false; });
-    else if (v === "inv") c.forEach((x) => { x.checked = !x.checked; });
-    else if (v === "bad") c.forEach((x) => { const r = x.closest(".lyric-line"); x.checked = !!r && (r.classList.contains("ai-d3") || r.classList.contains("ai-un")); });
-    else if (v === "ki") useTimes("ki");
-    else if (v === "alt") useTimes("alt");
-    else if (v === "pickalt") { rowsAll().forEach((r, k) => { const cb = r.querySelector(".row-pick"); if (cb && cb.checked && AI.old && AI.old[k] != null && !AI.reverted.has(k)) revertRow(k, r); }); }
+    const v = await uiDialog({ eyebrow: "Bearbeiten", title: "Zeilen auswählen", cancelValue: null, lines: ["Mit den Haken legst du fest, welche Zeilen „KI-Sync“ neu berechnet.", { check: { label: "Auswahl-Knöpfe dauerhaft in der Leiste anzeigen", value: selBarOn(), onChange: (x) => { lss("selBar", x ? "1" : "0"); tools(); } } }], buttons });
+    if (v) selAction(v);
     syncPickAll();
   }, true);
 
