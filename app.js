@@ -176,6 +176,21 @@ function uiDialog(opts) {
         parent.append(lb);
         return;
       }
+      if (item.num) {
+        const lb = document.createElement("label");
+        lb.className = "dlg-select";
+        lb.append(document.createTextNode(item.num.label + " "));
+        const ni = document.createElement("input");
+        ni.type = "number"; ni.min = item.num.min; ni.max = item.num.max; ni.step = item.num.step || 1; ni.inputMode = "decimal"; ni.value = item.num.value;
+        ni.addEventListener("input", () => item.num.onChange && item.num.onChange(ni.value));
+        const rg = document.createElement("input");
+        rg.type = "range"; rg.min = item.num.min; rg.max = item.num.max; rg.step = item.num.step || 1; rg.value = Math.min(item.num.max, Math.max(item.num.min, Number(item.num.value) || item.num.min));
+        rg.addEventListener("input", () => { ni.value = rg.value; item.num.onChange && item.num.onChange(rg.value); });
+        ni.addEventListener("input", () => { const x = Number(ni.value); if (x >= item.num.min && x <= item.num.max) rg.value = String(x); });
+        lb.append(rg, ni);
+        parent.append(lb);
+        return;
+      }
       if (item.select) {
         const lb = document.createElement("label");
         lb.className = "dlg-select";
@@ -410,6 +425,7 @@ function setSidebar(open) {
   document.body.classList.toggle("sidebar-open", open);
   updateChrome();
   if (open) setTimeout(centerActiveInList, 80);
+  setTimeout(() => { try { window.dispatchEvent(new Event("resize")); } catch { /* egal */ } }, 60);
 }
 
 function centerActiveInList() {
@@ -1236,7 +1252,29 @@ function layoutVideo() {
 
 /* Kennzeichen / Art-Buttons nur kurz einblenden (beim Liedstart und beim Einschalten), mit Maus darüber wieder sichtbar */
 let fadeTimer = 0;
+function paintTagsBtn() {
+  const b = document.getElementById("tagsBtn"); if (!b) return;
+  const on = srcTagsOn(), fade = lsv("srcTagsFade", "1") === "1";
+  b.textContent = !on ? "Icons: aus" : fade ? "Icons: kurz" : "Icons: an";
+  b.setAttribute("aria-pressed", String(on && !fade));
+  b.title = "Kleine Kennzeichen (Icons) bei den Liedern: kurz einblenden → immer sichtbar → aus (antippen zum Wechseln)";
+}
+function setupTagsBtn() {
+  const b = document.getElementById("tagsBtn"); if (!b || b._w) return; b._w = true;
+  b.addEventListener("click", () => {
+    const on = srcTagsOn(), fade = lsv("srcTagsFade", "1") === "1";
+    /* kurz -> an -> aus -> kurz */
+    if (on && fade) { lss("srcTagsFade", "0"); }
+    else if (on && !fade) { lss("srcTags", "0"); }
+    else { lss("srcTags", "1"); lss("srcTagsFade", "1"); }
+    const st = document.getElementById("srcTagsOpt"); if (st) st.checked = srcTagsOn();
+    const stf = document.getElementById("srcTagsFade"); if (stf) stf.checked = lsv("srcTagsFade", "1") === "1";
+    paintTagsBtn(); applyFade(true); renderList();
+  });
+  paintTagsBtn();
+}
 function applyFade(peek) {
+  try { paintTagsBtn(); } catch { /* egal */ }
   const b = document.body;
   const vbar = document.getElementById("versionBar");
   if (vbar && !vbar._fadeWired) { vbar._fadeWired = true; vbar.addEventListener("pointerdown", () => applyFade(true)); }
@@ -1482,6 +1520,8 @@ function setupNet() {
   window.addEventListener("online", () => { netUi(); if (state.wantPlay && (el.audio.paused || state.netErr)) reconnect(); });
   el.audio.addEventListener("playing", () => { state.netErr = false; reconnBusy = false; state.waitSince = 0; clearTimeout(reconnTimer); netUi(); });
   el.audio.addEventListener("play", () => { state.wantPlay = true; });
+  const syncBtn = () => { const on = !el.audio.paused && !el.audio.ended; el.play.textContent = on ? "❚❚" : "▶"; if (on) state.everPlayed = true; };
+  ["play", "playing", "pause", "ended", "emptied"].forEach((n) => el.audio.addEventListener(n, syncBtn));
   const playingCls = () => document.body.classList.toggle("is-playing", !el.audio.paused && !el.audio.ended);
   ["play", "playing", "pause", "ended", "emptied"].forEach((n) => el.audio.addEventListener(n, playingCls));
   el.audio.addEventListener("waiting", () => { if (!state.waitSince) state.waitSince = Date.now(); });
@@ -1516,16 +1556,20 @@ function togglePlay() {
   }
   if (!el.audio.src) el.audio.src = state.currentAudio;
   if (el.audio.paused) {
+    state.userPaused = false;
+    el.play.textContent = "❚❚";   // sofort anzeigen, nicht erst wenn die Datei geladen ist
     el.audio.play().then(() => {
       el.play.textContent = "❚❚";
       setStatus("Spielt", "is-play");
       if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "playing";
       requestWakeLock();
     }).catch(() => {
+      el.play.textContent = "▶";
       el.status.textContent = "Wiedergabe blockiert. Tippe noch einmal auf Play.";
     });
   } else {
     state.wantPlay = false;
+    state.userPaused = true;
     el.audio.pause();
     el.play.textContent = "▶";
     setStatus("Pause", "is-pause");
@@ -1898,8 +1942,13 @@ async function hardRefresh() {
 }
 
 /* Nach Ein-/Aussteigen im Tesla: Display-Sperre neu anfordern, kaputte Audio-Verbindung selbst reparieren */
+/* Nach Rückkehr in den Browser: pause = Pause bleibt, auto = wie vorher, always = immer weiterspielen */
+const resumeMode = () => { const v = lsv("resumeMode", ""); if (v === "pause" || v === "auto" || v === "always") return v; return isTesla() ? "auto" : "pause"; };
 function recoverAfterResume() {
   if (document.visibilityState !== "visible") return;
+  const rm = resumeMode();
+  if (rm === "pause" && state.userPaused && !el.audio.paused) { el.audio.pause(); }
+  if (rm === "always" && el.audio.paused && state.currentAudio && state.wasPlaying !== false && !state.userPaused) { el.audio.play().catch(() => {}); }
   if (!el.audio.paused) requestWakeLock();
   const broken = state.currentAudio && (el.audio.error || el.audio.networkState === 3);
   if (!broken) return;
@@ -1958,7 +2007,7 @@ function bindChrome() {
 
 /* Beim Öffnen automatisch abspielen (letztes Lied, sonst Zufall). Blockiert der Browser das, startet es beim ersten Antippen. */
 function tryAutoStart() {
-  Promise.race([state.userReady || Promise.resolve(), new Promise((r) => setTimeout(r, 2500))]).then(tryAutoStartNow);
+  Promise.race([state.userReady || Promise.resolve(), new Promise((r) => setTimeout(r, 700))]).then(tryAutoStartNow);
 }
 function tryAutoStartNow() {
   try { if (sessionStorage.getItem("noAutoOnce") === "1") { sessionStorage.removeItem("noAutoOnce"); return; } } catch { /* egal */ }
@@ -1972,8 +2021,9 @@ function tryAutoStartNow() {
     if (!el.audio.paused) return;
     const arm = () => {
       ["pointerdown", "keydown", "touchstart"].forEach((type) => document.removeEventListener(type, arm, true));
-      if (el.audio.paused) togglePlay();
+      if (el.audio.paused && !state.userPaused && !state.everPlayed && lsv("autoTap", "1") === "1") togglePlay();
     };
+    if (state.userPaused || state.everPlayed) return;
     ["pointerdown", "keydown", "touchstart"].forEach((type) => document.addEventListener(type, arm, true));
   }, 2500);
 }
@@ -2010,6 +2060,21 @@ function enhanceNumbers(root) {
     };
     box.append(mk("▲", 1, "um 1 erhöhen"), mk("▼", -1, "um 1 verringern"));
     inp.insertAdjacentElement("afterend", box);
+    /* Schieberegler für den empfohlenen Bereich (min bis max), gekoppelt mit dem Zahlenfeld */
+    const lo = inp.min !== "" ? Number(inp.min) : NaN, hi = inp.max !== "" ? Number(inp.max) : NaN;
+    if (Number.isFinite(lo) && Number.isFinite(hi) && hi > lo && !inp.dataset.noRange) {
+      const rg = document.createElement("input");
+      rg.type = "range"; rg.className = "num-rng"; rg.min = String(lo); rg.max = String(hi); rg.step = inp.step && Number(inp.step) > 0 ? inp.step : "1";
+      rg.title = `Empfohlener Bereich: ${lo} bis ${hi}`; rg.setAttribute("aria-label", rg.title);
+      const sync = () => { const x = Number(inp.value); rg.value = String(Math.min(hi, Math.max(lo, Number.isFinite(x) ? x : lo))); };
+      sync();
+      rg.addEventListener("input", () => { inp.value = rg.value; inp.dispatchEvent(new Event("input", { bubbles: true })); });
+      rg.addEventListener("change", () => { inp.value = rg.value; inp.dispatchEvent(new Event("change", { bubbles: true })); });
+      inp.addEventListener("input", sync); inp.addEventListener("change", sync);
+      new MutationObserver(sync).observe(inp, { attributes: true, attributeFilter: ["value"] });
+      inp.insertAdjacentElement("beforebegin", rg);
+      rg._sync = sync; inp._rg = rg;
+    }
   });
 }
 function setupNumberSteppers() {
@@ -2175,6 +2240,7 @@ const isTesla = () => /Tesla/i.test(navigator.userAgent);
 function bind() {
   setupViewport();
   setupNet();
+  setupTagsBtn();
   setupKeepVisible();
   applyFade(true);
   setupNumberSteppers();
@@ -2605,11 +2671,32 @@ function bind() {
   document.getElementById("verText").addEventListener("click", toggleUnsynced);
   document.getElementById("closeSidebar").addEventListener("click", () => setSidebar(false));
   document.getElementById("autoStartBtn").addEventListener("click", () => {
+    if (window.__autoLP) { window.__autoLP = false; return; }
     const on = localStorage.getItem("autoStart") !== "1";
     try { localStorage.setItem("autoStart", on ? "1" : "0"); } catch { /* egal */ }
     updateAutoIcon();
     showToast(on ? "Autoplay beim Öffnen: ein" : "Autoplay beim Öffnen: aus");
   });
+  (() => {
+    const b = document.getElementById("autoStartBtn"); let t = 0, fired = false;
+    const ask = async () => {
+      fired = true; window.__autoLP = true; setTimeout(() => { window.__autoLP = false; }, 900);
+      let on = localStorage.getItem("autoStart") === "1", rm = resumeMode(), tap = lsv("autoTap", "1") === "1";
+      const ok = await uiDialog({ eyebrow: "Autoplay", title: "Autoplay-Einstellungen", cancelValue: false, lines: [
+        { check: { label: "Beim Öffnen automatisch ein Lied abspielen", value: on, onChange: (v) => { on = v; } } },
+        { check: { label: "Blockiert der Browser das Abspielen: erster Tipp startet das Lied", value: tap, onChange: (v) => { tap = v; } } },
+        { select: { label: "Nach Rückkehr in den Browser:", value: rm, options: [["pause", "Pause bleibt Pause"], ["auto", "wie bisher (Tesla)"], ["always", "immer weiterspielen"]], onChange: (v) => { rm = v; } } },
+        { text: "„Pause bleibt Pause“ verhindert, dass ein pausiertes Lied nach dem Wechseln zu einer anderen App von selbst weiterspielt.", cls: "dlg-hint" }
+      ], buttons: [{ value: true, kind: "primary", label: "Speichern" }, { value: false, kind: "cancel", label: "Abbrechen" }] });
+      if (ok !== true) return;
+      try { localStorage.setItem("autoStart", on ? "1" : "0"); localStorage.setItem("autoTap", tap ? "1" : "0"); localStorage.setItem("resumeMode", rm); } catch { /* egal */ }
+      updateAutoIcon(); showToast("Autoplay-Einstellungen gespeichert");
+    };
+    b.addEventListener("pointerdown", () => { fired = false; clearTimeout(t); t = setTimeout(ask, 700); });
+    ["pointerup", "pointerleave", "pointercancel"].forEach((n) => b.addEventListener(n, () => clearTimeout(t)));
+    b.addEventListener("contextmenu", (e) => { e.preventDefault(); clearTimeout(t); ask(); });
+    b.addEventListener("click", (e) => { if (fired) { e.stopImmediatePropagation(); e.preventDefault(); fired = false; } }, true);
+  })();
   updateAutoIcon();
   document.getElementById("ludwtPrev").addEventListener("click", () => shiftLudwtWeek(-1));
   document.getElementById("ludwtNext").addEventListener("click", () => shiftLudwtWeek(1));
@@ -3012,7 +3099,7 @@ async function putSync(store, data) {
 }
 
 /* ---- Einstellungen mit abgleichen (optional, pro Schlüssel Drei-Wege-Abgleich) ---- */
-const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBarAlways", "verBarFade", "srcTagsFade", "fadeSec", "lyricPos", "flugPos", "rcIdleSec", "holdGuard", "holdHint", "eggMode", "eggFall", "eggGif", "startGif", "themeShown", "themeTabs", "themeOrder", "themeTabList", "themeCustom", "themeNames", "skinProf", "coverMode", "coverFlip", "coverSet", "musikLang", "langWarnOff", "startMode", "startFolders", "startOrder", "startSec", "startFade", "skinOnlyActive", "skinOnlyMode", "sidebarW", "topOffMain", "topOffSet", "startGif", "ludwtSingle", "listRepeat", "srcTags", "favPlace", "favSeek", "showExtra", "karaokeOnly", "srcFilter", "sync-auto-max", "lyricAlign", "skipSec", "skipBack", "skipFwd", "fehlMode", "fehlNotify", "fehlAll", "fehlHelpSeen", "fehlLang", "startShow", "startSizes", "castMode", "startCarSec", "startCarMs", "galNoKar", "galNoKarAmt", "galMini", "npLayout", "lyrColOn", "lyrColOff", "skinFilterMode", "fehlSkip", "fehlLog", "startBarOpen", STORAGE.scale, STORAGE.listSize];
+const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBarAlways", "verBarFade", "srcTagsFade", "fadeSec", "lyricPos", "flugPos", "rcIdleSec", "holdGuard", "holdHint", "eggMode", "eggFall", "eggGif", "startGif", "themeShown", "themeTabs", "themeOrder", "themeTabList", "themeCustom", "themeNames", "skinProf", "coverMode", "coverFlip", "coverSet", "musikLang", "langWarnOff", "startMode", "startFolders", "startOrder", "startSec", "startFade", "skinOnlyActive", "skinOnlyMode", "sidebarW", "topOffMain", "topOffSet", "startGif", "ludwtSingle", "listRepeat", "srcTags", "favPlace", "favSeek", "showExtra", "karaokeOnly", "srcFilter", "sync-auto-max", "lyricAlign", "skipSec", "skipBack", "skipFwd", "fehlMode", "fehlNotify", "fehlAll", "fehlHelpSeen", "fehlLang", "startShow", "startSizes", "castMode", "startCarSec", "startCarMs", "galNoKar", "galNoKarAmt", "galMini", "npLayout", "lyrColOn", "lyrColOff", "skinFilterMode", "fehlSkip", "fehlLog", "startBarOpen", "startTrans", "startCar3d", "startFloatSpd", "resumeMode", "autoTap", "aiAcc", STORAGE.scale, STORAGE.listSize];
 const isSettingKey = (k) => SETTING_KEYS.includes(k) || /^fehl(?:[TL]|Hide|Inc)_/.test(k);
 const syncSettingsOn = () => false;   // Einstellungen werden jetzt über den Benutzer gespeichert
 function collectSettings() {
@@ -3603,7 +3690,7 @@ function attachTimecodeUi() {
     const head = document.createElement("div");
     head.id = "colHead";
     head.className = "col-head";
-    head.innerHTML = "<span>Timecode</span><span>Player</span><span>Setzen</span><span>Liedtext</span>";
+    head.innerHTML = '<span class="hd-c1"><input type="checkbox" id="pickAll" title="Alle Zeilen wählen / abwählen"> Timecode</span><span>Player</span><span>Setzen</span><span class="hd-c4">Liedtext <button type="button" class="chip hd-sel" title="Zeilen auswählen: alle, keine, umkehren …">Auswahl ' + (window.CHEV ? window.CHEV(false) : "") + "</button></span>";
     el.lyrics.prepend(head);
   }
   el.lyrics.querySelectorAll(".lyric-line").forEach((line) => {
@@ -4063,26 +4150,30 @@ const PRESETS = [
   { id: "skip", label: "Springen zurück / vor (Sekunden)", keys: ["skipSec", "skipBack", "skipFwd"],
     fields: [{ key: "skipBack", t: "zurück", n: [1, 300], dv: "15" }, { key: "skipFwd", t: "vor", n: [1, 300], dv: "15" }] },
   { id: "fehl", label: "Fehlend: Prüfung, Hinweis und Anzeige", keys: ["fehlMode", "fehlNotify", "fehlAll"], rx: /^fehl[TL]_/, fields: [{ key: "fehlNotify", t: "Hinweis", o: BOOL, dv: "1" }] },
+  { id: "startshow", label: "Startseite: Anzeige, Übergang und Wechselzeit", keys: ["startShow", "startTrans", "startCar3d", "startSec", "startCarSec", "startFloatSpd"], def: { startShow: "fade", startTrans: "fade", startCar3d: "0", startSec: "8" },
+    fields: [{ key: "startShow", t: "Anzeige", o: [["image", "Bild"], ["chor", "Video"], ["carousel", "Karussell"], ["fade", "Überblenden"], ["float", "Schweben"]], dv: "image" }, { key: "startTrans", t: "Übergang", o: [["fade","Überblenden"],["stack","Kartenstapel"],["slide","Schieben"],["zoom","Zoom"],["flip","Drehen"],["mosaic","Mosaik"],["rand","Zufällig"]], dv: "fade" }, { key: "startCar3d", t: "3D", o: BOOL, dv: "1" }, { key: "startSec", t: "Sekunden", n: [2, 120], dv: "6" }] },
+  { id: "resume", label: "Nach Rückkehr in den Browser: Pause bleibt Pause", keys: ["resumeMode", "autoTap"], def: { resumeMode: "auto", autoTap: "1" },
+    fields: [{ key: "resumeMode", t: "Danach", o: [["pause", "Pause bleibt"], ["auto", "wie bisher"], ["always", "immer weiter"]], dv: "pause" }, { key: "autoTap", t: "Tipp startet", o: BOOL, dv: "1" }] },
   { id: "syncmax", label: "Automatisch abgleichen, auch wenn bis zu … Lieder gelöscht wurden", keys: ["sync-auto-max"], def: { "sync-auto-max": "2" }, fields: [{ key: "sync-auto-max", n: [0, 999], dv: "0" }] }
 ];
 /* Themen für die Voreinstellungen: Überschrift, Zeilen und ein ganz kurzer Hinweis je Zeile */
 const PRESET_GROUPS = [
-  ["Wiedergabe", ["auto", "karonly", "skip", "lupeopt", "rcidle"]],
+  ["Wiedergabe", ["auto", "resume", "karonly", "skip", "lupeopt", "rcidle"]],
   ["Liste und Auswahl", ["extra", "tags", "verbar", "srcfilter", "fav", "fontlist", "sidebar"]],
-  ["Karaoke-Text und Cover", ["fontkar", "lyricalign", "lyricpos", "cover", "startgif"]],
+  ["Karaoke-Text und Cover", ["fontkar", "lyricalign", "lyricpos", "cover", "startgif", "startshow"]],
   ["Design und Anzeige", ["theme", "hold", "topoff", "themeshown"]],
   ["Abgleich", ["fehl", "syncmax"]]
 ];
 const PRESET_TIP = {
-  auto: "Startet beim Öffnen von selbst.", karonly: "Automatisch weiter nur mit Karaoke-Liedern.", skip: "Sekunden pro Tipp auf −/+.", lupeopt: "Einzeln spielen, Liste wiederholen.", rcidle: "Wie oft das Gerät im Ruhezustand nachfragt.",
+  auto: "Startet beim Öffnen von selbst.", resume: "Pausiertes Lied bleibt nach App-Wechsel pausiert.", startshow: "Karussell, Überblenden, Übergang, Zeit.", karonly: "Automatisch weiter nur mit Karaoke-Liedern.", skip: "Sekunden pro Tipp auf −/+.", lupeopt: "Einzeln spielen, Liste wiederholen.", rcidle: "Wie oft das Gerät im Ruhezustand nachfragt.",
   extra: "Instrumental, Zusammenkünfte, Video in der Liste.", tags: "Kleine Buchstaben unter den Liedern.", verbar: "Art-Buttons und ihr Ausblenden.", srcfilter: "Welche Arten gerade gezeigt werden.", fav: "Wo der Stern erscheint.", fontlist: "Schrift in der Liste.", sidebar: "Breite der Liste.",
   fontkar: "Schrift des Karaoke-Textes.", lyricalign: "Links, Mitte oder rechts.", lyricpos: "Wo die aktive Zeile steht.", cover: "Neue oder alte Cover.", startgif: "Chor-GIF auf der Startseite.",
   theme: "Welches Design und wann.", hold: "Lupe nur nach langem Drücken.", topoff: "Platz oben (z. B. für Tesla).", themeshown: "Welche Designs im Hauptfenster stehen.",
   fehl: "Prüfung auf fehlende Lieder.", syncmax: "Automatisch abgleichen bis zu dieser Anzahl gelöschter Lieder."
 };
 /* Standard für neue Benutzer (beste Werte am Desktop); über den Namen „standard“ mit dem Schreib-Passwort änderbar */
-const HANDY_EXTRA = { themeMode: "manual", theme: "hy-amoled", holdGuard: "0", [STORAGE.listSize]: "18", sidebarW: "0" };
-const STD_VALS = { karaokeOnly: "0", verBarFade: "1", srcTagsFade: "1", fadeSec: "4", autoStart: "0", showExtra: "1", srcTags: "1", favPlace: "both", favSeek: "off", verBarAlways: "1", holdGuard: "0", holdHint: "0", themeMode: "device", [STORAGE.scale]: "42", [STORAGE.listSize]: "16", sidebarW: "300", skipBack: "15", skipFwd: "15", "sync-auto-max": "2" };
+const HANDY_EXTRA = { startShow: "fade", startTrans: "slide", startCar3d: "0", themeMode: "manual", theme: "hy-amoled", holdGuard: "0", [STORAGE.listSize]: "18", sidebarW: "0" };
+const STD_VALS = { karaokeOnly: "0", verBarFade: "1", srcTagsFade: "1", fadeSec: "4", autoStart: "0", showExtra: "1", srcTags: "1", favPlace: "both", favSeek: "off", verBarAlways: "1", holdGuard: "0", holdHint: "0", themeMode: "device", [STORAGE.scale]: "42", [STORAGE.listSize]: "16", sidebarW: "300", skipBack: "15", skipFwd: "15", "sync-auto-max": "2", startShow: "carousel", startTrans: "stack", startCar3d: "1", startSec: "6", resumeMode: "pause", autoTap: "1" };
 const SYS = { tesla: "_tesla", standard: "_standard", handy: "_handy" };
 const SYS_LABEL = { tesla: "Tesla", standard: "Standard", handy: "Handy" };
 const TESLA_EXTRA = { eggMode: "auto", eggFall: "0", eggGif: "chor", startGif: "0" };

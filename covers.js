@@ -40,20 +40,31 @@
     if (set === "alt") { map = {}; return Promise.resolve(map); }
     if (!force && loaded && Date.now() - loaded < 10 * 60 * 1000) return Promise.resolve(map);
     const mine = set;
-    const p = fetch(`${base()}/api/covers?set=${mine}`, { cache: force ? "reload" : "default" }).then((r) => r.ok ? r.json() : null).then((j) => {
-      if (mine === set && j && j.ok && j.map) { map = j.map; loaded = Date.now(); try { lss(idxKey(), JSON.stringify({ t: loaded, map })); } catch { /* egal */ } }
+    const p = fetchMap(mine, force).then((m) => {
+      if (mine === set && m) { map = m; loaded = Date.now(); try { lss(idxKey(), JSON.stringify({ t: loaded, map })); } catch { /* egal */ } }
       return map;
-    }).catch(() => map).finally(() => { if (loading === p) loading = null; if (mine === set) changed(); });
+    }).finally(() => { if (loading === p) loading = null; if (mine === set) changed(); });
     loading = p;
     return p;
   }
   /* Verzeichnis einer beliebigen Serie (für die Startseite: mehrere Ordner abwechselnd) */
   const setMaps = {};
+  /* Verzeichnis holen; beim ersten Aufruf antwortet der Server manchmal nicht: bis zu 4 Versuche, Fehlschläge werden nicht gemerkt */
+  async function fetchMap(id, force) {
+    for (let k = 0; k < 4; k++) {
+      try {
+        const r = await fetch(`${base()}/api/covers?set=${id}`, { cache: force || k ? "reload" : "default" });
+        if (r.ok) { const j = await r.json(); if (j && j.ok && j.map && Object.keys(j.map).length) return j.map; }
+      } catch { /* nächster Versuch */ }
+      await new Promise((res) => setTimeout(res, 500 + k * 700));
+    }
+    return null;
+  }
   function loadSetMap(id) {
     if (id === set) return load(false).then(() => map);
     if (id === "alt") return Promise.resolve({});
     if (setMaps[id] && Date.now() - setMaps[id].t < 10 * 60 * 1000) return Promise.resolve(setMaps[id].map);
-    return fetch(`${base()}/api/covers?set=${id}`).then((r) => r.ok ? r.json() : null).then((j) => { const m = (j && j.ok && j.map) || {}; setMaps[id] = { t: Date.now(), map: m }; return m; }).catch(() => ({}));
+    return fetchMap(id, false).then((m) => { if (m && Object.keys(m).length) setMaps[id] = { t: Date.now(), map: m }; return m || {}; });
   }
   const urlOfKey = (key) => imgUrl(key);
   const keyOf = (song) => { const n = numOf(song); return n ? map[String(n)] : ""; };

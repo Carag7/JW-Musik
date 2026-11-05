@@ -66,3 +66,18 @@ body:not(.start-on) .start-ctl { }
 @media (prefers-reduced-motion: reduce) { .ss-carousel .sc-item, .ss-fade .sf-img { transition-duration: 1ms; } }
 
 .count-wrap { display: inline-flex; align-items: center; gap: 6px; }
+
+/* v123: Übergänge der Anzeige „Überblenden“ */
+.ss-fade .sf-img.sf-away { opacity: 1 !important; transition: transform var(--sf-ms, 900ms) ease-in, opacity var(--sf-ms, 900ms) ease-in; transform: translateX(130%) rotate(16deg); z-index: 5; }
+.ss-fade .sf-img.tr-slide { transform: translateX(100%); opacity: 1; transition: transform var(--sf-ms, 900ms) ease, opacity 0s; }
+.ss-fade .sf-img.tr-slide.on { transform: none; }
+.ss-fade .sf-img.sf-out-slide { transform: translateX(-100%); opacity: 1 !important; transition: transform var(--sf-ms, 900ms) ease; }
+.ss-fade .sf-img.tr-zoom { transform: scale(1.35); }
+.ss-fade .sf-img.tr-zoom.on { transform: none; transition: opacity var(--sf-ms, 900ms) ease, transform var(--sf-ms, 900ms) ease; }
+.ss-fade .sf-img.sf-out-zoom { transform: scale(.8); }
+.ss-fade { perspective: 1200px; }
+.ss-fade .sf-img.tr-flip { transform: rotateY(-90deg); backface-visibility: hidden; opacity: 1; transition: transform var(--sf-ms, 900ms) ease, opacity 0s; }
+.ss-fade .sf-img.tr-flip.on { transform: none; transition-delay: calc(var(--sf-ms, 900ms) * .45); }
+.ss-fade .sf-img.sf-out-flip { transform: rotateY(90deg); opacity: 1 !important; backface-visibility: hidden; transition: transform calc(var(--sf-ms, 900ms) * .55) ease-in; }
+.ss-fade .sf-mos { position: absolute; inset: 0; width: 100%; height: 100%; cursor: pointer; z-index: 6; }
+@media (prefers-reduced-motion: reduce) { .ss-fade .sf-img.sf-away { transition-duration: 1ms; } }

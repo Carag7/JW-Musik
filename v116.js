@@ -203,6 +203,9 @@
   const carSecs = () => { const v = Number(lsv("startCarSec", "")); return v >= 1 ? v : secs(); };
   const carMs = () => { const v = Number(lsv("startCarMs", "")); return v >= 50 ? v : Math.min(1200, fadeMs() + 300); };
   const floatSpd = () => Math.max(0.1, Math.min(5, (Number(lsv("startFloatSpd", "100")) || 100) / 100));
+  const TRANS = [["fade", "Überblenden"], ["stack", "Kartenstapel (oberste Karte wird weggeschoben)"], ["slide", "Schieben"], ["zoom", "Zoom"], ["flip", "Drehen (Karte wenden)"], ["mosaic", "Mosaik (Bild baut sich aus Kacheln auf)"], ["rand", "Zufällig gemischt"]];
+  const startTrans = () => { const v = lsv("startTrans", "fade"); return TRANS.some((t) => t[0] === v) ? v : "fade"; };
+  const car3d = () => lsv("startCar3d", "1") !== "0";
   const fadeMs = () => Math.max(50, Number(lsv("startFade", "900")) || 900);
   let stopFn = null, runId = 0;
   const media = () => $("startMedia") || $("startPanel");
@@ -220,11 +223,19 @@
       if (v === "carousel") { key = "startCarSec"; min = 1; max = 120; cur = carSecs(); title = "Karussell: Wechselzeit"; text = "Sekunden bis zum nächsten Cover."; id = "advCarSec"; }
       else if (v === "fade") { key = "startSec"; min = 2; max = 120; cur = secs(); title = "Überblenden: Wechselzeit"; text = "Sekunden bis zum nächsten Cover."; id = "advStartSec"; }
       else { key = "startFloatSpd"; min = 20; max = 300; cur = Math.round(floatSpd() * 100); title = "Schweben: Geschwindigkeit"; text = "Tempo in Prozent (100 = normal)."; id = "advFloatSpd"; }
-      const raw = await uiPrompt({ eyebrow: "Startseite", title, text, value: String(cur), type: "number", inputMode: "decimal", ok: "Übernehmen" });
-      if (raw === null || raw === "") return;
-      const n = Number(String(raw).replace(",", ".")); if (!(n > 0)) return;
+      let nv = String(cur), tv = startTrans(), cv = car3d() ? "3d" : "2d", sv = startMode();
+      const lines = [{ text }, { num: { label: v === "float" ? "Tempo (%)" : "Sekunden", value: cur, min, max, onChange: (x) => { nv = String(x); } } }];
+      lines.push({ select: { label: "Anzeige:", value: sv, options: SHOWS.map(([a, b]) => [a, b]), onChange: (x) => { sv = x; } } });
+      if (v === "fade") lines.push({ select: { label: "Übergang:", value: tv, options: TRANS, onChange: (x) => { tv = x; } } });
+      if (v === "carousel") lines.push({ select: { label: "Karussell:", value: cv, options: [["3d", "3D (gedreht, mit Tiefe)"], ["2d", "2D (nur verschoben)"]], onChange: (x) => { cv = x; } } });
+      const ok = await uiDialog({ eyebrow: "Startseite", title, cancelValue: false, lines, buttons: [{ value: true, kind: "primary", label: "Übernehmen" }, { value: false, kind: "cancel", label: "Abbrechen" }] });
+      if (ok !== true) return;
+      const n = Number(String(nv).replace(",", ".")); if (!(n > 0)) return;
       const val = await askLimit(n, min, max);
       lss(key, String(val)); const f = $(id); if (f) f.value = String(val);
+      if (v === "fade") { lss("startTrans", tv); const ts = $("advStartTrans"); if (ts) ts.value = tv; }
+      if (v === "carousel") { lss("startCar3d", cv === "3d" ? "1" : "0"); const cs2 = $("advCar3d"); if (cs2) cs2.value = cv === "3d" ? "1" : "0"; }
+      if (sv !== v) { setStartMode(sv); return; }
       if (startMode() !== v) setStartMode(v); else applyStart();
     };
     b.addEventListener("pointerdown", () => { stop(); t = setTimeout(() => { t = 0; ask(); }, 700); });
@@ -232,16 +243,43 @@
     b.addEventListener("contextmenu", (e) => { e.preventDefault(); stop(); ask(); });
     b.title = "Tippen: Anzeige wählen – lange drücken: " + (v === "float" ? "Geschwindigkeit" : "Wechselzeit") + " eingeben";
   }
+  function mosaic(box, nxt, old, done) {
+    const iw = nxt.naturalWidth || 1000, ih = nxt.naturalHeight || 1475, W = box.clientWidth, H = box.clientHeight;
+    const sc = Math.min(W / iw, H / ih), dw = iw * sc, dh = ih * sc, dx = (W - dw) / 2, dy = (H - dh) / 2;
+    const cv = document.createElement("canvas"); cv.className = "sf-mos"; cv.width = W; cv.height = H; cv.addEventListener("click", () => { if (nxt._n != null) playNum(nxt._n); });
+    box.append(cv); const g = cv.getContext("2d");
+    const cols = 10, rows = Math.max(8, Math.round(cols * ih / iw)), tiles = []; for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) tiles.push([c, r]);
+    for (let i = tiles.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [tiles[i], tiles[j]] = [tiles[j], tiles[i]]; }
+    const dur = Math.max(600, fadeMs() * 1.4), t0 = performance.now(); let shown = 0;
+    const tw = iw / cols, th = ih / rows;
+    (function step(now) {
+      const f = Math.min(1, (now - t0) / dur), want = Math.floor(f * tiles.length);
+      for (; shown < want; shown++) { const [c, r] = tiles[shown]; g.drawImage(nxt, c * tw, r * th, tw, th, dx + c * dw / cols, dy + r * dh / rows, dw / cols + 0.6, dh / rows + 0.6); }
+      if (f < 1) requestAnimationFrame(step); else done(cv);
+    })(t0);
+  }
   function runFade(box, items) {
-    let i = 0, a = mkImg(items[0], "sf-img on"), b = mkImg(items[1 % items.length], "sf-img");
-    box.style.setProperty("--sf-ms", fadeMs() + "ms"); box.append(a, b);
+    let i = 0, a = mkImg(items[0], "sf-img on"), busy = false;
+    box.style.setProperty("--sf-ms", fadeMs() + "ms"); box.append(a);
+    const modes = ["fade", "stack", "slide", "zoom", "flip", "mosaic"];
     const t = setInterval(() => {
-      if (document.hidden) return;
-      i = (i + 1) % items.length; const nxt = mkImg(items[i], "sf-img"); nxt.addEventListener("load", () => {
-        box.append(nxt); void nxt.offsetWidth; nxt.classList.add("on"); a.classList.remove("on"); const old = a; setTimeout(() => old.remove(), fadeMs() + 100); a = nxt;
+      if (document.hidden || busy) return;
+      let tr = startTrans(); if (tr === "rand") tr = modes[Math.floor(Math.random() * modes.length)];
+      i = (i + 1) % items.length; const nxt = mkImg(items[i], "sf-img tr-" + tr); nxt._n = items[i].n; busy = true;
+      nxt.addEventListener("error", () => { busy = false; }, { once: true });
+      nxt.addEventListener("load", () => {
+        const old = a, ms = fadeMs();
+        const fin = () => { setTimeout(() => { old.remove(); busy = false; }, 60); a = nxt; };
+        if (tr === "mosaic") {
+          nxt.style.opacity = "0"; box.append(nxt);
+          mosaic(box, nxt, old, (cv) => { nxt.style.transition = "none"; nxt.classList.add("on"); nxt.style.opacity = "1"; old.classList.remove("on"); old.style.opacity = "0"; cv.remove(); fin(); });
+          return;
+        }
+        if (tr === "stack") { box.insertBefore(nxt, old); nxt.style.transition = "none"; nxt.classList.add("on"); old.classList.add("sf-away"); }
+        else { box.append(nxt); void nxt.offsetWidth; nxt.classList.add("on"); old.classList.remove("on"); if (tr !== "fade") old.classList.add("sf-out-" + tr); }
+        setTimeout(fin, ms + 100);
       }, { once: true });
     }, secs() * 1000);
-    b.remove();
     return () => clearInterval(t);
   }
   function runCarousel(box, items) {
@@ -254,7 +292,7 @@
         if (!nd) { const it = items[((i % N) + N) % N]; nd = mkImg(it, "sc-item"); nd.style.opacity = "0"; box.append(nd); nodes.set(i, nd); void nd.offsetWidth; }
         const ad = Math.abs(d), sg = Math.sign(d);
         nd.style.height = ch + "px"; nd.style.width = cw + "px";
-        nd.style.transform = `translate(-50%,-50%) translateX(${sg * (ad ? step * (1 + (ad - 1) * 0.55) + cw * 0.12 : 0)}px) translateZ(${-ad * 140}px) rotateY(${-sg * Math.min(52, 34 + ad * 6)}deg) scale(${ad ? 0.9 : 1})`;
+        nd.style.transform = car3d() ? `translate(-50%,-50%) translateX(${sg * (ad ? step * (1 + (ad - 1) * 0.55) + cw * 0.12 : 0)}px) translateZ(${-ad * 140}px) rotateY(${-sg * Math.min(52, 34 + ad * 6)}deg) scale(${ad ? 0.9 : 1})` : `translate(-50%,-50%) translateX(${sg * (ad ? cw * 1.04 * ad : 0)}px) scale(${ad ? 0.88 : 1})`;
         nd.style.opacity = String(ad === 0 ? 1 : Math.max(0, 0.85 - ad * 0.22)); nd.style.zIndex = String(10 - ad);
       }
       nodes.forEach((nd, i) => { if (Math.abs(i - idx) > 3) { nd.style.opacity = "0"; setTimeout(() => nd.remove(), 900); nodes.delete(i); } });
@@ -297,11 +335,18 @@
   }
   async function startShow(mode) {
     const id = ++runId; const panel = $("startPanel"); if (!panel) return;
-    const items = await buildItems();
+    let items = await buildItems();
+    /* beim ersten Aufruf antwortet der Server manchmal noch nicht: mehrmals versuchen, erst dann aufgeben */
+    for (let k = 0; k < 4 && !items.length && id === runId; k++) {
+      let w = $("startShow"); if (!w) { w = h("div", `start-show ss-${mode}`); w.id = "startShow"; media().append(w); }
+      w.replaceChildren(h("p", "start-show-empty", k ? `Cover werden geladen … (Versuch ${k + 1} von 4)` : "Cover werden geladen …"));
+      await new Promise((r) => setTimeout(r, 900 + k * 900));
+      items = await buildItems();
+    }
     if (id !== runId || panel.hidden) return;
     const old = $("startShow"); if (old) old.remove();
     const box = h("div", `start-show ss-${mode}`); box.id = "startShow";
-    if (!items.length) { box.append(h("p", "start-show-empty", "In den gewählten Ordnern liegen noch keine Cover.")); media().append(box); return; }
+    if (!items.length) { const p = h("p", "start-show-empty", "In den gewählten Ordnern liegen noch keine Cover. "); const rb = h("button", "chip", "Erneut versuchen"); rb.type = "button"; rb.addEventListener("click", () => applyStart()); p.append(rb); box.append(p); media().append(box); return; }
     media().append(box);
     stopFn = (mode === "fade" ? runFade : mode === "carousel" ? runCarousel : runFloat)(box, items);
   }
@@ -395,6 +440,8 @@
     const sc = get("advStartSec"); if (sc) { sc.value = String(secs()); sc.onchange = async () => { lss("startSec", String(await askLimit(Number(sc.value) || 6, 2, 120))); applyStart(); }; }
     const fd = get("advStartFade"); if (fd) { fd.value = String(fadeMs()); fd.onchange = async () => { lss("startFade", String(await askLimit(Number(fd.value) || 900, 100, 5000))); applyStart(); }; }
     const fsp = get("advFloatSpd"); if (fsp) { fsp.value = String(Math.round(floatSpd() * 100)); fsp.onchange = async () => { lss("startFloatSpd", String(await askLimit(Number(fsp.value) || 100, 20, 300))); applyStart(); }; }
+    const tr = get("advStartTrans"); if (tr) { tr.value = startTrans(); tr.onchange = () => { lss("startTrans", tr.value); applyStart(); }; }
+    const c3 = get("advCar3d"); if (c3) { c3.value = car3d() ? "1" : "0"; c3.onchange = () => { lss("startCar3d", c3.value); applyStart(); }; }
     const cs = get("advCarSec"); if (cs) { cs.value = String(carSecs()); cs.onchange = async () => { lss("startCarSec", String(await askLimit(Number(cs.value) || 6, 1, 120))); applyStart(); }; }
     const cm2 = get("advCarMs"); if (cm2) { cm2.value = String(carMs()); cm2.onchange = async () => { lss("startCarMs", String(await askLimit(Number(cm2.value) || 1000, 100, 5000))); applyStart(); }; }
     const sz = sizes();

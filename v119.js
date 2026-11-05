@@ -20,7 +20,7 @@
     liste: "extraSongsOpt srcTagsOpt srcTagsFade verBarOpt verBarFade fadeSec advListSize advSidebar",
     text: "advScale advAlign advLyricPos advMusikLang advLangWarn",
     cover: "advCover advCoverSet advLangWarn advMusikLang advCoverFlip advGalNoKar advGalNoKarAmt advGalMini",
-    start: "advStartShow advStartFolders advStartOrder advStartSec advStartFade advSz_image advSz_chor advSz_carousel advSz_fade advSz_float advSzReset advCastMode advCarSec advCarMs advFloatSpd startGif eggMode eggFall eggGif",
+    start: "advStartShow advStartFolders advStartOrder advStartSec advStartFade advSz_image advSz_chor advSz_carousel advSz_fade advSz_float advSzReset advCastMode advCarSec advCarMs advFloatSpd advStartTrans advCar3d startGif eggMode eggFall eggGif",
     player: "advNpLayout favSeekOpt advCoverFlip advCastMode flugResetBtn advBack advFwd advHold advHint",
     anz: "advTopMain advTopSet advHold advHint advMeasure advListSize advSidebar advScale advLyricPos",
     sonst: "advAdvanced advEdit advReload advStart"
@@ -166,12 +166,30 @@
       });
     });
   }
+  function syncRng() { document.querySelectorAll("#codeModal .num-rng").forEach((r) => { if (r._sync) r._sync(); }); }
   function init() {
     buildNav(); liveNumbers();
     const o = window.showSetTab;
-    if (typeof o === "function" && !o._v119) { const w = function (t) { o(t); sync(); }; w._v119 = true; window.showSetTab = w; }
-    new MutationObserver(() => { installSearch(); sync(); }).observe($("codeModal") || document.body, { attributes: true, attributeFilter: ["hidden"] });
+    if (typeof o === "function" && !o._v119) { const w = function (t) { o(t); sync(); setTimeout(syncRng, 0); }; w._v119 = true; window.showSetTab = w; }
+    new MutationObserver(() => { installSearch(); sync(); setTimeout(syncRng, 120); setTimeout(syncRng, 600); }).observe($("codeModal") || document.body, { attributes: true, attributeFilter: ["hidden"] });
     installSearch();
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", () => setTimeout(init, 0)); else setTimeout(init, 0);
+})();
+
+/* v123: Höhe der unteren Leiste messen (z. B. mit eingeblendeter Welle), damit der Liedtext/Editor nicht darunter abgeschnitten wird */
+(function () {
+  "use strict";
+  function measure() {
+    const f = document.querySelector("footer"); if (!f) return;
+    const h = Math.ceil(f.getBoundingClientRect().height);
+    if (h > 40 && h < 400) document.documentElement.style.setProperty("--flyer-h", h + "px");
+  }
+  function init() {
+    measure();
+    const f = document.querySelector("footer"); if (!f) return;
+    if (window.ResizeObserver) new ResizeObserver(measure).observe(f);
+    window.addEventListener("resize", measure);
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
 })();

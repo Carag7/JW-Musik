@@ -94,12 +94,13 @@
       b.textContent = txt;
       let rv = row.querySelector(".ai-rev");
       if (!rv) { rv = document.createElement("button"); rv.type = "button"; rv.className = "ai-rev"; row.append(rv); rv.addEventListener("click", (e) => { e.stopPropagation(); revertRow(rowsAll().indexOf(row), row); }); }
-      rv.textContent = "↶ alt"; rv.title = "Alte Zeit dieser Zeile wiederherstellen";
+      rv.textContent = "KI"; rv.className = "ai-rev"; rv.title = "Diese Zeile verwendet die KI-Zeit – antippen für die alte Zeit"; row.classList.remove("ai-useold");
     });
     return cnt;
   }
   function legend(cnt) {
-    let lg = $("aiLegend"); if (!lg) { lg = document.createElement("div"); lg.id = "aiLegend"; const l = $("lyrics"); l.parentNode.insertBefore(lg, l); }
+    let lg = $("aiLegend"); if (!lg) { lg = document.createElement("div"); lg.id = "aiLegend"; }
+    const hd = $("colHead"); if (hd) hd.after(lg); else { const l = $("lyrics"); l.prepend(lg); }
     lg.innerHTML = "";
     const add = (cls, txt) => { const s = document.createElement("span"); s.className = "ai-chip " + cls; s.textContent = txt; lg.append(s); };
     add("ai-d0", `unverändert ${cnt.d0}`); add("ai-d1", `klein (<0,6 s) ${cnt.d1}`); add("ai-d2", `mittel (<2 s) ${cnt.d2}`); add("ai-d3", `groß (≥2 s) ${cnt.d3}`); add("ai-un", `nicht zugeordnet ${cnt.un}`);
@@ -109,7 +110,7 @@
     off.onclick = () => { rowsAll().forEach((r) => { ["ai-d0", "ai-d1", "ai-d2", "ai-d3", "ai-un"].forEach((c) => r.classList.remove(c)); r.querySelectorAll(".ai-delta,.ai-rev").forEach((d) => d.remove()); }); lg.remove(); };
     const ab = document.createElement("span"); ab.className = "ai-ab";
     [["ki", "KI-Zeiten"], ["alt", "Original"]].forEach(([m, n]) => { const b = document.createElement("button"); b.type = "button"; b.className = "chip"; b.dataset.m = m; b.textContent = n; b.setAttribute("aria-pressed", String(m === AI.mode)); b.onclick = () => useTimes(m); ab.append(b); });
-    lg.append(ab, pick, off);
+    lg.prepend(ab); lg.append(pick, off);
   }
   function setPick(on) { document.body.classList.toggle("ai-pick", on); }
   const picked = () => rowsAll().map((r, k) => (r.querySelector(".row-pick") && r.querySelector(".row-pick").checked ? k : -1)).filter((k) => k >= 0);
@@ -117,16 +118,23 @@
   /* KI-Zeiten <-> Original-Zeiten umschalten (Abspielen nutzt die Zeit der Zeile) */
   function useTimes(which) {
     if (!AI.old || !AI.neu) return;
-    rowsAll().forEach((r, k) => { if (AI.neu[k] == null) return; const useNew = which === "ki" && !AI.reverted.has(k); setT(r, useNew ? AI.neu[k] : AI.old[k]); });
+    if (which === 'alt') AI.old.forEach((_, k) => AI.reverted.add(k)); else AI.reverted.clear();
+    rowsAll().forEach((r, k) => { if (AI.neu[k] == null) return; const useNew = which === "ki" && !AI.reverted.has(k); setT(r, useNew ? AI.neu[k] : AI.old[k]); if (r.querySelector('.ai-rev')) paintRev(r, !useNew); });
     AI.mode = which; state.editDirty = true;
     document.querySelectorAll("#aiLegend .ai-ab button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.m === which)));
+  }
+  function paintRev(row, old) {
+    row.classList.toggle("ai-useold", old);
+    const b = row.querySelector(".ai-rev"); if (!b) return;
+    b.textContent = old ? "alt" : "KI"; b.classList.toggle("old", old);
+    b.title = old ? "Diese Zeile verwendet die alte Zeit – antippen für die KI-Zeit" : "Diese Zeile verwendet die KI-Zeit – antippen für die alte Zeit";
   }
   function revertRow(k, row) {
     if (!AI.old || AI.old[k] == null) return;
     const back = !AI.reverted.has(k);
     if (back) AI.reverted.add(k); else AI.reverted.delete(k);
     setT(row, back ? AI.old[k] : AI.neu[k]);
-    const b = row.querySelector(".ai-rev"); if (b) { b.textContent = back ? "↷ KI" : "↶ alt"; b.title = back ? "KI-Zeit wieder verwenden" : "Alte Zeit dieser Zeile wiederherstellen"; }
+    paintRev(row, back);
     state.editDirty = true;
   }
   const level = () => lsv("aiAcc", "normal") === "low" ? "low" : lsv("aiAcc", "normal") === "high" ? "high" : "normal";
@@ -236,6 +244,41 @@
     const save = [...p.querySelectorAll("button")].find((x) => x.textContent === "Speichern");
     p.insertBefore(b, save || null);
   }).observe(document.body, { childList: true });
+
+
+  /* ----- Auswahl-Werkzeuge in der Kopfzeile ----- */
+  const pickCbs = () => [...document.querySelectorAll("#lyrics .row-pick")];
+  function syncPickAll() {
+    const all = $("pickAll"); if (!all) return; const c = pickCbs(), n = c.filter((x) => x.checked).length;
+    all.checked = c.length > 0 && n === c.length; all.indeterminate = n > 0 && n < c.length;
+  }
+  document.addEventListener("change", (e) => {
+    if (e.target && e.target.id === "pickAll") { pickCbs().forEach((c) => { c.checked = e.target.checked; }); syncPickAll(); }
+    else if (e.target && e.target.classList && e.target.classList.contains("row-pick")) syncPickAll();
+  });
+  document.addEventListener("click", async (e) => {
+    const b = e.target.closest && e.target.closest("#colHead .hd-sel"); if (!b) return;
+    e.stopPropagation();
+    const hasAI = AI.old && AI.neu;
+    const buttons = [
+      { value: "all", kind: "primary", label: "Alle Zeilen wählen" },
+      { value: "none", kind: "primary", label: "Keine Zeile wählen" },
+      { value: "inv", kind: "primary", label: "Auswahl umkehren" },
+      { value: "bad", kind: "primary", label: "Große Abweichung + nicht zugeordnete wählen" },
+      ...(hasAI ? [{ value: "ki", kind: "primary", label: "Alle Zeilen auf KI-Zeit" }, { value: "alt", kind: "primary", label: "Alle Zeilen auf alte Zeit" }, { value: "pickalt", kind: "primary", label: "Nur gewählte Zeilen auf alte Zeit" }] : []),
+      { value: null, kind: "cancel", label: "Schließen" }
+    ];
+    const v = await uiDialog({ eyebrow: "Bearbeiten", title: "Zeilen auswählen", cancelValue: null, lines: ["Mit den Haken legst du fest, welche Zeilen „KI-Sync“ neu berechnet."], buttons });
+    const c = pickCbs();
+    if (v === "all") c.forEach((x) => { x.checked = true; });
+    else if (v === "none") c.forEach((x) => { x.checked = false; });
+    else if (v === "inv") c.forEach((x) => { x.checked = !x.checked; });
+    else if (v === "bad") c.forEach((x) => { const r = x.closest(".lyric-line"); x.checked = !!r && (r.classList.contains("ai-d3") || r.classList.contains("ai-un")); });
+    else if (v === "ki") useTimes("ki");
+    else if (v === "alt") useTimes("alt");
+    else if (v === "pickalt") { rowsAll().forEach((r, k) => { const cb = r.querySelector(".row-pick"); if (cb && cb.checked && AI.old && AI.old[k] != null && !AI.reverted.has(k)) revertRow(k, r); }); }
+    syncPickAll();
+  }, true);
 
   /* ---------- Karaoke-Schriftfarben getrennt ---------- */
   function lyricCols() {

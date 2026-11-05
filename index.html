@@ -174,6 +174,7 @@
       <div id="sourceFilter" class="source-filter" hidden></div>
 
       <div class="filters">
+        <button id="tagsBtn" class="chip" type="button" aria-pressed="false" title="Kleine Kennzeichen (Icons) bei den Liedern: kurz / immer / aus">Icons</button>
         <button id="favoritesToggle" class="chip" type="button" aria-pressed="false">alle Lieder</button>
         <button id="shuffleBtn" class="chip" type="button" aria-pressed="false">Zufall</button>
         <span id="songCount" class="count">0</span>
@@ -512,6 +513,9 @@
         <label class="set-row">Symbol „Auf anderem Gerät abspielen“ (Cast) <select id="advCastMode"><option value="always">Immer anzeigen</option><option value="lupe">Nur bei aktiver Lupe</option><option value="off">Aus</option></select></label>
         <small class="set-hint">Das Symbol steht in der Titelzeile neben ☆ und ＋. Es erscheint nur, wenn der Browser Übertragen kann (Chrome auf Android/Computer, Safari/AirPlay) – im Tesla-Browser gibt es diese Funktion nicht.</small>
         <small class="set-hint">Gilt für Karussell und Überblenden. Die Reihenfolge und die Ordner gelten für alle drei Anzeigen.</small>
+        <label class="set-row">Überblenden: Übergang <select id="advStartTrans"><option value="fade">Überblenden</option><option value="stack">Kartenstapel</option><option value="slide">Schieben</option><option value="zoom">Zoom</option><option value="flip">Drehen</option><option value="mosaic">Mosaik</option><option value="rand">Zufällig gemischt</option></select></label>
+        <label class="set-row">Karussell: Darstellung <select id="advCar3d"><option value="1">3D</option><option value="0">2D (nur verschoben)</option></select></label>
+        <small class="set-hint">Übergang gilt für „Überblenden“: Kartenstapel schiebt das oberste Cover zur Seite wie die oberste Karte eines Stapels, Mosaik baut das nächste Cover aus Kacheln auf. Beide Auswahlen erreichst du auch, wenn du auf der Startseite lange auf „Überblenden“ bzw. „Karussell“ drückst.</small>
         <label class="set-row">Schweben: Geschwindigkeit in % <input id="advFloatSpd" type="number" min="20" max="300" step="10" inputmode="numeric" /></label>
         <label class="set-row">Karussell: Sekunden bis zum nächsten Cover <input id="advCarSec" type="number" min="1" max="120" inputmode="numeric" /></label>
         <label class="set-row">Karussell: Dauer der Drehung (Millisekunden) <input id="advCarMs" type="number" min="100" max="5000" step="100" inputmode="numeric" /></label>
