@@ -104,7 +104,7 @@
     if (!state.currentAudio || state.curVersion === "video" || /\.(mp4|m4v|webm|mov)(\?|$)/i.test(state.currentAudio)) { await uiAlert("KI-Scan", "Dafür wird eine MP3 gebraucht (Karaoke, Instrumental oder Zusammenkünfte), bei Video geht es nicht."); return; }
     const acc = lsv("kiScanAcc", "high");
     const ok = await uiDialog({ eyebrow: `Lied ${song.id}`, title: "Liedtext mit KI scannen", cancelValue: false,
-      lines: [song.title, `Die KI hört das Lied ab und setzt die Zeiten neu. Genauigkeit: ${ACCN[acc]} (änderbar unter Einstellungen → Bewertungen → KI-Verlauf). Das Ergebnis wird als eigener KI-Text auf diesem Gerät aufgehoben. Die gespeicherte LRC-Datei wird nicht verändert.`],
+      lines: [song.title, `Die KI hört das Lied ab und setzt die Zeiten neu. Genauigkeit: ${ACCN[acc]} (änderbar unter Einstellungen → Allgemein → Voreinstellungen → Wiedergabe → „KI-Text“, oder unter Bewertungen → KI-Verlauf). Das Ergebnis wird als eigener KI-Text auf diesem Gerät aufgehoben. Die gespeicherte LRC-Datei wird nicht verändert.`],
       buttons: [{ value: true, kind: "primary", label: "Starten" }, { value: false, kind: "cancel", label: "Abbrechen" }] });
     if (ok !== true) return;
     const texts = lines.map((l) => l.text), lang = musikLang() === "de" && state.lyricLang === "de" ? "de" : "en";
@@ -167,7 +167,7 @@
       lines: [s.title, "Der KI-Text ersetzt die bisherige LRC-Datei auf dem Server. Dafür wird der Schreib-Schlüssel (WRITE_KEY) gebraucht. Die bisherige Fassung bleibt im KI-Verlauf erhalten."],
       buttons: [{ value: true, kind: "danger", label: "Als Standard speichern" }, { value: false, kind: "cancel", label: "Abbrechen" }] });
     if (ok !== true) return;
-    let key = keyNow();
+    let key = "";   /* Passwort wird bei jedem Speichern des KI-Textes neu abgefragt */
     const R = window.RATING;
     /* bisherige Fassung sichern */
     try { const r = await fetch(`${SYNC_BASE}/sync/${kind}-${s.id}`, { cache: "no-store" }); if (r.ok) { const t = await r.text(); if (t.includes("[") && R && R.hadd) R.hadd(kind, s.id, { type: "orig", lrc: t.trim() }); } } catch { /* egal */ }
@@ -175,7 +175,7 @@
       if (!key) { key = await uiPrompt({ eyebrow: "Speichern", title: "Schreib-Schlüssel", type: "password", placeholder: "WRITE_KEY", ok: "Weiter" }); if (!key) return; }
       try {
         const res = await fetch(`${SYNC_BASE}/sync/${kind}-${s.id}`, { method: "PUT", headers: { "content-type": "text/plain; charset=utf-8", "x-write-key": key }, body: k.lrc });
-        if (res.status === 401) { key = ""; try { sessionStorage.removeItem("aiKey"); } catch { /* egal */ } continue; }
+        if (res.status === 401) { key = ""; continue; }
         if (!res.ok) throw new Error("Server " + res.status);
         try { sessionStorage.setItem("aiKey", key); } catch { /* egal */ }
         document.dispatchEvent(new CustomEvent("lrc-saved", { detail: { kind, id: s.id, lrc: k.lrc, key } }));

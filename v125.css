@@ -82,3 +82,7 @@ body.edit-mode #aiTools, body.edit-mode #aiLegend, body.edit-mode #editHead { ma
 #codeForm.kv-wide { width: min(96vw, 1500px) !important; max-width: 96vw !important; }
 #codeForm.kv-wide .kv-lines { max-height: 62vh; }
 #codeForm .rt-wrap input.rt-q, #codeForm .rt-wrap input[type="search"].rt-q { height: 30px !important; min-height: 0 !important; max-height: 30px !important; padding: 0 10px !important; line-height: 28px !important; font-size: 14px !important; display: block; box-sizing: border-box; }
+.rt-cnts { display: flex; flex-wrap: wrap; gap: 6px 10px; margin: 6px 0; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; font-size: 14px; }
+.rt-cnt-t { font-weight: 800; }
+.rt-cnt b { font-size: 16px; }
+.rt-lf { font-weight: 700; }

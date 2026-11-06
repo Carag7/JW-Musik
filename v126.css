@@ -13,3 +13,7 @@
 .ki-text-btn[aria-pressed="true"] { color: #fff; background: #3a7bd5; border-color: #3a7bd5; }
 .ki-text-btn[aria-pressed="false"] { opacity: .6; }
 .ki-scan-box { margin-top: 6px; }
+
+/* v127: Auswahlmenüs zeigen das ganze Wort, wo Platz ist */
+#codeForm :is(#advBox, #advPlay, #advList, #advView) .set-row select { width: auto !important; min-width: 84px !important; max-width: 100% !important; flex: 0 1 auto !important; text-overflow: clip; padding: 0 22px 0 10px !important; text-align: left; text-align-last: left; }
+#codeForm :is(#advBox, #advPlay, #advList, #advView) .set-row { flex-wrap: wrap; }

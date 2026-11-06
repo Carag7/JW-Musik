@@ -3707,14 +3707,18 @@ async function importFavorites() {
 async function openTimecode() {
   if (!document.body.classList.contains("edit-mode")) {
     const pass = await uiPrompt({ eyebrow: "Bearbeiten", title: "Timecode-Passwort", type: "password", placeholder: "Passwort", ok: "Öffnen" });
+    const back = () => { const t = state.editReturn; state.editReturn = null; if (t && typeof syncFavorites === "function") syncFavorites(t); };
     if (pass === null || !(await passwordOk(pass, window.TIMECODE_PASSWORD, window.TIMECODE_PASSWORD_HASH))) {
       if (pass !== null) await uiAlert("Falsches Passwort", "Der Bearbeitungsmodus bleibt gesperrt.");
+      back();
       return;
     }
     if (state.curVersion === "video") {
       await uiAlert("Video", "Im Video-Modus kann nichts bearbeitet werden. Wähle „Instrumental“ oder „Zusammenkünfte“, um dafür einen Text abzustimmen.");
+      back();
       return;
     }
+    state.editReturn = null;
     state.writeKey = pass;
     document.body.classList.add("edit-mode");
     updateChrome();
@@ -4151,7 +4155,7 @@ function setupAdvBox() {
   ef.onchange = () => { try { localStorage.setItem("eggFall", ef.checked ? "1" : "0"); } catch { /* egal */ } };
   const closeSettings = () => { sysKeyMem = ""; document.getElementById("codeModal").hidden = true; };
   document.getElementById("advAdvanced").onclick = () => { closeSettings(); toggleAdvanced(); };
-  document.getElementById("advEdit").onclick = () => { closeSettings(); openTimecode(); };
+  document.getElementById("advEdit").onclick = () => { state.editReturn = state.setTab || "allgemein"; closeSettings(); openTimecode(); };
   document.getElementById("advReload").onclick = () => hardRefresh();
   document.getElementById("advStart").onclick = () => { closeSettings(); showLogin(); };
   const num = (id, get, set, min, max) => {
@@ -4235,18 +4239,20 @@ const PRESETS = [
     fields: [{ key: "startShow", t: "Anzeige", o: [["image", "Bild"], ["chor", "Video"], ["carousel", "Karussell"], ["fade", "Überblenden"], ["float", "Schweben"]], dv: "image" }, { key: "startTrans", t: "Übergang", o: [["fade","Überblenden"],["stack","Kartenstapel"],["slide","Schieben"],["zoom","Zoom"],["flip","Drehen"],["mosaic","Mosaik"],["rand","Zufällig"]], dv: "fade" }, { key: "startCar3d", t: "3D", o: BOOL, dv: "1" }, { key: "startSec", t: "Sekunden", n: [2, 120], dv: "6" }] },
   { id: "resume", label: "Nach Rückkehr in den Browser: Pause bleibt Pause", keys: ["resumeMode", "autoTap", "autoMute"], def: { resumeMode: "auto", autoTap: "1", autoMute: "1" },
     fields: [{ key: "resumeMode", t: "Danach", o: [["pause", "Pause bleibt"], ["auto", "wie bisher"], ["always", "immer weiter"]], dv: "pause" }, { key: "autoTap", t: "Tipp startet", o: BOOL, dv: "1" }, { key: "autoMute", t: "Stumm starten, wenn blockiert", o: BOOL, dv: "1" }] },
+  { id: "kitext", label: "KI-Text beim Lied: Genauigkeit des Scans und KI-Text zuerst verwenden", keys: ["kiScanAcc", "kiFirst"], def: { kiScanAcc: "high", kiFirst: "1" },
+    fields: [{ key: "kiScanAcc", t: "Genauigkeit", o: [["low", "schwach"], ["normal", "normal"], ["high", "sehr genau"]], dv: "high" }, { key: "kiFirst", t: "KI-Text zuerst", o: BOOL, dv: "1" }] },
   { id: "syncmax", label: "Automatisch abgleichen, auch wenn bis zu … Lieder gelöscht wurden", keys: ["sync-auto-max"], def: { "sync-auto-max": "2" }, fields: [{ key: "sync-auto-max", n: [0, 999], dv: "0" }] }
 ];
 /* Themen für die Voreinstellungen: Überschrift, Zeilen und ein ganz kurzer Hinweis je Zeile */
 const PRESET_GROUPS = [
-  ["Wiedergabe", ["auto", "resume", "karonly", "skip", "lupeopt", "rcidle"]],
+  ["Wiedergabe", ["auto", "resume", "karonly", "skip", "lupeopt", "rcidle", "kitext"]],
   ["Liste und Auswahl", ["extra", "tags", "verbar", "srcfilter", "fav", "fontlist", "sidebar"]],
   ["Karaoke-Text und Cover", ["fontkar", "lyricalign", "lyricpos", "cover", "startgif", "startshow"]],
   ["Design und Anzeige", ["theme", "hold", "topoff", "themeshown"]],
   ["Abgleich", ["fehl", "syncmax"]]
 ];
 const PRESET_TIP = {
-  auto: "Startet beim Öffnen von selbst.", resume: "Pausiertes Lied bleibt nach App-Wechsel pausiert.", startshow: "Karussell, Überblenden, Übergang, Zeit.", karonly: "Automatisch weiter nur mit Karaoke-Liedern.", skip: "Sekunden pro Tipp auf −/+.", lupeopt: "Einzeln spielen, Liste wiederholen.", rcidle: "Wie oft das Gerät im Ruhezustand nachfragt.",
+  auto: "Startet beim Öffnen von selbst.", resume: "Pausiertes Lied bleibt nach App-Wechsel pausiert.", startshow: "Karussell, Überblenden, Übergang, Zeit.", karonly: "Automatisch weiter nur mit Karaoke-Liedern.", skip: "Sekunden pro Tipp auf −/+.", lupeopt: "Einzeln spielen, Liste wiederholen.", rcidle: "Wie oft das Gerät im Ruhezustand nachfragt.", kitext: "Scan im ＋-Fenster: Genauigkeit; KI-Text vor dem gespeicherten Text zeigen.",
   extra: "Instrumental, Zusammenkünfte, Video in der Liste.", tags: "Kleine Buchstaben unter den Liedern.", verbar: "Art-Buttons und ihr Ausblenden.", srcfilter: "Welche Arten gerade gezeigt werden.", fav: "Wo der Stern erscheint.", fontlist: "Schrift in der Liste.", sidebar: "Breite der Liste.",
   fontkar: "Schrift des Karaoke-Textes.", lyricalign: "Links, Mitte oder rechts.", lyricpos: "Wo die aktive Zeile steht.", cover: "Neue oder alte Cover.", startgif: "Chor-GIF auf der Startseite.",
   theme: "Welches Design und wann.", hold: "Lupe nur nach langem Drücken.", topoff: "Platz oben (z. B. für Tesla).", themeshown: "Welche Designs im Hauptfenster stehen.",
@@ -4254,7 +4260,7 @@ const PRESET_TIP = {
 };
 /* Standard für neue Benutzer (beste Werte am Desktop); über den Namen „standard“ mit dem Schreib-Passwort änderbar */
 const HANDY_EXTRA = { startShow: "fade", startTrans: "slide", startCar3d: "0", themeMode: "manual", theme: "hy-amoled", holdGuard: "0", [STORAGE.listSize]: "18", sidebarW: "0" };
-const STD_VALS = { karaokeOnly: "0", verBarFade: "1", srcTagsFade: "1", fadeSec: "4", autoStart: "0", showExtra: "1", srcTags: "1", favPlace: "both", favSeek: "off", verBarAlways: "1", holdGuard: "0", holdHint: "0", themeMode: "device", [STORAGE.scale]: "42", [STORAGE.listSize]: "16", sidebarW: "300", skipBack: "15", skipFwd: "15", "sync-auto-max": "2", startShow: "carousel", startTrans: "stack", startCar3d: "1", startSec: "6", resumeMode: "pause", autoTap: "1", autoMute: "1" };
+const STD_VALS = { karaokeOnly: "0", verBarFade: "1", srcTagsFade: "1", fadeSec: "4", autoStart: "0", showExtra: "1", srcTags: "1", favPlace: "both", favSeek: "off", verBarAlways: "1", holdGuard: "0", holdHint: "0", themeMode: "device", [STORAGE.scale]: "42", [STORAGE.listSize]: "16", sidebarW: "300", skipBack: "15", skipFwd: "15", "sync-auto-max": "2", startShow: "carousel", startTrans: "stack", startCar3d: "1", startSec: "6", resumeMode: "pause", autoTap: "1", autoMute: "1", kiScanAcc: "high", kiFirst: "1" };
 const SYS = { tesla: "_tesla", standard: "_standard", handy: "_handy" };
 const SYS_LABEL = { tesla: "Tesla", standard: "Standard", handy: "Handy" };
 const TESLA_EXTRA = { eggMode: "auto", eggFall: "0", eggGif: "chor", startGif: "0" };

@@ -161,12 +161,21 @@
     if (art === "sung") return !!(mt.sungLrc || {})[num];
     return !!(mt.lrc || {})[num];
   }
+  function lrcFiles(song) {
+    const m = state.media || {}, md = m.de || {}, n = String(song.number), out = [];
+    if (((m.karaoke || {}).lrc || {})[n]) out.push("Karaoke EN");
+    if (((md.karaoke || {}).lrc || {})[n]) out.push("Karaoke DE");
+    if (((m.meeting || {}).lrc || {})[n]) out.push("Instrumental");
+    if (((m.meeting || {}).sungLrc || {})[n]) out.push("Zusammenkünfte");
+    return out;
+  }
   function openSongEdit(song, art, lang) {
     const i = state.songs.findIndex((x) => x.id === song.id); if (i < 0) return;
     $("codeModal").hidden = true;
     if (art === "karaoke") lss("musikLang", lang);
     state.version = art === "video" ? "meeting" : art;
     state.returnTab = state.setTab || "bew";
+    state.editReturn = state.setTab || "bew";
     Promise.resolve(selectSong(i, false)).then(() => { if (!document.body.classList.contains("edit-mode")) openTimecode(); }).catch(() => {});
   }
   function mountBew() {
@@ -188,8 +197,8 @@
     const q = h("input", "rt-in rt-q"); q.type = "search"; q.placeholder = "Nummer oder Titel suchen"; q.value = BV.q; q.oninput = () => { BV.q = q.value; draw(); };
     const qu = h("input", "rt-in rt-q"); qu.type = "search"; qu.placeholder = "Benutzer oder Stichwort suchen"; qu.value = BV.us; qu.oninput = () => { BV.us = qu.value; draw(); };
     box.append(f, q, qu);
-    const info = h("small", "set-hint", ""); const list = h("div", "rt-list");
-    box.append(info, list);
+    const info = h("small", "set-hint", ""); const list = h("div", "rt-list"); const cnt = h("div", "rt-cnts");
+    box.append(cnt, info, list);
     function draw() {
       list.replaceChildren();
       const { art, lang } = BV;
@@ -210,7 +219,9 @@
       const cmp = { nr: (a, b) => a.s.number - b.s.number || String(a.s.id).localeCompare(String(b.s.id)), song: (a, b) => (b.sg ? b.sg.avg : -1) - (a.sg ? a.sg.avg : -1), text: (a, b) => (a.tx ? a.tx.avg : 9) - (b.tx ? b.tx.avg : 9), textbest: (a, b) => (b.tx ? b.tx.avg : -1) - (a.tx ? a.tx.avg : -1), recent: (a, b) => (b.li ? b.li.ts : 0) - (a.li ? a.li.ts : 0), amp: (a, b) => o[a.am] - o[b.am] }[BV.sort];
       rows.sort(cmp);
       const cn = (o) => Object.keys(o || {}).length, m = state.media || {}, md = m.de || {};
-      info.textContent = `${rows.length} Lieder in der Liste (${artName(art)}, ${langName(lang)}). LRC-Dateien auf dem Server: Karaoke Englisch ${cn((m.karaoke || {}).lrc)} · Karaoke Deutsch ${cn((md.karaoke || {}).lrc)} · Instrumental ${cn((m.meeting || {}).lrc)} · Zusammenkünfte ${cn((m.meeting || {}).sungLrc)}. Tippe auf ein Lied, um den Text zu bearbeiten.`;
+      cnt.replaceChildren(...[["Karaoke EN", cn((m.karaoke || {}).lrc)], ["Karaoke DE", cn((md.karaoke || {}).lrc)], ["Instrumental", cn((m.meeting || {}).lrc)], ["Zusammenkünfte", cn((m.meeting || {}).sungLrc)]].map(([n, v]) => { const c = h("span", "rt-cnt"); c.append(h("b", "", String(v)), document.createTextNode(" " + n)); return c; }));
+      cnt.prepend(h("span", "rt-cnt-t", "LRC-Dateien:"));
+      info.textContent = `${rows.length} Lieder in der Liste (${artName(art)}, ${langName(lang)}). Tippe auf ein Lied, um den Text zu bearbeiten.`;
       rows.forEach((r) => {
         const card = h("div", "rt-card"); if (r.am) card.dataset.amp = r.am;
         const top = h("div", "rt-top");
@@ -226,7 +237,7 @@
         };
         top.append(t, amp);
         const meta = h("div", "rt-meta");
-        meta.append(h("span", "", "Lied " + (r.sg ? `${f1(r.sg.avg)} ★ (${r.sg.n})` : "–")), h("span", "", "Text " + (r.tx ? `${f1(r.tx.avg)} ★ (${r.tx.n})` : "–")), h("span", "", "gespeichert " + (r.li ? dd(r.li.ts) : "–")));
+        meta.append(h("span", "", "Lied " + (r.sg ? `${f1(r.sg.avg)} ★ (${r.sg.n})` : "–")), h("span", "", "Text " + (r.tx ? `${f1(r.tx.avg)} ★ (${r.tx.n})` : "–")), h("span", "", "gespeichert " + (r.li ? dd(r.li.ts) : "–")), (() => { const f = lrcFiles(r.s); const e = h("span", "rt-lf", `LRC-Dateien: ${f.length}`); e.title = f.length ? f.join(", ") : "keine"; return e; })());
         const act = h("div", "rt-act");
         const bD = h("button", "chip", "Details"); bD.type = "button"; bD.onclick = () => showEntries(r.s, art, lang);
         const bP = h("button", "chip", "＋ Bewerten"); bP.type = "button"; bP.onclick = async () => { const sv = { art: state.version, lang: lsv("musikLang", "en") }; state.version = art; if (art === "karaoke") lss("musikLang", lang); await uiDialog({ eyebrow: `Lied ${r.s.id}`, title: "Bewerten", lines: [r.s.title, { node: ratingNode(r.s) }], buttons: [{ value: null, kind: "cancel", label: "Schließen" }], cancelValue: null }); state.version = sv.art; lss("musikLang", sv.lang); await loadIdx(); draw(); };
