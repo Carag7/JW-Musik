@@ -1,0 +1,15 @@
+/* v126 */
+.code-x-wrap { position: sticky; top: 0; z-index: 5; height: 0; align-self: stretch; margin: 0 0 -12px; }
+.code-x { position: absolute; top: -4px; right: -4px; width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line); background: var(--panel-2, rgba(128,128,128,.2)); color: inherit; font-size: 22px; line-height: 1; padding: 0; cursor: pointer; display: grid; place-items: center; }
+#codeForm .who-badge .wbox { right: 36px; max-width: 48%; }
+.auth-banner { display: grid; gap: 6px; margin: 4px 0 8px; }
+.auth-banner.tab-off { display: none !important; }
+.auth-row { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 10px; border: 2px solid; font-size: 14px; }
+.auth-row[data-ok="1"] { border-color: #3fae6a; background: color-mix(in srgb, #3fae6a 16%, transparent); }
+.auth-row[data-ok="0"] { border-color: #ef5350; background: color-mix(in srgb, #ef5350 16%, transparent); font-weight: 700; }
+.auth-ic { font-size: 18px; font-weight: 900; }
+.auth-tx { flex: 1; min-width: 0; }
+.ki-text-btn { font-size: 13px !important; font-weight: 800; }
+.ki-text-btn[aria-pressed="true"] { color: #fff; background: #3a7bd5; border-color: #3a7bd5; }
+.ki-text-btn[aria-pressed="false"] { opacity: .6; }
+.ki-scan-box { margin-top: 6px; }

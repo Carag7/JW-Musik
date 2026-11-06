@@ -152,7 +152,7 @@
   }
 
   /* ---------- Reiter „Bewertungen“ ---------- */
-  const BV = { art: "karaoke", lang: "en", sort: "nr", filt: "all", q: "" };
+  const BV = { art: "karaoke", lang: "en", sort: "nr", filt: "all", q: "", us: "", sg: "0", sx: "0" };
   function hasText(song, art, lang) {
     const m = state.media; if (!m) return !song.extra && art === "karaoke" && lang === "en";
     const num = String(song.number);
@@ -182,9 +182,12 @@
     const f = h("div", "rt-filters");
     f.append(mkSel(ART, BV.art, (v) => { BV.art = v; draw(); }), mkSel(LANG, BV.lang, (v) => { BV.lang = v; draw(); }),
       mkSel([["nr", "Sortieren: Nummer"], ["song", "Lied: beste zuerst"], ["text", "Text: schlechteste zuerst"], ["textbest", "Text: beste zuerst"], ["recent", "Text: zuletzt gespeichert"], ["amp", "Ampel: rot zuerst"]], BV.sort, (v) => { BV.sort = v; draw(); }),
-      mkSel([["all", "Filter: alle"], ["notext", "ohne Text-Bewertung"], ["low", "Text Ø unter 3,5"], ["red", "Ampel rot"], ["orange", "Ampel orange"], ["green", "Ampel grün"], ["none", "ohne Ampel"]], BV.filt, (v) => { BV.filt = v; draw(); }));
-    const q = h("input", "rt-in"); q.type = "search"; q.placeholder = "Nummer oder Titel suchen"; q.value = BV.q; q.oninput = () => { BV.q = q.value; draw(); };
-    box.append(f, q);
+      mkSel([["all", "Filter: alle"], ["note", "nur mit Notiz"], ["notext", "ohne Text-Bewertung"], ["low", "Text Ø unter 3,5"], ["red", "Ampel rot"], ["orange", "Ampel orange"], ["green", "Ampel grün"], ["none", "ohne Ampel"]], BV.filt, (v) => { BV.filt = v; draw(); }),
+      mkSel([["0", "Lied: alle Sterne"], ["5", "Lied: 5 Sterne"], ["4", "Lied: 4 Sterne"], ["3", "Lied: 3 Sterne"], ["2", "Lied: 2 Sterne"], ["1", "Lied: 1 Stern"]], BV.sg, (v) => { BV.sg = v; draw(); }),
+      mkSel([["0", "Text: alle Sterne"], ["5", "Text: 5 Sterne"], ["4", "Text: 4 Sterne"], ["3", "Text: 3 Sterne"], ["2", "Text: 2 Sterne"], ["1", "Text: 1 Stern"]], BV.sx, (v) => { BV.sx = v; draw(); }));
+    const q = h("input", "rt-in rt-q"); q.type = "search"; q.placeholder = "Nummer oder Titel suchen"; q.value = BV.q; q.oninput = () => { BV.q = q.value; draw(); };
+    const qu = h("input", "rt-in rt-q"); qu.type = "search"; qu.placeholder = "Benutzer oder Stichwort suchen"; qu.value = BV.us; qu.oninput = () => { BV.us = qu.value; draw(); };
+    box.append(f, q, qu);
     const info = h("small", "set-hint", ""); const list = h("div", "rt-list");
     box.append(info, list);
     function draw() {
@@ -193,21 +196,34 @@
       let rows = state.songs.filter((s) => hasText(s, art, lang) || stat(s.id, "text", art, lang) || ampel(s.id, art, lang)).map((s) => ({ s, sg: stat(s.id, "song", art, lang), tx: stat(s.id, "text", art, lang), am: ampel(s.id, art, lang), li: lrcInfo(s.id, art, lang) }));
       const qq = BV.q.trim().toLowerCase();
       if (qq) rows = rows.filter((r) => String(r.s.id).toLowerCase() === qq || String(r.s.number) === qq || r.s.title.toLowerCase().includes(qq));
+      const uq = BV.us.trim().toLowerCase();
+      if (uq) rows = rows.filter((r) => ["song", "text"].some((t) => ((((IDX[r.s.id] || {}).k || {})[`${t}|${art}|${lang}`] || {}).u || []).some((x) => x.includes(uq))));
+      if (BV.sg !== "0") rows = rows.filter((r) => r.sg && Math.round(r.sg.avg) === Number(BV.sg));
+      if (BV.sx !== "0") rows = rows.filter((r) => r.tx && Math.round(r.tx.avg) === Number(BV.sx));
       const F = BV.filt;
-      if (F === "notext") rows = rows.filter((r) => !r.tx);
+      if (F === "note") rows = rows.filter((r) => ((((IDX[r.s.id] || {}).k || {})[`text|${art}|${lang}`] || {}).notes || 0) > 0 || ((((IDX[r.s.id] || {}).k || {})[`song|${art}|${lang}`] || {}).notes || 0) > 0);
+      else if (F === "notext") rows = rows.filter((r) => !r.tx);
       else if (F === "low") rows = rows.filter((r) => r.tx && r.tx.avg < 3.5);
       else if (F === "none") rows = rows.filter((r) => !r.am);
       else if (F !== "all") rows = rows.filter((r) => r.am === F);
       const o = { red: 0, orange: 1, green: 2, "": 3 };
       const cmp = { nr: (a, b) => a.s.number - b.s.number || String(a.s.id).localeCompare(String(b.s.id)), song: (a, b) => (b.sg ? b.sg.avg : -1) - (a.sg ? a.sg.avg : -1), text: (a, b) => (a.tx ? a.tx.avg : 9) - (b.tx ? b.tx.avg : 9), textbest: (a, b) => (b.tx ? b.tx.avg : -1) - (a.tx ? a.tx.avg : -1), recent: (a, b) => (b.li ? b.li.ts : 0) - (a.li ? a.li.ts : 0), amp: (a, b) => o[a.am] - o[b.am] }[BV.sort];
       rows.sort(cmp);
-      info.textContent = `${rows.length} Lieder mit Karaoke-Text (${artName(art)}, ${langName(lang)}). Tippe auf ein Lied, um den Text zu bearbeiten.`;
+      const cn = (o) => Object.keys(o || {}).length, m = state.media || {}, md = m.de || {};
+      info.textContent = `${rows.length} Lieder in der Liste (${artName(art)}, ${langName(lang)}). LRC-Dateien auf dem Server: Karaoke Englisch ${cn((m.karaoke || {}).lrc)} · Karaoke Deutsch ${cn((md.karaoke || {}).lrc)} · Instrumental ${cn((m.meeting || {}).lrc)} · Zusammenkünfte ${cn((m.meeting || {}).sungLrc)}. Tippe auf ein Lied, um den Text zu bearbeiten.`;
       rows.forEach((r) => {
         const card = h("div", "rt-card"); if (r.am) card.dataset.amp = r.am;
         const top = h("div", "rt-top");
         const t = h("button", "rt-title"); t.type = "button"; t.innerHTML = ""; t.append(h("b", "", String(r.s.id)), document.createTextNode(" " + r.s.title)); t.title = "Karaoke-Text dieses Liedes bearbeiten"; t.onclick = () => openSongEdit(r.s, art, lang);
-        const amp = h("span", "rt-amp");
-        ["red", "orange", "green"].forEach((c) => { const b = h("button", "amp-b"); b.type = "button"; b.dataset.c = c; b.title = "Ampel " + AMP_NAME[c]; b.setAttribute("aria-pressed", String(r.am === c)); b.onclick = async () => { const nv = r.am === c ? "" : c; try { const res = await post("/api/rate", { id: r.s.id, op: "status", art, lang, value: nv }); (IDX[r.s.id] = IDX[r.s.id] || {}).status = res.status; try { localStorage.setItem("rateIdx", JSON.stringify(IDX)); } catch { /* egal */ } paintAmpel(); draw(); } catch (e) { showToast("Ampel nicht gespeichert: " + (e.message || e)); } }; amp.append(b); });
+        const amp = h("button", "rt-ampbtn"); amp.type = "button"; amp.dataset.c = r.am || "";
+        amp.append(h("i", "amp-dot"), h("span", "", r.am ? ({ red: "Rot", orange: "Orange", green: "Grün" })[r.am] : "Ampel"));
+        amp.firstChild.dataset.c = r.am || ""; amp.title = "Ampel für den Karaoke-Text setzen";
+        amp.onclick = async () => {
+          const v = await uiDialog({ eyebrow: `Lied ${r.s.id} · ${artName(art)} · ${langName(lang)}`, title: "Ampel für den Karaoke-Text", cancelValue: null, lines: [r.s.title, { text: "Rot: muss überarbeitet werden. Orange: fast fertig. Grün: passt.", cls: "dlg-hint" }],
+            buttons: [{ value: "red", kind: "primary", label: "● Rot – überarbeiten" }, { value: "orange", kind: "primary", label: "● Orange – fast fertig" }, { value: "green", kind: "primary", label: "● Grün – passt" }, { value: "", kind: "danger", label: "Keine Farbe" }, { value: null, kind: "cancel", label: "Abbrechen" }] });
+          if (v === null) return;
+          try { const res = await post("/api/rate", { id: r.s.id, op: "status", art, lang, value: v }); (IDX[r.s.id] = IDX[r.s.id] || {}).status = res.status; try { localStorage.setItem("rateIdx", JSON.stringify(IDX)); } catch { /* egal */ } paintAmpel(); draw(); } catch (e) { showToast("Ampel nicht gespeichert: " + (e.message || e)); }
+        };
         top.append(t, amp);
         const meta = h("div", "rt-meta");
         meta.append(h("span", "", "Lied " + (r.sg ? `${f1(r.sg.avg)} ★ (${r.sg.n})` : "–")), h("span", "", "Text " + (r.tx ? `${f1(r.tx.avg)} ★ (${r.tx.n})` : "–")), h("span", "", "gespeichert " + (r.li ? dd(r.li.ts) : "–")));
@@ -238,7 +254,7 @@
     const arr = hget(kind, id); let ch = false;
     for (const v of arr) {
       if (v.srv) continue;
-      try { await post("/api/kihist", { id, kind, type: v.type, acc: v.acc || "", u: lsv("rateName", ""), lrc: v.lrc }, k); v.srv = 1; ch = true; } catch (e) { if (e.status === 401) break; }
+      try { await post("/api/kihist", { id, kind, type: v.type, src: v.src || "edit", acc: v.acc || "", u: lsv("rateName", ""), lrc: v.lrc }, k); v.srv = 1; ch = true; } catch (e) { if (e.status === 401) break; }
     }
     if (ch) hput(kind, id, arr);
   }
@@ -250,7 +266,7 @@
       const texts = rows.map((r) => ((r.querySelector(".lyric-text") || {}).value || r.textContent || "").trim());
       if (texts.length !== d.old.length) return;
       hadd(kind, song.id, { type: "orig", lrc: mkLrc(d.old, texts) });
-      hadd(kind, song.id, { type: "ki", acc: d.acc || "normal", lrc: mkLrc(d.neu, texts) });
+      hadd(kind, song.id, { type: "ki", src: "edit", acc: d.acc || "normal", lrc: mkLrc(d.neu, texts) });
     } catch { /* egal */ }
   });
   document.addEventListener("lrc-saved", (e) => {
@@ -263,7 +279,7 @@
   });
 
   /* ---------- Reiter „KI-Verlauf“ ---------- */
-  const KV = { id: "", art: "karaoke", lang: "en", l: "", r: "", diffOnly: false };
+  const KV = { id: "", art: "karaoke", lang: "en", l: "", r: "", diffOnly: false, sel: -1, selR: -1 };
   const ACC = { low: "schwach", normal: "normal", high: "sehr genau" };
   const parse = (txt) => String(txt || "").split(/\r?\n/).map((ln) => { const m = /^\[(\d+):(\d+(?:\.\d+)?)\](.*)$/.exec(ln.trim()); return m ? { t: Number(m[1]) * 60 + Number(m[2]), x: m[3].trim() } : null; }).filter(Boolean);
   const tf = (t) => { const m = Math.floor(t / 60); return `${m}:${(t - m * 60).toFixed(2).padStart(5, "0")}`; };
@@ -275,7 +291,7 @@
     const seen = new Set();
     [...srv.map((v) => ({ ...v, from: "server" })), ...loc.map((v) => ({ ...v, from: "lokal" }))].forEach((v) => { const k = v.type + "|" + v.lrc; if (seen.has(k)) return; seen.add(k); out.push(v); });
     out.sort((a, b) => a.ts - b.ts);
-    const L = (v) => ({ ...v, label: v.type === "orig" ? `Original (vor der ersten KI) · ${dt(v.ts)}` : v.type === "ki" ? `KI-Download · ${dt(v.ts)} · Genauigkeit ${ACC[v.acc] || "normal"}` : `Gespeichert · ${dt(v.ts)}${v.u ? " · " + v.u : ""}` });
+    const L = (v) => ({ ...v, label: v.type === "orig" ? `Original (vor der ersten KI) · ${dt(v.ts)}` : v.type === "ki" ? `KI-Download${v.src === "song" ? " (direkt beim Lied)" : " (Bearbeiten-Modus)"} · ${dt(v.ts)} · Genauigkeit ${ACC[v.acc] || "normal"}` : `Gespeichert · ${dt(v.ts)}${v.u ? " · " + v.u : ""}` });
     const res = out.map(L);
     try { const r = await fetch(`${SYNC_BASE}/sync/${kind}-${id}`, { cache: "no-store" }); if (r.ok) { const t = await r.text(); if (t.includes("[")) res.unshift({ ts: 0, type: "server", lrc: t, label: "Aktuell auf dem Server" }); } } catch { /* egal */ }
     try { const p = JSON.parse(localStorage.getItem("pend-" + kind + "-" + id) || "null"); if (p && p.lines) res.push({ ts: p.ts, type: "pend", lrc: mkLrc(p.lines.map((l) => Number(l.time)), p.lines.map((l) => l.text || "")), label: `Nur lokal gespeichert · ${dt(p.ts)}` }); } catch { /* egal */ }
@@ -315,34 +331,53 @@
     if (!KV.l || !vs[KV.l]) { KV.l = String(0); KV.r = String(vs.length - 1); }
     if (!vs[KV.r]) KV.r = String(vs.length - 1);
     const opt = (s, val) => { vs.forEach((v, i) => { const o = h("option", "", v.label); o.value = String(i); s.append(o); }); s.value = val; };
-    const sum = h("div", "kv-sum"), grid = h("div", "kv-grid");
+    const sum = h("div", "kv-sum"), grid = h("div", "kv-grid"), det = h("div", "kv-det", "Zeile antippen: Sie wird in beiden Spalten umrahmt, darunter stehen die Zeiten.");
+    const chk = (label, key, def, fn) => { const l = h("label", "set-row check"); const c = h("input"); c.type = "checkbox"; c.checked = lsv(key, def) === "1"; c.onchange = () => { lss(key, c.checked ? "1" : "0"); fn && fn(); }; l.append(c, h("span", "", " " + label)); return l; };
     const dsel = h("label", "set-row check"); const dc = h("input"); dc.type = "checkbox"; dc.checked = KV.diffOnly; dc.onchange = () => { KV.diffOnly = dc.checked; draw(); }; dsel.append(dc, h("span", "", " nur abweichende Zeilen zeigen"));
-    const mkPane = (side) => { const p = h("div", "kv-pane"); const s = h("select", "rt-sel"); opt(s, KV[side]); s.onchange = () => { KV[side] = s.value; draw(); }; p.append(h("small", "kv-side", side === "l" ? "Links" : "Rechts"), s); const ls = h("div", "kv-lines"); p.append(ls); p.ls = ls; return p; };
+    const opts = h("div", "kv-opts");
+    opts.append(dsel, chk("beide Spalten gemeinsam scrollen", "kvSync", "0"));
+    if (window.innerWidth >= 900) opts.append(chk("breit anzeigen (großer Bildschirm)", "kvWide", "0", applyWide));
+    const mkPane = (side) => { const p = h("div", "kv-pane"); const s = h("select", "rt-sel"); opt(s, KV[side]); s.onchange = () => { KV[side] = s.value; KV.sel = -1; draw(); }; p.append(h("small", "kv-side", side === "l" ? "Links" : "Rechts"), s); const ls = h("div", "kv-lines"); p.append(ls); p.ls = ls; return p; };
     const pl = mkPane("l"), pr = mkPane("r");
-    grid.append(pl, pr); body.append(dsel, sum, grid);
+    let lock = false;
+    [[pl, pr], [pr, pl]].forEach(([a, b]) => a.ls.addEventListener("scroll", () => { if (lsv("kvSync", "0") !== "1" || lock) return; lock = true; const m = a.ls.scrollHeight - a.ls.clientHeight, f = m > 0 ? a.ls.scrollTop / m : 0; b.ls.scrollTop = f * (b.ls.scrollHeight - b.ls.clientHeight); requestAnimationFrame(() => { lock = false; }); }));
+    grid.append(pl, pr); body.append(opts, sum, det, grid);
+    applyWide();
+    let map = { ab: [], ba: [] }, AA = [], BB = [];
+    function pick(side, i) {
+      const j = side === "l" ? map.ab[i] : map.ba[i];
+      KV.sel = side === "l" ? i : (j >= 0 ? j : -1); KV.selR = side === "r" ? i : j;
+      [[pl, KV.sel], [pr, KV.selR]].forEach(([p, k]) => { p.ls.querySelectorAll(".kv-line.kv-sel").forEach((e) => e.classList.remove("kv-sel")); const e = p.ls.querySelector(`.kv-line[data-i="${k}"]`); if (e) { e.classList.add("kv-sel"); e.scrollIntoView({ block: "nearest" }); } });
+      const a = AA[KV.sel], b = BB[KV.selR];
+      if (a && b) { const d = b.t - a.t, ad = Math.abs(d); det.textContent = `„${a.x}“ · links ${tf(a.t)} · rechts ${tf(b.t)} · Unterschied ${ad < 0.005 ? "keiner" : (d > 0 ? "+" : "−") + ad.toFixed(2).replace(".", ",") + " s (rechts " + (d > 0 ? "später" : "früher") + ")"}`; }
+      else if (a) det.textContent = `„${a.x}“ · links ${tf(a.t)} · rechts: kein Gegenstück`;
+      else if (b) det.textContent = `„${b.x}“ · rechts ${tf(b.t)} · links: kein Gegenstück`;
+    }
     function draw() {
-      const A = parse(vs[KV.l].lrc), B = parse(vs[KV.r].lrc);
+      const A = parse(vs[KV.l].lrc), B = parse(vs[KV.r].lrc); AA = A; BB = B;
       const cnt = { d0: 0, d1: 0, d2: 0, d3: 0, un: 0 };
       const n = Math.max(A.length, B.length);
-      const same = A.length === B.length;
-      /* ohne gleiche Zeilenzahl: Zeilen mit gleichem Text der Reihe nach zuordnen */
       const bi = new Array(A.length).fill(-1);
-      if (same) A.forEach((_, i) => { bi[i] = i; });
+      if (A.length === B.length) A.forEach((_, i) => { bi[i] = i; });
       else { let j = 0; A.forEach((a, i) => { for (let k = j; k < B.length; k++) if (B[k].x === a.x) { bi[i] = k; j = k + 1; break; } }); }
+      const ba = new Array(B.length).fill(-1); bi.forEach((k, i) => { if (k >= 0) ba[k] = i; });
+      map = { ab: bi, ba };
       const clsA = A.map((a, i) => { if (bi[i] < 0) { cnt.un++; return "ai-un"; } const d = Math.abs(a.t - B[bi[i]].t); const c = d < 0.15 ? "d0" : d < 0.6 ? "d1" : d < 2 ? "d2" : "d3"; cnt[c]++; return "ai-" + c; });
-      const used = new Set(bi.filter((x) => x >= 0));
-      const clsB = B.map((b, k) => { const i = bi.indexOf(k); if (i < 0 || !used.has(k)) return "ai-un"; return clsA[i]; });
-      const fill = (p, L, cl) => { p.ls.replaceChildren(); L.forEach((l, i) => { if (KV.diffOnly && cl[i] === "ai-d0") return; const r = h("div", "kv-line lyric-line " + cl[i]); r.append(h("span", "kv-t", tf(l.t)), h("span", "kv-x", l.x)); p.ls.append(r); }); };
-      fill(pl, A, clsA); fill(pr, B, clsB);
+      const clsB = B.map((b, k) => (ba[k] < 0 ? "ai-un" : clsA[ba[k]]));
+      const badge = (a, b) => { if (!a || !b) return "ohne Gegenstück"; const d = b.t - a.t, ad = Math.abs(d); return ad < 0.15 ? "gleich" : (d > 0 ? "+" : "−") + ad.toFixed(1).replace(".", ",") + " s"; };
+      const fill = (p, L, cl, side) => { p.ls.replaceChildren(); L.forEach((l, i) => { if (KV.diffOnly && cl[i] === "ai-d0") return; const r = h("div", "kv-line lyric-line " + cl[i]); r.dataset.i = String(i); const o = side === "l" ? B[bi[i]] : A[ba[i]]; r.append(h("span", "kv-t", tf(l.t)), h("span", "kv-x", l.x), h("span", "kv-d", side === "l" ? badge(l, o) : badge(o, l))); r.onclick = () => pick(side, i); p.ls.append(r); }); };
+      fill(pl, A, clsA, "l"); fill(pr, B, clsB, "r");
       const tot = n || 1, pc = (x) => Math.round((100 * x) / tot) + " %";
       sum.textContent = `${A.length} / ${B.length} Zeilen · gleich ${cnt.d0} (${pc(cnt.d0)}) · klein ${cnt.d1} · mittel ${cnt.d2} · groß ${cnt.d3} · ohne Gegenstück ${cnt.un}`;
+      if (KV.sel >= 0 && A[KV.sel]) pick("l", KV.sel);
     }
     draw();
   }
+  function applyWide() { const f = $("codeForm"); if (f) f.classList.toggle("kv-wide", state.setTab === "kihist" && window.innerWidth >= 900 && lsv("kvWide", "0") === "1"); }
 
   /* ---------- Reiter-Gruppen ---------- */
   const GRP = {
-    daten: ["Daten", [["abgleich", "Favoriten-Abgleich"], ["sichern", "Sichern"]]],
+    daten: ["Sichern", [["abgleich", "Favoriten-Abgleich"], ["sichern", "Daten"]]],
     sync: ["Synchronisieren", [["fehlend", "Fehlende Lieder"], ["ludwt", "Wochenlieder LuD+WT"]]],
     bewert: ["Bewertungen", [["bew", "Bewertungen"], ["kihist", "KI-Verlauf"]]]
   };
@@ -361,7 +396,7 @@
     document.querySelectorAll("#setTabs [data-grp]").forEach((b) => { if (b._v125) return; b._v125 = true; b.addEventListener("click", () => showSetTab(lastSub[b.dataset.grp] || GRP[b.dataset.grp][1][0][0])); });
     const o = window.showSetTab;
     if (typeof o === "function" && !o._v125) {
-      const w = function (t) { o(t); try { paintGrp(t); if (t === "bew") mountBew(); else if (t === "kihist") mountKih(); } catch (e) { console.error(e); } };
+      const w = function (t) { o(t); try { applyWide(); paintGrp(t); if (t === "bew") mountBew(); else if (t === "kihist") mountKih(); } catch (e) { console.error(e); } };
       w._v125 = true; window.showSetTab = w;
     }
   }
@@ -386,5 +421,5 @@
 
   document.addEventListener("DOMContentLoaded", () => { wireGrp(); setTimeout(loadIdx, 1500); });
   if (document.readyState !== "loading") setTimeout(loadIdx, 1500);
-  window.RATING = { loadIdx, mountBew, mountKih, paintAmpel };
+  window.RATING = { loadIdx, mountBew, mountKih, paintAmpel, hadd, hget, mkLrc };
 })();

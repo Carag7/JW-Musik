@@ -68,3 +68,17 @@ body.edit-mode #aiTools, body.edit-mode #aiLegend, body.edit-mode #editHead { ma
 .rt-wrap .rt-in, .rt-wrap .rt-sel, .rt-box .rt-in, .rt-box .rt-sel { height: auto !important; min-height: 36px !important; width: auto; max-width: 100%; }
 .rt-wrap input[type="search"].rt-in, .rt-box .rt-in { width: 100%; }
 .rt-wrap .rt-filters .rt-sel { flex: 1 1 130px; }
+.rt-wrap input.rt-q { height: 30px !important; min-height: 0 !important; padding: 2px 10px !important; line-height: 1.2; margin-top: 4px; }
+.rt-ampbtn { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 4px 12px; border-radius: 20px; border: 1px solid var(--line); background: transparent; color: inherit; font: inherit; font-size: 14px; cursor: pointer; }
+.rt-ampbtn .amp-dot { width: 16px; height: 16px; margin: 0; border: 2px solid var(--muted, #888); background: transparent; }
+.rt-ampbtn .amp-dot[data-c="red"], .rt-ampbtn .amp-dot[data-c="orange"], .rt-ampbtn .amp-dot[data-c="green"] { border-color: transparent; }
+/* KI-Verlauf v126 */
+.kv-line { position: relative; cursor: pointer; flex-wrap: wrap; border: 2px solid transparent; border-radius: 6px; }
+.kv-line .kv-d { margin-left: auto; font-size: 11px; opacity: .85; white-space: nowrap; }
+.kv-line.kv-sel { border-color: var(--text, #fff); box-shadow: 0 0 0 2px var(--accent, #4a7bff); }
+.kv-line.kv-sel .kv-d { font-size: 14px; font-weight: 800; opacity: 1; }
+.kv-det { font-size: 13px; padding: 6px 8px; border: 1px dashed var(--line); border-radius: 8px; margin-top: 6px; }
+.kv-opts { display: grid; gap: 2px; }
+#codeForm.kv-wide { width: min(96vw, 1500px) !important; max-width: 96vw !important; }
+#codeForm.kv-wide .kv-lines { max-height: 62vh; }
+#codeForm .rt-wrap input.rt-q, #codeForm .rt-wrap input[type="search"].rt-q { height: 30px !important; min-height: 0 !important; max-height: 30px !important; padding: 0 10px !important; line-height: 28px !important; font-size: 14px !important; display: block; box-sizing: border-box; }

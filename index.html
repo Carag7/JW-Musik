@@ -23,6 +23,7 @@
   <link rel="stylesheet" href="v119.css" />
   <link rel="stylesheet" href="v124.css" />
   <link rel="stylesheet" href="v125.css" />
+  <link rel="stylesheet" href="v126.css" />
   <script src="password.js"></script>
 </head>
 <body>
@@ -271,17 +272,18 @@
   <div id="codeModal" class="login-gate" hidden>
     <form id="codeForm" class="login-card">
       <div id="whoBadge" class="who-badge" aria-label="Sync-Status"></div>
+      <div class="code-x-wrap"><button id="codeX" class="code-x" type="button" aria-label="Fenster schließen" title="Fenster schließen">×</button></div>
       <p class="eyebrow" id="codeEyebrow">Favoriten</p>
       <button id="metaToggle" data-tab="abgleich" class="ghost meta-i" type="button" hidden>i</button>
       <h2 id="codeTitle">Code</h2>
       <div id="setTabs" class="set-tabs" role="tablist">
         <button class="seg-btn" type="button" data-settab="allgemein">Allgemein</button>
         <button class="seg-btn" type="button" data-settab="design">Design</button>
-        <button class="seg-btn" type="button" data-grp="daten">Daten</button>
+        <button class="seg-btn" type="button" data-grp="daten">Sichern</button>
         <button class="seg-btn" type="button" data-grp="sync">Synchronisieren</button>
         <button class="seg-btn" type="button" data-grp="bewert">Bewertungen</button>
         <button class="seg-btn" type="button" data-settab="abgleich" hidden>Favoriten-Abgleich</button>
-        <button class="seg-btn" type="button" data-settab="sichern" hidden>Sichern</button>
+        <button class="seg-btn" type="button" data-settab="sichern" hidden>Daten</button>
         <button class="seg-btn" type="button" data-settab="fehlend" hidden>Fehlende Lieder</button>
         <button class="seg-btn" type="button" data-settab="ludwt" hidden>Wochenlieder LuD+WT</button>
       </div>
@@ -638,5 +640,6 @@
   <script src="v119.js"></script>
   <script src="v124.js"></script>
   <script src="v125.js"></script>
+  <script src="v126.js"></script>
 </body>
 </html>

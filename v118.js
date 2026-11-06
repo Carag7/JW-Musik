@@ -176,7 +176,7 @@
           ["Summe", n, "100 %"]], right: true },
         { text: `Durchschnittliche Verschiebung ${f1(st.avg)} s, größte ${f1(st.mx)} s. Farben in den Zeilen: grün = unverändert, gelb = klein, orange = mittel, rot = groß, violett = nicht zugeordnet.`, cls: "dlg-hint" }
       ],
-      buttons: [{ value: "bad", kind: "primary", label: "Große + nicht zugeordnete wählen" }, { value: null, kind: "cancel", label: "Schließen" }] });
+      buttons: [{ value: null, kind: "primary", label: "OK" }] });
     if (v === "bad") rowsAll().forEach((r) => { const c = r.querySelector(".row-pick"); if (c) c.checked = r.classList.contains("ai-d3") || r.classList.contains("ai-un"); });
     syncPickAll();
   }
@@ -199,8 +199,8 @@
   const level = () => lsv("aiAcc", "normal") === "low" ? "low" : lsv("aiAcc", "normal") === "high" ? "high" : "normal";
 
   const btnPct = (p) => { const b = document.querySelector(".ai-sync"); if (b) b.textContent = `KI ${Math.round(p)} %`; };
-  async function transcribe(texts, lang) {
-    const lv = level(), base = (typeof SYNC_BASE !== "undefined" ? SYNC_BASE : "");
+  async function transcribe(texts, lang, lvo) {
+    const lv = lvo || level(), base = (typeof SYNC_BASE !== "undefined" ? SYNC_BASE : "");
     const key0 = state.currentAudio + "|" + lang + "|" + lv;
     if (AI.words && AI.key === key0) return AI.words;
     const call = (k) => fetch(`${base}/api/transcribe`, { method: "POST", headers: { "content-type": "application/json", "x-write-key": k }, body: JSON.stringify({ path: state.currentAudio, lang, level: lv, prompt: lv === "low" ? "" : texts.join(" ").slice(0, 600) }) });
@@ -508,5 +508,6 @@
     bind(); bindLyr(); bindMeasure(); lyricCols();
     const cm = $("codeModal"); if (cm) new MutationObserver(() => { if (!cm.hidden) setTimeout(bind, 40); }).observe(cm, { attributes: true, attributeFilter: ["hidden"] });
   }
+  window.AIK = { transcribe, alignLines, prog, level };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", () => setTimeout(init, 0)); else setTimeout(init, 0);
 })();
