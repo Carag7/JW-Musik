@@ -878,8 +878,10 @@ function rtSummary(rec) {
   const sum = { k: {}, status: rec.status || {}, lrc: rec.lrc || {}, n: 0 };
   for (const e of rec.entries || []) {
     const k = `${e.t}|${e.art}|${e.lang}`;
-    const o = sum.k[k] || (sum.k[k] = { n: 0, s: 0, last: 0 });
+    const o = sum.k[k] || (sum.k[k] = { n: 0, s: 0, last: 0, notes: 0, u: [] });
     o.n++; o.s += e.s; o.last = Math.max(o.last, e.ts || 0); sum.n++;
+    if (e.note) o.notes++;
+    for (const w of [e.u || "anonym", e.tag || ""]) { const x = String(w).toLowerCase().trim(); if (x && !o.u.includes(x) && o.u.length < 30) o.u.push(x); }
   }
   return sum;
 }
@@ -893,15 +895,31 @@ async function rtSave(env, id, rec) {
   let idx = {};
   const o = await env.MUSIK.get("bewertung/_index.json");
   if (o) { try { idx = await o.json(); } catch { idx = {}; } }
-  idx[id] = rtSummary(rec);
+  idx[id] = rtSummary(rec);   /* ohne _v:2 wird der Index beim nächsten Lesen komplett neu aufgebaut */
   await env.MUSIK.put("bewertung/_index.json", JSON.stringify(idx), { httpMetadata: { contentType: "application/json" } });
 }
 async function handleRate(request, env, url, path) {
   const hdr = { ...CORS, "cache-control": "no-store" };
   if (request.method === "OPTIONS") return new Response(null, { headers: CORS });
   if (path === "/api/rate-index") {
+    let idx = {};
     const o = await env.MUSIK.get("bewertung/_index.json");
-    return new Response(o ? o.body : "{}", { headers: { ...hdr, "content-type": "application/json" } });
+    if (o) { try { idx = await o.json(); } catch { idx = {}; } }
+    if (idx._v !== 2) {
+      /* alter Index (ohne Notizen/Namen): aus allen Einzeldateien neu aufbauen */
+      idx = { _v: 2 };
+      let cursor;
+      do {
+        const l = await env.MUSIK.list({ prefix: "bewertung/", cursor });
+        for (const ob of l.objects) {
+          const m = ob.key.match(/^bewertung\/([0-9]{1,4}[a-z]?)\.json$/i); if (!m) continue;
+          const r = await rtLoad(env, m[1]); idx[m[1]] = rtSummary(r);
+        }
+        cursor = l.truncated ? l.cursor : undefined;
+      } while (cursor);
+      await env.MUSIK.put("bewertung/_index.json", JSON.stringify(idx), { httpMetadata: { contentType: "application/json" } });
+    }
+    return new Response(JSON.stringify(idx), { headers: { ...hdr, "content-type": "application/json" } });
   }
   if (request.method === "GET") {
     const id = url.searchParams.get("id");
@@ -961,7 +979,7 @@ async function handleKiHist(request, env, url) {
   const type = ["ki", "orig", "saved"].includes(b.type) ? b.type : "ki";
   const acc = ["low", "normal", "high"].includes(b.acc) ? b.acc : "";
   if (!(versions.length && versions[versions.length - 1].lrc === lrc && versions[versions.length - 1].type === type)) {
-    versions.push({ ts: Date.now(), type, acc, u: clip(b.u, 40), lrc });
+    versions.push({ ts: Date.now(), type, acc, src: b.src === "song" ? "song" : "edit", u: clip(b.u, 40), lrc });
     while (versions.length > 40) { const i = versions.findIndex((v) => v.type !== "orig"); versions.splice(i < 0 ? 0 : i, 1); }
   }
   await env.MUSIK.put(key, JSON.stringify({ versions }), { httpMetadata: { contentType: "application/json" } });
