@@ -183,6 +183,7 @@
   /* letzte KI-Änderung pro Lied merken, damit man sie später ohne neues Einlesen wieder abrufen kann */
   function saveLast() {
     try { localStorage.setItem("aiLast-" + songKey(), JSON.stringify({ old: AI.old, neu: AI.neu, hit: AI.hit, ts: Date.now() })); } catch { /* egal */ }
+    try { document.dispatchEvent(new CustomEvent("ki-run", { detail: { old: AI.old, neu: AI.neu, acc: lsv("aiAcc", "normal") } })); } catch { /* egal */ }
     tools();
   }
   const getLast = () => { try { return JSON.parse(localStorage.getItem("aiLast-" + songKey()) || "null"); } catch { return null; } };

@@ -83,7 +83,9 @@
     const s = cur(); if (!s) return;
     const buttons = state.playlists.map((l) => ({ value: l.id, label: l.name, sub: `${l.songs.includes(s.id) ? "✓ schon drin · " : ""}${l.songs.length} Lieder` }));
     buttons.push({ value: "__new", kind: "primary", label: "＋ Neue Liste …" }, { value: null, kind: "cancel", label: "Abbrechen" });
-    const r = await uiDialog({ eyebrow: `Lied ${s.id}`, title: "Zu Wiedergabeliste hinzufügen", lines: [s.title], buttons });
+    const lines = [s.title];
+    try { if (window.RATE && window.RATE.on()) lines.push({ node: window.RATE.node(s) }); } catch { /* egal */ }
+    const r = await uiDialog({ eyebrow: `Lied ${s.id}`, title: "Zu Wiedergabeliste hinzufügen", lines, buttons });
     if (!r) return;
     let list;
     if (r === "__new") {

@@ -166,6 +166,7 @@ function uiDialog(opts) {
         parent.append(g);
         return;
       }
+      if (item.node) { parent.append(item.node); return; }
       if (item.check) {
         const lb = document.createElement("label");
         lb.className = "dlg-check";
@@ -1488,12 +1489,11 @@ async function selectSong(index, autoplay) {
       if (err && err.name === "AbortError") {   // neue Datei wurde dazwischen geladen: kein echtes Blockieren, nochmal versuchen
         el.audio.addEventListener("canplay", () => {
           if (token !== state.selectToken || !el.audio.paused || state.userPaused) return;
-          el.audio.play().catch(() => { el.status.textContent = "Wiedergabe blockiert. Tippe irgendwo auf die Seite, dann startet das Lied."; armTap(); });
+          el.audio.play().catch(() => autoBlocked(token));
         }, { once: true });
         return;
       }
-      el.status.textContent = "Wiedergabe blockiert. Tippe irgendwo auf die Seite, dann startet das Lied.";
-      armTap();
+      autoBlocked(token);
     });
   }
   if (resume) el.audio.addEventListener("loadedmetadata", () => { try { el.audio.currentTime = Math.max(0, Math.min(resume, (el.audio.duration || resume + 1) - 0.5)); } catch { /* egal */ } }, { once: true });
@@ -1563,6 +1563,7 @@ function setupNet() {
 }
 
 function togglePlay() {
+  if (state.skipToggleUntil && Date.now() < state.skipToggleUntil) { state.skipToggleUntil = 0; return; }
   if (state.netErr && navigator.onLine) { reconnect(true); return; }
   if (!state.currentAudio) {
     const pool = visibleSongs();
@@ -2027,6 +2028,30 @@ function bindChrome() {
 
 /* Beim Öffnen automatisch abspielen (letztes Lied, sonst Zufall). Blockiert der Browser das, startet es beim ersten Antippen. */
 /* Browser blockiert Autoplay: der nächste Tipp irgendwo startet die Wiedergabe (abschaltbar per langem Druck auf die Autoplay-Taste) */
+/* Browser lässt Autoplay mit Ton nicht zu: stumm starten (das erlauben alle Browser), der erste Tipp schaltet den Ton ein */
+function autoBlocked(token) {
+  if (token !== undefined && token !== state.selectToken) return;
+  if (state.userPaused) return;
+  if (lsv("autoMute", "1") !== "1") { el.status.textContent = "Tippe irgendwo auf die Seite, dann startet das Lied."; armTap(); return; }
+  el.audio.muted = true;
+  el.audio.play().then(() => {
+    el.play.textContent = "❚❚";
+    setStatus("Läuft stumm – tippe für Ton", "is-play");
+    try { if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "playing"; } catch { /* egal */ }
+    const types = ["pointerdown", "keydown", "touchstart"];
+    const un = (e) => {
+      types.forEach((t) => document.removeEventListener(t, un, true));
+      el.audio.muted = false;
+      if (e && e.target && e.target.closest && e.target.closest("#playBtn")) state.skipToggleUntil = Date.now() + 700;
+      if (!el.audio.paused) setStatus("Spielt", "is-play");
+    };
+    types.forEach((t) => document.addEventListener(t, un, true));
+  }).catch(() => {
+    el.audio.muted = false;
+    el.status.textContent = "Tippe irgendwo auf die Seite, dann startet das Lied.";
+    armTap();
+  });
+}
 function armTap() {
   if (state.armed || state.userPaused || state.everPlayed || lsv("autoTap", "1") !== "1") return;
   state.armed = true;
@@ -2706,15 +2731,16 @@ function bind() {
     const b = document.getElementById("autoStartBtn"); let t = 0, fired = false;
     const ask = async () => {
       fired = true; window.__autoLP = true; setTimeout(() => { window.__autoLP = false; }, 900);
-      let on = localStorage.getItem("autoStart") === "1", rm = resumeMode(), tap = lsv("autoTap", "1") === "1";
+      let on = localStorage.getItem("autoStart") === "1", rm = resumeMode(), tap = lsv("autoTap", "1") === "1", mute = lsv("autoMute", "1") === "1";
       const ok = await uiDialog({ eyebrow: "Autoplay", title: "Autoplay-Einstellungen", cancelValue: false, lines: [
         { check: { label: "Beim Öffnen automatisch ein Lied abspielen", value: on, onChange: (v) => { on = v; } } },
         { check: { label: "Blockiert der Browser das Abspielen: erster Tipp startet das Lied", value: tap, onChange: (v) => { tap = v; } } },
+        { check: { label: "Blockiert der Browser: stumm starten, erster Tipp schaltet den Ton ein", value: mute, onChange: (v) => { mute = v; } } },
         { select: { label: "Nach Rückkehr in den Browser:", value: rm, options: [["pause", "Pause bleibt Pause"], ["auto", "wie bisher (Tesla)"], ["always", "immer weiterspielen"]], onChange: (v) => { rm = v; } } },
         { text: "„Pause bleibt Pause“ verhindert, dass ein pausiertes Lied nach dem Wechseln zu einer anderen App von selbst weiterspielt.", cls: "dlg-hint" }
       ], buttons: [{ value: true, kind: "primary", label: "Speichern" }, { value: false, kind: "cancel", label: "Abbrechen" }] });
       if (ok !== true) return;
-      try { localStorage.setItem("autoStart", on ? "1" : "0"); localStorage.setItem("autoTap", tap ? "1" : "0"); localStorage.setItem("resumeMode", rm); } catch { /* egal */ }
+      try { localStorage.setItem("autoStart", on ? "1" : "0"); localStorage.setItem("autoTap", tap ? "1" : "0"); localStorage.setItem("autoMute", mute ? "1" : "0"); localStorage.setItem("resumeMode", rm); } catch { /* egal */ }
       updateAutoIcon(); showToast("Autoplay-Einstellungen gespeichert");
     };
     b.addEventListener("pointerdown", () => { fired = false; clearTimeout(t); t = setTimeout(ask, 700); });
@@ -3124,7 +3150,7 @@ async function putSync(store, data) {
 }
 
 /* ---- Einstellungen mit abgleichen (optional, pro Schlüssel Drei-Wege-Abgleich) ---- */
-const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBarAlways", "verBarFade", "srcTagsFade", "fadeSec", "lyricPos", "flugPos", "rcIdleSec", "holdGuard", "holdHint", "eggMode", "eggFall", "eggGif", "startGif", "themeShown", "themeTabs", "themeOrder", "themeTabList", "themeCustom", "themeNames", "skinProf", "coverMode", "coverFlip", "coverSet", "musikLang", "langWarnOff", "startMode", "startFolders", "startOrder", "startSec", "startFade", "skinOnlyActive", "skinOnlyMode", "sidebarW", "topOffMain", "topOffSet", "startGif", "ludwtSingle", "listRepeat", "srcTags", "favPlace", "favSeek", "showExtra", "karaokeOnly", "srcFilter", "sync-auto-max", "lyricAlign", "skipSec", "skipBack", "skipFwd", "fehlMode", "fehlNotify", "fehlAll", "fehlHelpSeen", "fehlLang", "startShow", "startSizes", "castMode", "startCarSec", "startCarMs", "galNoKar", "galNoKarAmt", "galMini", "npLayout", "lyrColOn", "lyrColOff", "skinFilterMode", "fehlSkip", "fehlLog", "startBarOpen", "startTrans", "startCar3d", "startFloatSpd", "resumeMode", "autoTap", "aiAcc", STORAGE.scale, STORAGE.listSize];
+const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBarAlways", "verBarFade", "srcTagsFade", "fadeSec", "lyricPos", "flugPos", "rcIdleSec", "holdGuard", "holdHint", "eggMode", "eggFall", "eggGif", "startGif", "themeShown", "themeTabs", "themeOrder", "themeTabList", "themeCustom", "themeNames", "skinProf", "coverMode", "coverFlip", "coverSet", "musikLang", "langWarnOff", "startMode", "startFolders", "startOrder", "startSec", "startFade", "skinOnlyActive", "skinOnlyMode", "sidebarW", "topOffMain", "topOffSet", "startGif", "ludwtSingle", "listRepeat", "srcTags", "favPlace", "favSeek", "showExtra", "karaokeOnly", "srcFilter", "sync-auto-max", "lyricAlign", "skipSec", "skipBack", "skipFwd", "fehlMode", "fehlNotify", "fehlAll", "fehlHelpSeen", "fehlLang", "startShow", "startSizes", "castMode", "startCarSec", "startCarMs", "galNoKar", "galNoKarAmt", "galMini", "npLayout", "lyrColOn", "lyrColOff", "skinFilterMode", "fehlSkip", "fehlLog", "startBarOpen", "startTrans", "startCar3d", "startFloatSpd", "resumeMode", "autoTap", "autoMute", "rateOn", "rateName", "aiAcc", STORAGE.scale, STORAGE.listSize];
 const isSettingKey = (k) => SETTING_KEYS.includes(k) || /^fehl(?:[TL]|Hide|Inc)_/.test(k);
 const syncSettingsOn = () => false;   // Einstellungen werden jetzt über den Benutzer gespeichert
 function collectSettings() {
@@ -3975,6 +4001,7 @@ async function saveTimecode(skipConfirm) {
       try { sessionStorage.setItem("aiKey", key); } catch { /* egal */ }
       try { localStorage.removeItem(`pend-${kind}-${song.id}`); } catch { /* egal */ }
       document.dispatchEvent(new CustomEvent("pending-changed"));
+      document.dispatchEvent(new CustomEvent("lrc-saved", { detail: { kind, id: song.id, lrc, key } }));
       if (kind === "lrcm" && state.media) state.media.meeting.lrc[String(song.number)] = `meeting/lrc/${song.id}.lrc`;
       if (kind === "lrcs" && state.media) (state.media.meeting.sungLrc = state.media.meeting.sungLrc || {})[String(song.number)] = `meeting/sung/lrc/${song.id}.lrc`;
       await uiAlert("Gespeichert", kind === "lrcm" ? "Text für die Instrumental-Fassung gespeichert, auf allen Geräten verfügbar." : kind === "lrcs" ? "Text für die Zusammenkünfte-Fassung gespeichert, auf allen Geräten verfügbar." : "Auf dem Server gespeichert, auf allen Geräten verfügbar.");
@@ -4205,8 +4232,8 @@ const PRESETS = [
   { id: "fehl", label: "Fehlend: Prüfung, Hinweis und Anzeige", keys: ["fehlMode", "fehlNotify", "fehlAll"], rx: /^fehl[TL]_/, fields: [{ key: "fehlNotify", t: "Hinweis", o: BOOL, dv: "1" }] },
   { id: "startshow", label: "Startseite: Anzeige, Übergang und Wechselzeit", keys: ["startShow", "startTrans", "startCar3d", "startSec", "startCarSec", "startFloatSpd"], def: { startShow: "fade", startTrans: "fade", startCar3d: "0", startSec: "8" },
     fields: [{ key: "startShow", t: "Anzeige", o: [["image", "Bild"], ["chor", "Video"], ["carousel", "Karussell"], ["fade", "Überblenden"], ["float", "Schweben"]], dv: "image" }, { key: "startTrans", t: "Übergang", o: [["fade","Überblenden"],["stack","Kartenstapel"],["slide","Schieben"],["zoom","Zoom"],["flip","Drehen"],["mosaic","Mosaik"],["rand","Zufällig"]], dv: "fade" }, { key: "startCar3d", t: "3D", o: BOOL, dv: "1" }, { key: "startSec", t: "Sekunden", n: [2, 120], dv: "6" }] },
-  { id: "resume", label: "Nach Rückkehr in den Browser: Pause bleibt Pause", keys: ["resumeMode", "autoTap"], def: { resumeMode: "auto", autoTap: "1" },
-    fields: [{ key: "resumeMode", t: "Danach", o: [["pause", "Pause bleibt"], ["auto", "wie bisher"], ["always", "immer weiter"]], dv: "pause" }, { key: "autoTap", t: "Tipp startet", o: BOOL, dv: "1" }] },
+  { id: "resume", label: "Nach Rückkehr in den Browser: Pause bleibt Pause", keys: ["resumeMode", "autoTap", "autoMute"], def: { resumeMode: "auto", autoTap: "1", autoMute: "1" },
+    fields: [{ key: "resumeMode", t: "Danach", o: [["pause", "Pause bleibt"], ["auto", "wie bisher"], ["always", "immer weiter"]], dv: "pause" }, { key: "autoTap", t: "Tipp startet", o: BOOL, dv: "1" }, { key: "autoMute", t: "Stumm starten, wenn blockiert", o: BOOL, dv: "1" }] },
   { id: "syncmax", label: "Automatisch abgleichen, auch wenn bis zu … Lieder gelöscht wurden", keys: ["sync-auto-max"], def: { "sync-auto-max": "2" }, fields: [{ key: "sync-auto-max", n: [0, 999], dv: "0" }] }
 ];
 /* Themen für die Voreinstellungen: Überschrift, Zeilen und ein ganz kurzer Hinweis je Zeile */
@@ -4226,7 +4253,7 @@ const PRESET_TIP = {
 };
 /* Standard für neue Benutzer (beste Werte am Desktop); über den Namen „standard“ mit dem Schreib-Passwort änderbar */
 const HANDY_EXTRA = { startShow: "fade", startTrans: "slide", startCar3d: "0", themeMode: "manual", theme: "hy-amoled", holdGuard: "0", [STORAGE.listSize]: "18", sidebarW: "0" };
-const STD_VALS = { karaokeOnly: "0", verBarFade: "1", srcTagsFade: "1", fadeSec: "4", autoStart: "0", showExtra: "1", srcTags: "1", favPlace: "both", favSeek: "off", verBarAlways: "1", holdGuard: "0", holdHint: "0", themeMode: "device", [STORAGE.scale]: "42", [STORAGE.listSize]: "16", sidebarW: "300", skipBack: "15", skipFwd: "15", "sync-auto-max": "2", startShow: "carousel", startTrans: "stack", startCar3d: "1", startSec: "6", resumeMode: "pause", autoTap: "1" };
+const STD_VALS = { karaokeOnly: "0", verBarFade: "1", srcTagsFade: "1", fadeSec: "4", autoStart: "0", showExtra: "1", srcTags: "1", favPlace: "both", favSeek: "off", verBarAlways: "1", holdGuard: "0", holdHint: "0", themeMode: "device", [STORAGE.scale]: "42", [STORAGE.listSize]: "16", sidebarW: "300", skipBack: "15", skipFwd: "15", "sync-auto-max": "2", startShow: "carousel", startTrans: "stack", startCar3d: "1", startSec: "6", resumeMode: "pause", autoTap: "1", autoMute: "1" };
 const SYS = { tesla: "_tesla", standard: "_standard", handy: "_handy" };
 const SYS_LABEL = { tesla: "Tesla", standard: "Standard", handy: "Handy" };
 const TESLA_EXTRA = { eggMode: "auto", eggFall: "0", eggGif: "chor", startGif: "0" };
