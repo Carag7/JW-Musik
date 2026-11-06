@@ -87,6 +87,8 @@ const app = {
     if (path === "/api/refresh") return handleRefresh(request, env);
     if (path === "/api/transcribe") return handleTranscribe(request, env);
     if (path === "/api/users") return handleUsers(request, env);
+    if (path === "/api/rate" || path === "/api/rate-index") return handleRate(request, env, url, path);
+    if (path === "/api/kihist") return handleKiHist(request, env, url);
     if (path === "/api/media-index") return handleIndex(request, env, url);
     if (path === "/api/r2-prune") return handlePrune(request, env, url);
     if (path === "/api/r2-fetch") return handleFetchToR2(request, env, url);
@@ -864,4 +866,104 @@ async function handleTranscribe(request, env) {
   }
   if (!words.length) for (const x of out.words || []) words.push({ w: String(x.word || "").trim(), s: x.start, e: x.end });
   return json({ ok: true, words, segs, text: out.text || "" }, CORS);
+}
+
+
+/* ---------- Bewertungen (Lied und Karaoke-Text), Ampel, Speicherdatum ---------- */
+const RT_ART = ["karaoke", "meeting", "video", "sung"];
+const RT_LANG = ["en", "de"];
+const clip = (v, n) => String(v == null ? "" : v).replace(/[\u0000-\u001f]/g, " ").trim().slice(0, n);
+const idOk = (v) => /^[0-9]{1,4}[a-z]?$/i.test(String(v || ""));
+function rtSummary(rec) {
+  const sum = { k: {}, status: rec.status || {}, lrc: rec.lrc || {}, n: 0 };
+  for (const e of rec.entries || []) {
+    const k = `${e.t}|${e.art}|${e.lang}`;
+    const o = sum.k[k] || (sum.k[k] = { n: 0, s: 0, last: 0 });
+    o.n++; o.s += e.s; o.last = Math.max(o.last, e.ts || 0); sum.n++;
+  }
+  return sum;
+}
+async function rtLoad(env, id) {
+  const obj = await env.MUSIK.get(`bewertung/${id}.json`);
+  if (!obj) return { id, entries: [], status: {}, lrc: {} };
+  try { const r = await obj.json(); r.entries = r.entries || []; r.status = r.status || {}; r.lrc = r.lrc || {}; return r; } catch { return { id, entries: [], status: {}, lrc: {} }; }
+}
+async function rtSave(env, id, rec) {
+  await env.MUSIK.put(`bewertung/${id}.json`, JSON.stringify(rec), { httpMetadata: { contentType: "application/json" } });
+  let idx = {};
+  const o = await env.MUSIK.get("bewertung/_index.json");
+  if (o) { try { idx = await o.json(); } catch { idx = {}; } }
+  idx[id] = rtSummary(rec);
+  await env.MUSIK.put("bewertung/_index.json", JSON.stringify(idx), { httpMetadata: { contentType: "application/json" } });
+}
+async function handleRate(request, env, url, path) {
+  const hdr = { ...CORS, "cache-control": "no-store" };
+  if (request.method === "OPTIONS") return new Response(null, { headers: CORS });
+  if (path === "/api/rate-index") {
+    const o = await env.MUSIK.get("bewertung/_index.json");
+    return new Response(o ? o.body : "{}", { headers: { ...hdr, "content-type": "application/json" } });
+  }
+  if (request.method === "GET") {
+    const id = url.searchParams.get("id");
+    if (!idOk(id)) return json({ ok: false, error: "Nummer fehlt." }, CORS, 400);
+    return json({ ok: true, ...(await rtLoad(env, id)) }, hdr);
+  }
+  if (request.method !== "POST") return new Response("method not allowed", { status: 405, headers: CORS });
+  let b; try { b = await request.json(); } catch { return json({ ok: false, error: "Ungültige Anfrage." }, CORS, 400); }
+  if (!idOk(b.id)) return json({ ok: false, error: "Nummer fehlt." }, CORS, 400);
+  const rec = await rtLoad(env, b.id);
+  const art = RT_ART.includes(b.art) ? b.art : "karaoke", lang = RT_LANG.includes(b.lang) ? b.lang : "en";
+  if (b.op === "add") {
+    const e = b.entry || {};
+    const t = e.t === "text" ? "text" : "song";
+    const s = Math.round(Number(e.s));
+    if (!(s >= 1 && s <= 5)) return json({ ok: false, error: "Sterne 1 bis 5." }, CORS, 400);
+    if (rec.entries.length >= 400) rec.entries = rec.entries.slice(-300);
+    rec.entries.push({ t, art, lang, s, u: clip(e.u, 40), tag: clip(e.tag, 60), note: clip(e.note, 600), ts: Date.now() });
+  } else if (b.op === "status") {
+    const v = ["red", "orange", "green"].includes(b.value) ? b.value : "";
+    const k = `${art}|${lang}`;
+    if (v) rec.status[k] = v; else delete rec.status[k];
+  } else if (b.op === "lrc") {
+    const kind = ["lrc", "lrcde", "lrcm", "lrcs"].includes(b.kind) ? b.kind : "lrc";
+    rec.lrc[kind] = { ts: Date.now(), u: clip(b.u, 40) };
+  } else if (b.op === "del") {
+    if (!env.WRITE_KEY || request.headers.get("x-write-key") !== env.WRITE_KEY) return json({ ok: false, error: "Schlüssel falsch." }, CORS, 401);
+    const i = Number(b.index);
+    if (!(i >= 0 && i < rec.entries.length)) return json({ ok: false, error: "Eintrag nicht gefunden." }, CORS, 404);
+    rec.entries.splice(i, 1);
+  } else return json({ ok: false, error: "Unbekannte Aktion." }, CORS, 400);
+  await rtSave(env, b.id, rec);
+  return json({ ok: true, ...rec }, hdr);
+}
+
+/* ---------- Verlauf der KI-Abstimmungen (Fassungen eines Karaoke-Textes) ---------- */
+async function handleKiHist(request, env, url) {
+  const hdr = { ...CORS, "cache-control": "no-store" };
+  if (request.method === "OPTIONS") return new Response(null, { headers: CORS });
+  const KIND = ["lrc", "lrcde", "lrcm", "lrcs"];
+  if (request.method === "GET") {
+    const id = url.searchParams.get("id"), kind = url.searchParams.get("kind") || "lrc";
+    if (!idOk(id) || !KIND.includes(kind)) return json({ ok: false, error: "Angaben fehlen." }, CORS, 400);
+    const o = await env.MUSIK.get(`kihist/${id}-${kind}.json`);
+    let versions = []; if (o) { try { versions = (await o.json()).versions || []; } catch { versions = []; } }
+    return json({ ok: true, versions }, hdr);
+  }
+  if (request.method !== "POST") return new Response("method not allowed", { status: 405, headers: CORS });
+  if (env.WRITE_KEY && request.headers.get("x-write-key") !== env.WRITE_KEY) return json({ ok: false, error: "Passwort abgelehnt." }, CORS, 401);
+  let b; try { b = await request.json(); } catch { return json({ ok: false, error: "Ungültige Anfrage." }, CORS, 400); }
+  if (!idOk(b.id) || !KIND.includes(b.kind)) return json({ ok: false, error: "Angaben fehlen." }, CORS, 400);
+  const lrc = String(b.lrc || "");
+  if (!lrc || lrc.length > 80000) return json({ ok: false, error: "Text fehlt oder ist zu groß." }, CORS, 400);
+  const key = `kihist/${b.id}-${b.kind}.json`;
+  const o = await env.MUSIK.get(key);
+  let versions = []; if (o) { try { versions = (await o.json()).versions || []; } catch { versions = []; } }
+  const type = ["ki", "orig", "saved"].includes(b.type) ? b.type : "ki";
+  const acc = ["low", "normal", "high"].includes(b.acc) ? b.acc : "";
+  if (!(versions.length && versions[versions.length - 1].lrc === lrc && versions[versions.length - 1].type === type)) {
+    versions.push({ ts: Date.now(), type, acc, u: clip(b.u, 40), lrc });
+    while (versions.length > 40) { const i = versions.findIndex((v) => v.type !== "orig"); versions.splice(i < 0 ? 0 : i, 1); }
+  }
+  await env.MUSIK.put(key, JSON.stringify({ versions }), { httpMetadata: { contentType: "application/json" } });
+  return json({ ok: true, anzahl: versions.length }, hdr);
 }
