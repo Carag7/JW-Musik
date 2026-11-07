@@ -152,7 +152,7 @@
   }
 
   /* ---------- Reiter „Bewertungen“ ---------- */
-  const BV = { art: "karaoke", lang: "en", sort: "nr", filt: "all", q: "", us: "", sg: "0", sx: "0" };
+  const BV = { lrc: "", desc: false, art: "karaoke", lang: "en", sort: "nr", filt: "all", q: "", us: "", sg: "0", sx: "0" };
   function hasText(song, art, lang) {
     const m = state.media; if (!m) return !song.extra && art === "karaoke" && lang === "en";
     const num = String(song.number);
@@ -189,20 +189,22 @@
     const nm = h("label", "set-row"); nm.append(document.createTextNode("Mein Name "), (() => { const i = h("input"); i.type = "text"; i.maxLength = 40; i.placeholder = "leer = anonym"; i.value = lsv("rateName", ""); i.onchange = () => lss("rateName", i.value.trim()); return i; })());
     box.append(c1, c2, nm);
     const f = h("div", "rt-filters");
-    f.append(mkSel(ART, BV.art, (v) => { BV.art = v; draw(); }), mkSel(LANG, BV.lang, (v) => { BV.lang = v; draw(); }),
-      mkSel([["nr", "Sortieren: Nummer"], ["song", "Lied: beste zuerst"], ["text", "Text: schlechteste zuerst"], ["textbest", "Text: beste zuerst"], ["recent", "Text: zuletzt gespeichert"], ["amp", "Status: rot zuerst"]], BV.sort, (v) => { BV.sort = v; draw(); }),
+    const selArt = mkSel(ART, BV.art, (v) => { BV.art = v; draw(); }), selLang = mkSel(LANG, BV.lang, (v) => { BV.lang = v; draw(); });
+    f.append(selArt, selLang,
+      mkSel([["nr", "Sortieren: Nummer"], ["song", "Lied: beste zuerst"], ["text", "Text: schlechteste zuerst"], ["textbest", "Text: beste zuerst"], ["recent", "Text: zuletzt gespeichert"], ["amp", "Status: rot zuerst"], ["title", "Titel A–Z"], ["lrcn", "LRC-Dateien: wenige zuerst"], ["nrat", "Bewertungen: meiste zuerst"]], BV.sort, (v) => { BV.sort = v; draw(); }),
       mkSel([["all", "Filter: alle"], ["note", "nur mit Notiz"], ["notext", "ohne Text-Bewertung"], ["low", "Text Ø unter 3,5"], ["red", "Status rot"], ["orange", "Status orange"], ["green", "Status grün"], ["none", "ohne Ampel"]], BV.filt, (v) => { BV.filt = v; draw(); }),
       mkSel([["0", "Lied: alle Sterne"], ["5", "Lied: 5 Sterne"], ["4", "Lied: 4 Sterne"], ["3", "Lied: 3 Sterne"], ["2", "Lied: 2 Sterne"], ["1", "Lied: 1 Stern"]], BV.sg, (v) => { BV.sg = v; draw(); }),
       mkSel([["0", "Text: alle Sterne"], ["5", "Text: 5 Sterne"], ["4", "Text: 4 Sterne"], ["3", "Text: 3 Sterne"], ["2", "Text: 2 Sterne"], ["1", "Text: 1 Stern"]], BV.sx, (v) => { BV.sx = v; draw(); }));
     const q = h("input", "rt-in rt-q"); q.type = "search"; q.placeholder = "Nummer oder Titel suchen"; q.value = BV.q; q.oninput = () => { BV.q = q.value; draw(); };
     const qu = h("input", "rt-in rt-q"); qu.type = "search"; qu.placeholder = "Benutzer oder Stichwort suchen"; qu.value = BV.us; qu.oninput = () => { BV.us = qu.value; draw(); };
-    box.append(f, q, qu);
+    const dirB = h("button", "chip rt-dir", BV.desc ? "↑ Reihenfolge: umgekehrt" : "↓ Reihenfolge: normal"); dirB.type = "button"; dirB.onclick = () => { BV.desc = !BV.desc; dirB.textContent = BV.desc ? "↑ Reihenfolge: umgekehrt" : "↓ Reihenfolge: normal"; draw(); };
+    box.append(f, dirB, q, qu);
     const info = h("small", "set-hint", ""); const list = h("div", "rt-list"); const cnt = h("div", "rt-cnts");
     box.append(cnt, info, list);
     function draw() {
       list.replaceChildren();
       const { art, lang } = BV;
-      let rows = state.songs.filter((s) => hasText(s, art, lang) || stat(s.id, "text", art, lang) || ampel(s.id, art, lang)).map((s) => ({ s, sg: stat(s.id, "song", art, lang), tx: stat(s.id, "text", art, lang), am: ampel(s.id, art, lang), li: lrcInfo(s.id, art, lang) }));
+      let rows = state.songs.filter((s) => BV.lrc ? lrcFiles(s).includes(BV.lrc) : (hasText(s, art, lang) || stat(s.id, "text", art, lang) || ampel(s.id, art, lang))).map((s) => ({ s, sg: stat(s.id, "song", art, lang), tx: stat(s.id, "text", art, lang), am: ampel(s.id, art, lang), li: lrcInfo(s.id, art, lang) }));
       const qq = BV.q.trim().toLowerCase();
       if (qq) rows = rows.filter((r) => String(r.s.id).toLowerCase() === qq || String(r.s.number) === qq || r.s.title.toLowerCase().includes(qq));
       const uq = BV.us.trim().toLowerCase();
@@ -216,12 +218,13 @@
       else if (F === "none") rows = rows.filter((r) => !r.am);
       else if (F !== "all") rows = rows.filter((r) => r.am === F);
       const o = { red: 0, orange: 1, green: 2, "": 3 };
-      const cmp = { nr: (a, b) => a.s.number - b.s.number || String(a.s.id).localeCompare(String(b.s.id)), song: (a, b) => (b.sg ? b.sg.avg : -1) - (a.sg ? a.sg.avg : -1), text: (a, b) => (a.tx ? a.tx.avg : 9) - (b.tx ? b.tx.avg : 9), textbest: (a, b) => (b.tx ? b.tx.avg : -1) - (a.tx ? a.tx.avg : -1), recent: (a, b) => (b.li ? b.li.ts : 0) - (a.li ? a.li.ts : 0), amp: (a, b) => o[a.am] - o[b.am] }[BV.sort];
-      rows.sort(cmp);
+      const cmp = { nr: (a, b) => a.s.number - b.s.number || String(a.s.id).localeCompare(String(b.s.id)), song: (a, b) => (b.sg ? b.sg.avg : -1) - (a.sg ? a.sg.avg : -1), text: (a, b) => (a.tx ? a.tx.avg : 9) - (b.tx ? b.tx.avg : 9), textbest: (a, b) => (b.tx ? b.tx.avg : -1) - (a.tx ? a.tx.avg : -1), recent: (a, b) => (b.li ? b.li.ts : 0) - (a.li ? a.li.ts : 0), amp: (a, b) => o[a.am] - o[b.am], title: (a, b) => a.s.title.localeCompare(b.s.title, "de"), lrcn: (a, b) => lrcFiles(a.s).length - lrcFiles(b.s).length || a.s.number - b.s.number, nrat: (a, b) => ((b.sg ? b.sg.n : 0) + (b.tx ? b.tx.n : 0)) - ((a.sg ? a.sg.n : 0) + (a.tx ? a.tx.n : 0)) }[BV.sort];
+      rows.sort(cmp); if (BV.desc) rows.reverse();
       const cn = (o) => Object.keys(o || {}).length, m = state.media || {}, md = m.de || {};
-      cnt.replaceChildren(...[["Karaoke EN", cn((m.karaoke || {}).lrc)], ["Karaoke DE", cn((md.karaoke || {}).lrc)], ["Instrumental", cn((m.meeting || {}).lrc)], ["Zusammenkünfte", cn((m.meeting || {}).sungLrc)]].map(([n, v]) => { const c = h("span", "rt-cnt"); c.append(h("b", "", String(v)), document.createTextNode(" " + n)); return c; }));
+      cnt.replaceChildren(...[["Karaoke EN", cn((m.karaoke || {}).lrc)], ["Karaoke DE", cn((md.karaoke || {}).lrc)], ["Instrumental", cn((m.meeting || {}).lrc)], ["Zusammenkünfte", cn((m.meeting || {}).sungLrc)]].map(([n, v]) => { const c = h("button", "rt-cnt" + (BV.lrc === n ? " on" : "")); c.type = "button"; c.setAttribute("aria-pressed", String(BV.lrc === n)); c.title = "Antippen: nur Lieder mit dieser LRC-Datei zeigen"; c.append(h("b", "", String(v)), document.createTextNode(" " + n));
+        c.onclick = () => { if (BV.lrc === n) BV.lrc = ""; else { BV.lrc = n; const m = { "Karaoke EN": ["karaoke", "en"], "Karaoke DE": ["karaoke", "de"], Instrumental: ["meeting", "en"], "Zusammenkünfte": ["sung", "en"] }[n]; BV.art = m[0]; BV.lang = m[1]; selArt.value = m[0]; selLang.value = m[1]; } draw(); }; return c; }));
       cnt.prepend(h("span", "rt-cnt-t", "LRC-Dateien:"));
-      info.textContent = `${rows.length} Lieder in der Liste (${artName(art)}, ${langName(lang)}). Tippe auf ein Lied, um den Text zu bearbeiten.`;
+      info.textContent = `${rows.length} Lieder in der Liste (${artName(art)}, ${langName(lang)})${BV.lrc ? " – nur mit LRC-Datei „" + BV.lrc + "“ (erneut auf die Zahl tippen = alle)" : ""}. Tippe auf ein Lied, um den Text zu bearbeiten.`;
       rows.forEach((r) => {
         const card = h("div", "rt-card"); if (r.am) card.dataset.amp = r.am;
         const top = h("div", "rt-top");
