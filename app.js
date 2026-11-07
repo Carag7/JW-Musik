@@ -1188,7 +1188,7 @@ function addMissingSongs() {
   let added = false;
   for (const n of wanted) {
     if (have.has(n) || !(mediaKey("meeting", n) || mediaKey("video", n) || mediaKey("sung", n))) continue;
-    state.songs.push({ id: String(n).padStart(3, "0"), number: n, title: titles.get(n) || `Lied ${n}`, category: "", extra: true });
+    state.songs.push({ id: String(n).padStart(3, "0"), number: n, title: titles.get(n) || (window.LIEDTITEL_DE || {})[n] || `Lied ${n}`, category: "", extra: true });
     have.add(n);
     added = true;
   }
@@ -1417,15 +1417,34 @@ function setMediaSession(song) {
   });
   /* Tesla-Tasten: Doppelsignale (<350 ms) ignorieren; die Schutzsperre gegen Endlos-Wechsel gilt nur für automatische Wechsel */
   const mediaStep = (d) => { const t = Date.now(); if (state.lastMediaKey && t - state.lastMediaKey.t < 350 && state.lastMediaKey.d === d) return; state.lastMediaKey = { t, d }; try { el.status.textContent = d > 0 ? "Taste: nächstes Lied" : "Taste: voriges Lied"; } catch { /* egal */ } step(d); };
-  navigator.mediaSession.setActionHandler("previoustrack", () => mediaStep(-1));
-  navigator.mediaSession.setActionHandler("nexttrack", () => mediaStep(1));
+  /* Tesla-Tasten: kurz = Lied vor/zurück; lange gedrückt (Wiederholsignale) = vor-/zurückspulen */
+  const holdOn = () => { try { return localStorage.getItem("mediaHold") !== "0"; } catch { return true; } };
+  const hold = { d: 0, n: 0, t: 0, last: 0, seeking: false };
+  const keyStep = (d) => {
+    if (!holdOn()) { mediaStep(d); return; }
+    const now = Date.now();
+    if (hold.d === d && hold.t && now - hold.last < 700) {   /* Wiederholung = Taste wird gehalten */
+      hold.n++; hold.last = now; clearTimeout(hold.t); hold.t = setTimeout(() => { hold.t = 0; hold.d = 0; hold.seeking = false; }, 750);
+      if (!hold.seeking) { hold.seeking = true; clearTimeout(hold.go); }
+      try { skip(d * skipSec(d)); el.status.textContent = d > 0 ? "Taste gehalten: vorspulen" : "Taste gehalten: zurückspulen"; } catch { /* egal */ }
+      return;
+    }
+    hold.d = d; hold.n = 1; hold.last = now; hold.seeking = false;
+    clearTimeout(hold.t); hold.t = setTimeout(() => { hold.t = 0; hold.d = 0; hold.seeking = false; }, 750);
+    clearTimeout(hold.go); hold.go = setTimeout(() => { if (!hold.seeking) mediaStep(d); }, 420);
+  };
+  navigator.mediaSession.setActionHandler("previoustrack", () => keyStep(-1));
+  navigator.mediaSession.setActionHandler("nexttrack", () => keyStep(1));
   navigator.mediaSession.setActionHandler("play", togglePlay);
   navigator.mediaSession.setActionHandler("pause", togglePlay);
   const optional = (action, handler) => {
     try { navigator.mediaSession.setActionHandler(action, handler); } catch { /* nicht überall unterstützt */ }
   };
-  optional("seekbackward", favSeek() === "back" ? toggleFavorite : () => skip(-skipSec(-1)));
-  optional("seekforward", favSeek() === "fwd" ? toggleFavorite : () => skip(skipSec(1)));
+  /* Standard: keine Spul-Tasten anmelden, damit Tesla „Lied vor / zurück“ zeigt. Nur wenn gewünscht (Einstellung „Tesla-Player-Tasten“) */
+  const mk = (() => { try { return localStorage.getItem("mediaKeys") || "step"; } catch { return "step"; } })();
+  const wantSeek = mk === "seek" || favSeek() !== "off";
+  optional("seekbackward", wantSeek ? (favSeek() === "back" ? toggleFavorite : () => skip(-skipSec(-1))) : null);
+  optional("seekforward", wantSeek ? (favSeek() === "fwd" ? toggleFavorite : () => skip(skipSec(1))) : null);
   optional("seekto", (details) => {
     if (details && Number.isFinite(details.seekTime)) el.audio.currentTime = details.seekTime;
   });
@@ -3208,7 +3227,7 @@ const SV_ITEMS = [
 ];
 const SV_KEYS = SV_ITEMS.map((x) => "sv_" + x[0]);
 const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBarAlways", "verBarFade", "srcTagsFade", "fadeSec", "lyricPos", "flugPos", "rcIdleSec", "holdGuard", "holdHint", "eggMode", "eggFall", "eggGif", "startGif", "themeShown", "themeTabs", "themeOrder", "themeTabList", "themeCustom", "themeNames", "skinProf", "coverMode", "coverFlip", "coverSet", "musikLang", "langWarnOff", "startMode", "startFolders", "startOrder", "startSec", "startFade", "skinOnlyActive", "skinOnlyMode", "sidebarW", "topOffMain", "topOffSet", "startGif", "ludwtSingle", "listRepeat", "srcTags", "favPlace", "favSeek", "showExtra", "karaokeOnly", "srcFilter", "sync-auto-max", "lyricAlign", "skipSec", "skipBack", "skipFwd", "fehlMode", "fehlNotify", "fehlAll", "fehlHelpSeen", "fehlLang", "startShow", "startSizes", "castMode", "startCarSec", "startCarMs", "galNoKar", "galNoKarAmt", "galMini", "npLayout", "lyrColOn", "lyrColOff", "skinFilterMode", "fehlSkip", "fehlLog", "startBarOpen", "startTrans", "startCar3d", "startFloatSpd", "resumeMode", "autoTap", "autoMute", "rateOn", "rateName", "rateAnon", "ampelOn", "kiScanAcc", "kiFirst", "kvSync", "kvWide", "aiAcc", STORAGE.scale, STORAGE.listSize];
-SETTING_KEYS.push(...SV_KEYS, "ampelLong", "rcListenStart", "galNoKar", "galNoKarAmt", "galMini", "npLayout", "castMode", "musikLang", "langWarnOff", "startAnim", "startFolders", "startOrder", "selBar");
+SETTING_KEYS.push(...SV_KEYS, "mediaKeys", "mediaHold", "svHints", "kiHide", "startAdj", "startImgFit", "ampelLong", "rcListenStart", "galNoKar", "galNoKarAmt", "galMini", "npLayout", "castMode", "musikLang", "langWarnOff", "startAnim", "startFolders", "startOrder", "selBar");
 const isSettingKey = (k) => SETTING_KEYS.includes(k) || /^fehl(?:[TL]|Hide|Inc)_/.test(k);
 const syncSettingsOn = () => false;   // Einstellungen werden jetzt über den Benutzer gespeichert
 function collectSettings() {
@@ -5253,9 +5272,10 @@ init();
 function showSetTab(tab) {
   const form = document.getElementById("codeForm");
   state.setTab = tab;
-  const sub = state.sub || "einst";
+  const subRaw = state.sub || "einst", sub = subRaw === "tesla" ? "einst" : subRaw;
+  form.classList.toggle("sub-tesla", subRaw === "tesla");
   form.querySelectorAll("[data-tab]").forEach((n) => n.classList.toggle("tab-off", !n.dataset.tab.split(" ").includes(tab) || (tab === "allgemein" && !!n.dataset.sub && n.id !== "subTabs" && !n.dataset.sub.split(" ").includes(sub))));
-  document.querySelectorAll("#subTabs [data-sub]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.sub === sub)));
+  document.querySelectorAll("#subTabs [data-sub]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.sub === subRaw)));
   document.querySelectorAll("#setTabs [data-settab]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.settab === tab)));
   if (tab === "design" && window.THEME) window.THEME.mountUi(document.getElementById("themeBox"));
   if (tab === "fehlend" && window.FEHLEND) window.FEHLEND.mount(document.getElementById("fehlendBox"));

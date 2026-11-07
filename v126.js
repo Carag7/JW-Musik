@@ -139,6 +139,7 @@
       if (long) { long = false; return; }
       const s = cur(); if (!s) return;
       const kind = curLrcKind(s), k = kind + "-" + s.id;
+      if (!kiGet(kind, s.id) || (state.lrcPick && state.lrcPick.id === s.id)) { if (window.V130) window.V130.trackDialog(); return; }
       if (kiOff.has(k)) kiOff.delete(k); else kiOff.add(k);
       await loadLyrics(s, state.curVersion); paintKiBtn(true);
       showToast(kiOff.has(k) ? "Gespeicherter Liedtext (ohne KI)." : "KI-Text wird verwendet.");
@@ -151,9 +152,13 @@
     const s = cur(), b = ensureKiBtn(); if (!b) return;
     if (!s || !s.id) { b.hidden = true; return; }
     const kind = curLrcKind(s), k = kiGet(kind, s.id);
+    const picked = !!(state.lrcPick && state.lrcPick.id === s.id);
     const has = !!(k && k.lrc);
-    b.hidden = !has;
-    if (!has) return;
+    let show = has || picked;
+    if (!show && lsv("kiHide", "1") !== "1") { try { show = ((window.RATING && window.RATING.hget(kind, s.id)) || []).length > 0 || (window.V130 && window.V130.alts(s).length > 1); } catch { show = false; } }
+    b.hidden = !show;
+    b.dataset.pick = picked ? "1" : "0";
+    if (!has) { b.setAttribute("aria-pressed", String(picked)); b.title = picked ? "Ein anderer Karaoke-Text ist gewählt. Lange drücken: Text wählen." : "Antippen oder lange drücken: Karaoke-Text wählen."; return; }
     const used = !!(state.kiUsed && state.kiUsed.id === s.id && state.kiUsed.kind === kind);
     b.setAttribute("aria-pressed", String(used));
     b.title = used ? `KI-Text wird verwendet (${dt(k.ts)}, Genauigkeit ${ACCN[k.acc] || "normal"}). Antippen: gespeicherten Text zeigen. Lange drücken: KI-Text als Standard speichern.` : "KI-Text ist vorhanden, wird aber nicht verwendet. Antippen: KI-Text verwenden. Lange drücken: als Standard speichern.";
@@ -163,9 +168,12 @@
   async function saveAsDefault() {
     const s = cur(); if (!s) return;
     const kind = curLrcKind(s), k = kiGet(kind, s.id); if (!k) return;
-    const ok = await uiDialog({ eyebrow: `Lied ${s.id}`, title: "KI-Text als Standard speichern?", cancelValue: false,
-      lines: [s.title, "Der KI-Text ersetzt die bisherige LRC-Datei auf dem Server. Dafür wird der Schreib-Schlüssel (WRITE_KEY) gebraucht. Die bisherige Fassung bleibt im KI-Verlauf erhalten."],
-      buttons: [{ value: true, kind: "danger", label: "Als Standard speichern" }, { value: false, kind: "cancel", label: "Abbrechen" }] });
+    let saved = false;
+    try { const r0 = await fetch(`${SYNC_BASE}/sync/${kind}-${s.id}`, { cache: "no-store" }); if (r0.ok) { const t0 = await r0.text(); const nz = (x) => String(x).replace(/\r/g, "").trim(); saved = nz(t0) === nz(k.lrc); } } catch { /* egal */ }
+    const ok = await uiDialog({ eyebrow: `Lied ${s.id}`, title: saved ? "KI-Text ist schon der Standard" : "KI-Text als Standard speichern?", cancelValue: false,
+      lines: [s.title, saved ? { text: "✔ Dieser KI-Text ist bereits als Standard auf dem Server gespeichert (identisch mit der aktuellen LRC-Datei).", cls: "dlg-hint" } : { text: "Noch nicht gespeichert: Dieser KI-Text ist nur auf diesem Gerät.", cls: "dlg-hint" }, "Speichern ersetzt die bisherige LRC-Datei auf dem Server. Dafür wird das Passwort des Bearbeitungsmodus gebraucht. Die bisherige Fassung bleibt im KI-Verlauf erhalten."],
+      buttons: [{ value: true, kind: saved ? "primary" : "danger", label: saved ? "Trotzdem erneut speichern" : "Als Standard speichern" }, { value: "pick", label: "Anderen Karaoke-Text wählen …" }, { value: false, kind: "cancel", label: "Abbrechen" }] });
+    if (ok === "pick") { if (window.V130) window.V130.trackDialog(); return; }
     if (ok !== true) return;
     let key = "";   /* Passwort wird bei jedem Speichern des KI-Textes neu abgefragt */
     const R = window.RATING;

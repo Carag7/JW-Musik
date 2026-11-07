@@ -217,8 +217,15 @@
 
   /* Lange auf Karussell / Überblenden / Schweben drücken: Wechselzeit (bzw. Tempo) eingeben, gleiche Werte wie in den Einstellungen */
   function longPress(b, v) {
-    if (v !== "carousel" && v !== "fade" && v !== "float") return;
     let t = 0;
+    if (v !== "carousel" && v !== "fade" && v !== "float") {
+      const go = () => { b._lp = true; setTimeout(() => { b._lp = false; }, 600); adjustOverlay(); };
+      b.addEventListener("pointerdown", () => { clearTimeout(t); t = setTimeout(() => { t = 0; go(); }, 700); });
+      ["pointerup", "pointerleave", "pointercancel"].forEach((ev) => b.addEventListener(ev, () => clearTimeout(t)));
+      b.addEventListener("contextmenu", (e) => { e.preventDefault(); clearTimeout(t); go(); });
+      b.title = "Tippen: Anzeige wählen – lange drücken: Position und Größe anpassen";
+      return;
+    }
     const stop = () => { clearTimeout(t); t = 0; };
     const ask = async () => {
       b._lp = true; setTimeout(() => { b._lp = false; }, 600);
@@ -237,7 +244,8 @@
       }
       if (v === "carousel") lines.push({ num: { label: "Dauer der Drehung (ms)", value: carMs(), min: 100, max: 5000, step: 100, onChange: (x) => { cm3 = String(x); } } });
       if (v === "carousel") lines.push({ select: { label: "Karussell:", value: cv, options: [["3d", "3D (gedreht, mit Tiefe)"], ["2d", "2D (nur verschoben)"]], onChange: (x) => { cv = x; } } });
-      const ok = await uiDialog({ eyebrow: "Startseite", title, cancelValue: false, lines, buttons: [{ value: true, kind: "primary", label: "Übernehmen" }, { value: false, kind: "cancel", label: "Abbrechen" }] });
+      const ok = await uiDialog({ eyebrow: "Startseite", title, cancelValue: false, lines, buttons: [{ value: true, kind: "primary", label: "Übernehmen" }, { value: "adj", label: "Position und Größe anpassen …" }, { value: false, kind: "cancel", label: "Abbrechen" }] });
+      if (ok === "adj") { adjustOverlay(); return; }
       if (ok !== true) return;
       const n = Number(String(nv).replace(",", ".")); if (!(n > 0)) return;
       const val = await askLimit(n, min, max);
@@ -374,6 +382,37 @@
   const SZ_NAME = { image: "Bild", chor: "Video (Chor)", carousel: "Karussell", fade: "Überblenden", float: "Schweben" };
   const sizes = () => { let o = {}; try { o = JSON.parse(lsv("startSizes", "{}")) || {}; } catch { o = {}; } const r = {}; Object.keys(SZ_DEF).forEach((k) => { const v = Number(o[k]); r[k] = v >= 10 && v <= 500 ? Math.round(v) : SZ_DEF[k]; }); return r; };
   const sizeOf = () => sizes()[startMode()] || 100;
+  /* Versatz je Ansicht (Pixel) – per Anpassen-Fenster einstellbar (lange drücken auf die Ansicht-Taste) */
+  const adjAll = () => { let o = {}; try { o = JSON.parse(lsv("startAdj", "{}")) || {}; } catch { o = {}; } return o; };
+  const adjOf = (m) => { const a = adjAll()[m || startMode()] || [0, 0]; return [Number(a[0]) || 0, Number(a[1]) || 0]; };
+  function adjustOverlay() {
+    const old = $("startAdjBox"); if (old) { old.remove(); return; }
+    const box = h("div", "start-adj"); box.id = "startAdjBox"; box.setAttribute("role", "dialog"); box.setAttribute("aria-label", "Startseite anpassen");
+    const info = h("div", "sa-info"); const ttl = h("div", "sa-title");
+    const mk = (txt, title, fn, cls) => { const b = h("button", "sa-b" + (cls ? " " + cls : ""), txt); b.type = "button"; b.title = title; b.setAttribute("aria-label", title); let rep = 0, tm = 0;
+      const go = () => { fn(); paint(); };
+      b.addEventListener("pointerdown", (e) => { e.preventDefault(); go(); tm = setTimeout(() => { rep = setInterval(go, 70); }, 380); });
+      ["pointerup", "pointerleave", "pointercancel"].forEach((ev) => b.addEventListener(ev, () => { clearTimeout(tm); clearInterval(rep); }));
+      b.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } });
+      return b; };
+    const step = () => (window.innerWidth > 1000 ? 12 : 8);
+    const move = (dx, dy) => () => { const m = startMode(), a = adjAll(), c = adjOf(m); a[m] = [c[0] + dx * step(), c[1] + dy * step()]; lss("startAdj", JSON.stringify(a)); fit(); };
+    const size = (d) => () => { const m = startMode(), o = sizes(); o[m] = Math.max(20, Math.min(300, o[m] + d)); lss("startSizes", JSON.stringify(o)); fit(); const f = $("advSz_" + m); if (f) f.value = String(o[m]); };
+    const setSize = (v) => () => { const m = startMode(), o = sizes(); o[m] = v; lss("startSizes", JSON.stringify(o)); fit(); const f = $("advSz_" + m); if (f) f.value = String(v); };
+    const pad = h("div", "sa-pad");
+    pad.append(h("span"), mk("▲", "Inhalt nach oben schieben", move(0, -1)), h("span"), mk("◀", "nach links", move(-1, 0)), h("span", "sa-mid", "↕↔"), mk("▶", "nach rechts", move(1, 0)), h("span"), mk("▼", "Inhalt nach unten schieben", move(0, 1)), h("span"));
+    const sz = h("div", "sa-sz");
+    sz.append(mk("Kleiner −", "Anzeige verkleinern", size(-5)), mk("Größer ＋", "Anzeige vergrößern", size(5)), mk("Ganzer Bereich", "Anzeige füllt den ganzen freien Platz (100 %)", setSize(100)), mk("Klein (80 %)", "Anzeige kleiner (80 %)", setSize(80)));
+    const ft = h("div", "sa-ft");
+    ft.append(mk("Zurücksetzen", "Versatz und Größe dieser Ansicht zurücksetzen", () => { const m = startMode(), a = adjAll(); delete a[m]; lss("startAdj", JSON.stringify(a)); const o = sizes(); o[m] = SZ_DEF[m]; lss("startSizes", JSON.stringify(o)); fit(); }), mk("Fertig", "Schließen", () => { box.remove(); window.removeEventListener("resize", paint); }, "sa-ok"));
+    function paint() {
+      const m = startMode(), a = adjOf(m), pm = $("startMedia"), r = pm ? pm.getBoundingClientRect() : { width: 0, height: 0 };
+      ttl.textContent = "Anpassen: " + (SZ_NAME[m] || m);
+      info.textContent = `Fenster ${window.innerWidth} × ${window.innerHeight} px · Fläche ${Math.round(r.width)} × ${Math.round(r.height)} px · Versatz ${a[0]} / ${a[1]} px · Größe ${sizes()[m]} %`;
+    }
+    box.append(ttl, info, pad, sz, ft); document.body.append(box); paint();
+    window.addEventListener("resize", paint);
+  }
   function paintDrawer() {
     const d = $("startDrawer"); if (!d) return;
     const m = startMode();
@@ -387,7 +426,7 @@
     const top = panel.getBoundingClientRect().top + window.scrollY;
     const free = window.innerHeight - (fl ? fl.offsetHeight : 70) - top - 10;
     panel.style.height = Math.max(300, Math.floor(free)) + "px";
-    const mm = $("startMedia"); if (mm) mm.style.setProperty("--ms", String(sizeOf() / 100));
+    const mm = $("startMedia"); if (mm) { mm.style.setProperty("--ms", String(sizeOf() / 100)); const a = adjOf(); mm.style.setProperty("--dx", a[0] + "px"); mm.style.setProperty("--dy", a[1] + "px"); }
   }
   function applyStart() {
     try { rowsByMode(); } catch { /* egal */ }

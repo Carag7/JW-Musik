@@ -90,3 +90,7 @@ body.edit-mode #aiTools, body.edit-mode #aiLegend, body.edit-mode #editHead { ma
 button.rt-cnt { font: inherit; cursor: pointer; border: 1px solid var(--line); background: transparent; color: inherit; border-radius: 14px; padding: 3px 10px; }
 button.rt-cnt.on { background: var(--accent); color: var(--on-accent, #111); border-color: var(--accent); }
 .rt-dir { margin: 6px 0 2px; }
+
+.rt-amprow { display: flex; flex-wrap: wrap; gap: 6px 8px; margin: 6px 0; align-items: center; }
+.rt-amprow .amp-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
+button.rt-cnt.on { background: var(--accent, #3b82f6); color: #fff; }

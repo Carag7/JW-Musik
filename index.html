@@ -25,6 +25,7 @@
   <link rel="stylesheet" href="v125.css" />
   <link rel="stylesheet" href="v126.css" />
   <link rel="stylesheet" href="v128.css" />
+  <link rel="stylesheet" href="v130.css" />
   <script src="password.js"></script>
 </head>
 <body>
@@ -282,7 +283,7 @@
         <button class="seg-btn" type="button" data-settab="design">Design</button>
         <button class="seg-btn" type="button" data-grp="daten">Sichern</button>
         <button class="seg-btn" type="button" data-grp="sync">Synchronisieren</button>
-        <button class="seg-btn" type="button" data-grp="bewert">Bewertungen</button>
+        <button class="seg-btn" type="button" data-grp="bewert">Anpassungen</button>
         <button class="seg-btn" type="button" data-settab="abgleich" hidden>Favoriten-Abgleich</button>
         <button class="seg-btn" type="button" data-settab="sichern" hidden>Daten</button>
         <button class="seg-btn" type="button" data-settab="fehlend" hidden>Fehlende Lieder</button>
@@ -326,6 +327,7 @@
       <div id="subTabs" data-tab="allgemein" class="set-tabs sub-tabs" hidden>
         <button class="seg-btn" type="button" data-sub="einst">Einstellungen</button>
         <button class="seg-btn" type="button" data-sub="vor">Voreinstellungen</button>
+        <button class="seg-btn sub-tesla-btn" type="button" data-sub="tesla">🚗 Tesla</button>
       </div>
       <div id="presetBox" data-tab="allgemein" data-sub="vor" class="autoplay-box" hidden>
         <button id="caragOpen2" class="carag-open" type="button" aria-label="Weitere Einstellungen"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M3 2.5l5.2 4h7.6l5.2-4V12c0 5.2-4 9.5-9 9.5S3 17.200 3 12zM8.600 11.200a1.100 1.100 0 100 2.200 1.100 1.100 0 000-2.200zm6.800 0a1.100 1.100 0 100 2.200 1.100 1.100 0 000-2.200zM12 15l-1.400 1.200h2.800z"/></svg></button>
@@ -631,6 +633,7 @@
   <div id="remoteModal" class="login-gate rm-gate" hidden><div id="rmBody" class="rm-card"></div></div>
   <div id="remotePanel" class="rc-panel" hidden></div>
   <button id="remoteBadge" class="rm-badge" type="button" data-st="ok" hidden><i class="rb-dot"></i><span class="rb-txt"></span></button>
+  <script src="liedtitel.js"></script>
   <script src="app.js"></script>
   <script src="remote.js"></script>
   <script src="covers.js"></script>
@@ -643,5 +646,6 @@
   <script src="v125.js"></script>
   <script src="v126.js"></script>
   <script src="v128.js"></script>
+  <script src="v130.js"></script>
 </body>
 </html>

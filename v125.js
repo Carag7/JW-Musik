@@ -192,13 +192,22 @@
     const selArt = mkSel(ART, BV.art, (v) => { BV.art = v; draw(); }), selLang = mkSel(LANG, BV.lang, (v) => { BV.lang = v; draw(); });
     f.append(selArt, selLang,
       mkSel([["nr", "Sortieren: Nummer"], ["song", "Lied: beste zuerst"], ["text", "Text: schlechteste zuerst"], ["textbest", "Text: beste zuerst"], ["recent", "Text: zuletzt gespeichert"], ["amp", "Status: rot zuerst"], ["title", "Titel A–Z"], ["lrcn", "LRC-Dateien: wenige zuerst"], ["nrat", "Bewertungen: meiste zuerst"]], BV.sort, (v) => { BV.sort = v; draw(); }),
-      mkSel([["all", "Filter: alle"], ["note", "nur mit Notiz"], ["notext", "ohne Text-Bewertung"], ["low", "Text Ø unter 3,5"], ["red", "Status rot"], ["orange", "Status orange"], ["green", "Status grün"], ["none", "ohne Ampel"]], BV.filt, (v) => { BV.filt = v; draw(); }),
+      mkSel([["all", "Filter: alle"], ["note", "nur mit Notiz"], ["notext", "ohne Text-Bewertung"], ["low", "Text Ø unter 3,5"], ["red", "Status rot"], ["orange", "Status orange"], ["green", "Status grün"], ["none", "ohne Ampel"], ["unsaved", "KI-Text / lokal ungespeichert"], ["fresh", "neu: noch nicht geprüft"]], BV.filt, (v) => { BV.filt = v; try { paintChips(); } catch { /* egal */ } draw(); }),
       mkSel([["0", "Lied: alle Sterne"], ["5", "Lied: 5 Sterne"], ["4", "Lied: 4 Sterne"], ["3", "Lied: 3 Sterne"], ["2", "Lied: 2 Sterne"], ["1", "Lied: 1 Stern"]], BV.sg, (v) => { BV.sg = v; draw(); }),
       mkSel([["0", "Text: alle Sterne"], ["5", "Text: 5 Sterne"], ["4", "Text: 4 Sterne"], ["3", "Text: 3 Sterne"], ["2", "Text: 2 Sterne"], ["1", "Text: 1 Stern"]], BV.sx, (v) => { BV.sx = v; draw(); }));
     const q = h("input", "rt-in rt-q"); q.type = "search"; q.placeholder = "Nummer oder Titel suchen"; q.value = BV.q; q.oninput = () => { BV.q = q.value; draw(); };
     const qu = h("input", "rt-in rt-q"); qu.type = "search"; qu.placeholder = "Benutzer oder Stichwort suchen"; qu.value = BV.us; qu.oninput = () => { BV.us = qu.value; draw(); };
     const dirB = h("button", "chip rt-dir", BV.desc ? "↑ Reihenfolge: umgekehrt" : "↓ Reihenfolge: normal"); dirB.type = "button"; dirB.onclick = () => { BV.desc = !BV.desc; dirB.textContent = BV.desc ? "↑ Reihenfolge: umgekehrt" : "↓ Reihenfolge: normal"; draw(); };
-    box.append(f, dirB, q, qu);
+    const ab = h("div", "rt-amprow");
+    ab.append(h("span", "rt-cnt-t", "Korrektur-Status:"));
+    [["all", "alle", ""], ["red", "überarbeiten", "red"], ["orange", "fast fertig", "orange"], ["green", "passt", "green"], ["none", "ohne Markierung", ""], ["unsaved", "ungespeichert", ""]].forEach(([v, n, c]) => {
+      const b = h("button", "rt-cnt rt-ampchip"); b.type = "button"; b.dataset.f = v; if (c) { const i = h("i", "amp-dot"); i.dataset.c = c; b.append(i); } b.append(document.createTextNode(n));
+      b.onclick = () => { BV.filt = v; paintChips(); const sf = f.querySelectorAll("select")[3]; if (sf) sf.value = v; draw(); };
+      ab.append(b);
+    });
+    const paintChips = () => ab.querySelectorAll("button").forEach((x) => { x.classList.toggle("on", x.dataset.f === BV.filt); x.setAttribute("aria-pressed", String(x.dataset.f === BV.filt)); });
+    paintChips();
+    box.append(f, ab, dirB, q, qu);
     const info = h("small", "set-hint", ""); const list = h("div", "rt-list"); const cnt = h("div", "rt-cnts");
     box.append(cnt, info, list);
     function draw() {
@@ -216,6 +225,8 @@
       else if (F === "notext") rows = rows.filter((r) => !r.tx);
       else if (F === "low") rows = rows.filter((r) => r.tx && r.tx.avg < 3.5);
       else if (F === "none") rows = rows.filter((r) => !r.am);
+      else if (F === "unsaved") { const kd = kindOf(art, lang); rows = rows.filter((r) => { try { return !!(localStorage.getItem(`kitext-${kd}-${r.s.id}`) || localStorage.getItem(`pend-${kd}-${r.s.id}`)); } catch { return false; } }); }
+      else if (F === "fresh") rows = rows.filter((r) => !r.am && !r.tx);
       else if (F !== "all") rows = rows.filter((r) => r.am === F);
       const o = { red: 0, orange: 1, green: 2, "": 3 };
       const cmp = { nr: (a, b) => a.s.number - b.s.number || String(a.s.id).localeCompare(String(b.s.id)), song: (a, b) => (b.sg ? b.sg.avg : -1) - (a.sg ? a.sg.avg : -1), text: (a, b) => (a.tx ? a.tx.avg : 9) - (b.tx ? b.tx.avg : 9), textbest: (a, b) => (b.tx ? b.tx.avg : -1) - (a.tx ? a.tx.avg : -1), recent: (a, b) => (b.li ? b.li.ts : 0) - (a.li ? a.li.ts : 0), amp: (a, b) => o[a.am] - o[b.am], title: (a, b) => a.s.title.localeCompare(b.s.title, "de"), lrcn: (a, b) => lrcFiles(a.s).length - lrcFiles(b.s).length || a.s.number - b.s.number, nrat: (a, b) => ((b.sg ? b.sg.n : 0) + (b.tx ? b.tx.n : 0)) - ((a.sg ? a.sg.n : 0) + (a.tx ? a.tx.n : 0)) }[BV.sort];
@@ -230,7 +241,7 @@
         const top = h("div", "rt-top");
         const t = h("button", "rt-title"); t.type = "button"; t.innerHTML = ""; t.append(h("b", "", String(r.s.id)), document.createTextNode(" " + r.s.title)); t.title = "Karaoke-Text dieses Liedes bearbeiten"; t.onclick = () => openSongEdit(r.s, art, lang);
         const amp = h("button", "rt-ampbtn"); amp.type = "button"; amp.dataset.c = r.am || "";
-        amp.append(h("i", "amp-dot"), h("span", "", r.am ? ({ red: "Rot", orange: "Orange", green: "Grün" })[r.am] : "Korrektur-Status"));
+        amp.append(h("i", "amp-dot"), h("span", "", r.am ? ({ red: "überarbeiten", orange: "fast fertig", green: "passt" })[r.am] : "Korrektur-Status"));
         amp.firstChild.dataset.c = r.am || ""; amp.title = "Korrektur-Status des Karaoke-Textes setzen";
         amp.onclick = async () => {
           const v = await uiDialog({ eyebrow: `Lied ${r.s.id} · ${artName(art)} · ${langName(lang)}`, title: "Korrektur-Status des Karaoke-Textes", cancelValue: null, lines: [r.s.title, { text: "Rot: muss überarbeitet werden. Orange: fast fertig. Grün: passt.", cls: "dlg-hint" }],
@@ -293,7 +304,7 @@
   });
 
   /* ---------- Reiter „KI-Verlauf“ ---------- */
-  const KV = { id: "", art: "karaoke", lang: "en", l: "", r: "", diffOnly: false, sel: -1, selR: -1 };
+  const KV = { id: "", art: "karaoke", lang: "en", l: "", r: "", diffOnly: false, sel: -1, selR: -1, both: false };
   const ACC = { low: "schwach", normal: "normal", high: "sehr genau" };
   const parse = (txt) => String(txt || "").split(/\r?\n/).map((ln) => { const m = /^\[(\d+):(\d+(?:\.\d+)?)\](.*)$/.exec(ln.trim()); return m ? { t: Number(m[1]) * 60 + Number(m[2]), x: m[3].trim() } : null; }).filter(Boolean);
   const tf = (t) => { const m = Math.floor(t / 60); return `${m}:${(t - m * 60).toFixed(2).padStart(5, "0")}`; };
@@ -320,13 +331,16 @@
     box.append(h("small", "set-hint", "Jeder KI-Download und jedes Speichern eines Karaoke-Textes wird aufgehoben. Hier kannst du zwei Fassungen nebeneinander vergleichen. Farben wie im Bearbeiten-Modus: grün gleich, gelb klein, orange mittel, rot groß, violett ohne Gegenstück."));
     const top = h("div", "rt-filters");
     const num = h("select", "rt-sel kv-song");
+    { const o0 = h("option", "", "– Lied wählen –"); o0.value = ""; num.append(o0); }
     state.songs.filter((s) => hasText(s, KV.art, KV.lang) || s.id === KV.id).forEach((s) => { const o = h("option", "", `${s.id} ${s.title}`); o.value = s.id; num.append(o); });
     num.value = KV.id;
     const sa = h("select", "rt-sel"); [["karaoke", "Karaoke"], ["meeting", "Instrumental"], ["sung", "Zusammenkünfte"]].forEach(([v, n]) => { const o = h("option", "", n); o.value = v; sa.append(o); }); sa.value = KV.art === "video" ? "meeting" : KV.art;
     const sl = h("select", "rt-sel"); LANG.forEach(([v, n]) => { const o = h("option", "", n); o.value = v; sl.append(o); }); sl.value = KV.lang;
     const chg = () => { KV.id = num.value; KV.art = sa.value; KV.lang = sl.value; KV.l = KV.r = ""; mountKih(); };
     num.onchange = chg; sa.onchange = chg; sl.onchange = chg;
-    top.append(num, sa, sl); box.append(top);
+    top.append(num, sa, sl);
+    if (KV.art === "karaoke") { const bl = h("label", "set-row check"); const bc = h("input"); bc.type = "checkbox"; bc.checked = KV.both; bc.onchange = () => { KV.both = bc.checked; KV.l = KV.r = ""; mountKih(); }; bl.append(bc, h("span", "", " beide Sprachen (Deutsch und Englisch) in der Vergleichsliste")); top.append(bl); }
+    box.append(top);
     const song = state.songs.find((s) => s.id === KV.id);
     if (!song) { box.append(h("small", "set-hint", "Kein Lied gewählt.")); return; }
     const kind = kindOf(KV.art, KV.lang), li = lrcInfo(song.id, KV.art, KV.lang), am = ampel(song.id, KV.art, KV.lang), sT = stat(song.id, "text", KV.art, KV.lang), sS = stat(song.id, "song", KV.art, KV.lang);
@@ -338,10 +352,22 @@
     act.append(bE); box.append(act);
     const body = h("div", "kv-body"); box.append(body);
     body.append(h("small", "set-hint", "Lade Fassungen …"));
-    const vs = await versionsOf(song.id, kind);
+    let vs;
+    if (KV.both && KV.art === "karaoke") {
+      const [ve, vd] = await Promise.all([versionsOf(song.id, "lrc"), versionsOf(song.id, "lrcde")]);
+      vs = [...ve.map((v) => ({ ...v, label: "EN · " + v.label })), ...vd.map((v) => ({ ...v, label: "DE · " + v.label }))];
+    } else vs = await versionsOf(song.id, kind);
     if (state.setTab !== "kihist" || !box.isConnected || KV.id !== song.id) return;
     body.replaceChildren();
-    if (vs.length < 1) { body.append(h("small", "set-hint", "Für diese Fassung gibt es noch keinen Verlauf. Er entsteht, sobald du im Bearbeiten-Modus „KI-Sync“ ausführst oder einen Text speicherst.")); return; }
+    if (vs.length < 1) {
+      /* kein Verlauf: den Standardtext auf beiden Seiten zeigen */
+      let std = "";
+      if (state.songs[state.index] && state.songs[state.index].id === song.id && (state.lyrics || []).length && kind === curLrcKind(song)) std = mkLrc(state.lyrics.map((l) => Number(l.time) || 0), state.lyrics.map((l) => l.text || ""));
+      if (!std) { try { const r = await fetch(`${SYNC_BASE}/sync/${kind}-${song.id}`, { cache: "no-store" }); if (r.ok) { const t = await r.text(); if (t.includes("[")) std = t; } } catch { /* egal */ } }
+      if (!std) { body.append(h("small", "set-hint", "Für dieses Lied ist noch kein Liedtext vorhanden.")); return; }
+      vs = [{ ts: 0, type: "server", lrc: std, label: "Standardtext" }];
+      body.append(h("small", "set-hint", "Noch kein Verlauf – links und rechts steht der Standardtext. Weitere Fassungen entstehen durch „KI-Sync“ oder Speichern."));
+    }
     if (!KV.l || !vs[KV.l]) { KV.l = String(0); KV.r = String(vs.length - 1); }
     if (!vs[KV.r]) KV.r = String(vs.length - 1);
     const opt = (s, val) => { vs.forEach((v, i) => { const o = h("option", "", v.label); o.value = String(i); s.append(o); }); s.value = val; };
@@ -393,7 +419,7 @@
   const GRP = {
     daten: ["Sichern", [["abgleich", "Favoriten-Abgleich"], ["sichern", "Daten"]]],
     sync: ["Synchronisieren", [["fehlend", "Fehlende Lieder"], ["ludwt", "Wochenlieder LuD+WT"]]],
-    bewert: ["Bewertungen", [["bew", "Bewertungen"], ["kihist", "KI-Verlauf"]]]
+    bewert: ["Anpassungen", [["bew", "Bewertungen"], ["kihist", "KI-Verlauf"]]]
   };
   const grpOf = (t) => Object.keys(GRP).find((g) => GRP[g][1].some((x) => x[0] === t)) || "";
   const lastSub = {};

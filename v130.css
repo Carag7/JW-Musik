@@ -1,0 +1,39 @@
+/* v130 */
+#subTabs [data-sub="tesla"] { background: #b3261e !important; color: #fff !important; border-radius: 12px; font-weight: 700; font-size: 1.05em; min-height: 48px; padding: 0 18px; border-color: #b3261e; }
+#subTabs [data-sub="tesla"][aria-pressed="true"] { outline: 3px solid #fff; box-shadow: 0 0 0 3px #b3261e; }
+#codeForm.sub-tesla #setTopics, #codeForm.sub-tesla #setTopicHead { display: none !important; }
+
+/* Startseite anpassen */
+.start-adj { position: fixed; left: 50%; bottom: calc(var(--flyer-h, 70px) + 12px); transform: translateX(-50%); z-index: 250; width: min(94vw, 460px); padding: 12px; border-radius: 16px; background: var(--panel, #181818); color: var(--text, #fff); border: 2px solid var(--accent, #3b82f6); box-shadow: 0 8px 30px rgba(0,0,0,.55); display: grid; gap: 8px; }
+.start-adj .sa-title { font-weight: 800; }
+.start-adj .sa-info { font-size: 13px; color: var(--muted, #aaa); }
+.start-adj .sa-pad { display: grid; grid-template-columns: repeat(3, 64px); grid-auto-rows: 52px; gap: 6px; justify-content: center; }
+.start-adj .sa-mid { display: grid; place-items: center; color: var(--muted, #aaa); }
+.start-adj .sa-sz, .start-adj .sa-ft { display: flex; flex-wrap: wrap; gap: 6px; }
+.start-adj .sa-b { min-height: 46px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--line, #444); background: var(--panel-2, rgba(255,255,255,.08)); color: inherit; font: inherit; font-weight: 700; cursor: pointer; touch-action: manipulation; flex: 1 1 auto; }
+.start-adj .sa-pad .sa-b { font-size: 22px; padding: 0; }
+.start-adj .sa-ok { background: var(--accent, #3b82f6); color: #fff; }
+
+/* Tempo-Anzeige */
+.tempo-badge { margin: 0 6px; padding: 2px 9px; border-radius: 12px; border: 0; background: #ff9800; color: #111; font: inherit; font-weight: 800; font-size: 14px; cursor: pointer; animation: tempoPulse 2.4s ease-in-out infinite; }
+.tempo-badge[hidden] { display: none !important; }
+@keyframes tempoPulse { 50% { box-shadow: 0 0 0 4px rgba(255,152,0,.35); } }
+/* anderer Karaoke-Text gewählt */
+#kiTextBtn[data-pick="1"] { background: #ff9800 !important; color: #111 !important; border-color: #ff9800 !important; }
+.lang-mini[data-pick="1"]:not(.tags-mini) { background: #ff9800; color: #111; border-color: #ff9800; }
+/* Korrektur-Status: Ampel untereinander */
+.tz-amp { grid-template-columns: 1fr !important; gap: 10px !important; max-width: 340px; margin-left: auto; margin-right: auto; }
+.tz-amp .tz-ab { flex-direction: row !important; justify-content: flex-start !important; padding: 8px 18px; min-height: 76px; gap: 16px; }
+body.sv-hints-off .sv-lp { display: none; }
+.sv-lp { margin-left: 26px; }
+
+/* Handy quer: Player so niedrig wie möglich, oben kein Leerraum */
+@media (orientation: landscape) and (max-height: 480px) and (max-width: 1000px) and (pointer: coarse) {
+  .flyer { padding-top: 2px !important; padding-bottom: 2px !important; gap: 0 !important; }
+  .flyer .nav-row, .flyer .transport, .flyer .player-row { gap: 6px !important; }
+  .flyer button.nav-btn, .flyer .nav-song { min-height: 40px !important; height: 40px !important; }
+  .flyer .play-btn, .flyer #playBtn { width: 46px !important; height: 46px !important; min-height: 46px !important; }
+  body { --safe-top: 0px; }
+  .stage { padding-top: 0 !important; margin-top: 0 !important; }
+  .stage > .now { margin-top: 0 !important; padding-top: 0 !important; }
+}

@@ -1254,7 +1254,7 @@ body:not(.hold-hint) .hold-guard::after { display: none; }
 .egg { display: none; position: fixed; bottom: calc(var(--flyer-h) + 6px); z-index: 20; width: 22px; height: 22px; padding: 0; border: 0; background: transparent; color: var(--muted); opacity: .28; cursor: pointer; }
 .egg-l { left: calc(var(--sidebar) + 10px); }
 .egg-r { right: 10px; }
-body.glass-open .egg { display: block; }
+body.glass-open .egg, body.no-song .egg { display: block; }
 .egg svg { display: block; margin: auto; }
 .egg-modal { position: fixed; inset: 0; z-index: 300; background: #000; display: grid; place-items: center; }
 .egg-modal[hidden] { display: none !important; }

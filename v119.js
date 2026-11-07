@@ -60,8 +60,8 @@
       box.dataset.topicBox = "1";
     });
   }
-  function apply(t) {
-    tag(); current = t; lss("setTopic", t);
+  function apply(t, nosave) {
+    tag(); if (!nosave) current = t; if (!nosave) lss("setTopic", t);
     const form = $("codeForm"); if (!form) return;
     form.dataset.topic = t;
     const all = t === "alle";
@@ -79,9 +79,9 @@
   function sync() {
     const form = $("codeForm"); if (!form) return;
     const st = typeof state !== "undefined" ? state : {};
-    const on = form.classList.contains("settings-mode") && st.setTab === "allgemein" && (st.sub || "einst") === "einst";
+    const on = form.classList.contains("settings-mode") && st.setTab === "allgemein" && ["einst", "tesla"].includes(st.sub || "einst");
     form.classList.toggle("topics-on", on);
-    if (on) apply(current);
+    if (on) { if (st.sub === "tesla") apply("tesla", true); else apply(current); }
     else form.querySelectorAll(".tp-off").forEach((n) => n.classList.remove("tp-off"));
   }
   function buildNav() {

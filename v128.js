@@ -27,7 +27,8 @@
   /* zusätzliche Felder für Einstellungen, die bisher nur in Fenstern oder anderen Reitern standen */
   function applyKey(k, v) {
     try { lss(k, v); } catch { localStorage.setItem(k, v); }
-    if (/^sv_/.test(k)) { applySV(); return; }
+    if (/^sv_/.test(k) || k === "svHints") { applySV(); return; }
+    if (k === "mediaKeys" || k === "mediaHold") { try { setMediaSession(state.songs[state.index]); } catch { /* egal */ } return; }
     try { applyTarget([{ key: k, val: v }], true); } catch { /* egal */ }
   }
   function mCheck(key, label, def, hint, inverse) {
@@ -53,6 +54,28 @@
     i.onchange = () => { try { lss(key, i.value.trim()); } catch { /* egal */ } };
     l.append(i); l._sync = () => { i.value = lsv(key, ""); };
     return [l, hint ? h("small", "set-hint", hint) : null];
+  }
+  const LONGP = {
+    lang: "Lang drücken: Spur (Deutsch/Englisch) und Karaoke-Text wählen.",
+    ki: "Lang drücken: KI-Text als Standard speichern oder anderen Karaoke-Text wählen.",
+    autolong: "Das Autoplay-Symbol öffnet bei langem Drücken die Autoplay-Einstellungen.",
+    pl: "Antippen: Wiedergabeliste, Bewertung und KI-Scan."
+  };
+  /* Tempo (Wiedergabegeschwindigkeit) direkt in den Einstellungen */
+  function mTempo() {
+    const a = () => $("audio");
+    const wrap = h("div", "set-row v130-tempo");
+    wrap.append(document.createTextNode("Tempo (1 = normal) "));
+    const r = h("input"); r.type = "range"; r.min = "0.5"; r.max = "2"; r.step = "0.05";
+    const n = h("input"); n.type = "number"; n.min = "0.1"; n.max = "4"; n.step = "0.05"; n.style.width = "5em";
+    const rs = h("button", "chip", "Normal (1x)"); rs.type = "button";
+    const set = (v) => { v = Math.round(Number(String(v).replace(",", ".")) * 100) / 100; if (!(v >= 0.1 && v <= 4)) return; const x = a(); if (x) { x.defaultPlaybackRate = v; x.playbackRate = v; } r.value = String(v); n.value = String(v); };
+    r.oninput = () => set(r.value); n.onchange = () => set(n.value); rs.onclick = () => set(1);
+    const sync = () => { const v = a() ? Math.round((a().playbackRate || 1) * 100) / 100 : 1; r.value = String(v); n.value = String(v); };
+    wrap._sync = sync; sync();
+    if (a()) a().addEventListener("ratechange", sync);
+    wrap.append(r, n, rs);
+    return [wrap, h("small", "set-hint", "Regler oder Zahl (0,1 bis 4). Gilt für alle Lieder, bis du auf „Normal“ stellst. Ist das Tempo nicht 1x, steht es im Player in Orange. Auch: Lupe an, linken Timecode lang drücken.")];
   }
   const OFFON = [["1", "ein"], ["0", "aus"]];
   const ACCU = [["low", "schwach (schnell)"], ["normal", "normal"], ["high", "sehr genau (langsam)"]];
@@ -132,13 +155,18 @@
         box("Chor-GIF", [u("startGif")])
       ] },
       { id: "player", name: "Player und Fernsteuerung", desc: "Player-Anordnung, Übertragen auf andere Geräte, Mithören.", boxes: [
-        box("Player", [unit("advNpLayout"), unit("advCastMode", 1)]),
+        box("Player", [unit("advNpLayout"), unit("advCastMode", 1), ...reg(mTempo())]),
+        box("Tasten im Tesla-Player (unter den Fahrzeug-Infos)", [
+          ...reg(mSelect("mediaKeys", "Die kleinen Tasten sollen sein", [["step", "Lied vor / Lied zurück (Standard)"], ["seek", "Vor- / Zurückspulen"]], "step", "Standard: die Tasten funktionieren so, wie sie angezeigt werden – Lied vor und Lied zurück. Auch nach dem Ändern am besten ein Lied neu wählen.")),
+          ...reg(mCheck("mediaHold", "Lange gedrückt halten = vor- bzw. zurückspulen", "1", "Kurz drücken wechselt das Lied (mit kurzer Verzögerung von etwa 0,4 s), gehalten spult. Aus: Taste wirkt sofort, kein Spulen."))
+        ]),
         box("Fernsteuerung", [u("advRcIdle")]),
         $("listenBox")
       ] },
       { id: "ki", name: "KI und Bewertungen", desc: "KI-Abstimmung, KI-Text beim Lied, Bewertungen und Verlauf.", boxes: [
         box("KI-Text beim Lied (Scan im ＋-Fenster)", [
           ...reg(mSelect("kiScanAcc", "Genauigkeit des KI-Scans", ACCU, "high", "Standard: sehr genau.")),
+          ...reg(mCheck("kiHide", "Knopf „KI“ nur zeigen, wenn ein nicht gespeicherter KI-Text vorhanden ist", "1", "Ein: nach dem Speichern als Standard verschwindet der Knopf. Aus: der Knopf bleibt, sobald es mehrere Karaoke-Texte gibt (zum Auswählen). Ist ein anderer Text gewählt, leuchtet er farbig.")),
           ...reg(mCheck("kiFirst", "KI-Text zuerst verwenden, wenn vorhanden", "1", "Dann zeigt die Titelzeile den Knopf „KI“: kurz tippen wechselt zwischen KI-Text und gespeichertem Text, lange drücken speichert den KI-Text als Standard (mit Schlüssel)."))
         ]),
         box("KI-Sync im Bearbeiten-Modus", [
@@ -155,11 +183,13 @@
       ] },
       { id: "einfach", name: "Einfache Ansicht", desc: "Was ohne Lupe zu sehen ist. Weniger Knöpfe = weniger Ablenkung beim Fahren. Mit aktiver Lupe ist immer alles sichtbar.", boxes: [
         box("Knöpfe ohne Lupe sichtbar machen", [
-          h("small", "set-hint", "Ein = der Knopf bleibt auch ohne Lupe sichtbar. Aus = nur mit Lupe."),
-          ...SV_ITEMS.flatMap((x) => reg(mCheck("sv_" + x[0], x[1], x[3])))
+          h("small", "set-hint", "Hier legst du fest, welche Knöpfe ohne Lupe sichtbar sind: Ein = der Knopf bleibt auch ohne Lupe sichtbar, Aus = er erscheint nur mit Lupe. So bleibt die Oberfläche ruhig, und du blendest nur ein, was du wirklich brauchst."),
+          ...reg(mCheck("svHints", "Hinweis auf die Zweitfunktion (langes Drücken) unter dem Knopf zeigen", "1", "Knöpfe mit einer zweiten Funktion bei langem Drücken bekommen eine eingerückte Zeile darunter.")),
+          ...SV_ITEMS.flatMap((x) => [...reg(mCheck("sv_" + x[0], x[1], x[3])), LONGP[x[0]] ? h("small", "set-hint sv-lp", "↳ " + LONGP[x[0]]) : null])
         ]),
         box("Weitere Bedienung", [
-          ...reg(mCheck("ampelLong", "Lang auf „Pause / Spielt“ drücken: Korrektur-Status (rot/orange/grün) setzen", "1", "Große Tasten für die Fahrt; derselbe Status wie unter Bewertungen.")),
+          ...reg(mCheck("ampelLong", "Lang auf „Pause / Spielt“ drücken: Korrektur-Status (rot/orange/grün) setzen", "1", "Große Tasten für die Fahrt, untereinander wie eine Ampel; derselbe Status wie unter Anpassungen → Bewertungen.")),
+          h("small", "set-hint sv-lp", "↳ Linker Timecode, lang gedrückt (mit Lupe): Wiedergabe-Tempo einstellen."),
           ...reg(mCheck("holdGuard", "Lupe und Player-Symbol nur nach langem Drücken", "0"))
         ])
       ] },
@@ -231,6 +261,7 @@
   const SVI = () => (typeof SV_ITEMS !== "undefined" ? SV_ITEMS : []);
   function applySV() {
     SVI().forEach((x) => document.body.classList.toggle("sv-" + x[0], lsv("sv_" + x[0], x[3]) === "1"));
+    document.body.classList.toggle("sv-hints-off", lsv("svHints", "1") !== "1");
   }
   (function svCss() {
     const st = h("style"); st.id = "v128SvCss";
