@@ -15,7 +15,8 @@
  *
  * R2-Struktur (Ziel, siehe Aufräumen):
  *   karaoke/audio/sjjc_E_003.mp3     gesungene Karaoke-MP3
- *   karaoke/lrc/003.lrc              Liedtext-Zeiten dazu
+ *   karaoke/lrc/003.lrc              Liedtext-Zeiten dazu (Englisch)
+ *   karaoke/lrc_de/003.lrc           Liedtext-Zeiten Deutsch (eigener Ordner, nicht mit Englisch gemischt)
  *   meeting/audio/....mp3            instrumentale MP3 (Zusammenkünfte)
  *   meeting/lrc/003.lrc              Liedtext-Zeiten dazu
  *   meeting/video/....mp4            Videos
@@ -211,6 +212,8 @@ export function classify(key) {
 
 /* Deutsche Dateien: R2-Ordner musik_de/ (flach oder mit Unterordnern karaoke/ und meeting/). Art nach Ordner, sonst nach Dateiname (sjjc = Karaoke, sjji = Instrumental, sjjm = Zusammenkünfte/Video) */
 export const DE_DIR = "musik_de/";
+/* Deutsche Karaoke-Texte (LRC): eigener Ordner neben karaoke/lrc/ (Englisch) */
+export const DE_LRC_DIR = "karaoke/lrc_de/";
 export function classifyDe(key) {
   const rest = key.slice(DE_DIR.length);
   const parts = rest.split("/");
@@ -254,7 +257,7 @@ async function buildIndex(env) {
   const put = (bucket, name, n, key) => {
     const id = String(n);
     if (bucket === deB.karaoke.audio || bucket === deB.karaoke.lrc || bucket === deB.meeting.audio || bucket === deB.meeting.video || bucket === deB.meeting.lrc || bucket === deB.meeting.sung || bucket === deB.meeting.sungLrc) name = "de" + name;
-    const s = /\/(audio|video|lrc)\//.test(key) ? 2 : 1;   // geordnete Ordner haben Vorrang
+    const s = key.startsWith(DE_LRC_DIR) ? 3 : /\/(audio|video|lrc)\//.test(key) ? 2 : 1;   // geordnete Ordner haben Vorrang
     const tag = `${name}:${id}`;
     if (score[tag] === undefined || s > score[tag]) { score[tag] = s; bucket[id] = key; }
   };
@@ -268,8 +271,9 @@ async function buildIndex(env) {
   }
   const hoch = { dateien: 0, bytes: 0 };   // Nummern ab 500 (Gebärdensprache/Blindenschrift): nicht anzeigen
   for (const o of objects) {
-    const isDe = o.key.startsWith(DE_DIR);
-    const c = isDe ? classifyDe(o.key) : classify(o.key);
+    const deLrc = o.key.startsWith(DE_LRC_DIR) && /\.lrc$/i.test(o.key);
+    const isDe = deLrc || o.key.startsWith(DE_DIR);
+    const c = deLrc ? { type: "karaoke-lrc", n: numberFromName(o.key.split("/").pop()) } : isDe ? classifyDe(o.key) : classify(o.key);
     if (!c || !c.n) continue;
     if (c.n >= HIGH_MIN && o.key.split("/")[0] !== "sync") { hoch.dateien++; hoch.bytes += o.size || 0; continue; }
     const I = isDe ? idx.de : idx;
@@ -466,7 +470,7 @@ export function storeKeys(code) {
   const m = code.match(/^lrc(de|[ms]?)-([a-z0-9]+)$/);
   if (m) {
     const n = m[2];
-    if (m[1] === "de") return { write: `musik_de/karaoke/lrc/${n}.lrc`, read: [`musik_de/karaoke/lrc/${n}.lrc`, `musik_de/${n}.lrc`], lrc: true };
+    if (m[1] === "de") return { write: `karaoke/lrc_de/${n}.lrc`, read: [`karaoke/lrc_de/${n}.lrc`, `musik_de/karaoke/lrc/${n}.lrc`, `musik_de/${n}.lrc`], lrc: true };
     if (m[1] === "s") return { write: `meeting/sung/lrc/${n}.lrc`, read: [`meeting/sung/lrc/${n}.lrc`], lrc: true };
     return m[1]
       ? { write: `meeting/lrc/${n}.lrc`, read: [`meeting/lrc/${n}.lrc`], lrc: true }
