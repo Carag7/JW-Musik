@@ -145,7 +145,7 @@
     if (ok !== true) return;
     let key = keyNow();
     for (let tries = 0; tries < 3; tries++) {
-      if (!key) { key = await uiPrompt({ eyebrow: "Löschen", title: "Schreib-Schlüssel", text: "Zum Löschen wird der Schlüssel WRITE_KEY gebraucht.", type: "password", placeholder: "WRITE_KEY", ok: "Weiter" }); if (!key) return; }
+      if (!key) { key = window.askEditPass ? await window.askEditPass("Löschen") : await uiPrompt({ eyebrow: "Löschen", title: "Schreib-Schlüssel", text: "Zum Löschen wird der Schlüssel WRITE_KEY gebraucht.", type: "password", placeholder: "WRITE_KEY", ok: "Weiter" }); if (!key) return; }
       try { await post("/api/rate", { id: song.id, op: "del", index: pick, art, lang }, key); try { sessionStorage.setItem("aiKey", key); } catch { /* egal */ } showToast("Eintrag gelöscht."); loadIdx().then(() => { if (state.setTab === "bew") mountBew(); }); return; }
       catch (e) { if (e.status === 401) { key = ""; continue; } await uiAlert("Löschen", e.message || String(e)); return; }
     }
@@ -185,13 +185,13 @@
     box.append(h("p", "ap-title", "Bewertungen"));
     box.append(h("small", "set-hint", "Sterne für das Lied (gefällt es?) und getrennt dafür, wie gut der Karaoke-Text zeitlich stimmt. So sieht man, welche Texte noch überarbeitet werden müssen. Jeder kann mithelfen."));
     const c1 = h("label", "set-row check"); const k1 = h("input"); k1.type = "checkbox"; k1.checked = rateOn(); k1.onchange = () => lss("rateOn", k1.checked ? "1" : "0"); c1.append(k1, h("span", "", " Bewertung im „＋“-Fenster zeigen"));
-    const c2 = h("label", "set-row check"); const k2 = h("input"); k2.type = "checkbox"; k2.checked = ampOn(); k2.onchange = () => { lss("ampelOn", k2.checked ? "1" : "0"); paintAmpel(); }; c2.append(k2, h("span", "", " Ampel in der Liedliste zeigen"));
+    const c2 = h("label", "set-row check"); const k2 = h("input"); k2.type = "checkbox"; k2.checked = ampOn(); k2.onchange = () => { lss("ampelOn", k2.checked ? "1" : "0"); paintAmpel(); }; c2.append(k2, h("span", "", " Korrektur-Status in der Liedliste zeigen"));
     const nm = h("label", "set-row"); nm.append(document.createTextNode("Mein Name "), (() => { const i = h("input"); i.type = "text"; i.maxLength = 40; i.placeholder = "leer = anonym"; i.value = lsv("rateName", ""); i.onchange = () => lss("rateName", i.value.trim()); return i; })());
     box.append(c1, c2, nm);
     const f = h("div", "rt-filters");
     f.append(mkSel(ART, BV.art, (v) => { BV.art = v; draw(); }), mkSel(LANG, BV.lang, (v) => { BV.lang = v; draw(); }),
-      mkSel([["nr", "Sortieren: Nummer"], ["song", "Lied: beste zuerst"], ["text", "Text: schlechteste zuerst"], ["textbest", "Text: beste zuerst"], ["recent", "Text: zuletzt gespeichert"], ["amp", "Ampel: rot zuerst"]], BV.sort, (v) => { BV.sort = v; draw(); }),
-      mkSel([["all", "Filter: alle"], ["note", "nur mit Notiz"], ["notext", "ohne Text-Bewertung"], ["low", "Text Ø unter 3,5"], ["red", "Ampel rot"], ["orange", "Ampel orange"], ["green", "Ampel grün"], ["none", "ohne Ampel"]], BV.filt, (v) => { BV.filt = v; draw(); }),
+      mkSel([["nr", "Sortieren: Nummer"], ["song", "Lied: beste zuerst"], ["text", "Text: schlechteste zuerst"], ["textbest", "Text: beste zuerst"], ["recent", "Text: zuletzt gespeichert"], ["amp", "Status: rot zuerst"]], BV.sort, (v) => { BV.sort = v; draw(); }),
+      mkSel([["all", "Filter: alle"], ["note", "nur mit Notiz"], ["notext", "ohne Text-Bewertung"], ["low", "Text Ø unter 3,5"], ["red", "Status rot"], ["orange", "Status orange"], ["green", "Status grün"], ["none", "ohne Ampel"]], BV.filt, (v) => { BV.filt = v; draw(); }),
       mkSel([["0", "Lied: alle Sterne"], ["5", "Lied: 5 Sterne"], ["4", "Lied: 4 Sterne"], ["3", "Lied: 3 Sterne"], ["2", "Lied: 2 Sterne"], ["1", "Lied: 1 Stern"]], BV.sg, (v) => { BV.sg = v; draw(); }),
       mkSel([["0", "Text: alle Sterne"], ["5", "Text: 5 Sterne"], ["4", "Text: 4 Sterne"], ["3", "Text: 3 Sterne"], ["2", "Text: 2 Sterne"], ["1", "Text: 1 Stern"]], BV.sx, (v) => { BV.sx = v; draw(); }));
     const q = h("input", "rt-in rt-q"); q.type = "search"; q.placeholder = "Nummer oder Titel suchen"; q.value = BV.q; q.oninput = () => { BV.q = q.value; draw(); };
@@ -227,13 +227,13 @@
         const top = h("div", "rt-top");
         const t = h("button", "rt-title"); t.type = "button"; t.innerHTML = ""; t.append(h("b", "", String(r.s.id)), document.createTextNode(" " + r.s.title)); t.title = "Karaoke-Text dieses Liedes bearbeiten"; t.onclick = () => openSongEdit(r.s, art, lang);
         const amp = h("button", "rt-ampbtn"); amp.type = "button"; amp.dataset.c = r.am || "";
-        amp.append(h("i", "amp-dot"), h("span", "", r.am ? ({ red: "Rot", orange: "Orange", green: "Grün" })[r.am] : "Ampel"));
-        amp.firstChild.dataset.c = r.am || ""; amp.title = "Ampel für den Karaoke-Text setzen";
+        amp.append(h("i", "amp-dot"), h("span", "", r.am ? ({ red: "Rot", orange: "Orange", green: "Grün" })[r.am] : "Korrektur-Status"));
+        amp.firstChild.dataset.c = r.am || ""; amp.title = "Korrektur-Status des Karaoke-Textes setzen";
         amp.onclick = async () => {
-          const v = await uiDialog({ eyebrow: `Lied ${r.s.id} · ${artName(art)} · ${langName(lang)}`, title: "Ampel für den Karaoke-Text", cancelValue: null, lines: [r.s.title, { text: "Rot: muss überarbeitet werden. Orange: fast fertig. Grün: passt.", cls: "dlg-hint" }],
+          const v = await uiDialog({ eyebrow: `Lied ${r.s.id} · ${artName(art)} · ${langName(lang)}`, title: "Korrektur-Status des Karaoke-Textes", cancelValue: null, lines: [r.s.title, { text: "Rot: muss überarbeitet werden. Orange: fast fertig. Grün: passt.", cls: "dlg-hint" }],
             buttons: [{ value: "red", kind: "primary", label: "● Rot – überarbeiten" }, { value: "orange", kind: "primary", label: "● Orange – fast fertig" }, { value: "green", kind: "primary", label: "● Grün – passt" }, { value: "", kind: "danger", label: "Keine Farbe" }, { value: null, kind: "cancel", label: "Abbrechen" }] });
           if (v === null) return;
-          try { const res = await post("/api/rate", { id: r.s.id, op: "status", art, lang, value: v }); (IDX[r.s.id] = IDX[r.s.id] || {}).status = res.status; try { localStorage.setItem("rateIdx", JSON.stringify(IDX)); } catch { /* egal */ } paintAmpel(); draw(); } catch (e) { showToast("Ampel nicht gespeichert: " + (e.message || e)); }
+          try { const res = await post("/api/rate", { id: r.s.id, op: "status", art, lang, value: v }); (IDX[r.s.id] = IDX[r.s.id] || {}).status = res.status; try { localStorage.setItem("rateIdx", JSON.stringify(IDX)); } catch { /* egal */ } paintAmpel(); draw(); } catch (e) { showToast("Status nicht gespeichert: " + (e.message || e)); }
         };
         top.append(t, amp);
         const meta = h("div", "rt-meta");
@@ -432,5 +432,6 @@
 
   document.addEventListener("DOMContentLoaded", () => { wireGrp(); setTimeout(loadIdx, 1500); });
   if (document.readyState !== "loading") setTimeout(loadIdx, 1500);
-  window.RATING = { loadIdx, mountBew, mountKih, paintAmpel, hadd, hget, mkLrc };
+  window.RATING = { loadIdx, mountBew, mountKih, paintAmpel, hadd, hget, mkLrc, curArt, curLang, AMP_NAME, getStatus: (id, art, lang) => ampel(id, art, lang),
+    setStatus: async (id, art, lang, v) => { const res = await post("/api/rate", { id, op: "status", art, lang, value: v }); (IDX[id] = IDX[id] || {}).status = res.status; try { localStorage.setItem("rateIdx", JSON.stringify(IDX)); } catch { /* egal */ } paintAmpel(); return res; } };
 })();

@@ -172,7 +172,7 @@
     /* bisherige Fassung sichern */
     try { const r = await fetch(`${SYNC_BASE}/sync/${kind}-${s.id}`, { cache: "no-store" }); if (r.ok) { const t = await r.text(); if (t.includes("[") && R && R.hadd) R.hadd(kind, s.id, { type: "orig", lrc: t.trim() }); } } catch { /* egal */ }
     for (let tries = 0; tries < 3; tries++) {
-      if (!key) { key = await uiPrompt({ eyebrow: "Speichern", title: "Schreib-Schlüssel", type: "password", placeholder: "WRITE_KEY", ok: "Weiter" }); if (!key) return; }
+      if (!key) { key = window.askEditPass ? await window.askEditPass("KI-Text speichern") : await uiPrompt({ eyebrow: "Speichern", title: "Schreib-Schlüssel", type: "password", placeholder: "WRITE_KEY", ok: "Weiter" }); if (!key) return; }
       try {
         const res = await fetch(`${SYNC_BASE}/sync/${kind}-${s.id}`, { method: "PUT", headers: { "content-type": "text/plain; charset=utf-8", "x-write-key": key }, body: k.lrc });
         if (res.status === 401) { key = ""; continue; }

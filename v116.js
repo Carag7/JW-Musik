@@ -300,15 +300,18 @@
   }
   function runCarousel(box, items) {
     const N = items.length; let idx = 0; const nodes = new Map();
-    const W = () => box.clientWidth || 600, H = () => box.clientHeight || 600;
+    const W = () => box.clientWidth || 600;
+    /* sichtbarer Bereich: Leiste oben und Player unten können die Fläche überdecken (z. B. Tesla mit Abstand oben) */
+    const ins = () => { try { const r = box.getBoundingClientRect(), tb = document.querySelector(".topbar"), fl = document.querySelector(".flyer"); const t = tb ? Math.max(0, tb.getBoundingClientRect().bottom - r.top) : 0, bt = fl && getComputedStyle(fl).position === "fixed" ? Math.max(0, r.bottom - fl.getBoundingClientRect().top) : 0; return { t, b: bt }; } catch { return { t: 0, b: 0 }; } };
+    const H = () => { const i = ins(); return Math.max(120, (box.clientHeight || 600) - i.t - i.b); };
     function layout() {
-      const ch = Math.min(H() * 0.98, W() * 1.475 * 0.7), cw = ch / 1.475, step = Math.min(cw * 0.62, W() * 0.3);
+      const sy = (ins().t - ins().b) / 2, ch = Math.min(H() * 0.96, W() * 1.475 * 0.7), cw = ch / 1.475, step = Math.min(cw * 0.62, W() * 0.3);
       for (let d = -3; d <= 3; d++) {
         const i = idx + d; let nd = nodes.get(i);
         if (!nd) { const it = items[((i % N) + N) % N]; nd = mkImg(it, "sc-item"); nd.style.opacity = "0"; box.append(nd); nodes.set(i, nd); void nd.offsetWidth; }
         const ad = Math.abs(d), sg = Math.sign(d);
         nd.style.height = ch + "px"; nd.style.width = cw + "px";
-        nd.style.transform = car3d() ? `translate(-50%,-50%) translateX(${sg * (ad ? step * (1 + (ad - 1) * 0.55) + cw * 0.12 : 0)}px) translateZ(${-ad * 140}px) rotateY(${-sg * Math.min(52, 34 + ad * 6)}deg) scale(${ad ? 0.9 : 1})` : `translate(-50%,-50%) translateX(${sg * (ad ? cw * 1.04 * ad : 0)}px) scale(${ad ? 0.88 : 1})`;
+        nd.style.transform = car3d() ? `translate(-50%,calc(-50% + ${sy}px)) translateX(${sg * (ad ? step * (1 + (ad - 1) * 0.55) + cw * 0.12 : 0)}px) translateZ(${-ad * 140}px) rotateY(${-sg * Math.min(52, 34 + ad * 6)}deg) scale(${ad ? 0.9 : 1})` : `translate(-50%,calc(-50% + ${sy}px)) translateX(${sg * (ad ? cw * 1.04 * ad : 0)}px) scale(${ad ? 0.88 : 1})`;
         nd.style.opacity = String(ad === 0 ? 1 : Math.max(0, 0.85 - ad * 0.22)); nd.style.zIndex = String(10 - ad);
       }
       nodes.forEach((nd, i) => { if (Math.abs(i - idx) > 3) { nd.style.opacity = "0"; setTimeout(() => nd.remove(), 900); nodes.delete(i); } });
@@ -436,7 +439,7 @@
     lab.append(sel); d.append(seg, lab);
     more.addEventListener("click", () => { d.hidden = !d.hidden; more.setAttribute("aria-expanded", String(!d.hidden)); more.innerHTML = CHEV(!d.hidden); ctl.classList.toggle("open", !d.hidden); try { lss("startBarOpen", d.hidden ? "0" : "1"); } catch { /* egal */ } });
     ctl.append(more, d); wrap.append(ctl);
-    if (lsv("startBarOpen", "0") === "1") { d.hidden = false; more.innerHTML = CHEV(true); more.setAttribute("aria-expanded", "true"); ctl.classList.add("open"); }
+    /* Zusatzmenü ist beim Öffnen immer zu */
     const sync = () => { ctl.hidden = panel.hidden; if (panel.hidden) stopShow(); else applyStart(); };
     new MutationObserver(sync).observe(panel, { attributes: true, attributeFilter: ["hidden"] });
     sync();

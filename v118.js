@@ -206,6 +206,7 @@
     const call = (k) => fetch(`${base}/api/transcribe`, { method: "POST", headers: { "content-type": "application/json", "x-write-key": k }, body: JSON.stringify({ path: state.currentAudio, lang, level: lv, prompt: lv === "low" ? "" : texts.join(" ").slice(0, 600) }) });
     let key = ""; try { key = sessionStorage.getItem("aiKey") || ""; } catch { /* egal */ }
     if (!key) key = state.writeKey || "";
+    if (!key && window.askEditPass) { const k0 = await window.askEditPass("KI-Abstimmung"); if (!k0) throw new Error("Abgebrochen."); key = k0; }
     const t0 = Date.now(), T = estimateSecs(lv) * 1000;
     prog(true, 3, "KI-Abstimmung: Audio wird gesendet …");
     const tick = setInterval(() => {

@@ -9,27 +9,21 @@
     ["wieder", "Wiedergabe"],
     ["liste", "Liedliste"],
     ["text", "Karaoke-Text"],
-    ["cover", "Cover & Galerie"],
+    ["cover", "Cover und Galerie"],
     ["start", "Startseite"],
-    ["player", "Player & Tesla"],
-    ["anz", "Anzeige & Bedienung"],
-    ["sonst", "Werkzeuge"]
+    ["player", "Player und Fernsteuerung"],
+    ["ki", "KI und Bewertungen"],
+    ["einfach", "Einfache Ansicht"],
+    ["anz", "Abstände und Schutz"],
+    ["tesla", "Tesla (im Auto)"],
+    ["sonst", "Schnellaktionen"]
   ];
-  const BY_ID = {
-    wieder: "autoPlayOpt karaokeOnlyOpt advBack advFwd advRcIdle rcListenStart favSeekOpt",
-    liste: "extraSongsOpt srcTagsOpt srcTagsFade verBarOpt verBarFade fadeSec advListSize advSidebar",
-    text: "advScale advAlign advLyricPos advMusikLang advLangWarn",
-    cover: "advCover advCoverSet advLangWarn advMusikLang advCoverFlip advGalNoKar advGalNoKarAmt advGalMini",
-    start: "advStartShow advStartFolders advStartOrder advStartSec advStartFade advSz_image advSz_chor advSz_carousel advSz_fade advSz_float advSzReset advCastMode advCarSec advCarMs advFloatSpd advStartTrans advCar3d startGif eggMode eggFall eggGif",
-    player: "advNpLayout favSeekOpt advCoverFlip advCastMode flugResetBtn advBack advFwd advHold advHint",
-    anz: "advTopMain advTopSet advHold advHint advMeasure advListSize advSidebar advScale advLyricPos",
-    sonst: "advAdvanced advEdit advReload advStart"
-  };
-  const BOX = { autoPlayBox: "wieder", advPlay: "wieder", listenBox: "wieder", extraBox: "liste", tagsBox: "liste", verBarBox: "liste", favBox: "liste player", advList: "liste anz", advBox: "text", advView: "anz", caragBox: "start sonst", toolsBox: "sonst" };
+  const BY_ID = {};
+  const BOX = { caragBox: "start" };
   const MAP = {};
   Object.entries(BY_ID).forEach(([t, ids]) => ids.split(" ").forEach((i) => { (MAP[i] = MAP[i] || []).push(t); }));
   const norm = (t) => (t || "").toLowerCase().replace(/\s+/g, " ").trim();
-  let tagged = false, current = lsv("setTopic", "alle");
+  let tagged = false, current = lsv("setTopic", /Tesla/i.test(navigator.userAgent) ? "tesla" : "alle");
 
   function units(box) {
     const out = [];
@@ -41,8 +35,13 @@
   }
   function tag() {
     if (tagged) return; tagged = true;
+    try { if (window.V128) window.V128.restructure(); } catch (e) { console.error(e); }
+    document.querySelectorAll(".tp-sec").forEach((sec) => {
+      const id = sec.id.replace(/^tp_/, "");
+      [...sec.children].forEach((box) => { if (box.classList.contains("v128-gone")) return; units(box).forEach((u) => { u.dataset.topics = id; }); box.dataset.topicBox = "1"; });
+    });
     document.querySelectorAll('#codeForm [data-tab="allgemein"][data-sub~="einst"]').forEach((box) => {
-      if (!BOX[box.id]) return;
+      if (!BOX[box.id] || box.dataset.topicBox) return;
       let prev = BOX[box.id].split(" ");
       const us = units(box);
       us.forEach((u) => {
@@ -72,6 +71,7 @@
       units(box).forEach((u) => { const on = all || (u.dataset.topics || "").split(" ").includes(t); u.classList.toggle("tp-off", !on); if (on) any = true; });
       box.classList.toggle("tp-off", !any);
     });
+    form.querySelectorAll('[data-only="1"]').forEach((n) => n.classList.toggle("tp-off", n.classList.contains("tp-sec") ? t !== "tesla" : true));
     document.querySelectorAll("#setTopics [data-topic]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.topic === t)));
     const head = $("setTopicHead"); if (head) { const name = (TOPICS.find((x) => x[0] === t) || [])[1]; head.textContent = all ? "" : name; head.hidden = all; }
     const f = $("codeForm"); if (f) f.scrollTop = 0;

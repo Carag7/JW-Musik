@@ -1,0 +1,66 @@
+/* v128: Einstellungen nach Themen, Einfache Ansicht, Tesla-Tasten, Korrektur-Status, Handy-Korrekturen */
+.v128-gone { display: none !important; }
+.tp-sec { display: block; }
+.tp-sec:not(:has(> :not(.tp-off))) { display: none !important; }
+.tp-sec > .autoplay-box { margin-top: 10px; }
+.tp-off { display: none !important; }
+#codeForm .v128-box > .ap-title { margin-top: 0; }
+
+/* Tesla-Thema: große Tasten, viel Abstand (wie im Auswahlfenster) */
+.tz-box { padding: 12px 14px 18px; }
+.tz-box .tz-sub { margin: 20px 0 6px; font-size: 20px; font-weight: 800; color: var(--accent); }
+.tz-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 76px; padding: 10px 4px; border-bottom: 1px solid var(--line); }
+.tz-l { font-size: 22px; line-height: 1.25; font-weight: 600; flex: 1 1 auto; }
+.tz-hint { display: block; margin: -4px 4px 8px; color: var(--muted); font-size: 16px; line-height: 1.35; }
+.tz-sw, .tz-b, .tz-btn { min-height: 64px; border-radius: 16px; border: 2px solid var(--line); background: var(--panel-2, rgba(255,255,255,.06)); color: var(--text, inherit); font: inherit; font-size: 22px; font-weight: 800; cursor: pointer; }
+.tz-sw { min-width: 120px; padding: 0 18px; }
+.tz-sw[aria-pressed="true"] { background: var(--accent); color: var(--on-accent, #111); border-color: var(--accent); }
+.tz-step { display: inline-flex; align-items: center; gap: 10px; }
+.tz-b { width: 64px; min-width: 64px; flex: none; font-size: 30px; padding: 0; }
+.tz-v { min-width: 110px; text-align: center; font-size: 22px; font-weight: 800; }
+.tz-sel { min-height: 64px; min-width: 200px; border-radius: 16px; font-size: 22px; padding: 0 14px; width: auto; max-width: 60%; }
+.tz-btns { display: flex; flex-wrap: wrap; gap: 14px; margin: 8px 0; }
+.tz-btn { padding: 0 26px; }
+.tz-primary { width: 100%; margin: 6px 0 4px; background: var(--accent); color: var(--on-accent, #111); border-color: var(--accent); }
+.tz-small { min-height: 48px; font-size: 16px; width: 100%; }
+
+/* Korrektur-Status */
+.amp-badge { display: inline-flex; align-items: center; min-height: 34px; padding: 0 12px; border-radius: 18px; border: 1px solid currentColor; background: transparent; font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; }
+.amp-badge[data-c="red"] { color: #ef5350; }
+.amp-badge[data-c="orange"] { color: #f19a3e; }
+.tz-amp { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin: 10px 0; }
+.tz-ab { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-height: 96px; border-radius: 20px; border: 2px solid var(--line); background: var(--panel-2, rgba(255,255,255,.06)); color: inherit; font: inherit; font-size: 20px; font-weight: 800; cursor: pointer; }
+.tz-ab .amp-dot { width: 56px; height: 56px; margin: 0; border-radius: 50%; border: 3px solid var(--muted, #888); background: transparent; }
+.tz-ab .amp-dot[data-c="red"] { background: #ef5350; border-color: #ef5350; }
+.tz-ab .amp-dot[data-c="orange"] { background: #f19a3e; border-color: #f19a3e; }
+.tz-ab .amp-dot[data-c="green"] { background: #5ccf8a; border-color: #5ccf8a; }
+
+/* Liedliste: Punkt und Marker verschieben die Spalten nicht mehr */
+.song-btn > .amp-dot { position: absolute; left: 3px; top: 7px; margin: 0; width: 9px; height: 9px; }
+.extra-song .song-btn.is-extra { border-left-style: solid !important; }
+
+/* Abstand zwischen +15 und dem unteren Stern */
+.transport .round.fav2 { margin-left: 14px; }
+
+/* Titelzeile bricht nicht um (Tesla: KI-Knopf schob die rechten Knöpfe in die 2. Zeile) */
+@media (min-width: 701px) { #titleRow { flex-wrap: nowrap !important; gap: 8px; } #titleRow > * { flex: 0 0 auto; } #titleRow > .song-number { min-width: 0; } }
+
+/* Handy: Tastatur offen – obere Leiste bleibt erreichbar */
+body.kb-open .topbar { position: fixed; top: var(--kb-top, 0px); left: 0; right: 0; z-index: 200; }
+body.kb-open .flyer { display: none; }
+
+/* Handy hochkant: Bearbeiten-Modus, Text nebeneinander statt untereinander */
+@media (max-width: 700px) and (orientation: portrait) {
+  body.edit-mode .stage > .now { display: flex !important; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+  body.edit-mode .stage > .now > .meta-row { display: flex !important; flex: 1 1 100%; flex-direction: row; flex-wrap: wrap; gap: 2px 12px; order: 3; }
+  body.edit-mode .stage > .now #currentCategory, body.edit-mode .stage > .now #currentStatus { width: auto !important; min-width: 0; writing-mode: horizontal-tb !important; overflow-wrap: normal !important; word-break: normal !important; margin: 0; }
+  body.edit-mode .stage > .now > h2 { flex: 1 1 100%; order: 2; margin: 2px 0; font-size: 20px; }
+  body.edit-mode .stage > .now .cover-thumb { display: none; }
+  body.edit-mode #editHead { position: static !important; width: 100% !important; flex: 1 1 100%; order: 5; }
+}
+/* Handy quer: Bearbeiten-Modus ohne Titelblock und mit weniger Rand */
+@media (max-height: 500px) and (orientation: landscape) {
+  body.edit-mode .stage > .now { display: none !important; }
+  body.edit-mode { --safe-top: 0px; }
+  body.edit-mode .flyer { padding-bottom: 2px !important; }
+}
