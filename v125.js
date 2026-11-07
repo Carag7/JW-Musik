@@ -319,6 +319,13 @@
     const L = (v) => ({ ...v, label: v.type === "orig" ? `Original (vor der ersten KI) · ${dt(v.ts)}` : v.type === "ki" ? `KI-Download${v.src === "song" ? " (direkt beim Lied)" : " (Bearbeiten-Modus)"} · ${dt(v.ts)} · Genauigkeit ${ACC[v.acc] || "normal"}` : `Gespeichert · ${dt(v.ts)}${v.u ? " · " + v.u : ""}` });
     const res = out.map(L);
     try { const r = await fetch(`${SYNC_BASE}/sync/${kind}-${id}`, { cache: "no-store" }); if (r.ok) { const t = await r.text(); if (t.includes("[")) res.unshift({ ts: 0, type: "server", lrc: t, label: "Aktuell auf dem Server" }); } } catch { /* egal */ }
+    if (!res.some((v) => v.type === "server")) {   /* kein bearbeiteter Text: die LRC-Datei aus dem Medienordner (R2) zeigen */
+      try {
+        const sg = state.songs.find((x) => x.id === id), n = sg ? String(sg.number) : "", m = state.media || {}, md = m.de || {};
+        const key = kind === "lrc" ? ((m.karaoke || {}).lrc || {})[n] : kind === "lrcde" ? ((md.karaoke || {}).lrc || {})[n] : kind === "lrcm" ? ((m.meeting || {}).lrc || {})[n] : ((m.meeting || {}).sungLrc || {})[n];
+        if (key) { const r = await fetch(mediaUrl(key), { cache: "no-store" }); if (r.ok) { const t = await r.text(); if (t.includes("[")) res.unshift({ ts: 0, type: "server", lrc: t, label: "Aktuell (LRC-Datei)" }); } }
+      } catch { /* egal */ }
+    }
     try { const p = JSON.parse(localStorage.getItem("pend-" + kind + "-" + id) || "null"); if (p && p.lines) res.push({ ts: p.ts, type: "pend", lrc: mkLrc(p.lines.map((l) => Number(l.time)), p.lines.map((l) => l.text || "")), label: `Nur lokal gespeichert · ${dt(p.ts)}` }); } catch { /* egal */ }
     return res;
   }

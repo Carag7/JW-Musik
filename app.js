@@ -2936,13 +2936,18 @@ function bind() {
 const SYNC_BASE = window.SYNC_BASE || (/github\.io$/.test(location.hostname) ? "https://musik.carag.workers.dev" : location.origin);
 
 function encodeShare(payload) {
+  if (payload && Array.isArray(payload.favorites)) {   /* kompakt: kürzerer Link, passt sicher in einen QR-Code */
+    payload = { v: 2, f: payload.favorites.join(","), p: (payload.playlists || []).map((l) => [l.id, l.name, (l.songs || []).join(",")]) };
+  }
   return btoa(unescape(encodeURIComponent(JSON.stringify(payload)))).replace(/=+$/, "");
 }
 
 function decodeShare(code) {
   try {
     const padded = code.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((code.length + 3) % 4);
-    return JSON.parse(decodeURIComponent(escape(atob(padded))));
+    const o = JSON.parse(decodeURIComponent(escape(atob(padded))));
+    if (o && o.v === 2) return { favorites: o.f ? o.f.split(",") : [], playlists: (o.p || []).map(([id, name, songs]) => ({ id, name, songs: songs ? songs.split(",") : [] })) };
+    return o;
   } catch {
     return null;
   }
@@ -2953,10 +2958,20 @@ function shareLink(payload) {
   return `${location.origin}${location.pathname}?sync=${encodeURIComponent(share)}`;
 }
 
+function qrLog(msg) {
+  const d = document.getElementById("qrLog"), pre = document.getElementById("qrLogText"); if (!d || !pre) return;
+  d.hidden = false;
+  pre.textContent += `${new Date().toLocaleTimeString("de-AT")}  ${msg}\n`;
+}
 function showQr(link) {
   const qr = document.getElementById("syncQr");
   qr.hidden = false;
-  const svg = window.makeQrSvg ? window.makeQrSvg(link) : null;   /* lokal erzeugt, ohne Fremddienst */
+  qr.onload = () => qrLog(`Bild geladen (${qr.naturalWidth}×${qr.naturalHeight})`);
+  qr.onerror = () => qrLog("FEHLER: Bild konnte nicht geladen werden");
+  let svg = null;
+  qrLog(`Link-Länge: ${link.length} Zeichen · makeQrSvg: ${window.makeQrSvg ? "vorhanden" : "FEHLT (qr.js nicht geladen – alte Version im Cache?)"}`);
+  try { svg = window.makeQrSvg ? window.makeQrSvg(link) : null; } catch (e) { qrLog("FEHLER im QR-Erzeuger: " + e.message); }
+  qrLog(svg ? `QR lokal erzeugt (${svg.length} Byte SVG)` : "QR lokal NICHT erzeugt (zu lang oder Fehler) – Ausweichen auf Online-Dienst");
   qr.src = svg ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}` : `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(link)}`;
 }
 
@@ -3228,7 +3243,7 @@ const SV_ITEMS = [
 ];
 const SV_KEYS = SV_ITEMS.map((x) => "sv_" + x[0]);
 const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBarAlways", "verBarFade", "srcTagsFade", "fadeSec", "lyricPos", "flugPos", "rcIdleSec", "holdGuard", "holdHint", "eggMode", "eggFall", "eggGif", "startGif", "themeShown", "themeTabs", "themeOrder", "themeTabList", "themeCustom", "themeNames", "skinProf", "coverMode", "coverFlip", "coverSet", "musikLang", "langWarnOff", "startMode", "startFolders", "startOrder", "startSec", "startFade", "skinOnlyActive", "skinOnlyMode", "sidebarW", "topOffMain", "topOffSet", "startGif", "ludwtSingle", "listRepeat", "srcTags", "favPlace", "favSeek", "showExtra", "karaokeOnly", "srcFilter", "sync-auto-max", "lyricAlign", "skipSec", "skipBack", "skipFwd", "fehlMode", "fehlNotify", "fehlAll", "fehlHelpSeen", "fehlLang", "startShow", "startSizes", "castMode", "startCarSec", "startCarMs", "galNoKar", "galNoKarAmt", "galMini", "npLayout", "lyrColOn", "lyrColOff", "skinFilterMode", "fehlSkip", "fehlLog", "startBarOpen", "startTrans", "startCar3d", "startFloatSpd", "resumeMode", "autoTap", "autoMute", "rateOn", "rateName", "rateAnon", "ampelOn", "kiScanAcc", "kiFirst", "kvSync", "kvWide", "aiAcc", STORAGE.scale, STORAGE.listSize];
-SETTING_KEYS.push(...SV_KEYS, "mediaKeys", "mediaHold", "svHints", "kiHide", "startAdj", "startImgFit", "ampelLong", "rcListenStart", "galNoKar", "galNoKarAmt", "galMini", "npLayout", "castMode", "musikLang", "langWarnOff", "startAnim", "startFolders", "startOrder", "selBar");
+SETTING_KEYS.push(...SV_KEYS, "mediaKeys", "mediaHold", "svHints", "kiHide", "galAdj", "galSizes", "startAdj", "startImgFit", "ampelLong", "rcListenStart", "galNoKar", "galNoKarAmt", "galMini", "npLayout", "castMode", "musikLang", "langWarnOff", "startAnim", "startFolders", "startOrder", "selBar");
 const isSettingKey = (k) => SETTING_KEYS.includes(k) || /^fehl(?:[TL]|Hide|Inc)_/.test(k);
 const syncSettingsOn = () => false;   // Einstellungen werden jetzt über den Benutzer gespeichert
 function collectSettings() {
@@ -3701,6 +3716,9 @@ async function autoSync() {
 async function exportFavorites() {
   const payload = { favorites: [...state.favorites], playlists: state.playlists };
   openCode("Favoriten sichern", async (code, mode) => {
+    { const pre = document.getElementById("qrLogText"); if (pre) pre.textContent = ""; }
+    qrLog(`Start · Modus ${mode} · ${payload.favorites.length} Favoriten · ${payload.playlists.length} Listen · ${navigator.userAgent.slice(0, 90)}`);
+    try { const cs = await caches.keys(); qrLog("Cache: " + cs.join(", ")); } catch { /* egal */ }
     if (mode === "local") {
       localStorage.setItem(`fav-${code}`, JSON.stringify(payload));
       document.getElementById("syncQr").hidden = true;
@@ -3710,9 +3728,9 @@ async function exportFavorites() {
     const short = (code || Math.random().toString(36).slice(2, 7)).toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 6) || "abcd";
     let stored = false;
     try {
-      const res = await fetch(`${SYNC_BASE}/sync/${short}`, { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) });
-      stored = res.ok;
-    } catch {}
+      const res = await fetch(`${SYNC_BASE}/sync/${short}`, { method: "PUT", headers: { "content-type": "application/json", "x-write-key": state.writeKey || "" }, body: JSON.stringify(payload) });
+      stored = res.ok; qrLog(`Server-Speichern (${SYNC_BASE}): HTTP ${res.status}${res.ok ? " OK" : " – nicht gespeichert, langer Link wird verwendet"}`);
+    } catch (e) { qrLog("Server nicht erreichbar: " + e.message); }
     const link = stored
       ? `${location.origin}${location.pathname}?sync=${short}`
       : shareLink(payload);
@@ -4989,6 +5007,7 @@ function openCode(title, onSubmit, kind) {
     ? "Anderes Gerät: Link vom Export hier einfügen. Vom Handy zum Tesla den Link kopieren."
     : "Lokal: eigenes Passwort. Anderes Gerät: QR erzeugen, das andere Gerät scannt.";
   qr.hidden = true;
+  { const ql = document.getElementById("qrLog"); if (ql) ql.hidden = true; }
   { const sc = document.querySelector(".sync-choice"); if (sc) sc.hidden = settingsMode; }
   document.getElementById("codeForm").classList.toggle("fav-export", !settingsMode);
   if (!settingsMode) { input.placeholder = "eigenes Passwort, mind. 4 Zeichen"; }

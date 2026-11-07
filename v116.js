@@ -385,31 +385,38 @@
   /* Versatz je Ansicht (Pixel) – per Anpassen-Fenster einstellbar (lange drücken auf die Ansicht-Taste) */
   const adjAll = () => { let o = {}; try { o = JSON.parse(lsv("startAdj", "{}")) || {}; } catch { o = {}; } return o; };
   const adjOf = (m) => { const a = adjAll()[m || startMode()] || [0, 0]; return [Number(a[0]) || 0, Number(a[1]) || 0]; };
-  function adjustOverlay() {
+  /* Anpassen-Fenster (Startseite und Galerie): cfg = {title(), info(), move(dx,dy), size(d), setSize(v), reset()} */
+  function startCfg() {
+    return {
+      title: () => "Anpassen: " + (SZ_NAME[startMode()] || startMode()),
+      info: () => { const m = startMode(), a = adjOf(m), pm = $("startMedia"), r = pm ? pm.getBoundingClientRect() : { width: 0, height: 0 }; return `Fenster ${window.innerWidth} × ${window.innerHeight} px · Fläche ${Math.round(r.width)} × ${Math.round(r.height)} px · Versatz ${a[0]} / ${a[1]} px · Größe ${sizes()[m]} %`; },
+      move: (dx, dy) => { const m = startMode(), a = adjAll(), c = adjOf(m); a[m] = [c[0] + dx, c[1] + dy]; lss("startAdj", JSON.stringify(a)); fit(); },
+      size: (d) => { const m = startMode(), o = sizes(); o[m] = Math.max(20, Math.min(300, o[m] + d)); lss("startSizes", JSON.stringify(o)); fit(); const f = $("advSz_" + m); if (f) f.value = String(o[m]); },
+      setSize: (v) => { const m = startMode(), o = sizes(); o[m] = v; lss("startSizes", JSON.stringify(o)); fit(); const f = $("advSz_" + m); if (f) f.value = String(v); },
+      full: 100, small: 80,
+      reset: () => { const m = startMode(), a = adjAll(); delete a[m]; lss("startAdj", JSON.stringify(a)); const o = sizes(); o[m] = SZ_DEF[m]; lss("startSizes", JSON.stringify(o)); fit(); }
+    };
+  }
+  function adjustOverlay(cfg) {
+    cfg = cfg && cfg.move ? cfg : startCfg();
     const old = $("startAdjBox"); if (old) { old.remove(); return; }
-    const box = h("div", "start-adj"); box.id = "startAdjBox"; box.setAttribute("role", "dialog"); box.setAttribute("aria-label", "Startseite anpassen");
+    const box = h("div", "start-adj"); box.id = "startAdjBox"; box.setAttribute("role", "dialog"); box.setAttribute("aria-label", "Anpassen");
     const info = h("div", "sa-info"); const ttl = h("div", "sa-title");
-    const mk = (txt, title, fn, cls) => { const b = h("button", "sa-b" + (cls ? " " + cls : ""), txt); b.type = "button"; b.title = title; b.setAttribute("aria-label", title); let rep = 0, tm = 0;
+    const mk = (txt, title, fn, cls) => { const b = h("button", "sa-b" + (cls ? " " + cls : ""), txt); b.type = "button"; b.title = title; b.setAttribute("aria-label", title); let rp = 0, tm = 0;
       const go = () => { fn(); paint(); };
-      b.addEventListener("pointerdown", (e) => { e.preventDefault(); go(); tm = setTimeout(() => { rep = setInterval(go, 70); }, 380); });
-      ["pointerup", "pointerleave", "pointercancel"].forEach((ev) => b.addEventListener(ev, () => { clearTimeout(tm); clearInterval(rep); }));
+      b.addEventListener("pointerdown", (e) => { e.preventDefault(); go(); tm = setTimeout(() => { rp = setInterval(go, 70); }, 380); });
+      ["pointerup", "pointerleave", "pointercancel"].forEach((ev) => b.addEventListener(ev, () => { clearTimeout(tm); clearInterval(rp); }));
       b.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } });
       return b; };
     const step = () => (window.innerWidth > 1000 ? 12 : 8);
-    const move = (dx, dy) => () => { const m = startMode(), a = adjAll(), c = adjOf(m); a[m] = [c[0] + dx * step(), c[1] + dy * step()]; lss("startAdj", JSON.stringify(a)); fit(); };
-    const size = (d) => () => { const m = startMode(), o = sizes(); o[m] = Math.max(20, Math.min(300, o[m] + d)); lss("startSizes", JSON.stringify(o)); fit(); const f = $("advSz_" + m); if (f) f.value = String(o[m]); };
-    const setSize = (v) => () => { const m = startMode(), o = sizes(); o[m] = v; lss("startSizes", JSON.stringify(o)); fit(); const f = $("advSz_" + m); if (f) f.value = String(v); };
+    const move = (dx, dy) => () => cfg.move(dx * step(), dy * step());
     const pad = h("div", "sa-pad");
     pad.append(h("span"), mk("▲", "Inhalt nach oben schieben", move(0, -1)), h("span"), mk("◀", "nach links", move(-1, 0)), h("span", "sa-mid", "↕↔"), mk("▶", "nach rechts", move(1, 0)), h("span"), mk("▼", "Inhalt nach unten schieben", move(0, 1)), h("span"));
     const sz = h("div", "sa-sz");
-    sz.append(mk("Kleiner −", "Anzeige verkleinern", size(-5)), mk("Größer ＋", "Anzeige vergrößern", size(5)), mk("Ganzer Bereich", "Anzeige füllt den ganzen freien Platz (100 %)", setSize(100)), mk("Klein (80 %)", "Anzeige kleiner (80 %)", setSize(80)));
+    sz.append(mk("Kleiner −", "Anzeige verkleinern", () => cfg.size(-(cfg.step || 5))), mk("Größer ＋", "Anzeige vergrößern", () => cfg.size(cfg.step || 5)), mk(cfg.fullLabel || "Ganzer Bereich", "Anzeige füllt den ganzen freien Platz", () => cfg.setSize(cfg.full)), mk(cfg.smallLabel || "Klein (80 %)", "Anzeige kleiner", () => cfg.setSize(cfg.small)));
     const ft = h("div", "sa-ft");
-    ft.append(mk("Zurücksetzen", "Versatz und Größe dieser Ansicht zurücksetzen", () => { const m = startMode(), a = adjAll(); delete a[m]; lss("startAdj", JSON.stringify(a)); const o = sizes(); o[m] = SZ_DEF[m]; lss("startSizes", JSON.stringify(o)); fit(); }), mk("Fertig", "Schließen", () => { box.remove(); window.removeEventListener("resize", paint); }, "sa-ok"));
-    function paint() {
-      const m = startMode(), a = adjOf(m), pm = $("startMedia"), r = pm ? pm.getBoundingClientRect() : { width: 0, height: 0 };
-      ttl.textContent = "Anpassen: " + (SZ_NAME[m] || m);
-      info.textContent = `Fenster ${window.innerWidth} × ${window.innerHeight} px · Fläche ${Math.round(r.width)} × ${Math.round(r.height)} px · Versatz ${a[0]} / ${a[1]} px · Größe ${sizes()[m]} %`;
-    }
+    ft.append(mk("Zurücksetzen", "Versatz und Größe dieser Ansicht zurücksetzen", () => cfg.reset()), mk("Fertig", "Schließen", () => { box.remove(); window.removeEventListener("resize", paint); }, "sa-ok"));
+    function paint() { ttl.textContent = cfg.title(); info.textContent = cfg.info(); }
     box.append(ttl, info, pad, sz, ft); document.body.append(box); paint();
     window.addEventListener("resize", paint);
   }
@@ -536,6 +543,6 @@
     new MutationObserver(() => { const l = lupe(); if (l !== lastLupe) { lastLupe = l; fit(); } }).observe(document.body, { attributes: true, attributeFilter: ["class"] });
     window.addEventListener("storage", () => { paintAllLang(); applyStart(); });
   }
-  window.V116 = { fit, paintCast, langBtn, switchLang, guardCover, addToPlaylist, toStart, applyStart, paintAllLang };
+  window.V116 = { adjust: adjustOverlay, fit, paintCast, langBtn, switchLang, guardCover, addToPlaylist, toStart, applyStart, paintAllLang };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", () => setTimeout(init, 0)); else setTimeout(init, 0);
 })();

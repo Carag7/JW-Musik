@@ -119,6 +119,7 @@
     flow: '<svg viewBox="0 0 24 24" width="100%" height="100%"><path fill="currentColor" d="M2 7h4v10H2zm16 0h4v10h-4zM8 4h8v16H8z"/></svg>',
     player: '<svg viewBox="0 0 24 24" width="100%" height="100%"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="2"/><path fill="currentColor" d="M10 8v8l6-4z"/></svg>',
     jump: '<svg viewBox="0 0 24 24" width="100%" height="100%"><path fill="currentColor" d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm-1-6v3.1A7 7 0 0 0 5.1 11H2v2h3.1A7 7 0 0 0 11 18.9V22h2v-3.1a7 7 0 0 0 5.9-5.9H22v-2h-3.1A7 7 0 0 0 13 5.1V2z"/></svg>',
+    fill: '<svg viewBox="0 0 24 24" width="100%" height="100%"><rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path fill="currentColor" d="M6 16.5l4-5 3 3.5 2-2.5 3 4z"/><circle cx="16.5" cy="9.5" r="1.5" fill="currentColor"/></svg>',
     full: '<svg viewBox="0 0 24 24" width="100%" height="100%"><path fill="currentColor" d="M4 4h6v2H6v4H4zm10 0h6v6h-2V6h-4zM4 14h2v4h4v2H4zm14 0h2v6h-6v-2h4z"/></svg>'
   };
   /* v118: nur den Container scrollen (scrollIntoView verschob im Tesla-Browser die ganze Seite) */
@@ -153,7 +154,7 @@
     const lab = h("span", "np-label", "Jetzt läuft");
     const tools = h("div", "np-tools");
     const gb = svgBtn("np-btn", ic.grid, "Galerie"); gb.addEventListener("click", () => { closeNow(); openGallery(); });
-    const fb = svgBtn("np-btn", ic.full, "Cover füllt den ganzen Bildschirm"); fb.id = "npFillBtn"; fb.setAttribute("aria-pressed", String(npFill));
+    const fb = svgBtn("np-btn", ic.fill, "Cover füllt den ganzen Bildschirm (Bild-Symbol)"); fb.id = "npFillBtn"; fb.setAttribute("aria-pressed", String(npFill));
     fb.addEventListener("click", () => { const f = !np.classList.contains("fill"); lss("npLayout", f ? "fill" : "split"); npFill = f; lss("coverFill", f ? "1" : "0"); applyLay(); fb.setAttribute("aria-pressed", String(f)); });
     const sb = svgBtn("np-btn", '<svg viewBox="0 0 24 24" width="100%" height="100%"><path fill="currentColor" d="M5 5h5v2H7v3H5zm9 0h5v5h-2V7h-3zM5 14h2v3h3v2H5zm12 0h2v5h-5v-2h3z"/></svg>', "Browser-Vollbild");
     sb.addEventListener("click", () => fsToggle(np));
@@ -267,6 +268,28 @@
   /* ---------- Galerie ---------- */
   let gal = null;
   const G = { view: lsv("coverView", "grid"), size: Number(lsv("coverSize", "170")) || 170, q: "", only: lsv("coverOnly", "0") === "1", fav: false, mark: lsv("coverFavMark", "0") === "1", next: lsv("coverNext", "off"), fromGal: false, cat: "", sort: "num" };
+  /* Position und Größe je Ansicht (Raster / Liste / Karussell) */
+  const galJ = (k) => { try { return JSON.parse(lsv(k, "{}")) || {}; } catch { return {}; } };
+  const galSz = (v) => Number(galJ("galSizes")[v || G.view]) || G.size;
+  function galApply() {
+    if (!gal) return; const a = galJ("galAdj")[G.view] || [0, 0];
+    gal.style.setProperty("--gdx", (Number(a[0]) || 0) + "px"); gal.style.setProperty("--gdy", (Number(a[1]) || 0) + "px");
+    gal.style.setProperty("--cg-size", galSz() + "px");
+  }
+  const VN = { grid: "Raster", list: "Liste", flow: "Karussell" };
+  function galAdjust(view) {
+    if (!window.V116 || !V116.adjust) return;
+    const v = view || G.view;
+    V116.adjust({
+      title: () => "Galerie anpassen: " + VN[v],
+      info: () => { const a = galJ("galAdj")[v] || [0, 0], b = gal && gal._r ? gal._r.body.getBoundingClientRect() : { width: 0, height: 0 }; return `Fenster ${window.innerWidth} × ${window.innerHeight} px · Fläche ${Math.round(b.width)} × ${Math.round(b.height)} px · Versatz ${a[0] || 0} / ${a[1] || 0} px · Cover-Größe ${galSz(v)} px`; },
+      move: (dx, dy) => { const o = galJ("galAdj"), c = o[v] || [0, 0]; o[v] = [(Number(c[0]) || 0) + dx, (Number(c[1]) || 0) + dy]; lss("galAdj", JSON.stringify(o)); galApply(); },
+      size: (d) => { const o = galJ("galSizes"); o[v] = Math.max(100, Math.min(360, galSz(v) + d)); lss("galSizes", JSON.stringify(o)); if (v === G.view) { G.size = o[v]; lss("coverSize", String(o[v])); } galApply(); },
+      setSize: (x) => { const o = galJ("galSizes"); o[v] = x; lss("galSizes", JSON.stringify(o)); galApply(); },
+      step: 20, full: 360, small: 140, fullLabel: "Groß (360)", smallLabel: "Klein (140)",
+      reset: () => { const a = galJ("galAdj"), z = galJ("galSizes"); delete a[v]; delete z[v]; lss("galAdj", JSON.stringify(a)); lss("galSizes", JSON.stringify(z)); galApply(); }
+    });
+  }
   function openGallery() {
     if (gal) return;
     load(true);
@@ -280,7 +303,12 @@
     const seg = h("div", "cg-seg"); seg.setAttribute("role", "group");
     [["grid", ic.grid, "Raster"], ["list", ic.list, "Liste"], ["flow", ic.flow, "Karussell"]].forEach(([k, svg, name]) => {
       const b = svgBtn("cg-segbtn", svg, name); b.dataset.v = k; b.setAttribute("aria-pressed", String(G.view === k));
-      b.addEventListener("click", () => { G.view = k; lss("coverView", k); seg.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.v === k))); paintGallery(true); scrollNow(); });
+      b.addEventListener("click", () => { if (b._lp) return; G.view = k; lss("coverView", k); seg.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.v === k))); galApply(); paintGallery(true); scrollNow(); });
+      { let t = 0; const go = () => { b._lp = true; setTimeout(() => { b._lp = false; }, 700); galAdjust(k); };
+        b.addEventListener("pointerdown", () => { clearTimeout(t); t = setTimeout(go, 700); });
+        ["pointerup", "pointerleave", "pointercancel"].forEach((ev) => b.addEventListener(ev, () => clearTimeout(t)));
+        b.addEventListener("contextmenu", (e) => { e.preventDefault(); clearTimeout(t); go(); });
+        b.title = (b.title || VN[k]) + " – lange drücken: Position und Größe anpassen"; }
       seg.append(b);
     });
     const fsb = svgBtn("cg-btn", ic.full, "Browser-Vollbild"); fsb.addEventListener("click", () => fsToggle(gal));
@@ -309,7 +337,7 @@
     srt.addEventListener("change", () => { G.sort = srt.value; paintGallery(); });
     const size = h("label", "cg-size"); size.append(h("span", "", "Größe"));
     const sz = document.createElement("input"); sz.type = "range"; sz.min = "100"; sz.max = "360"; sz.step = "10"; sz.value = String(G.size); sz.setAttribute("aria-label", "Größe der Cover");
-    sz.addEventListener("input", () => { G.size = Number(sz.value); lss("coverSize", String(G.size)); gal.style.setProperty("--cg-size", G.size + "px"); });
+    sz.addEventListener("input", () => { G.size = Number(sz.value); lss("coverSize", String(G.size)); gal.style.setProperty("--cg-size", G.size + "px"); { const o = galJ("galSizes"); o[G.view] = G.size; lss("galSizes", JSON.stringify(o)); } });
     size.append(sz);
     const cnt = h("span", "cg-count"); cnt.id = "cgCount";
     tools.append(dirSel, cOnly, cFav, cMark, cat, srt, nxt, size, cnt);
@@ -324,7 +352,7 @@
     gal.style.setProperty("--nk", String(nkAmt() / 100));
     gal.style.setProperty("--cg-size", G.size + "px");
     gal._r = { body, mini, cnt, size, cOnly, jump, last: "" };
-    document.body.append(gal); document.body.classList.add("cg-open");
+    document.body.append(gal); document.body.classList.add("cg-open"); galApply();
     document.addEventListener("keydown", galKey, true);
     paintGallery(true);
     galTimer = setInterval(paintMini, 400);
@@ -562,6 +590,6 @@
     setInterval(() => { const s = cur(); const k = s ? s.id : ""; if (boot.k !== k) { boot.k = k; paintThumb(); if (gal) paintGallery(); } if (gal) { paintMini(); updJump(); } }, 500);
     window.addEventListener("pagehide", () => { /* nichts */ });
   }
-  window.COVERS = { setSet, pick, setLang: (id) => SET_LANG[id === undefined ? set : id] || "", pairOf: (id) => SET_PAIR[id === undefined ? set : id] || "", loadSetMap, urlOfKey, get set() { return set; }, SETS, galleryNext, src, has, newUrl, artwork, load, mode, refresh: changed, openGallery, closeGallery, openNow, closeNow, get map() { return map; } };
+  window.COVERS = { galAdjust, galApply, setSet, pick, setLang: (id) => SET_LANG[id === undefined ? set : id] || "", pairOf: (id) => SET_PAIR[id === undefined ? set : id] || "", loadSetMap, urlOfKey, get set() { return set; }, SETS, galleryNext, src, has, newUrl, artwork, load, mode, refresh: changed, openGallery, closeGallery, openNow, closeNow, get map() { return map; } };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 })();

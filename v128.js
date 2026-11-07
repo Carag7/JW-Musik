@@ -77,6 +77,27 @@
     wrap.append(n, rs);
     return [wrap, h("small", "set-hint", "Regler oder Zahl (0,1 bis 4). Gilt für alle Lieder, bis du auf „Normal“ stellst. Ist das Tempo nicht 1x, steht es im Player in Orange. Auch: Lupe an, linken Timecode lang drücken.")];
   }
+  /* Position (Versatz in Pixel) je Ansicht – Startseite oder Galerie; „Anpassen-Fenster“ wie bei langem Drücken */
+  function posBox(kind) {
+    const isStart = kind === "start", key = isStart ? "startAdj" : "galAdj";
+    const views = isStart ? [["image", "Bild"], ["chor", "Video"], ["carousel", "Karussell"], ["fade", "Überblenden"], ["float", "Schweben"]] : [["grid", "Raster"], ["list", "Liste"], ["flow", "Karussell"]];
+    const get = () => { try { return JSON.parse(lsv(key, "{}")) || {}; } catch { return {}; } };
+    const out = [];
+    const refresh = () => { try { if (isStart) window.V116 && V116.fit(); else window.COVERS && COVERS.galApply(); } catch { /* egal */ } };
+    views.forEach(([v, name]) => {
+      const row = h("div", "set-row v130-pos"); row.append(document.createTextNode(name + ": "));
+      const mk = (idx, lab) => { const i = h("input"); i.type = "text"; i.inputMode = "numeric"; i.style.width = "5.5em"; i.title = lab; i.setAttribute("aria-label", name + " " + lab);
+        i.value = String((get()[v] || [0, 0])[idx] || 0);
+        i.onchange = () => { const o = get(), c = o[v] || [0, 0]; c[idx] = Number(i.value) || 0; o[v] = c; lss(key, JSON.stringify(o)); refresh(); }; return i; };
+      const lx = h("span", "", " rechts "), ly = h("span", "", " runter ");
+      const x = mk(0, "nach rechts (px)"), y = mk(1, "nach unten (px)");
+      row.append(lx, x, ly, y); row._sync = () => { const c = get()[v] || [0, 0]; x.value = String(c[0] || 0); y.value = String(c[1] || 0); };
+      out.push(row);
+    });
+    const b = bigBtn("Anpassen-Fenster öffnen (Pfeile, Größe)", () => { const c = $("codeModal"); try { if (isStart) { window.V116 && V116.toStart && V116.toStart(); V116.adjust(); } else { window.COVERS && COVERS.openGallery(); setTimeout(() => COVERS.galAdjust(), 400); } } catch { /* egal */ } if (c) c.hidden = true; }, "tz-small");
+    out.push(b, h("small", "set-hint", isStart ? "Versatz in Pixel (rechts / runter, auch negativ). Auf der Startseite erreichst du dasselbe, wenn du lange auf eine Ansicht drückst." : "Versatz in Pixel je Ansicht. In der Galerie: lange auf Raster, Liste oder Karussell drücken."));
+    return out;
+  }
   const OFFON = [["1", "ein"], ["0", "aus"]];
   const ACCU = [["low", "schwach (schnell)"], ["normal", "normal"], ["high", "sehr genau (langsam)"]];
   const syncers = [];
@@ -145,13 +166,17 @@
         box("Sprache der Musik", [u("advMusikLang", "advLangWarn")]),
         box("Schriftfarben", [(() => { const b = bigBtn("Karaoke-Schriftfarben im Reiter „Design“ ändern", () => { const t = document.querySelector('#setTabs [data-settab="design"]'); if (t) t.click(); }, "tz-small"); return b; })(), h("small", "set-hint", "Aktive Zeile und übrige Zeilen: Reiter „Design“ → Karaoke-Schriftfarbe.")])
       ] },
-      { id: "cover", name: "Cover und Galerie", desc: "Welche Cover gezeigt werden und wie die Galerie aussieht.", boxes: [
-        box("Cover", [u("advCover", "advCoverSet", "advCoverFlip")]),
-        box("Galerie", [u("advGalNoKar", "advGalNoKarAmt", "advGalMini")])
+      { id: "cover", name: "Cover", desc: "Welche Cover gezeigt werden.", boxes: [
+        box("Cover", [u("advCover", "advCoverSet", "advCoverFlip")])
+      ] },
+      { id: "gal", name: "Galerie", desc: "Cover-Galerie: Ansichten Raster, Liste und Karussell, Größe und Position.", boxes: [
+        box("Galerie", [u("advGalNoKar", "advGalNoKarAmt", "advGalMini")]),
+        box("Ansichten: Größe und Position", [h("small", "set-hint", "Lange auf Raster, Liste oder Karussell drücken (in der Galerie oben): Fenster zum Verschieben (Pfeile) und für die Größe der Cover. Hier kannst du die Werte auch eintippen."), ...posBox("gal")])
       ] },
       { id: "start", name: "Startseite", desc: "Was vor dem ersten Lied zu sehen ist.", boxes: [
         box("Anzeige und Wechsel", [startHead1, u("advStartShow", "advStartFolders"), u("advStartOrder", "advStartSec"), fixHint ? [fixHint] : [], fadeUnit, u("advStartTrans", "advStartAnim", "advCar3d", "advFloatSpd", "advCarSec", "advCarMs")]),
         box("Größe der Ansichten", [startHead2, u("advSz_image", "advSz_chor", "advSz_carousel", "advSz_fade", "advSz_float", "advSzReset"), u("flugResetBtn")]),
+        box("Position der Ansichten", posBox("start")),
         box("Chor-GIF", [u("startGif")])
       ] },
       { id: "player", name: "Player und Fernsteuerung", desc: "Player-Anordnung, Übertragen auf andere Geräte, Mithören.", boxes: [

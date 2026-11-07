@@ -63,3 +63,10 @@ body.sv-hints-off .sv-lp { display: none; }
 #codeForm .sub-tabs { align-items: center; }
 #codeForm .sub-tabs .seg-btn[data-sub="tesla"] { margin-left: auto !important; min-height: 60px !important; padding: 0 22px !important; font-size: 20px !important; font-weight: 800 !important; color: #fff !important; background: #c62828 !important; border: 2px solid #ff8a80 !important; border-radius: 14px !important; box-shadow: 0 2px 8px rgba(198,40,40,.45); }
 #codeForm .sub-tabs .seg-btn[data-sub="tesla"][aria-pressed="true"] { background: #e53935 !important; outline: 3px solid #fff; outline-offset: -6px; }
+
+/* Anpassen-Fenster über Galerie/Player */
+.start-adj { z-index: 100000 !important; }
+.cg-body > * { transform: translate(var(--gdx, 0px), var(--gdy, 0px)); }
+/* Tesla-Reiter: blau */
+#codeForm .sub-tabs .seg-btn[data-sub="tesla"] { background: #1565c0 !important; border-color: #90caf9 !important; box-shadow: 0 2px 8px rgba(21,101,192,.5) !important; }
+#codeForm .sub-tabs .seg-btn[data-sub="tesla"][aria-pressed="true"] { background: #1e88e5 !important; }

@@ -24,12 +24,20 @@
     return out;
   }
   async function serverText(kind, id) { try { const r = await fetch(`${SYNC_BASE}/sync/${kind}-${id}`, { cache: "no-store" }); if (r.ok) { const t = await r.text(); if (t.includes("[")) return t; } } catch { /* egal */ } return ""; }
+  async function fileText(kind, song) {
+    try {
+      const n = String(song.number), m = state.media || {}, md = m.de || {};
+      const key = kind === "lrc" ? ((m.karaoke || {}).lrc || {})[n] : kind === "lrcde" ? ((md.karaoke || {}).lrc || {})[n] : kind === "lrcm" ? ((m.meeting || {}).lrc || {})[n] : ((m.meeting || {}).sungLrc || {})[n];
+      if (key) { const r = await fetch(mediaUrl(key), { cache: "no-store" }); if (r.ok) { const t = await r.text(); if (t.includes("[")) return t; } }
+    } catch { /* egal */ }
+    return "";
+  }
   async function collect(song) {
     const art = state.curVersion || "karaoke", R = window.RATING, res = [], seen = new Set();
     const add = (kind, lrc, label, sub) => { const k = kind + "|" + nz(lrc); if (!lrc || seen.has(k)) return; seen.add(k); res.push({ kind, lrc, label, sub }); };
     for (const kind of kindsFor(art)) {
       const L = art === "karaoke" ? NAME[kLang(kind)] : "";
-      const sv = await serverText(kind, song.id); if (sv) add(kind, sv, `${L ? L + " · " : ""}gespeichert (Server)`, "aktuelle LRC-Datei");
+      let sv = await serverText(kind, song.id); let lab = "gespeichert (Server)"; if (!sv) { sv = await fileText(kind, song); lab = "LRC-Datei"; } if (sv) add(kind, sv, `${L ? L + " · " : ""}${lab}`, "aktuelle LRC-Datei");
       const k = kiGet(kind, song.id); if (k && k.lrc) add(kind, k.lrc, `${L ? L + " · " : ""}KI-Text (noch nicht gespeichert)`, dt(k.ts));
       try { ((R && R.hget(kind, song.id)) || []).slice().reverse().forEach((v) => add(kind, v.lrc, `${L ? L + " · " : ""}${v.type === "orig" ? "Original vor KI" : v.type === "ki" ? "KI-Fassung" : "Gespeichert"}`, dt(v.ts))); } catch { /* egal */ }
     }

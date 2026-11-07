@@ -6,11 +6,12 @@
   const lss = (k, v) => { try { localStorage.setItem(k, v); } catch { /* egal */ } };
   const TOPICS = [
     ["alle", "Alle anzeigen"],
+    ["start", "Startseite"],
     ["wieder", "Wiedergabe"],
     ["liste", "Liedliste"],
     ["text", "Karaoke-Text"],
-    ["cover", "Cover und Galerie"],
-    ["start", "Startseite"],
+    ["cover", "Cover"],
+    ["gal", "Galerie"],
     ["player", "Player und Fernsteuerung"],
     ["ki", "KI und Bewertungen"],
     ["einfach", "Einfache Ansicht"],
