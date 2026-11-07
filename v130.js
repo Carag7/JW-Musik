@@ -130,7 +130,25 @@
     const w = $("lyricSearchWrap"), ss = $("songSearch"), l = ss && ss.closest("label");
     if (w && l && l.nextElementSibling !== w) l.after(w);
   }
+/* Änderungs-Übersicht (Tabelle) + aufklappbare Einzelzeilen; items = [{old, neu, text, miss}] */
+  function diffInfo(items) {
+    const f1 = (x) => String(x.toFixed(1)).replace(".", ","), pc = (x, n) => (n ? Math.round(100 * x / n) : 0) + " %";
+    const fmtT = (x) => { const m = Math.floor(x / 60), sec = x - m * 60; return `${m}:${sec < 10 ? "0" : ""}${sec.toFixed(1)}`; };
+    const n = items.length, b = { d0: 0, d1: 0, d2: 0, d3: 0, un: 0 }; let sum = 0, mx = 0, m = 0;
+    items.forEach((it) => { if (it.miss) { b.un++; return; } const a = Math.abs(it.neu - it.old); b[a < 0.15 ? "d0" : a < 0.6 ? "d1" : a < 2 ? "d2" : "d3"]++; sum += a; m++; if (a > mx) mx = a; });
+    const table = [["Änderung der Startzeit", "Zeilen", "Anteil"], ["unverändert (unter 0,15 s)", b.d0, pc(b.d0, n)], ["klein (0,15 – 0,6 s)", b.d1, pc(b.d1, n)], ["mittel (0,6 – 2 s)", b.d2, pc(b.d2, n)], ["groß (ab 2 s)", b.d3, pc(b.d3, n)], ["nicht zugeordnet", b.un, pc(b.un, n)], ["Summe", n, "100 %"]];
+    const note = `Durchschnittliche Verschiebung ${f1(m ? sum / m : 0)} s, größte ${f1(mx)} s.`;
+    const det = document.createElement("details"); det.className = "ki-diff";
+    const rows = [];
+    items.forEach((it, i) => { if (it.miss) rows.push({ i, c: "#a855f7", t: `${i + 1}. nicht zugeordnet  ${String(it.text || "").slice(0, 40)}` }); else { const d = it.neu - it.old, ad = Math.abs(d); if (ad >= 0.15) rows.push({ i, c: ad >= 2 ? "#e5484d" : ad >= 0.6 ? "#f08a00" : "#d9b400", t: `${i + 1}. ${fmtT(it.old)} → ${fmtT(it.neu)} (${d > 0 ? "+" : "−"}${f1(ad)} s)  ${String(it.text || "").slice(0, 40)}` }); } });
+    const sm = document.createElement("summary"); sm.textContent = `Einzelne Zeilen (${rows.length} geändert)`; det.append(sm);
+    const box = document.createElement("div"); box.style.cssText = "max-height:30vh;overflow:auto;font-size:12px;text-align:left;margin-top:6px";
+    rows.forEach((r) => { const d = document.createElement("div"); d.textContent = r.t; d.style.color = r.c; box.append(d); });
+    if (!rows.length) box.textContent = "Keine Zeile geändert.";
+    det.append(box);
+    return { n, b, table, note, det };
+  }
   const boot = () => { tempoBadge(); paintPick(); moveSearch(); };
-  window.V130 = { trackDialog, alts, tempoDialog, paintPick };
+  window.V130 = { diffInfo, trackDialog, alts, tempoDialog, paintPick };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 })();

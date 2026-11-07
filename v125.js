@@ -354,11 +354,10 @@
     let vs;
     {
       /* alle für dieses Lied vorhandenen LRC-Dateien stehen auf beiden Seiten zur Wahl */
-      const files = lrcFiles(song), KK = { "Karaoke EN": ["lrc", "Karaoke EN"], "Karaoke DE": ["lrcde", "Karaoke DE"], "Instrumental": ["lrcm", "Instrumental"], "Zusammenkünfte": ["lrcs", "Zusammenkünfte"] };
-      const list = files.map((f) => KK[f]).filter(Boolean);
-      if (!list.some((x) => x[0] === kind)) { const k0 = kind === "lrcde" ? ["lrcde", "Karaoke DE"] : kind === "lrcm" ? ["lrcm", "Instrumental"] : kind === "lrcs" ? ["lrcs", "Zusammenkünfte"] : ["lrc", "Karaoke EN"]; list.unshift(k0); }
-      const parts = await Promise.all(list.map(([k]) => versionsOf(song.id, k)));
-      vs = []; parts.forEach((arr, n) => arr.forEach((v) => vs.push({ ...v, label: (list.length > 1 ? list[n][1] + " · " : "") + v.label })));
+      const all = [["lrc", "Karaoke EN"], ["lrcde", "Karaoke DE"], ["lrcm", "Instrumental"], ["lrcs", "Zusammenkünfte"]];
+      const parts = await Promise.all(all.map(([k]) => versionsOf(song.id, k).catch(() => [])));
+      const list = all.filter((x, n) => parts[n].length || x[0] === kind);
+      vs = []; list.forEach((x) => { const arr = parts[all.indexOf(x)]; arr.forEach((v) => vs.push({ ...v, label: (list.length > 1 ? x[1] + " · " : "") + v.label })); });
     }
     if (state.setTab !== "kihist" || !box.isConnected || KV.id !== song.id) return;
     body.replaceChildren();

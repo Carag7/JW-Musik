@@ -56,6 +56,10 @@ body.sv-hints-off .sv-lp { display: none; }
 .preset-row:has(.preset-field:nth-child(4)) > .preset-fields { max-width: 100% !important; width: 100%; align-items: stretch !important; }
 .preset-row:has(.preset-field:nth-child(4)) .preset-field { justify-content: space-between; width: 100%; }
 
-/* Fehlerprotokoll-Knopf: rechtsbündig, doppelt so groß, farbig */
-.ls-log-wrap { display: flex; justify-content: flex-end; margin: 0 0 10px; }
-.ls-log-btn { min-height: 60px; padding: 0 26px; font-size: 1.25em; font-weight: 800; border-radius: 16px; background: #c2410c !important; color: #fff !important; border: 2px solid #fdba74 !important; }
+.ls-log-d { margin: 10px 0; font-size: 12px; opacity: .8; }
+.ls-log-d summary { cursor: pointer; }
+
+/* Unterreiter „Tesla“: doppelt so groß, farbig, rechtsbündig */
+#codeForm .sub-tabs { align-items: center; }
+#codeForm .sub-tabs .seg-btn[data-sub="tesla"] { margin-left: auto !important; min-height: 60px !important; padding: 0 22px !important; font-size: 20px !important; font-weight: 800 !important; color: #fff !important; background: #c62828 !important; border: 2px solid #ff8a80 !important; border-radius: 14px !important; box-shadow: 0 2px 8px rgba(198,40,40,.45); }
+#codeForm .sub-tabs .seg-btn[data-sub="tesla"][aria-pressed="true"] { background: #e53935 !important; outline: 3px solid #fff; outline-offset: -6px; }

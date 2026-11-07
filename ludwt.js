@@ -236,6 +236,7 @@
   function build(root, keepOpen) {
     const wasOpen = keepOpen != null ? keepOpen : !!root.querySelector(".ls-all:not([hidden])");
     root.replaceChildren();
+    { const d0 = document.getElementById("ludwtPopupLog"); if (d0) { d0.hidden = true; d0.replaceChildren(); } }
     const head = h("div", "ls-top");
     head.append(h("h3", "", "Lieder LuD+WT"));
     const info = h("button", "ghost ls-i", "i");
@@ -299,15 +300,13 @@
         for (const e of r.fehler) lines.push(`   ${fmtTime(e.zeit)} · ${e.schritt}\n   ${e.ziel ? e.ziel + " – " : ""}${e.meldung}`);
         lines.push("");
       }
-      const wrap = h("div", "ls-log-wrap");
-      const btn = h("button", "chip ls-log-btn", `⚠ Fehlerprotokoll (${total})`);
-      btn.type = "button"; btn.title = `${total} fehlgeschlagene Tests in ${withErrors.length} Läufen`;
-      btn.addEventListener("click", () => {
-        const pre = document.createElement("pre"); pre.className = "dlg-pre"; pre.style.cssText = "white-space:pre-wrap;max-height:55vh;overflow:auto;font-size:12px;text-align:left";
-        pre.textContent = lines.join("\n");
-        uiDialog({ eyebrow: "Wochenlieder LuD+WT", title: "Fehlerprotokoll", lines: [`${total} fehlgeschlagene Tests in ${withErrors.length} Läufen`, { node: pre }], buttons: [{ value: true, kind: "primary", label: "Schließen" }] });
-      });
-      wrap.append(btn); root.prepend(wrap);
+      const det = document.getElementById("ludwtPopupLog");
+      if (det) {
+        det.replaceChildren(); det.hidden = false;
+        det.append(h("summary", "", `Fehlerprotokoll (${total} fehlgeschlagene Tests in ${withErrors.length} Läufen)`));
+        const pre = document.createElement("pre"); pre.style.cssText = "white-space:pre-wrap;max-height:40vh;overflow:auto;font-size:12px;text-align:left;margin:6px 0";
+        pre.textContent = lines.join("\n"); det.append(pre);
+      }
     }
   }
 

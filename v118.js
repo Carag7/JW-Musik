@@ -174,7 +174,8 @@
           ["groß (ab 2 s)", b.d3, fmtP(b.d3, n)],
           ["nicht zugeordnet", b.un, fmtP(b.un, n)],
           ["Summe", n, "100 %"]], right: true },
-        { text: `Durchschnittliche Verschiebung ${f1(st.avg)} s, größte ${f1(st.mx)} s. Farben in den Zeilen: grün = unverändert, gelb = klein, orange = mittel, rot = groß, violett = nicht zugeordnet.`, cls: "dlg-hint" }
+        { text: `Durchschnittliche Verschiebung ${f1(st.avg)} s, größte ${f1(st.mx)} s. Farben in den Zeilen: grün = unverändert, gelb = klein, orange = mittel, rot = groß, violett = nicht zugeordnet.`, cls: "dlg-hint" },
+        ...(() => { try { const rw = rowsAll(); return [{ node: window.V130.diffInfo(AI.neu.map((nv, k) => ({ old: AI.old[k], neu: nv, miss: !!(AI.hit && AI.hit[k] === false), text: rw[k] ? rowText(rw[k]) : "" }))).det }]; } catch { return []; } })()
       ],
       buttons: [{ value: null, kind: "primary", label: "OK" }] });
     if (v === "bad") rowsAll().forEach((r) => { const c = r.querySelector(".row-pick"); if (c) c.checked = r.classList.contains("ai-d3") || r.classList.contains("ai-un"); });

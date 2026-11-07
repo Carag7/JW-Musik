@@ -2956,7 +2956,8 @@ function shareLink(payload) {
 function showQr(link) {
   const qr = document.getElementById("syncQr");
   qr.hidden = false;
-  qr.src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(link)}`;
+  const svg = window.makeQrSvg ? window.makeQrSvg(link) : null;   /* lokal erzeugt, ohne Fremddienst */
+  qr.src = svg ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}` : `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(link)}`;
 }
 
 /* ---------- Abgleich von Favoriten und Wiedergabelisten ----------
@@ -5039,6 +5040,7 @@ function openCode(title, onSubmit, kind) {
     ok.hidden = false;
     mark();
   };
+  if (!settingsMode) document.getElementById("syncDevice").onclick();   /* Export/Import: gleich „Anderes Gerät“ (QR) */
   const form = document.getElementById("codeForm");
   form.onsubmit = async (event) => {
     event.preventDefault();
