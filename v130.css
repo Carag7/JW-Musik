@@ -70,3 +70,7 @@ body.sv-hints-off .sv-lp { display: none; }
 /* Tesla-Reiter: blau */
 #codeForm .sub-tabs .seg-btn[data-sub="tesla"] { background: #1565c0 !important; border-color: #90caf9 !important; box-shadow: 0 2px 8px rgba(21,101,192,.5) !important; }
 #codeForm .sub-tabs .seg-btn[data-sub="tesla"][aria-pressed="true"] { background: #1e88e5 !important; }
+
+/* Tesla-Knopf: Position wählbar */
+body.tesla-tab-list #subTabs [data-sub="tesla"] { display: none !important; }
+body.tesla-tab-top #setTopics .topic-tesla { display: none !important; }

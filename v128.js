@@ -28,6 +28,7 @@
   function applyKey(k, v) {
     try { lss(k, v); } catch { localStorage.setItem(k, v); }
     if (/^sv_/.test(k) || k === "svHints") { applySV(); return; }
+    if (k === "teslaTab") { try { window.V130 && V130.applyTeslaMode(true); } catch { /* egal */ } return; }
     if (k === "mediaKeys" || k === "mediaHold") { try { setMediaSession(state.songs[state.index]); } catch { /* egal */ } return; }
     try { applyTarget([{ key: k, val: v }], true); } catch { /* egal */ }
   }
@@ -273,6 +274,9 @@
     add(bigCheck("extraSongsOpt", "Weitere Lieder in der Liste"));
     add(bigCheck("srcTagsOpt", "Kleine Kennzeichen (K, ♪, ▶, Z)"));
     add(bigSel("favSeekOpt", "Tesla-Player: Taste = Favorit"));
+    sub("Tesla-Knopf in den Einstellungen");
+    add((() => { const s = h("select", "tz-sel"); [["auto", "automatisch (im Tesla oben, sonst links in der Liste)"], ["top", "oben groß (neben Einstellungen)"], ["list", "links in der Liste (klein)"]].forEach(([v, n]) => { const o = h("option", "", n); o.value = v; s.append(o); });
+      const paint = () => { s.value = lsv("teslaTab", "auto"); }; s.onchange = () => applyKey("teslaTab", s.value); return bigRow("Wo steht der Tesla-Knopf?", s, "Oben: großer blauer Knopf, gut im Auto zu treffen. Liste: kleiner Eintrag links wie die anderen Themen (Desktop).", paint); })());
     sub("Tasten im Tesla-Player (unter den Fahrzeug-Infos)");
     add((() => { const s = h("select", "tz-sel"); [["step", "Lied vor / zurück"], ["seek", "Vor- / Zurückspulen"]].forEach(([v, n]) => { const o = h("option", "", n); o.value = v; s.append(o); });
       const paint = () => { s.value = lsv("mediaKeys", "step"); }; s.onchange = () => applyKey("mediaKeys", s.value); return bigRow("Die Tasten sollen sein", s, "Standard: Lied vor und Lied zurück. Danach ein Lied neu wählen.", paint); })());

@@ -156,7 +156,20 @@
     det.append(box);
     return { n, b, table, note, det };
   }
-  const boot = () => { tempoBadge(); paintPick(); moveSearch(); };
-  window.V130 = { diffInfo, trackDialog, alts, tempoDialog, paintPick };
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
+/* Tesla-Knopf: oben groß oder links in der Liste */
+  function teslaTop() { const v = lsv("teslaTab", "auto"); return v === "top" || (v === "auto" && typeof isTesla === "function" && isTesla()); }
+  function applyTeslaMode(refresh) {
+    const top = teslaTop();
+    document.body.classList.toggle("tesla-tab-top", top); document.body.classList.toggle("tesla-tab-list", !top);
+    if (refresh) {
+      try {
+        if (!top && state.sub === "tesla") { state.sub = "einst"; showSetTab(state.setTab || "allgemein"); try { window.V119 && V119.apply && V119.apply("tesla"); } catch { /* egal */ } }
+        else if (top && state.sub !== "tesla") { /* bleibt */ }
+      } catch { /* egal */ }
+    }
+  }
+  const boot = () => { applyTeslaMode(); };
+  const boot0 = () => { tempoBadge(); paintPick(); moveSearch(); applyTeslaMode(); };
+  window.V130 = { applyTeslaMode, diffInfo, trackDialog, alts, tempoDialog, paintPick };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot0); else boot0();
 })();

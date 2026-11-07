@@ -89,8 +89,7 @@
     const sub = $("subTabs"); if (!sub || $("setTopics")) return;
     const nav = document.createElement("nav"); nav.id = "setTopics"; nav.className = "set-topics"; nav.dataset.tab = "allgemein"; nav.dataset.sub = "einst"; nav.setAttribute("aria-label", "Themen");
     TOPICS.forEach(([id, name]) => {
-      if (id === "tesla") return;   /* eigener Unterreiter „Tesla“ */
-      const b = document.createElement("button"); b.type = "button"; b.className = "seg-btn topic-btn"; b.dataset.topic = id; b.textContent = name;
+      const b = document.createElement("button"); b.type = "button"; b.className = "seg-btn topic-btn" + (id === "tesla" ? " topic-tesla" : ""); b.dataset.topic = id; b.textContent = name;
       b.addEventListener("click", () => apply(id));
       nav.append(b);
     });
