@@ -125,7 +125,12 @@
     paint();
   }
 
-  const boot = () => { tempoBadge(); paintPick(); };
+  /* „im Liedtext suchen“ steht an zweiter Stelle, direkt unter „Lied suchen“ */
+  function moveSearch() {
+    const w = $("lyricSearchWrap"), ss = $("songSearch"), l = ss && ss.closest("label");
+    if (w && l && l.nextElementSibling !== w) l.after(w);
+  }
+  const boot = () => { tempoBadge(); paintPick(); moveSearch(); };
   window.V130 = { trackDialog, alts, tempoDialog, paintPick };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 })();

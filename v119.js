@@ -23,7 +23,7 @@
   const MAP = {};
   Object.entries(BY_ID).forEach(([t, ids]) => ids.split(" ").forEach((i) => { (MAP[i] = MAP[i] || []).push(t); }));
   const norm = (t) => (t || "").toLowerCase().replace(/\s+/g, " ").trim();
-  let tagged = false, current = lsv("setTopic", /Tesla/i.test(navigator.userAgent) ? "tesla" : "alle");
+  let tagged = false, current = lsv("setTopic", "alle"); if (current === "tesla") current = "alle";
 
   function units(box) {
     const out = [];
@@ -88,6 +88,7 @@
     const sub = $("subTabs"); if (!sub || $("setTopics")) return;
     const nav = document.createElement("nav"); nav.id = "setTopics"; nav.className = "set-topics"; nav.dataset.tab = "allgemein"; nav.dataset.sub = "einst"; nav.setAttribute("aria-label", "Themen");
     TOPICS.forEach(([id, name]) => {
+      if (id === "tesla") return;   /* eigener Unterreiter „Tesla“ */
       const b = document.createElement("button"); b.type = "button"; b.className = "seg-btn topic-btn"; b.dataset.topic = id; b.textContent = name;
       b.addEventListener("click", () => apply(id));
       nav.append(b);

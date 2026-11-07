@@ -293,20 +293,21 @@
     const withErrors = runs.filter((r) => r.fehler && r.fehler.length);
     if (withErrors.length) {
       const total = withErrors.reduce((n, r) => n + r.fehler.length, 0);
-      const box = h("details", "ls-log");
-      box.append(h("summary", "", `Fehlerprotokoll (${total} fehlgeschlagene Tests in ${withErrors.length} Läufen)`));
+      const lines = [];
       for (const r of withErrors) {
-        const run = h("div", "ls-run");
-        run.append(h("b", "", `${fmtTime(r.zeit)} – ${trigger(r.ausloeser)} – ${r.ok ? "am Ende erfolgreich (Ersatz-Option hat funktioniert)" : "fehlgeschlagen"}`));
-        for (const e of r.fehler) {
-          const d = h("div", `ls-err${r.ok ? " hint" : ""}`);
-          d.append(h("b", "", `${fmtTime(e.zeit)} · ${e.schritt}`));
-          d.append(h("code", "", `${e.ziel ? `${e.ziel}\n` : ""}${e.meldung}`));
-          run.append(d);
-        }
-        box.append(run);
+        lines.push(`${fmtTime(r.zeit)} – ${trigger(r.ausloeser)} – ${r.ok ? "am Ende erfolgreich (Ersatz-Option hat funktioniert)" : "fehlgeschlagen"}`);
+        for (const e of r.fehler) lines.push(`   ${fmtTime(e.zeit)} · ${e.schritt}\n   ${e.ziel ? e.ziel + " – " : ""}${e.meldung}`);
+        lines.push("");
       }
-      root.append(box);
+      const wrap = h("div", "ls-log-wrap");
+      const btn = h("button", "chip ls-log-btn", `⚠ Fehlerprotokoll (${total})`);
+      btn.type = "button"; btn.title = `${total} fehlgeschlagene Tests in ${withErrors.length} Läufen`;
+      btn.addEventListener("click", () => {
+        const pre = document.createElement("pre"); pre.className = "dlg-pre"; pre.style.cssText = "white-space:pre-wrap;max-height:55vh;overflow:auto;font-size:12px;text-align:left";
+        pre.textContent = lines.join("\n");
+        uiDialog({ eyebrow: "Wochenlieder LuD+WT", title: "Fehlerprotokoll", lines: [`${total} fehlgeschlagene Tests in ${withErrors.length} Läufen`, { node: pre }], buttons: [{ value: true, kind: "primary", label: "Schließen" }] });
+      });
+      wrap.append(btn); root.prepend(wrap);
     }
   }
 

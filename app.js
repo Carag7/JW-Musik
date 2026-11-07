@@ -4988,6 +4988,9 @@ function openCode(title, onSubmit, kind) {
     ? "Anderes Gerät: Link vom Export hier einfügen. Vom Handy zum Tesla den Link kopieren."
     : "Lokal: eigenes Passwort. Anderes Gerät: QR erzeugen, das andere Gerät scannt.";
   qr.hidden = true;
+  { const sc = document.querySelector(".sync-choice"); if (sc) sc.hidden = settingsMode; }
+  document.getElementById("codeForm").classList.toggle("fav-export", !settingsMode);
+  if (!settingsMode) { input.placeholder = "eigenes Passwort, mind. 4 Zeichen"; }
   const linkEl = document.getElementById("syncLink");
   linkEl.hidden = true;
   linkEl.textContent = "";

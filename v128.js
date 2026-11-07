@@ -66,7 +66,7 @@
     const a = () => $("audio");
     const wrap = h("div", "set-row v130-tempo");
     wrap.append(document.createTextNode("Tempo (1 = normal) "));
-    const r = h("input"); r.type = "range"; r.min = "0.5"; r.max = "2"; r.step = "0.05";
+    const r = { value: "", oninput: null };   /* nur noch ein Regler: das Zahlenfeld wird von der Oberfläche als Regler dargestellt */
     const n = h("input"); n.type = "number"; n.min = "0.1"; n.max = "4"; n.step = "0.05"; n.style.width = "5em";
     const rs = h("button", "chip", "Normal (1x)"); rs.type = "button";
     const set = (v) => { v = Math.round(Number(String(v).replace(",", ".")) * 100) / 100; if (!(v >= 0.1 && v <= 4)) return; const x = a(); if (x) { x.defaultPlaybackRate = v; x.playbackRate = v; } r.value = String(v); n.value = String(v); };
@@ -74,7 +74,7 @@
     const sync = () => { const v = a() ? Math.round((a().playbackRate || 1) * 100) / 100 : 1; r.value = String(v); n.value = String(v); };
     wrap._sync = sync; sync();
     if (a()) a().addEventListener("ratechange", sync);
-    wrap.append(r, n, rs);
+    wrap.append(n, rs);
     return [wrap, h("small", "set-hint", "Regler oder Zahl (0,1 bis 4). Gilt für alle Lieder, bis du auf „Normal“ stellst. Ist das Tempo nicht 1x, steht es im Player in Orange. Auch: Lupe an, linken Timecode lang drücken.")];
   }
   const OFFON = [["1", "ein"], ["0", "aus"]];
@@ -248,6 +248,10 @@
     add(bigCheck("extraSongsOpt", "Weitere Lieder in der Liste"));
     add(bigCheck("srcTagsOpt", "Kleine Kennzeichen (K, ♪, ▶, Z)"));
     add(bigSel("favSeekOpt", "Tesla-Player: Taste = Favorit"));
+    sub("Tasten im Tesla-Player (unter den Fahrzeug-Infos)");
+    add((() => { const s = h("select", "tz-sel"); [["step", "Lied vor / zurück"], ["seek", "Vor- / Zurückspulen"]].forEach(([v, n]) => { const o = h("option", "", n); o.value = v; s.append(o); });
+      const paint = () => { s.value = lsv("mediaKeys", "step"); }; s.onchange = () => applyKey("mediaKeys", s.value); return bigRow("Die Tasten sollen sein", s, "Standard: Lied vor und Lied zurück. Danach ein Lied neu wählen.", paint); })());
+    add((() => { const b2 = h("button", "tz-sw"); b2.type = "button"; const paint = () => { const on = lsv("mediaHold", "1") === "1"; b2.textContent = on ? "EIN" : "AUS"; b2.setAttribute("aria-pressed", String(on)); }; b2.onclick = () => { applyKey("mediaHold", lsv("mediaHold", "1") === "1" ? "0" : "1"); paint(); }; paint(); return bigRow("Gehalten = vor- / zurückspulen", b2, "Kurz drücken wechselt das Lied (mit kurzer Verzögerung), gehalten spult.", paint); })());
     add(bigCheck("eggFall", "Video blockiert: GIF abspielen"));
     sub("Sonst");
     const row = h("div", "tz-btns");

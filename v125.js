@@ -339,7 +339,6 @@
     const chg = () => { KV.id = num.value; KV.art = sa.value; KV.lang = sl.value; KV.l = KV.r = ""; mountKih(); };
     num.onchange = chg; sa.onchange = chg; sl.onchange = chg;
     top.append(num, sa, sl);
-    if (KV.art === "karaoke") { const bl = h("label", "set-row check"); const bc = h("input"); bc.type = "checkbox"; bc.checked = KV.both; bc.onchange = () => { KV.both = bc.checked; KV.l = KV.r = ""; mountKih(); }; bl.append(bc, h("span", "", " beide Sprachen (Deutsch und Englisch) in der Vergleichsliste")); top.append(bl); }
     box.append(top);
     const song = state.songs.find((s) => s.id === KV.id);
     if (!song) { box.append(h("small", "set-hint", "Kein Lied gewählt.")); return; }
@@ -353,10 +352,14 @@
     const body = h("div", "kv-body"); box.append(body);
     body.append(h("small", "set-hint", "Lade Fassungen …"));
     let vs;
-    if (KV.both && KV.art === "karaoke") {
-      const [ve, vd] = await Promise.all([versionsOf(song.id, "lrc"), versionsOf(song.id, "lrcde")]);
-      vs = [...ve.map((v) => ({ ...v, label: "EN · " + v.label })), ...vd.map((v) => ({ ...v, label: "DE · " + v.label }))];
-    } else vs = await versionsOf(song.id, kind);
+    {
+      /* alle für dieses Lied vorhandenen LRC-Dateien stehen auf beiden Seiten zur Wahl */
+      const files = lrcFiles(song), KK = { "Karaoke EN": ["lrc", "Karaoke EN"], "Karaoke DE": ["lrcde", "Karaoke DE"], "Instrumental": ["lrcm", "Instrumental"], "Zusammenkünfte": ["lrcs", "Zusammenkünfte"] };
+      const list = files.map((f) => KK[f]).filter(Boolean);
+      if (!list.some((x) => x[0] === kind)) { const k0 = kind === "lrcde" ? ["lrcde", "Karaoke DE"] : kind === "lrcm" ? ["lrcm", "Instrumental"] : kind === "lrcs" ? ["lrcs", "Zusammenkünfte"] : ["lrc", "Karaoke EN"]; list.unshift(k0); }
+      const parts = await Promise.all(list.map(([k]) => versionsOf(song.id, k)));
+      vs = []; parts.forEach((arr, n) => arr.forEach((v) => vs.push({ ...v, label: (list.length > 1 ? list[n][1] + " · " : "") + v.label })));
+    }
     if (state.setTab !== "kihist" || !box.isConnected || KV.id !== song.id) return;
     body.replaceChildren();
     if (vs.length < 1) {

@@ -168,10 +168,27 @@
   async function saveAsDefault() {
     const s = cur(); if (!s) return;
     const kind = curLrcKind(s), k = kiGet(kind, s.id); if (!k) return;
-    let saved = false;
-    try { const r0 = await fetch(`${SYNC_BASE}/sync/${kind}-${s.id}`, { cache: "no-store" }); if (r0.ok) { const t0 = await r0.text(); const nz = (x) => String(x).replace(/\r/g, "").trim(); saved = nz(t0) === nz(k.lrc); } } catch { /* egal */ }
+    let saved = false, base = "";
+    try { const r0 = await fetch(`${SYNC_BASE}/sync/${kind}-${s.id}`, { cache: "no-store" }); if (r0.ok) { const t0 = await r0.text(); const nz = (x) => String(x).replace(/\r/g, "").trim(); saved = nz(t0) === nz(k.lrc); if (t0.includes("[")) base = t0; } } catch { /* egal */ }
+    if (!base) { try { const hs = ((window.RATING && window.RATING.hget(kind, s.id)) || []).filter((v) => v.type === "orig"); if (hs.length) base = hs[0].lrc; } catch { /* egal */ } }
+    const fmtT = (x) => { const m = Math.floor(x / 60), sec = x - m * 60; return `${m}:${sec < 10 ? "0" : ""}${sec.toFixed(1)}`; };
+    const diffNode = (() => {
+      const det = document.createElement("details"); det.className = "ki-diff";
+      const sm = document.createElement("summary"); det.append(sm);
+      let A = [], B = [];
+      try { A = parseLrc(base); B = parseLrc(k.lrc); } catch { /* egal */ }
+      if (!A.length || !B.length) { sm.textContent = "Änderungen: kein gespeicherter Text zum Vergleich"; return det; }
+      if (A.length !== B.length) { sm.textContent = `Änderungen: Zeilenzahl unterschiedlich (${A.length} gespeichert, ${B.length} KI)`; return det; }
+      const rows = []; let ch = 0, sum = 0, mx = 0;
+      B.forEach((b, i) => { const d = (Number(b.time) || 0) - (Number(A[i].time) || 0); if (Math.abs(d) >= 0.05) { ch++; sum += Math.abs(d); mx = Math.max(mx, Math.abs(d)); rows.push({ i, d, a: A[i], b }); } });
+      const pct = Math.round(100 * ch / B.length);
+      sm.textContent = ch ? `Änderungen: ${ch} von ${B.length} Zeilen (${pct} %), Ø ${(sum / ch).toFixed(1).replace(".", ",")} s, max. ${mx.toFixed(1).replace(".", ",")} s` : "Änderungen: keine (Zeiten gleich wie gespeichert)";
+      const ul = document.createElement("div"); ul.style.cssText = "max-height:30vh;overflow:auto;font-size:12px;text-align:left;margin-top:6px";
+      rows.forEach((r) => { const d = document.createElement("div"); d.textContent = `${r.i + 1}. ${fmtT(r.a.time)} → ${fmtT(r.b.time)} (${r.d > 0 ? "+" : "−"}${Math.abs(r.d).toFixed(1).replace(".", ",")} s)  ${String(r.b.text || "").slice(0, 40)}`; d.style.color = Math.abs(r.d) > 2 ? "#e5484d" : Math.abs(r.d) > 0.5 ? "#f08a00" : "#d9b400"; ul.append(d); });
+      det.append(ul); return det;
+    })();
     const ok = await uiDialog({ eyebrow: `Lied ${s.id}`, title: saved ? "KI-Text ist schon der Standard" : "KI-Text als Standard speichern?", cancelValue: false,
-      lines: [s.title, saved ? { text: "✔ Dieser KI-Text ist bereits als Standard auf dem Server gespeichert (identisch mit der aktuellen LRC-Datei).", cls: "dlg-hint" } : { text: "Noch nicht gespeichert: Dieser KI-Text ist nur auf diesem Gerät.", cls: "dlg-hint" }, "Speichern ersetzt die bisherige LRC-Datei auf dem Server. Dafür wird das Passwort des Bearbeitungsmodus gebraucht. Die bisherige Fassung bleibt im KI-Verlauf erhalten."],
+      lines: [s.title, saved ? { text: "✔ Dieser KI-Text ist bereits als Standard auf dem Server gespeichert (identisch mit der aktuellen LRC-Datei).", cls: "dlg-hint" } : { text: "Noch nicht gespeichert: Dieser KI-Text ist nur auf diesem Gerät.", cls: "dlg-hint" }, { node: diffNode }, "Speichern ersetzt die bisherige LRC-Datei auf dem Server. Dafür wird das Passwort des Bearbeitungsmodus gebraucht. Die bisherige Fassung bleibt im KI-Verlauf erhalten."],
       buttons: [{ value: true, kind: saved ? "primary" : "danger", label: saved ? "Trotzdem erneut speichern" : "Als Standard speichern" }, { value: "pick", label: "Anderen Karaoke-Text wählen …" }, { value: false, kind: "cancel", label: "Abbrechen" }] });
     if (ok === "pick") { if (window.V130) window.V130.trackDialog(); return; }
     if (ok !== true) return;
