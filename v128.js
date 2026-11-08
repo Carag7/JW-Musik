@@ -30,6 +30,7 @@
     if (/^sv_/.test(k) || k === "svHints") { applySV(); return; }
     if (k === "teslaTab") { try { window.V130 && V130.applyTeslaMode(true); } catch { /* egal */ } return; }
     if (k === "mediaKeys" || k === "mediaHold") { try { setMediaSession(state.songs[state.index]); } catch { /* egal */ } return; }
+    if (/^sim/.test(k)) { try { renderList(); window.V131 && V131.paintBtn(); } catch { /* egal */ } return; }
     try { applyTarget([{ key: k, val: v }], true); } catch { /* egal */ }
   }
   function mCheck(key, label, def, hint, inverse) {
@@ -47,6 +48,13 @@
     const get = () => (getter ? getter() : lsv(key, def));
     s.value = get(); s.onchange = () => applyKey(key, s.value);
     l.append(s); l._sync = () => { s.value = get(); };
+    return [l, hint ? h("small", "set-hint", hint) : null];
+  }
+  function mNum(key, label, min, max, def, hint) {
+    const l = h("label", "set-row"); l.append(document.createTextNode(label + " "));
+    const i = h("input"); i.type = "number"; i.min = String(min); i.max = String(max); i.step = "1"; i.value = lsv(key, def);
+    i.onchange = () => { let v = Math.round(Number(i.value)); if (!(v >= min)) v = min; if (v > max) v = max; i.value = String(v); applyKey(key, String(v)); };
+    l.append(i); l._sync = () => { i.value = lsv(key, def); };
     return [l, hint ? h("small", "set-hint", hint) : null];
   }
   function mText(key, label, placeholder, hint) {
@@ -188,7 +196,10 @@
         ]),
         box("Ähnliche Lieder", [
           ...reg(mCheck("simBtn", "Knopf „Ähnliche Lieder“ in der Titelzeile des Players zeigen", "1", "Tippen: ähnliche Lieder spielen als Nächstes, wie eine Wiedergabeliste. Auch unter „Listen“ gibt es „Ähnliche Lieder“ mit Prozentwerten.")),
-          ...reg(mSelect("simMin", "Genauigkeit (Mindest-Ähnlichkeit)", [["60", "sehr genau – nur sehr ähnliche (ab 60 %)"], ["45", "genau (ab 45 %)"], ["30", "normal (ab 30 %)"], ["22", "locker (ab 22 %)"], ["15", "sehr locker (ab 15 %)"]], "30", "Je strenger, desto weniger Lieder. In „Listen“ gibt es dafür zusätzlich einen Schieberegler."))
+          ...reg(mSelect("simMin", "Genauigkeit (Mindest-Ähnlichkeit)", [["60", "sehr genau – nur sehr ähnliche (ab 60 %)"], ["45", "genau (ab 45 %)"], ["30", "normal (ab 30 %)"], ["22", "locker (ab 22 %)"], ["15", "sehr locker (ab 15 %)"]], "30", "Je strenger, desto weniger Lieder. In „Listen“ gibt es dafür zusätzlich einen Schieberegler.")),
+          ...reg(mCheck("simFill", "Zeilen als Füllstand färben (von links, wie ein liegendes Glas)", "1", "Jede Zeile wird zur Ähnlichkeit in Prozent von links gefüllt – gut lesbar im Auto. Aus: nur die Prozentzahl.")),
+          ...reg(mNum("simOpRef", "Deckung der Farbe beim Bezugslied (%)", 0, 100, "35")),
+          ...reg(mNum("simOpFill", "Deckung der Füllung bei den anderen Liedern (%)", 0, 100, "28"))
         ]),
         box("Fernsteuerung", [u("advRcIdle")]),
         $("listenBox")

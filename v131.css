@@ -22,3 +22,21 @@ body.sim-off #similarBtn{display:none}
 #syncLink { min-height: 2.6em; max-height: 90px; overflow: auto; box-sizing: border-box; }
 #qrLog { position: static; margin: 12px 0 8px; clear: both; }
 #qrLog > pre { max-height: 24vh; overflow: auto; }
+
+/* Handy quer: Player (auch im Bearbeitungsmodus mit Wellenform) deutlich flacher */
+@media (orientation: landscape) and (max-height: 480px) and (max-width: 1000px) and (pointer: coarse) {
+  html[data-theme], html { --flyer-h: 84px !important; }
+  .flyer { min-height: 0 !important; }
+  .flyer .spectrum { height: 24px !important; min-height: 0 !important; margin: 2px 0 0 !important; }
+  body.edit-mode .flyer { padding-top: 2px !important; padding-bottom: 2px !important; }
+}
+
+/* Ähnliche Lieder: Knopf im Player (Farbe folgt dem Design) */
+#similarBtn.sim-ref { background: var(--accent) !important; color: var(--on-accent, #111) !important; border-color: var(--accent) !important; }
+#similarBtn.sim-play { background: color-mix(in srgb, var(--accent) 32%, transparent) !important; border-color: var(--accent) !important; }
+.sim-bar .sim-ref { width: 100%; margin: 0; }
+.sim-bar .sim-ref select { width: 100%; }
+.song-btn.sim-row { border-radius: 12px; }
+.sim-bar { padding: 8px 0; }
+.sim-bar > label.search-wrap.sim-ref { display: block; padding: 0; margin: 0; flex: 1 1 100%; }
+.sim-bar > label.search-wrap.sim-ref select { width: 100%; box-sizing: border-box; }

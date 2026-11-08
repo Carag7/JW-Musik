@@ -8,7 +8,7 @@
   let DATA = null, loading = null;
   const ID = "similar-auto";
   const thr = () => Math.max(10, Math.min(90, Number(lsv("simMin", "30")) || 30));
-  const cur = () => (window.state && state.songs[state.index]) || null;
+  const cur = () => (typeof state !== "undefined" && state.songs[state.index]) || null;
   function load() {
     if (DATA) return Promise.resolve(DATA);
     if (!loading) loading = fetch("aehnlich.json").then((r) => r.json()).then((j) => (DATA = j.s || {})).catch(() => { DATA = {}; });
@@ -36,6 +36,7 @@
       if (!pl) { pl = { id: ID, name: "", songs: [] }; state.playlists.push(pl); }
       pl.name = `Ähnlich zu „${ref.title}“`; pl.songs = songs;
       savePlaylists();
+      if (!prev) prev = { mode: state.mode, activePlaylist: state.activePlaylist, selectMode: state.selectMode };
       state.simOn = false; state.mode = "playlists"; state.activePlaylist = ID; state.selectMode = false;
       try { $("eigeneToggle").setAttribute("aria-pressed", "true"); $("playlistBar").hidden = false; } catch { /* egal */ }
       fillPlaylists(); renderList();
@@ -45,24 +46,49 @@
     });
   }
 
-  /* Knopf im Player */
+  /* Knopf im Player: 1. Tippen = Bezugslied wählen und „Listen → Ähnliche Lieder“ öffnen, 2. Tippen = zurück */
+  let prev = null;
+  const active = () => (state.simOn && state.mode === "playlists") || (state.mode === "playlists" && state.activePlaylist === ID);
+  function undo() {
+    const p = prev || { mode: "songs", activePlaylist: "", selectMode: false }; prev = null;
+    state.simOn = false; state.mode = p.mode; state.activePlaylist = p.activePlaylist; state.selectMode = p.selectMode;
+    try {
+      $("eigeneToggle").setAttribute("aria-pressed", p.mode === "playlists" ? "true" : "false");
+      $("playlistBar").hidden = p.mode !== "playlists";
+      if (p.mode !== "playlists") $("menuToggle").click();
+    } catch { /* egal */ }
+    fillPlaylists(); renderList(); try { updateEditTools(); } catch { /* egal */ }
+  }
   function ensureBtn() {
     let b = $("similarBtn"); if (b) return b;
     const row = $("titleRow"); if (!row) return null;
-    b = h("button", "star-btn sim-btn", "≈"); b.id = "similarBtn"; b.type = "button"; b.title = "Ähnliche Lieder als Nächstes spielen"; b.setAttribute("aria-label", "Ähnliche Lieder");
-    b.onclick = () => playSimilar();
+    b = h("button", "star-btn sim-btn", "≈"); b.id = "similarBtn"; b.type = "button"; b.title = "Ähnliche Lieder (nochmal tippen = zurück)"; b.setAttribute("aria-label", "Ähnliche Lieder");
+    b.onclick = () => {
+      if (active()) { undo(); return; }
+      const c = cur(); if (!c || c.extra) { try { showToast("Für dieses Lied gibt es keine Ähnlichkeitsdaten"); } catch { /* egal */ } return; }
+      prev = { mode: state.mode, activePlaylist: state.activePlaylist, selectMode: state.selectMode };
+      state.simRef = c.number;
+      if (!(state.mode === "playlists" && state.sidebarOpen)) { $("eigeneToggle").click(); }
+      startSim(true);
+    };
     row.append(b); return b;
   }
-  const paintBtn = () => { const b = ensureBtn(); document.body.classList.toggle("sim-off", lsv("simBtn", "1") !== "1"); if (b) b.hidden = false; };
+  const paintBtn = () => {
+    const b = ensureBtn(); document.body.classList.toggle("sim-off", lsv("simBtn", "1") !== "1");
+    if (!b) return;
+    const c = cur();
+    b.classList.toggle("sim-ref", !!(state.simOn && state.mode === "playlists" && c && state.simRef === c.number));
+    b.classList.toggle("sim-play", !!(state.mode === "playlists" && state.activePlaylist === ID));
+  };
 
   /* Liste: Ähnliche Lieder zum gewählten Lied */
   function bar() {
     let b = $("simBar"); if (b) return b;
     const pb = $("playlistBar"); if (!pb) return null;
     b = h("div", "sim-bar"); b.id = "simBar"; b.hidden = true;
-    const lab = h("label", "sim-ref"); lab.append(h("span", "", "Lied: "));
+    const lab = h("label", "search-wrap sim-ref"); lab.append(h("span", "sr-only", "Bezugslied"));
     const sel = h("select"); sel.id = "simRef"; lab.append(sel);
-    const rg = h("label", "sim-rng"); rg.append(h("span", "", "Genauigkeit: "));
+    const rg = h("label", "sim-rng"); rg.append(h("span", "", "Genauigkeit "));
     const r = h("input"); r.type = "range"; r.min = "10"; r.max = "80"; r.step = "1"; r.id = "simRange";
     const o = h("output"); o.id = "simOut"; rg.append(r, o);
     const cnt = h("small", "sim-cnt"); cnt.id = "simCnt";
@@ -82,20 +108,27 @@
     sel.value = String(state.simRef); $("simRange").value = String(thr()); $("simOut").textContent = thr() + " %";
     $("simCnt").textContent = similar(state.simRef, thr()).length + " Lieder";
   }
-  function startSim() {
+  function startSim(keepRef) {
     load().then(() => {
+      if (!prev) prev = { mode: "songs", activePlaylist: "", selectMode: false };
       state.simOn = true; state.activePlaylist = ""; state.selectMode = false;
-      const c = cur(); if (!state.simRef) state.simRef = c && !c.extra ? c.number : 1;
+      const c = cur(); if (!keepRef && !state.simRef) state.simRef = c && !c.extra ? c.number : 1;
+      if (keepRef && c && !c.extra) state.simRef = c.number;
       fillPlaylists(); renderList();
     });
   }
   function badges() {
     if (!(state.simOn && state.mode === "playlists" && DATA)) return;
     const m = simOf(state.simRef);
-    document.querySelectorAll("#songList .song-btn, .song-list .song-btn").forEach((btn) => {
+    const fill = lsv("simFill", "1") === "1";
+    const opR = Math.max(0, Math.min(100, Number(lsv("simOpRef", "35")))), opF = Math.max(0, Math.min(100, Number(lsv("simOpFill", "28"))));
+    document.querySelectorAll("#songList .song-btn").forEach((btn) => {
       const s = state.songs.find((x) => x.id === btn.dataset.id); if (!s) return;
-      const i = h("em", "sim-pct", s.number === state.simRef ? "Bezug" : (m.get(s.number) || 0) + " %");
-      btn.append(i);
+      const isRef = s.number === state.simRef, p = m.get(s.number) || 0;
+      btn.append(h("em", "sim-pct", isRef ? "Bezug" : p + " %"));
+      btn.classList.add("sim-row");
+      if (isRef) btn.style.background = `color-mix(in srgb, var(--accent) ${opR}%, transparent)`;
+      else if (fill) { const c = `color-mix(in srgb, var(--accent) ${opF}%, transparent)`; btn.style.background = `linear-gradient(to right, ${c} 0, ${c} ${p}%, transparent ${p}%)`; }
     });
   }
 
@@ -109,7 +142,7 @@
   });
   wrap("renderList", (orig) => function () {
     const r = orig.apply(this, arguments);
-    try { paintBar(); badges(); } catch { /* egal */ }
+    try { paintBar(); badges(); paintBtn(); } catch { /* egal */ }
     return r;
   });
   wrap("fillPlaylists", (orig) => function () {
@@ -119,7 +152,7 @@
       if (box) {
         const chip = h("button", "chip sim-chip", "Ähnliche Lieder"); chip.type = "button";
         if (state.simOn) { chip.setAttribute("aria-pressed", "true"); box.querySelectorAll(".chip[aria-pressed=true]").forEach((c) => { if (c !== chip) c.removeAttribute("aria-pressed"); }); }
-        chip.onclick = (e) => { e.stopPropagation(); startSim(); };
+        chip.onclick = (e) => { e.stopPropagation(); prev = prev || { mode: "playlists", activePlaylist: state.activePlaylist, selectMode: false }; startSim(); };
         box.prepend(chip);
         box.querySelectorAll(".chip:not(.sim-chip)").forEach((c) => c.addEventListener("click", () => { state.simOn = false; }, true));
       }
@@ -127,14 +160,29 @@
     } catch { /* egal */ }
     return r;
   });
+  wrap("updateEditTools", (orig) => function () {
+    const r = orig.apply(this, arguments);
+    try { const e = $("playlistEdit"); if (e && state.activePlaylist === ID) e.hidden = true; } catch { /* egal */ }
+    return r;
+  });
+  /* Neue Benutzer: Liste „meine Liste“, falls noch keine eigene Wiedergabeliste existiert */
+  function defaultList() {
+    try {
+      if (typeof state === "undefined" || !Array.isArray(state.playlists)) return;
+      if (state.playlists.some((l) => l.id !== ID)) { lssv("defListDone", "1"); return; }
+      if (lsv("defListDone", "0") === "1") return;
+      state.playlists.push({ id: "meine-liste", name: "meine Liste", songs: [] });
+      savePlaylists();
+    } catch { /* egal */ }
+  }
   wrap("selectSong", (orig) => function () {
     const r = orig.apply(this, arguments);
-    try { const c = cur(); if (c && !c.extra && !state.simOn) state.simRef = c.number; } catch { /* egal */ }
+    try { const c = cur(); if (c && !c.extra && !state.simOn) state.simRef = c.number; paintBtn(); } catch { /* egal */ }
     return r;
   });
   ["menuToggle", "ludwtToggle"].forEach((id) => { const b = $(id); if (b) b.addEventListener("click", () => { state.simOn = false; }, true); });
   window.V131 = { playSimilar, similar, load, paintBtn };
-  const boot = () => { paintBtn(); load(); };
+  const boot = () => { paintBtn(); load(); [2500, 6000, 12000].forEach((t) => setTimeout(() => { defaultList(); try { fillPlaylists(); } catch { /* egal */ } }, t)); };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
   window.addEventListener("storage", paintBtn);
 })();
