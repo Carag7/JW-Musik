@@ -157,3 +157,32 @@ html[data-selsize="gross"] .tz-row .tz-l, html[data-selsize="sehr"] .tz-row .tz-
 /* Einstellungsfenster beginnt unter der Kopfleiste, falls diese darüber liegt (Suchfeld nicht verdeckt) */
 #codeModal { padding-top: max(var(--set-off, 0px), var(--set-auto, 0px)); }
 #codeModal .login-card, #codeModal .login-card.has-ludwt { max-height: calc(var(--vvh, 100dvh) - max(var(--set-off, 0px), var(--set-auto, 0px)) - 12px) !important; }
+
+/* Zeiten übertragen: Auswahlliste */
+.zt-tools { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+.zt-list { max-height: 52vh; overflow: auto; border: 1px solid var(--line, #888); border-radius: 12px; margin: 6px 0 10px; }
+.zt-row { display: grid; grid-template-columns: 28px minmax(0, 1fr) 80px; gap: 4px 10px; align-items: center; padding: 8px 10px; border-bottom: 1px solid var(--line, #888); cursor: pointer; }
+.zt-row input { width: 22px; height: 22px; }
+.zt-row.warn { background: color-mix(in srgb, var(--accent, #e8912d) 10%, transparent); }
+.zt-m { display: flex; flex-direction: column; min-width: 0; }
+.zt-m small { color: var(--muted, #888); }
+.zt-bar { height: 10px; border-radius: 5px; background: color-mix(in srgb, var(--muted, #888) 20%, transparent); overflow: hidden; }
+.zt-bar i { display: block; height: 100%; background: var(--accent, #e8912d); }
+.zt-pc { grid-column: 2 / -1; font-size: 12px; color: var(--muted, #888); }
+
+/* Große Auswahl im Thema Tesla (ersetzt das kleine Systemmenü) */
+.tz-pickwrap { display: inline-flex; max-width: 62%; flex: 0 1 auto; }
+.tz-pick { display: inline-flex !important; align-items: center; justify-content: space-between; gap: 12px; width: 100%; text-align: left; cursor: pointer; border: 2px solid var(--line); background: var(--panel-2, rgba(255,255,255,.06)); color: var(--text, inherit); min-height: 72px !important; font-size: 24px !important; font-weight: 700; padding: 0 18px !important; border-radius: 16px !important; max-width: 100% !important; }
+.tz-pick .tz-pl { flex: 1 1 auto; min-width: 0; white-space: normal; line-height: 1.2; }
+.tz-pick .tz-pa { flex: none; font-size: 26px; opacity: .8; }
+html[data-selsize="gross"] .tz-pick { min-height: 84px !important; font-size: 28px !important; }
+html[data-selsize="sehr"] .tz-pick { min-height: 100px !important; font-size: 32px !important; }
+html[data-selsize="riesig"] .tz-pick { min-height: 120px !important; font-size: 38px !important; }
+.tz-ov { position: fixed; inset: 0; z-index: 500; background: rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center; padding: 16px; box-sizing: border-box; }
+.tz-ovc { width: min(720px, 100%); max-height: 92vh; overflow: auto; background: var(--panel, #1c2230); color: var(--text, #fff); border: 2px solid var(--line, #888); border-radius: 20px; padding: 14px; display: flex; flex-direction: column; gap: 10px; box-sizing: border-box; }
+.tz-ovt { margin: 4px 6px 0; font-size: 22px; font-weight: 800; color: var(--accent); }
+.tz-opt { min-height: 84px; font: inherit; font-size: 30px; font-weight: 700; text-align: left; padding: 10px 22px; border-radius: 16px; border: 2px solid var(--line, #888); background: var(--panel-2, rgba(255,255,255,.06)); color: inherit; cursor: pointer; }
+.tz-opt[aria-pressed="true"] { background: var(--accent); color: var(--on-accent, #111); border-color: var(--accent); }
+.tz-cancel { text-align: center; opacity: .85; }
+html[data-selsize="sehr"] .tz-opt { min-height: 100px; font-size: 34px; }
+html[data-selsize="riesig"] .tz-opt { min-height: 120px; font-size: 40px; }

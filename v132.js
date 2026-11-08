@@ -29,8 +29,8 @@
     const S = parse(a), T = parse(b);
     if (!S.length || !T.length) return { err: "Ein Text konnte nicht gelesen werden." };
     const rows = transfer(S, T), same = S.length === T.length;
-    const diff = rows.filter((r) => Math.abs(r.time - r.old) > 0.05).length;
-    return { S, T, rows, same, diff, tgtRaw: b };
+    const dev = rows.map((r) => Math.abs(r.time - r.old)), diff = dev.filter((x) => x > 0.05).length;
+    return { S, T, rows, same, diff, tgtRaw: b, pct: Math.round((diff / rows.length) * 100), avg: dev.reduce((a, x) => a + x, 0) / dev.length, max: Math.max(...dev) };
   }
   async function putLrc(kind, id, lrc, keyRef) {
     for (let tries = 0; tries < 3; tries++) {
@@ -94,22 +94,39 @@
     const chk = h("button", "chip", "Alle Lieder prüfen"); chk.type = "button"; const res = h("div", "zt-res");
     chk.onclick = async () => {
       chk.disabled = true; res.replaceChildren(h("small", "set-hint", "Prüfe …"));
-      const todo = [];
+      const cand = [];
       for (let i = 0; i < songs.length; i++) {
         res.firstChild.textContent = `Prüfe … ${i + 1} / ${songs.length}`;
-        const q = await plan(songs[i].id, d); if (q.err || !q.same || !q.diff) continue; todo.push({ id: songs[i].id, title: songs[i].title, q });
+        const q = await plan(songs[i].id, d); if (q.err || !q.diff) continue; cand.push({ id: songs[i].id, title: songs[i].title, q });
       }
       chk.disabled = false; res.replaceChildren();
-      if (!todo.length) { res.append(h("small", "set-hint", "Nichts zu übertragen: überall gleich oder nicht möglich.")); return; }
-      res.append(h("p", "", `${todo.length} Lieder: ${todo.map((t) => t.id).join(", ")}`));
-      const run = h("button", "chip danger", `Alle ${todo.length} Lieder übertragen`); run.type = "button";
+      if (!cand.length) { res.append(h("small", "set-hint", "Nichts zu übertragen: überall gleich oder nicht möglich (Text fehlt).")); return; }
+      cand.sort((x, y) => (y.q.same - x.q.same) || (y.q.pct - x.q.pct));
+      res.append(h("p", "", `${cand.length} Lieder haben abweichende Zeiten (${d.fl} → ${d.tl}). Wähle aus, welche übertragen werden sollen.`));
+      const run = h("button", "chip danger", "Ausgewählte übertragen"); run.type = "button";
+      const tools = h("div", "zt-tools");
+      const list = h("div", "zt-list"); const cbs = [];
+      const upd = () => { const n = cbs.filter((c) => c.checked).length; run.textContent = `${n} ausgewählte Lieder übertragen`; run.disabled = !n; };
+      const setAll = (f) => { cbs.forEach((c, i) => { c.checked = f(cand[i]); }); upd(); };
+      [["Alle auswählen", () => true], ["Keine", () => false], ["Nur gleiche Zeilenzahl", (c) => c.q.same]].forEach(([n, f]) => { const b2 = h("button", "chip", n); b2.type = "button"; b2.onclick = () => setAll(f); tools.append(b2); });
+      cand.forEach((c) => {
+        const row = h("label", "zt-row" + (c.q.same ? "" : " warn")); const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = c.q.same; cb.onchange = upd; cbs.push(cb);
+        const t = h("span", "zt-t"); t.append(h("b", "", `${c.id} `), document.createTextNode(c.title));
+        const info = h("small", "", c.q.same ? `${c.q.S.length} Zeilen` : `Zeilenzahl ${d.fl} ${c.q.S.length} ≠ ${d.tl} ${c.q.T.length}`);
+        const bar = h("span", "zt-bar"); const fill = h("i"); fill.style.width = Math.max(4, c.q.pct) + "%"; bar.append(fill);
+        const pc = h("span", "zt-pc", `${c.q.pct} % · Ø ${c.q.avg.toFixed(1).replace(".", ",")} s · max ${c.q.max.toFixed(1).replace(".", ",")} s`);
+        const mid = h("span", "zt-m"); mid.append(t, info); row.append(cb, mid, bar, pc); list.append(row);
+      });
+      upd();
       run.onclick = async () => {
-        if (!(await uiConfirm({ eyebrow: "Zeiten übertragen", title: `${todo.length} Lieder übertragen?`, lines: [`In ${todo.length} ${d.tl}en Texten werden die Zeiten durch die ${d.fl}en ersetzt und auf dem Server gespeichert.`, "Die bisherigen Fassungen bleiben im KI-Verlauf."], ok: "Alle übertragen", danger: true }))) return;
-        const keyRef = { k: "" }; let ok = 0, bad = "";
+        const todo = cand.filter((_, i) => cbs[i].checked); if (!todo.length) return;
+        const warn = todo.filter((t) => !t.q.same).length;
+        if (!(await uiConfirm({ eyebrow: "Zeiten übertragen", title: `${todo.length} Lieder übertragen?`, lines: [`In ${todo.length} ${d.tl}en Texten werden die Zeiten durch die ${d.fl}en ersetzt und auf dem Server gespeichert.`, warn ? `${warn} davon haben eine andere Zeilenzahl – bitte danach prüfen.` : "", "Die bisherigen Fassungen bleiben im KI-Verlauf."].filter(Boolean), ok: "Übertragen", danger: true }))) return;
+        const keyRef = { k: "" }; let ok = 0, bad = ""; run.disabled = true;
         for (const t of todo) { run.textContent = `Speichere ${ok + 1} / ${todo.length} …`; const r = await saveOne(t.id, d, t.q, keyRef); if (r === "ok") ok++; else { bad = r; break; } }
-        run.textContent = `${ok} von ${todo.length} gespeichert`; if (bad && bad !== "abbruch") await uiAlert("Speichern", bad);
+        run.textContent = `${ok} von ${todo.length} gespeichert`; run.disabled = false; if (bad && bad !== "abbruch") await uiAlert("Speichern", bad);
       };
-      res.append(run);
+      res.append(tools, list, run);
     };
     all.append(chk, res); box.append(all);
   }

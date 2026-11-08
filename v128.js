@@ -275,6 +275,28 @@
     new MutationObserver(() => { syncers.forEach((f) => { try { f(); } catch { /* egal */ } }); }).observe($("codeModal"), { attributes: true, attributeFilter: ["hidden"] });
   }
 
+  /* Große Auswahl statt des kleinen Systemmenüs: Knopf mit dem aktuellen Wert, Antippen öffnet eine Liste mit sehr großer Schrift */
+  function pickify(sel) {
+    if (sel._pick) return; sel._pick = true;
+    const wrap = h("span", "tz-pickwrap"), btn = h("button", "tz-sel tz-pick"); btn.type = "button";
+    const label = () => { const o = sel.options[sel.selectedIndex]; return o ? o.textContent : ""; };
+    const paint = () => { btn.textContent = ""; btn.append(h("span", "tz-pl", label()), h("span", "tz-pa", "▾")); };
+    const d = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value");
+    Object.defineProperty(sel, "value", { get() { return d.get.call(sel); }, set(v) { d.set.call(sel, v); paint(); }, configurable: true });
+    sel.hidden = true; sel.style.display = "none";
+    btn.onclick = () => {
+      const ov = h("div", "tz-ov"), card = h("div", "tz-ovc");
+      const row = sel.closest(".tz-row"); card.append(h("p", "tz-ovt", row && row.querySelector(".tz-l") ? row.querySelector(".tz-l").textContent : ""));
+      const close = () => { ov.remove(); document.removeEventListener("keydown", esc, true); };
+      const esc = (e) => { if (e.key === "Escape") { e.stopPropagation(); close(); } };
+      [...sel.options].forEach((o) => { const b = h("button", "tz-opt", o.textContent); b.type = "button"; b.setAttribute("aria-pressed", String(o.value === sel.value)); b.onclick = () => { sel.value = o.value; sel.dispatchEvent(new Event("change", { bubbles: true })); paint(); close(); }; card.append(b); });
+      const x = h("button", "tz-opt tz-cancel", "Abbrechen"); x.type = "button"; x.onclick = close; card.append(x);
+      ov.append(card); ov.addEventListener("click", (e) => { if (e.target === ov) close(); });
+      document.addEventListener("keydown", esc, true); document.body.append(ov);
+    };
+    sel.before(wrap); wrap.append(btn, sel); paint();
+  }
+
   function teslaBox() {
     const b = h("div", "autoplay-box v128-box tz-box");
     b.append(h("p", "ap-title", "Tesla: schnell einstellen"));
@@ -317,6 +339,7 @@
     const row = h("div", "tz-btns");
     row.append(bigBtn("Seite neu laden", () => { const x = $("advReload"); if (x) x.click(); }), bigBtn("Design wählen", () => { const t = document.querySelector('#setTabs [data-settab="design"]'); if (t) t.click(); }), bigBtn("Schließen", () => { const x = $("codeX") || $("codeCancel"); if (x) x.click(); }));
     b.append(row);
+    b.querySelectorAll("select.tz-sel").forEach(pickify);
     return b;
   }
 
