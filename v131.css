@@ -25,7 +25,7 @@ body.sim-off #similarBtn{display:none}
 
 /* Handy quer: Player (auch im Bearbeitungsmodus mit Wellenform) deutlich flacher */
 @media (orientation: landscape) and (max-height: 480px) and (max-width: 1000px) and (pointer: coarse) {
-  html[data-theme], html { --flyer-h: 84px !important; }
+  .lyrics { padding-bottom: calc(var(--flyer-h) + 6px) !important; }
   .flyer { min-height: 0 !important; }
   .flyer .spectrum { height: 24px !important; min-height: 0 !important; margin: 2px 0 0 !important; }
   body.edit-mode .flyer { padding-top: 2px !important; padding-bottom: 2px !important; }
@@ -40,3 +40,10 @@ body.sim-off #similarBtn{display:none}
 .sim-bar { padding: 8px 0; }
 .sim-bar > label.search-wrap.sim-ref { display: block; padding: 0; margin: 0; flex: 1 1 100%; }
 .sim-bar > label.search-wrap.sim-ref select { width: 100%; box-sizing: border-box; }
+
+/* Einstellungssuche: Überschriften erkennbar */
+.set-hit { position: relative; }
+.set-hit .hit-kind { float: right; font-style: normal; font-size: 11px; padding: 1px 8px; border-radius: 999px; margin-left: 8px; background: color-mix(in srgb, var(--muted, #888) 25%, transparent); }
+.set-hit.is-head { border-left: 4px solid var(--accent); }
+.set-hit.is-head .hit-kind { background: var(--accent); color: var(--on-accent, #111); font-weight: 700; }
+.set-hit.is-head > b { text-transform: uppercase; letter-spacing: .03em; }

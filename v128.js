@@ -196,7 +196,9 @@
         ]),
         box("Ähnliche Lieder", [
           ...reg(mCheck("simBtn", "Knopf „Ähnliche Lieder“ in der Titelzeile des Players zeigen", "1", "Tippen: ähnliche Lieder spielen als Nächstes, wie eine Wiedergabeliste. Auch unter „Listen“ gibt es „Ähnliche Lieder“ mit Prozentwerten.")),
-          ...reg(mSelect("simMin", "Genauigkeit (Mindest-Ähnlichkeit)", [["60", "sehr genau – nur sehr ähnliche (ab 60 %)"], ["45", "genau (ab 45 %)"], ["30", "normal (ab 30 %)"], ["22", "locker (ab 22 %)"], ["15", "sehr locker (ab 15 %)"]], "30", "Je strenger, desto weniger Lieder. In „Listen“ gibt es dafür zusätzlich einen Schieberegler.")),
+          ...reg(mSelect("simMin", "Genauigkeit (Mindest-Ähnlichkeit)", [["auto", "Automatik – immer die ähnlichsten N Lieder"], ["60", "sehr genau – nur sehr ähnliche (ab 60 %)"], ["45", "genau (ab 45 %)"], ["30", "normal (ab 30 %)"], ["22", "locker (ab 22 %)"], ["15", "sehr locker (ab 15 %)"]], "30", "Je strenger, desto weniger Lieder. In „Listen“ gibt es dafür zusätzlich einen Schieberegler.")),
+          ...reg(mNum("simTop", "Automatik: Anzahl der ähnlichsten Lieder", 1, 60, "10", "Gilt bei Genauigkeit „Automatik“, z. B. die 10 oder 5 ähnlichsten.")),
+          ...reg(mCheck("simPct", "Prozentzahl bei jedem Lied anzeigen", "1")),
           ...reg(mCheck("simFill", "Zeilen als Füllstand färben (von links, wie ein liegendes Glas)", "1", "Jede Zeile wird zur Ähnlichkeit in Prozent von links gefüllt – gut lesbar im Auto. Aus: nur die Prozentzahl.")),
           ...reg(mNum("simOpRef", "Deckung der Farbe beim Bezugslied (%)", 0, 100, "35")),
           ...reg(mNum("simOpFill", "Deckung der Füllung bei den anderen Liedern (%)", 0, 100, "28"))

@@ -18,10 +18,14 @@
   function simOf(n) {
     const m = new Map(); const row = DATA && DATA[String(n)]; if (row) row.forEach(([k, p]) => m.set(Number(k), p)); return m;
   }
+  const auto = () => lsv("simMin", "30") === "auto";
+  const topN = () => Math.max(1, Math.min(60, Number(lsv("simTop", "10")) || 10));
   function similar(n, min) {
     const m = simOf(n); const out = [];
-    state.songs.forEach((s) => { if (!s.extra && s.number !== n && m.get(s.number) >= min) out.push([s, m.get(s.number)]); });
-    return out.sort((a, b) => b[1] - a[1]);
+    const lim = auto() ? 1 : min;
+    state.songs.forEach((s) => { if (!s.extra && s.number !== n && m.get(s.number) >= lim) out.push([s, m.get(s.number)]); });
+    out.sort((a, b) => b[1] - a[1]);
+    return auto() ? out.slice(0, topN()) : out;
   }
   const titleOf = (s) => (s ? `${s.id} ${s.title}` : "");
 
@@ -96,6 +100,9 @@
     b.append(lab, rg, cnt, play);
     sel.onchange = () => { state.simRef = Number(sel.value); renderList(); };
     r.oninput = () => { lssv("simMin", r.value); renderList(); };
+    const ab = h("button", "chip", "Auto"); ab.type = "button"; ab.id = "simAuto"; ab.title = "Automatik: immer etwa die ähnlichsten Lieder (Anzahl in den Einstellungen)";
+    ab.onclick = () => { lssv("simMin", auto() ? "30" : "auto"); renderList(); };
+    rg.append(ab);
     play.onclick = () => playSimilar(state.songs.find((s) => s.number === state.simRef));
     pb.after(b); return b;
   }
@@ -105,7 +112,7 @@
     b.hidden = !on; if (!on) return;
     const sel = $("simRef");
     if (!sel.options.length) state.songs.filter((s) => !s.extra).forEach((s) => { const o = h("option", "", titleOf(s)); o.value = s.number; sel.append(o); });
-    sel.value = String(state.simRef); $("simRange").value = String(thr()); $("simOut").textContent = thr() + " %";
+    sel.value = String(state.simRef); $("simRange").value = String(thr()); $("simRange").disabled = auto(); $("simOut").textContent = auto() ? "Auto: " + topN() : thr() + " %"; $("simAuto").setAttribute("aria-pressed", auto() ? "true" : "false");
     $("simCnt").textContent = similar(state.simRef, thr()).length + " Lieder";
   }
   function startSim(keepRef) {
@@ -114,7 +121,7 @@
       state.simOn = true; state.activePlaylist = ""; state.selectMode = false;
       const c = cur(); if (!keepRef && !state.simRef) state.simRef = c && !c.extra ? c.number : 1;
       if (keepRef && c && !c.extra) state.simRef = c.number;
-      fillPlaylists(); renderList();
+      fillPlaylists(); renderList(); try { updateEditTools(); } catch { /* egal */ }
     });
   }
   function badges() {
@@ -125,7 +132,7 @@
     document.querySelectorAll("#songList .song-btn").forEach((btn) => {
       const s = state.songs.find((x) => x.id === btn.dataset.id); if (!s) return;
       const isRef = s.number === state.simRef, p = m.get(s.number) || 0;
-      btn.append(h("em", "sim-pct", isRef ? "Bezug" : p + " %"));
+      if (lsv("simPct", "1") === "1" || isRef) btn.append(h("em", "sim-pct", isRef ? "Bezug" : p + " %"));
       btn.classList.add("sim-row");
       if (isRef) btn.style.background = `color-mix(in srgb, var(--accent) ${opR}%, transparent)`;
       else if (fill) { const c = `color-mix(in srgb, var(--accent) ${opF}%, transparent)`; btn.style.background = `linear-gradient(to right, ${c} 0, ${c} ${p}%, transparent ${p}%)`; }
@@ -162,7 +169,7 @@
   });
   wrap("updateEditTools", (orig) => function () {
     const r = orig.apply(this, arguments);
-    try { const e = $("playlistEdit"); if (e && state.activePlaylist === ID) e.hidden = true; } catch { /* egal */ }
+    try { const e = $("playlistEdit"); if (e && (state.activePlaylist === ID || state.simOn)) e.hidden = true; } catch { /* egal */ }
     return r;
   });
   /* Neue Benutzer: Liste „meine Liste“, falls noch keine eigene Wiedergabeliste existiert */
@@ -181,6 +188,17 @@
     return r;
   });
   ["menuToggle", "ludwtToggle"].forEach((id) => { const b = $(id); if (b) b.addEventListener("click", () => { state.simOn = false; }, true); });
+  /* Handy quer: --flyer-h = tatsächliche Höhe des Players (kein Leerraum darunter) */
+  function flyerFit() {
+    try {
+      const root = document.documentElement, f = document.querySelector(".flyer");
+      const mq = matchMedia("(orientation: landscape) and (max-height: 480px) and (max-width: 1000px) and (pointer: coarse)").matches;
+      if (!mq || !f || getComputedStyle(f).display === "none") { root.style.removeProperty("--flyer-h"); return; }
+      root.style.setProperty("--flyer-h", Math.ceil(f.getBoundingClientRect().height) + "px", "important");
+    } catch { /* egal */ }
+  }
+  try { const f = document.querySelector(".flyer"); if (f && window.ResizeObserver) new ResizeObserver(flyerFit).observe(f); } catch { /* egal */ }
+  window.addEventListener("resize", flyerFit); window.addEventListener("orientationchange", () => setTimeout(flyerFit, 300)); setTimeout(flyerFit, 500);
   window.V131 = { playSimilar, similar, load, paintBtn };
   const boot = () => { paintBtn(); load(); [2500, 6000, 12000].forEach((t) => setTimeout(() => { defaultList(); try { fillPlaylists(); } catch { /* egal */ } }, t)); };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();

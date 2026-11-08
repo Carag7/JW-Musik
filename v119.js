@@ -115,7 +115,7 @@
       const add = (node, tab, where, label, hay, topic) => {
         if (!words.every((w) => hay.includes(w))) return;
         const key = tab + "|" + label; if (seen.has(key)) return; seen.add(key);
-        hits.push({ node, tab, where, label, topic, score: norm(label).includes(q) ? 0 : 1 });
+        hits.push({ node, head: node.matches(".ap-title, .set-h, .set-grp, h3, h4, summary"), tab, where, label, topic, score: norm(label).includes(q) ? 0 : 1 });
       };
       document.querySelectorAll('#codeForm [data-topic-box]').forEach((box) => units(box).forEach((u) => {
         if (u.classList.contains("set-hint") && !u.previousElementSibling) return;
@@ -136,7 +136,8 @@
         const b = document.createElement("button"); b.type = "button"; b.className = "set-hit";
         const l = document.createElement("b"); l.textContent = o.label.length > 90 ? o.label.slice(0, 90) + " …" : o.label;
         const s = document.createElement("small"); s.textContent = [tabName(o.tab), o.where].filter(Boolean).join(" › ");
-        b.append(l, s);
+        const k = document.createElement("em"); k.className = "hit-kind"; k.textContent = o.head ? "Überschrift" : "Einstellung"; if (o.head) b.classList.add("is-head");
+        b.append(k, l, s);
         b.addEventListener("click", () => {
           const tb = document.querySelector(`#setTabs [data-settab="${o.tab}"]`); if (tb) tb.click();
           setTimeout(() => {
