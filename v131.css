@@ -47,3 +47,46 @@ body.sim-off #similarBtn{display:none}
 .set-hit.is-head { border-left: 4px solid var(--accent); }
 .set-hit.is-head .hit-kind { background: var(--accent); color: var(--on-accent, #111); font-weight: 700; }
 .set-hit.is-head > b { text-transform: uppercase; letter-spacing: .03em; }
+
+/* Genauigkeit-Zeile: Auto-Knopf rutscht in die nächste Zeile, statt zu verschwinden */
+.sim-bar { min-width: 0; }
+.sim-bar .sim-rng { flex-wrap: wrap; min-width: 0; }
+.sim-bar .sim-rng input[type=range] { flex: 1 1 110px; min-width: 80px; }
+.sim-bar .sim-rng .chip, .sim-bar .sim-rng output { flex: 0 0 auto; }
+.sim-bar .sim-cnt { white-space: nowrap; }
+.sim-bar .chip#simPlay { max-width: 100%; }
+/* Knopf „Ähnliche Lieder“ mit eigenem Farbton */
+#playlistButtons .sim-chip { background: color-mix(in srgb, var(--accent) 24%, var(--panel-2, transparent)); border-color: var(--accent); font-weight: 800; }
+#playlistButtons .sim-chip[aria-pressed="true"] { background: var(--accent); color: var(--on-accent, #111); }
+
+/* Handy hochkant: Kategorie/Status nicht mehr Buchstabe für Buchstabe, weniger Leerraum */
+@media (max-width: 700px) and (orientation: portrait) {
+  .stage > .now > .title-row { grid-column: 1 / 3 !important; grid-row: 1 !important; flex-wrap: wrap; row-gap: 4px; }
+  .stage > .now #currentCategory { grid-column: 1 !important; grid-row: 2 !important; align-self: center !important; white-space: nowrap; overflow-wrap: normal !important; }
+  .stage > .now #currentStatus { grid-column: 2 !important; grid-row: 2 !important; align-self: center !important; white-space: nowrap; overflow-wrap: normal !important; }
+  .stage > .now .cover-thumb { grid-row: 1 / span 2 !important; }
+  .lyrics { padding-top: 2px !important; }
+  .lyric-line { padding-top: 6px; padding-bottom: 6px; }
+  :root { --safe-bottom: calc(env(safe-area-inset-bottom, 0px) * 0.3); }
+  html[data-theme^="sk-pro"] .flyer { bottom: 4px !important; }
+  body.edit-mode .lyrics { padding-top: 0 !important; }
+  body.edit-mode .stage > .now { margin-bottom: 0; padding-bottom: 0; }
+}
+
+/* Handy quer: Cover-Galerie / Karussell kompakt */
+@media (orientation: landscape) and (max-height: 480px) and (pointer: coarse) {
+  .cg-top { padding: calc(4px + env(safe-area-inset-top, 0px)) 10px 2px; gap: 6px; flex-wrap: nowrap; }
+  .cg-top .cg-title { font-size: 18px; }
+  .cg-tools { flex-wrap: nowrap; overflow-x: auto; padding: 2px 10px 4px; gap: 6px; scrollbar-width: none; }
+  .cg-tools > * { flex: 0 0 auto; }
+  .cg-body.v-flow { padding-bottom: 54px; }
+  .cg-flow { padding-top: 8px; padding-bottom: 6px; }
+  .cg-fl img { max-height: min(calc(100vh - 175px), calc(var(--cg-size, 140px) * 2.6)) !important; }
+  .cg-cap { padding: 0 12px; }
+  .cg-cap .cg-bigplay, .cg-cap .cg-capc, .cg-cap .cg-capfav { display: none; }
+  .cg-capn { display: inline; margin-right: 8px; font-size: 11px; }
+  .cg-capt { display: inline; margin: 0; font-size: 15px; }
+  .cg-mini { padding: 3px 12px calc(3px + env(safe-area-inset-bottom, 0px) * .3); }
+  .cg-minithumb { height: 36px; }
+  .cg-minibtn.big { width: 38px; height: 38px; padding: 9px; }
+}

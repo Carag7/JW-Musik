@@ -161,7 +161,19 @@
         if (state.simOn) { chip.setAttribute("aria-pressed", "true"); box.querySelectorAll(".chip[aria-pressed=true]").forEach((c) => { if (c !== chip) c.removeAttribute("aria-pressed"); }); }
         chip.onclick = (e) => { e.stopPropagation(); prev = prev || { mode: "playlists", activePlaylist: state.activePlaylist, selectMode: false }; startSim(); };
         box.prepend(chip);
-        box.querySelectorAll(".chip:not(.sim-chip)").forEach((c) => c.addEventListener("click", () => { state.simOn = false; }, true));
+        box.querySelectorAll(".chip:not(.sim-chip)").forEach((c) => {
+          c.addEventListener("click", (e) => { if (c._lp) { e.stopImmediatePropagation(); e.preventDefault(); c._lp = false; return; } state.simOn = false; state.plEdit = false; }, true);
+          const l = state.playlists.find((x) => x.name === c.textContent && x.id !== ID);
+          if (!l) return;
+          let t = null; const stop = () => clearTimeout(t);
+          c.addEventListener("pointerdown", () => { stop(); t = setTimeout(() => {
+            c._lp = true; state.simOn = false; state.activePlaylist = l.id; state.plEdit = !(state.plEdit && state.activePlaylist === l.id && c.dataset.ed === "1");
+            fillPlaylists(); renderList(); try { updateEditTools(); } catch { /* egal */ }
+            const pe = $("playlistEdit"); if (pe) pe.hidden = false;
+          }, Math.max(2, Number(lsv("plHold", "2")) || 2) * 1000); });
+          ["pointerup", "pointerleave", "pointercancel"].forEach((ev) => c.addEventListener(ev, stop));
+          c.addEventListener("contextmenu", (e) => e.preventDefault());
+        });
       }
       const sel = $("playlistSelect"); if (sel && !sel._sim) { sel._sim = 1; sel.addEventListener("change", () => { state.simOn = false; }, true); }
     } catch { /* egal */ }
@@ -169,7 +181,7 @@
   });
   wrap("updateEditTools", (orig) => function () {
     const r = orig.apply(this, arguments);
-    try { const e = $("playlistEdit"); if (e && (state.activePlaylist === ID || state.simOn)) e.hidden = true; } catch { /* egal */ }
+    try { const e = $("playlistEdit"); if (e && (state.activePlaylist === ID || state.simOn)) e.hidden = true; else if (e && state.plEdit && state.activePlaylist) e.hidden = false; } catch { /* egal */ }
     return r;
   });
   /* Neue Benutzer: Liste „meine Liste“, falls noch keine eigene Wiedergabeliste existiert */
@@ -199,8 +211,14 @@
   }
   try { const f = document.querySelector(".flyer"); if (f && window.ResizeObserver) new ResizeObserver(flyerFit).observe(f); } catch { /* egal */ }
   window.addEventListener("resize", flyerFit); window.addEventListener("orientationchange", () => setTimeout(flyerFit, 300)); setTimeout(flyerFit, 500);
+  function quick() {
+    const box = document.querySelector("#toolsBox .adv-btns"); if (!box || $("advToStart")) return;
+    const mk = (id, txt, fn) => { const b = h("button", "chip", txt); b.id = id; b.type = "button"; b.onclick = () => { const c = $("codeModal"); if (c) c.hidden = true; try { fn(); } catch { /* egal */ } }; box.append(b); };
+    mk("advToStart", "Startseite öffnen", () => window.V116 && V116.toStart());
+    mk("advToGal", "Galerie öffnen", () => window.COVERS && COVERS.openGallery());
+  }
   window.V131 = { playSimilar, similar, load, paintBtn };
-  const boot = () => { paintBtn(); load(); [2500, 6000, 12000].forEach((t) => setTimeout(() => { defaultList(); try { fillPlaylists(); } catch { /* egal */ } }, t)); };
+  const boot = () => { paintBtn(); load(); quick(); [2500, 6000, 12000].forEach((t) => setTimeout(() => { defaultList(); try { fillPlaylists(); } catch { /* egal */ } }, t)); };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
   window.addEventListener("storage", paintBtn);
 })();

@@ -203,6 +203,9 @@
           ...reg(mNum("simOpRef", "Deckung der Farbe beim Bezugslied (%)", 0, 100, "35")),
           ...reg(mNum("simOpFill", "Deckung der Füllung bei den anderen Liedern (%)", 0, 100, "28"))
         ]),
+        box("Eigene Wiedergabelisten", [
+          ...reg(mNum("plHold", "Lange drücken auf eine Liste (Sekunden, mind. 2) = Umbenennen/Löschen", 2, 10, "2", "Unter „Listen“ eine eigene Liste lange gedrückt halten, dann erscheinen Umbenennen und Löschen – ohne die Lupe einzuschalten. Nochmal lange drücken blendet sie wieder aus."))
+        ]),
         box("Fernsteuerung", [u("advRcIdle")]),
         $("listenBox")
       ] },
