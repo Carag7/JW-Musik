@@ -126,3 +126,27 @@ body:not(.sidebar-open) .egg-l { left: 10px; }
 .st-tab { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 13px; }
 .st-tab th, .st-tab td { padding: 4px 6px; border-bottom: 1px solid var(--line, #888); text-align: right; }
 .st-tab th:first-child, .st-tab td:first-child { text-align: left; }
+
+/* senkrechte Balken (Höhe = Anzahl) */
+.st-vb { display: flex; align-items: flex-end; gap: 6px; margin-top: 12px; padding: 0 2px; border-bottom: 1px solid var(--line, #888); min-height: calc(var(--vh, 120px) + 18px); }
+.st-vc { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; justify-content: flex-end; align-items: stretch; text-align: center; }
+.st-vc b { font-size: 12px; line-height: 1.2; }
+.st-vbar { border-radius: 5px 5px 0 0; }
+.st-vb { position: relative; margin-bottom: 30px; }
+.st-vc small { position: static; display: block; height: 0; overflow: visible; font-size: 10px; line-height: 1.1; margin-top: 4px; color: var(--muted, #888); word-break: break-word; }
+.st-sec h3 { margin: 14px 0 4px; }
+
+/* Tesla: Auswahlfelder und Zahlenfelder deutlich größer (gut treffbar im Auto) */
+body.tesla-ua #codeForm select, body.tesla-ua #codeForm .set-row input[type="number"], body.tesla-ua #codeForm .set-row input[type="text"],
+body.tesla-ua #codeForm .preset-field select, body.tesla-ua #codeForm .preset-field input:not([type="checkbox"]), #codeForm.sub-tesla select, #codeForm.sub-tesla .set-row input[type="number"],
+#codeForm.sub-tesla .preset-field select, #codeForm.sub-tesla .preset-field input:not([type="checkbox"]) {
+  min-height: 56px !important; font-size: 20px !important; padding: 0 14px !important; border-radius: 12px !important;
+}
+body.tesla-ua #codeForm .set-row input[type="number"], body.tesla-ua #codeForm .preset-field input[type="number"], #codeForm.sub-tesla .set-row input[type="number"], #codeForm.sub-tesla .preset-field input[type="number"] { width: 112px !important; }
+body.tesla-ua #codeForm .preset-field select, #codeForm.sub-tesla .preset-field select { max-width: 260px !important; min-width: 130px; }
+body.tesla-ua #codeForm .set-row select, #codeForm.sub-tesla .set-row select { min-width: 150px; }
+body.tesla-ua #codeForm .preset-field, #codeForm.sub-tesla .preset-field { font-size: 16px; }
+
+/* Einstellungsfenster beginnt unter der Kopfleiste, falls diese darüber liegt (Suchfeld nicht verdeckt) */
+#codeModal { padding-top: max(var(--set-off, 0px), var(--set-auto, 0px)); }
+#codeModal .login-card, #codeModal .login-card.has-ludwt { max-height: calc(var(--vvh, 100dvh) - max(var(--set-off, 0px), var(--set-auto, 0px)) - 12px) !important; }

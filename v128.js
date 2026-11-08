@@ -302,6 +302,8 @@
     sub("Tesla-Knopf in den Einstellungen");
     add((() => { const s = h("select", "tz-sel"); [["auto", "automatisch (im Tesla oben, sonst links in der Liste)"], ["top", "oben groß (neben Einstellungen)"], ["list", "links in der Liste (klein)"]].forEach(([v, n]) => { const o = h("option", "", n); o.value = v; s.append(o); });
       const paint = () => { s.value = lsv("teslaTab", "auto"); }; s.onchange = () => applyKey("teslaTab", s.value); return bigRow("Wo steht der Tesla-Knopf?", s, "Oben: großer blauer Knopf, gut im Auto zu treffen. Liste: kleiner Eintrag links wie die anderen Themen (Desktop).", paint); })());
+    add((() => { const s = h("select", "tz-sel"); [["auto", "automatisch (im Tesla: Tesla-Seite)"], ["tesla", "immer zuerst die Tesla-Seite"], ["last", "die zuletzt besuchte Seite"]].forEach(([v, n]) => { const o = h("option", "", n); o.value = v; s.append(o); });
+      const paint = () => { s.value = lsv("setStart", "auto"); }; s.onchange = () => applyKey("setStart", s.value); return bigRow("Beim Öffnen der Einstellungen zeigen", s, "Immer zuerst die Tesla-Seite, oder dort weitermachen, wo du zuletzt warst.", paint); })());
     sub("Tasten im Tesla-Player (unter den Fahrzeug-Infos)");
     add((() => { const s = h("select", "tz-sel"); [["step", "Lied vor / zurück"], ["seek", "Vor- / Zurückspulen"]].forEach(([v, n]) => { const o = h("option", "", n); o.value = v; s.append(o); });
       const paint = () => { s.value = lsv("mediaKeys", "step"); }; s.onchange = () => applyKey("mediaKeys", s.value); return bigRow("Die Tasten sollen sein", s, "Standard: Lied vor und Lied zurück. Danach ein Lied neu wählen.", paint); })());

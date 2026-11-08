@@ -217,8 +217,9 @@
     const mk = (id, txt, fn) => { const b = h("button", "chip", txt); b.id = id; b.type = "button"; b.onclick = () => { const c = $("codeModal"); if (c) c.hidden = true; try { fn(); } catch { /* egal */ } }; box.append(b); };
     mk("advToStart", "Startseite öffnen", () => window.V116 && V116.toStart());
     mk("advToGal", "Galerie öffnen", () => window.COVERS && COVERS.openGallery());
+    { const w = h("button", "chip danger", "Alle Browserdaten löschen"); w.id = "advWipe"; w.type = "button"; w.onclick = () => wipeAll(); box.append(w); }
     /* Reihenfolge: Neu laden · Startseite · Galerie · Anmeldefenster · Bearbeitungsmodus · Erweiterte Optionen */
-    ["advReload", "advToStart", "advToGal", "advStart", "advEdit", "advAdvanced"].forEach((i) => { const e = $(i); if (e) box.append(e); });
+    ["advReload", "advToStart", "advToGal", "advStart", "advEdit", "advAdvanced", "advWipe"].forEach((i) => { const e = $(i); if (e) box.append(e); });
   }
   /* Einstellungen öffnen: im Tesla (oder per Einstellung) sofort die Tesla-Seite */
   wrap("openCode", (orig) => function () {
@@ -247,6 +248,38 @@
   /* Suchfeld in den Einstellungen bleibt beim Tippen sichtbar */
   document.addEventListener("focusin", (e) => { if (e.target && e.target.id === "setSearch") setTimeout(() => { try { e.target.scrollIntoView({ block: "nearest" }); } catch { /* egal */ } }, 350); });
   window.V131 = { playSimilar, similar, load, paintBtn };
+  /* Einstellungsfenster liegt unter der Kopfleiste, wenn diese darüber gezeichnet wird (Handy hoch): Suchfeld bleibt sichtbar */
+  function setAuto() {
+    try {
+      const r = document.documentElement, tb = document.querySelector(".topbar"), m = $("codeModal");
+      if (!tb || !m || m.hidden) { r.style.setProperty("--set-auto", "0px"); return; }
+      const rc = tb.getBoundingClientRect();
+      if (rc.bottom <= 0 || getComputedStyle(tb).display === "none") { r.style.setProperty("--set-auto", "0px"); return; }
+      const st = document.elementsFromPoint(Math.min(innerWidth - 2, Math.round(rc.left + rc.width / 2)), Math.max(1, Math.round(rc.top + rc.height / 2)));
+      const it = st.findIndex((e) => e === tb || tb.contains(e)), im = st.findIndex((e) => e === m || m.contains(e));
+      r.style.setProperty("--set-auto", it >= 0 && (im < 0 || it < im) ? Math.ceil(rc.bottom) + "px" : "0px");
+    } catch { /* egal */ }
+  }
+  try { const m = $("codeModal"); if (m) new MutationObserver(() => setTimeout(setAuto, 30)).observe(m, { attributes: true, attributeFilter: ["hidden", "class"] }); } catch { /* egal */ }
+  try { const tb = document.querySelector(".topbar"); if (tb && window.ResizeObserver) new ResizeObserver(setAuto).observe(tb); } catch { /* egal */ }
+  window.addEventListener("resize", setAuto); window.addEventListener("orientationchange", () => setTimeout(setAuto, 300));
+  /* Alle Browserdaten löschen: Zustand wie im neuen Browser nach der ersten Anmeldung */
+  async function wipeAll() {
+    const ok = await uiConfirm({ eyebrow: "Achtung", title: "Alle Browserdaten löschen?", lines: ["Gelöscht werden alle Einstellungen, Design, Favoriten-Code, eigene Listen, Bewertungen und der gespeicherte Zwischenspeicher dieses Browsers.", "Danach startet die App wie in einem neuen Browser nach der ersten Anmeldung und zeigt die Startseite.", "Auf dem Server gespeicherte Daten bleiben erhalten."], ok: "Alles löschen", cancel: "Abbrechen", danger: true });
+    if (!ok) return;
+    const c = $("codeModal"); if (c) c.hidden = true;
+    try { localStorage.clear(); } catch { /* egal */ }
+    try { sessionStorage.clear(); } catch { /* egal */ }
+    try { document.cookie.split(";").forEach((k) => { const n = k.split("=")[0].trim(); if (n) document.cookie = n + "=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/"; }); } catch { /* egal */ }
+    try { if (window.caches) for (const k of await caches.keys()) await caches.delete(k); } catch { /* egal */ }
+    try { if (navigator.serviceWorker) for (const r of await navigator.serviceWorker.getRegistrations()) await r.unregister(); } catch { /* egal */ }
+    try { if (indexedDB.databases) for (const d of await indexedDB.databases()) if (d.name) indexedDB.deleteDatabase(d.name); } catch { /* egal */ }
+    /* angemeldet bleiben, wie nach dem ersten Login mit „im Browser speichern“ */
+    try { localStorage.setItem(STORAGE.auth, "ok"); } catch { /* egal */ }
+    if (window.V116 && V116.toStart) V116.toStart(); else location.reload();
+  }
+  window.V131.wipeAll = wipeAll;
+
   const boot = () => { if (/Tesla/i.test(navigator.userAgent)) document.body.classList.add("tesla-ua"); paintBtn(); load(); quick(); [2500, 6000, 12000].forEach((t) => setTimeout(() => { defaultList(); try { fillPlaylists(); } catch { /* egal */ } }, t)); };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
   window.addEventListener("storage", paintBtn);

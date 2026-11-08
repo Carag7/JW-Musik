@@ -592,5 +592,29 @@
     popup(keys, intro);
   }
 
-  window.FEHLEND = { mount, checkNew, showLast };
+  /* Zahlen für die Diagramme (Synchronisieren › Diagramme): beide Sprachen, je Art */
+  async function stats() {
+    const keep = optS("fehlLang", "en"), out = {};
+    try {
+      if (!state.media) await loadMedia(true);
+      for (const lg of ["en", "de"]) {
+        setOptS("fehlLang", lg); await loadData();
+        const m = model(), rows = [];
+        TYPES.forEach((t) => {
+          if (lg === "de" && (t.id === "instrumental" || t.id === "sung")) return;
+          const r = { id: t.id, name: t.name, total: m.rows.length, server: 0, pub: 0, ready: 0, none: 0, only: 0, lrc: 0, lrcMiss: 0, bytes: 0 };
+          m.rows.forEach((x) => {
+            const hv = m.has[t.id](x.n), pb = m.published(x.n, t.id), lr = m.lrc[t.lrc](x.n);
+            if (hv) { r.server++; r.bytes += sizeOf(x.n, t.id); if (lr) r.lrc++; else r.lrcMiss++; }
+            if (pb) r.pub++;
+            if (pb && !hv) r.ready++; else if (!pb && !hv) r.none++; else if (hv && !pb) r.only++;
+          });
+          rows.push(r);
+        });
+        out[lg] = { rows, stand: data.stand || null };
+      }
+    } finally { setOptS("fehlLang", keep); try { await loadData(); } catch { /* egal */ } }
+    return out;
+  }
+  window.FEHLEND = { mount, checkNew, showLast, stats };
 })();

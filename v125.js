@@ -449,6 +449,37 @@
     return svg;
   }
   const legend = (parts, tot) => { const l = h("div", "st-leg"); parts.forEach((p) => { const i = h("span", "st-l"); const d = h("i"); d.style.background = p.c; i.append(d, document.createTextNode(` ${p.n}: ${p.v}${tot ? " (" + Math.round((p.v / tot) * 100) + " %)" : ""}`)); l.append(i); }); return l; };
+  /* senkrechte Balken: Höhe = Anzahl (gemeinsame Skala, max = Gesamtzahl) */
+  function vbars(items, max, hpx) {
+    const w = h("div", "st-vb"); w.style.setProperty("--vh", hpx + "px");
+    items.forEach(([n, v, c]) => {
+      const col = h("div", "st-vc"); col.title = `${n}: ${v}`;
+      const bar = h("div", "st-vbar"); bar.style.height = (v > 0 ? Math.max(3, Math.round((v / (max || 1)) * hpx)) : 0) + "px"; bar.style.background = c;
+      col.append(h("b", "", String(v)), bar, h("small", "", n)); w.append(col);
+    });
+    return w;
+  }
+  async function mountSyncStat() {
+    const box = $("syncStatBox"); if (!box) return;
+    box.replaceChildren(h("p", "ap-title", "Diagramme: Lieder auf dem Server und auf jw.org"), h("small", "set-hint", "Lade Zahlen …"));
+    let st = null; try { st = window.FEHLEND && await FEHLEND.stats(); } catch (e) { console.error(e); }
+    box.replaceChildren(h("p", "ap-title", "Diagramme: Lieder auf dem Server und auf jw.org"));
+    if (!st || !state.media) { box.append(h("small", "set-hint bad", "Die Dateiliste vom Server konnte nicht geladen werden. Bitte später noch einmal versuchen.")); return; }
+    box.append(h("small", "set-hint", "„Server“ = Datei liegt in R2 · „jw.org“ = dort veröffentlicht · „zum Laden“ = auf jw.org, aber noch nicht auf dem Server · „fehlt“ = nirgends vorhanden · „nur Server“ = liegt im Server, aber nicht mehr auf jw.org · „Text“ = LRC-Datei vorhanden."));
+    [["en", "Englisch"], ["de", "Deutsch"]].forEach(([lg, ln]) => {
+      const sec = h("section", "st-sec"); sec.append(h("h3", "", ln));
+      const grid = h("div", "st-grid");
+      (st[lg] ? st[lg].rows : []).forEach((x) => {
+        const card = h("section", "st-card"); card.append(h("h4", "", x.name));
+        const pie = [{ n: "auf dem Server", v: x.server, c: COL.ok }, { n: "zum Laden bereit", v: x.ready, c: COL.orange }, { n: "fehlt", v: x.none, c: COL.miss }];
+        const pr = h("div", "st-pies"), p1 = h("div", "st-pie"); p1.append(donut(pie, 120, x.name + ": Server"), legend(pie, x.total)); pr.append(p1); card.append(pr);
+        card.append(vbars([["Server", x.server, COL.ok], ["jw.org", x.pub, COL.green], ["zum Laden", x.ready, COL.orange], ["fehlt", x.none, COL.miss], ["nur Server", x.only, COL.ed], ["Text", x.lrc, "#3bb0a6"], ["Text fehlt", x.lrcMiss, COL.red]], x.total, 120));
+        card.append(h("small", "set-hint", `Gesamt ${x.total} Lieder${x.bytes ? " · Speicher auf dem Server " + (x.bytes >= 1024 ** 3 ? (x.bytes / 1024 ** 3).toFixed(2) + " GB" : Math.round(x.bytes / 1024 ** 2) + " MB") : ""}`));
+        grid.append(card);
+      });
+      sec.append(grid); box.append(sec);
+    });
+  }
   async function mountStat() {
     const box = $("statBox"); if (!box) return;
     box.replaceChildren(h("p", "ap-title", "Diagramme: Stand der Karaoke-Texte"));
@@ -474,6 +505,7 @@
       const p1 = h("div", "st-pie"); p1.append(donut(ps, 120, x.name + ": Stand"), h("small", "", "Stand"), legend(ps, x.total));
       const p2 = h("div", "st-pie"); p2.append(donut(pa, 120, x.name + ": Ampel"), h("small", "", "Ampel"), legend(pa, x.have));
       pr.append(p1, p2); card.append(pr);
+      card.append(vbars([["vorhanden", x.have, COL.ok], ["bearbeitet", x.edited, COL.ed], ["grün", x.g, COL.green], ["orange", x.o, COL.orange], ["rot", x.r, COL.red], ["fehlt", x.miss, COL.miss]], x.total, 120));
       if (x.rated) card.append(h("small", "set-hint", `Bewertung der Texte: ${x.avg.toFixed(1).replace(".", ",")} ★ im Schnitt (${x.rated} Lieder bewertet)`));
       grid.append(card);
     });
@@ -495,7 +527,7 @@
   /* ---------- Reiter-Gruppen ---------- */
   const GRP = {
     daten: ["Sichern", [["abgleich", "Favoriten-Abgleich"], ["sichern", "Daten"]]],
-    sync: ["Synchronisieren", [["fehlend", "Fehlende Lieder"], ["ludwt", "Wochenlieder LuD+WT"]]],
+    sync: ["Synchronisieren", [["fehlend", "Fehlende Lieder"], ["syncstat", "Diagramme"], ["ludwt", "Wochenlieder LuD+WT"]]],
     bewert: ["Anpassungen", [["bew", "Bewertungen"], ["kihist", "KI-Verlauf"], ["stat", "Diagramme"]]]
   };
   const grpOf = (t) => Object.keys(GRP).find((g) => GRP[g][1].some((x) => x[0] === t)) || "";
@@ -513,7 +545,7 @@
     document.querySelectorAll("#setTabs [data-grp]").forEach((b) => { if (b._v125) return; b._v125 = true; b.addEventListener("click", () => showSetTab(lastSub[b.dataset.grp] || GRP[b.dataset.grp][1][0][0])); });
     const o = window.showSetTab;
     if (typeof o === "function" && !o._v125) {
-      const w = function (t) { o(t); try { applyWide(); paintGrp(t); if (t === "bew") mountBew(); else if (t === "kihist") mountKih(); else if (t === "stat") mountStat(); } catch (e) { console.error(e); } };
+      const w = function (t) { o(t); try { applyWide(); paintGrp(t); if (t === "bew") mountBew(); else if (t === "kihist") mountKih(); else if (t === "stat") mountStat(); else if (t === "syncstat") mountSyncStat(); } catch (e) { console.error(e); } };
       w._v125 = true; window.showSetTab = w;
     }
   }
