@@ -324,6 +324,7 @@
         const sg = state.songs.find((x) => x.id === id), n = sg ? String(sg.number) : "", m = state.media || {}, md = m.de || {};
         const key = kind === "lrc" ? ((m.karaoke || {}).lrc || {})[n] : kind === "lrcde" ? ((md.karaoke || {}).lrc || {})[n] : kind === "lrcm" ? ((m.meeting || {}).lrc || {})[n] : ((m.meeting || {}).sungLrc || {})[n];
         if (key) { const r = await fetch(mediaUrl(key), { cache: "no-store" }); if (r.ok) { const t = await r.text(); if (t.includes("[")) res.unshift({ ts: 0, type: "server", lrc: t, label: "Aktuell (LRC-Datei)" }); } }
+        if (!res.some((v) => v.type === "server") && kind === "lrc" && sg) { const r = await fetch(sg.lyrics || `lyrics/sjj_E_${String(sg.number).padStart(2, "0")}.lrc`, { cache: "no-store" }); if (r.ok) { const t = await r.text(); if (t.includes("[")) res.unshift({ ts: 0, type: "server", lrc: t, label: "Aktuell (LRC-Datei)" }); } }
       } catch { /* egal */ }
     }
     try { const p = JSON.parse(localStorage.getItem("pend-" + kind + "-" + id) || "null"); if (p && p.lines) res.push({ ts: p.ts, type: "pend", lrc: mkLrc(p.lines.map((l) => Number(l.time)), p.lines.map((l) => l.text || "")), label: `Nur lokal gespeichert · ${dt(p.ts)}` }); } catch { /* egal */ }
@@ -424,11 +425,78 @@
   }
   function applyWide() { const f = $("codeForm"); if (f) f.classList.toggle("kv-wide", state.setTab === "kihist" && window.innerWidth >= 900 && lsv("kvWide", "0") === "1"); }
 
+
+  /* ---------- Diagramme: Stand der LRC-Dateien auf einen Blick ---------- */
+  const STAT_KINDS = [["karaoke", "en", "Karaoke EN"], ["karaoke", "de", "Karaoke DE"], ["meeting", "en", "Instrumental"], ["sung", "en", "Zusammenkünfte"]];
+  const COL = { green: "#2e9e5b", orange: "#e8912d", red: "#d64545", none: "#7a8190", ok: "#3b82c4", miss: "#7a8190", ed: "#8e6cd1" };
+  function svgEl(t, a, txt) { const e = document.createElementNS("http://www.w3.org/2000/svg", t); Object.entries(a || {}).forEach(([k, v]) => e.setAttribute(k, v)); if (txt != null) e.textContent = txt; return e; }
+  function donut(parts, size, title) {
+    const tot = parts.reduce((a, p) => a + p.v, 0) || 1, r = size / 2 - 6, c = size / 2, w = size * 0.2;
+    const svg = svgEl("svg", { viewBox: `0 0 ${size} ${size}`, width: size, height: size, role: "img", "aria-label": title });
+    let ang = -Math.PI / 2;
+    parts.forEach((p) => {
+      if (p.v <= 0) return;
+      const a2 = ang + (p.v / tot) * Math.PI * 2, big = a2 - ang > Math.PI ? 1 : 0;
+      if (p.v === tot) { svg.append(svgEl("circle", { cx: c, cy: c, r: r - w / 2, fill: "none", stroke: p.c, "stroke-width": w })); }
+      else {
+        const x1 = c + r * Math.cos(ang), y1 = c + r * Math.sin(ang), x2 = c + r * Math.cos(a2), y2 = c + r * Math.sin(a2), ri = r - w, x3 = c + ri * Math.cos(a2), y3 = c + ri * Math.sin(a2), x4 = c + ri * Math.cos(ang), y4 = c + ri * Math.sin(ang);
+        svg.append(svgEl("path", { d: `M${x1} ${y1} A${r} ${r} 0 ${big} 1 ${x2} ${y2} L${x3} ${y3} A${ri} ${ri} 0 ${big} 0 ${x4} ${y4}Z`, fill: p.c }));
+      }
+      ang = a2;
+    });
+    svg.append(svgEl("text", { x: c, y: c - 2, "text-anchor": "middle", "font-size": size * 0.2, "font-weight": 800, fill: "currentColor" }, String(tot === 1 && !parts.some((p) => p.v) ? 0 : tot)));
+    svg.append(svgEl("text", { x: c, y: c + size * 0.12, "text-anchor": "middle", "font-size": size * 0.08, fill: "currentColor", opacity: .7 }, "Lieder"));
+    return svg;
+  }
+  const legend = (parts, tot) => { const l = h("div", "st-leg"); parts.forEach((p) => { const i = h("span", "st-l"); const d = h("i"); d.style.background = p.c; i.append(d, document.createTextNode(` ${p.n}: ${p.v}${tot ? " (" + Math.round((p.v / tot) * 100) + " %)" : ""}`)); l.append(i); }); return l; };
+  async function mountStat() {
+    const box = $("statBox"); if (!box) return;
+    box.replaceChildren(h("p", "ap-title", "Diagramme: Stand der Karaoke-Texte"));
+    box.append(h("small", "set-hint", "Auf einen Blick: wie viele Texte vorhanden sind, wie viele bearbeitet wurden und wie die Ampel steht (grün passt · orange fast fertig · rot muss überarbeitet werden)."));
+    await loadIdx().catch(() => {});
+    const songs = state.songs.filter((s) => !s.extra);
+    const rows = STAT_KINDS.map(([art, lang, name]) => {
+      let have = 0, edited = 0, g = 0, o = 0, r = 0, n = 0, rated = 0, sum = 0;
+      songs.forEach((s) => {
+        const hv = hasText(s, art, lang); if (hv) have++;
+        if (lrcInfo(s.id, art, lang)) edited++;
+        const a = ampel(s.id, art, lang); if (a === "green") g++; else if (a === "orange") o++; else if (a === "red") r++; else if (hv) n++;
+        const st = stat(s.id, "text", art, lang); if (st) { rated++; sum += st.avg; }
+      });
+      return { name, total: songs.length, have, miss: songs.length - have, edited, todo: Math.max(0, have - edited), g, o, r, n, rated, avg: rated ? sum / rated : 0 };
+    });
+    const grid = h("div", "st-grid");
+    rows.forEach((x) => {
+      const card = h("section", "st-card"); card.append(h("h4", "", x.name));
+      const ps = [{ n: "bearbeitet", v: x.edited, c: COL.ed }, { n: "vorhanden, noch nicht bearbeitet", v: x.todo, c: COL.ok }, { n: "fehlt", v: x.miss, c: COL.miss }];
+      const pa = [{ n: "grün", v: x.g, c: COL.green }, { n: "orange", v: x.o, c: COL.orange }, { n: "rot", v: x.r, c: COL.red }, { n: "ohne Ampel", v: x.n, c: COL.none }];
+      const pr = h("div", "st-pies");
+      const p1 = h("div", "st-pie"); p1.append(donut(ps, 120, x.name + ": Stand"), h("small", "", "Stand"), legend(ps, x.total));
+      const p2 = h("div", "st-pie"); p2.append(donut(pa, 120, x.name + ": Ampel"), h("small", "", "Ampel"), legend(pa, x.have));
+      pr.append(p1, p2); card.append(pr);
+      if (x.rated) card.append(h("small", "set-hint", `Bewertung der Texte: ${x.avg.toFixed(1).replace(".", ",")} ★ im Schnitt (${x.rated} Lieder bewertet)`));
+      grid.append(card);
+    });
+    box.append(grid);
+    /* Balkendiagramm: alle vier Arten im Vergleich */
+    const bars = h("section", "st-card st-wide"); bars.append(h("h4", "", "Vergleich aller Arten"));
+    rows.forEach((x) => {
+      const line = h("div", "st-bar"); line.append(h("span", "st-bn", x.name));
+      const tr = h("div", "st-track");
+      [[x.g, COL.green, "grün"], [x.o, COL.orange, "orange"], [x.r, COL.red, "rot"], [Math.max(0, x.have - x.g - x.o - x.r), COL.none, "ohne Ampel"], [x.miss, "transparent", "fehlt"]].forEach(([v, c, n]) => { if (!v) return; const seg = h("i"); seg.style.width = (v / x.total) * 100 + "%"; seg.style.background = c; seg.title = `${n}: ${v}`; if (c === "transparent") seg.style.boxShadow = "inset 0 0 0 1px var(--line, #888)"; tr.append(seg); });
+      line.append(tr, h("span", "st-bv", `${x.have}/${x.total}`)); bars.append(line);
+    });
+    bars.append(legend([{ n: "grün", v: 0, c: COL.green }, { n: "orange", v: 0, c: COL.orange }, { n: "rot", v: 0, c: COL.red }, { n: "ohne Ampel", v: 0, c: COL.none }, { n: "fehlt", v: 0, c: "transparent" }].map((p) => ({ ...p })), 0));
+    box.append(bars);
+    const sum = h("table", "st-tab"); sum.innerHTML = "<thead><tr><th>Art</th><th>vorhanden</th><th>bearbeitet</th><th>grün</th><th>orange</th><th>rot</th></tr></thead>";
+    const tb = document.createElement("tbody"); rows.forEach((x) => { const tr = document.createElement("tr"); [x.name, `${x.have}/${x.total}`, x.edited, x.g, x.o, x.r].forEach((v) => { const td = document.createElement("td"); td.textContent = v; tr.append(td); }); tb.append(tr); }); sum.append(tb); box.append(sum);
+  }
+
   /* ---------- Reiter-Gruppen ---------- */
   const GRP = {
     daten: ["Sichern", [["abgleich", "Favoriten-Abgleich"], ["sichern", "Daten"]]],
     sync: ["Synchronisieren", [["fehlend", "Fehlende Lieder"], ["ludwt", "Wochenlieder LuD+WT"]]],
-    bewert: ["Anpassungen", [["bew", "Bewertungen"], ["kihist", "KI-Verlauf"]]]
+    bewert: ["Anpassungen", [["bew", "Bewertungen"], ["kihist", "KI-Verlauf"], ["stat", "Diagramme"]]]
   };
   const grpOf = (t) => Object.keys(GRP).find((g) => GRP[g][1].some((x) => x[0] === t)) || "";
   const lastSub = {};
@@ -445,7 +513,7 @@
     document.querySelectorAll("#setTabs [data-grp]").forEach((b) => { if (b._v125) return; b._v125 = true; b.addEventListener("click", () => showSetTab(lastSub[b.dataset.grp] || GRP[b.dataset.grp][1][0][0])); });
     const o = window.showSetTab;
     if (typeof o === "function" && !o._v125) {
-      const w = function (t) { o(t); try { applyWide(); paintGrp(t); if (t === "bew") mountBew(); else if (t === "kihist") mountKih(); } catch (e) { console.error(e); } };
+      const w = function (t) { o(t); try { applyWide(); paintGrp(t); if (t === "bew") mountBew(); else if (t === "kihist") mountKih(); else if (t === "stat") mountStat(); } catch (e) { console.error(e); } };
       w._v125 = true; window.showSetTab = w;
     }
   }

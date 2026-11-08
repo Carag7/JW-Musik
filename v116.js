@@ -156,7 +156,13 @@
 
   /* ---------- lang auf × drücken: zurück zur Startseite ---------- */
   function toStart() {
-    try { sessionStorage.setItem("noAutoOnce", "1"); } catch { /* egal */ }
+    try { sessionStorage.setItem("noAutoOnce", "1"); sessionStorage.setItem("startFull", "1"); } catch { /* egal */ }
+    /* Welche Ansicht beim Öffnen der Startseite: erstes Bild (Standard), bestimmte, zuletzt gewählte oder Zufall */
+    try {
+      const o = lsv("startOpen", "first"); let m = "";
+      if (o === "first") m = "image"; else if (o === "random") m = ["image", "chor", "carousel", "fade", "float"][Math.floor(Math.random() * 5)]; else if (o !== "last") m = o;
+      if (m) { if (m === "image" || m === "chor") { lss("startShow", "image"); lss("startGif", m === "chor" ? "1" : "0"); } else lss("startShow", m); }
+    } catch { /* egal */ }
     try { if (C()) { C().closeNow(); C().closeGallery(); } } catch { /* egal */ }
     location.reload();
   }

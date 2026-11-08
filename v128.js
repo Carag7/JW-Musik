@@ -185,6 +185,9 @@
       { id: "start", name: "Startseite", desc: "Was vor dem ersten Lied zu sehen ist.", boxes: [
         box("Anzeige und Wechsel", [startHead1, u("advStartShow", "advStartFolders"), u("advStartOrder", "advStartSec"), fixHint ? [fixHint] : [], fadeUnit, u("advStartTrans", "advStartAnim", "advCar3d", "advFloatSpd", "advCarSec", "advCarMs")]),
         box("Größe der Ansichten", [startHead2, u("advSz_image", "advSz_chor", "advSz_carousel", "advSz_fade", "advSz_float", "advSzReset"), u("flugResetBtn")]),
+        box("Beim Öffnen der Startseite", [
+          ...reg(mSelect("startOpen", "Diese Ansicht zeigen", [["first", "immer das erste Bild (Standard)"], ["image", "Bild"], ["chor", "Video (Chor)"], ["carousel", "Karussell"], ["fade", "Überblenden"], ["float", "Schweben"], ["last", "zuletzt gewählte Ansicht"], ["random", "Zufall"]], "first", "Gilt, wenn die Startseite über das × (lange drücken), die Schnellaktion oder nach der ersten Anmeldung geöffnet wird."))
+        ]),
         box("Position der Ansichten", posBox("start")),
         box("Chor-GIF", [u("startGif")])
       ] },
@@ -243,7 +246,7 @@
       ] },
       { id: "anz", name: "Abstände und Schutz", desc: "Platz am Rand, Schutz vor versehentlichem Tippen, Anzeigegröße.", boxes: [$("advView")] },
       { id: "tesla", name: "Tesla (im Auto)", desc: "Große Tasten für die Fahrt. Nur nötig, wenn du im Auto sitzt.", only: true, boxes: [tzBox] },
-      { id: "sonst", name: "Schnellaktionen", desc: "Seite neu laden, Anmeldefenster, Bearbeitungsmodus und erweiterte Optionen.", boxes: [$("toolsBox")] }
+      { id: "sonst", name: "Schnellaktionen", desc: "Seite neu laden, Anmeldefenster, Bearbeitungsmodus und erweiterte Optionen.", boxes: [$("toolsBox"), box("Einstellungen öffnen", [...reg(mSelect("setStart", "Beim Öffnen der Einstellungen zeigen", [["auto", "Tesla: Tesla-Seite, sonst zuletzt besuchte Seite"], ["tesla", "immer die Tesla-Seite"], ["last", "die zuletzt besuchte Seite"]], "auto", "Im Tesla sofort die Tesla-Seite zu zeigen spart Antippen."))])] }
     ];
 
     /* advPlay: Rest (Titel „Springen und Fernsteuerung“) ausblenden, Zeilen wurden verteilt */

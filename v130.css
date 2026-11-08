@@ -1,7 +1,6 @@
 /* v130 */
 #subTabs [data-sub="tesla"] { background: #b3261e !important; color: #fff !important; border-radius: 12px; font-weight: 700; font-size: 1.05em; min-height: 48px; padding: 0 18px; border-color: #b3261e; }
 #subTabs [data-sub="tesla"][aria-pressed="true"] { outline: 3px solid #fff; box-shadow: 0 0 0 3px #b3261e; }
-#codeForm.sub-tesla #setTopics, #codeForm.sub-tesla #setTopicHead { display: none !important; }
 
 /* Startseite anpassen */
 .start-adj { position: fixed; left: 50%; bottom: calc(var(--flyer-h, 70px) + 12px); transform: translateX(-50%); z-index: 250; width: min(94vw, 460px); padding: 12px; border-radius: 16px; background: var(--panel, #181818); color: var(--text, #fff); border: 2px solid var(--accent, #3b82f6); box-shadow: 0 8px 30px rgba(0,0,0,.55); display: grid; gap: 8px; }

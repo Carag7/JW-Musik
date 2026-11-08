@@ -88,10 +88,10 @@
   }
   function buildNav() {
     const sub = $("subTabs"); if (!sub || $("setTopics")) return;
-    const nav = document.createElement("nav"); nav.id = "setTopics"; nav.className = "set-topics"; nav.dataset.tab = "allgemein"; nav.dataset.sub = "einst"; nav.setAttribute("aria-label", "Themen");
+    const nav = document.createElement("nav"); nav.id = "setTopics"; nav.className = "set-topics"; nav.dataset.tab = "allgemein"; nav.dataset.sub = "einst tesla"; nav.setAttribute("aria-label", "Themen");
     TOPICS.forEach(([id, name]) => {
       const b = document.createElement("button"); b.type = "button"; b.className = "seg-btn topic-btn" + (id === "tesla" ? " topic-tesla" : ""); b.dataset.topic = id; b.textContent = name;
-      b.addEventListener("click", () => apply(id));
+      b.addEventListener("click", () => { try { if (typeof state !== "undefined" && state.sub === "tesla" && id !== "tesla") { state.sub = "einst"; showSetTab("allgemein"); } } catch { /* egal */ } apply(id); });
       nav.append(b);
     });
     const head = document.createElement("h3"); head.id = "setTopicHead"; head.className = "set-topic-head"; head.hidden = true; head.dataset.tab = "allgemein"; head.dataset.sub = "einst";

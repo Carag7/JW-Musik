@@ -99,3 +99,30 @@ body.sim-off #similarBtn{display:none}
   .cg-fl img { max-height: min(calc(100vh - 340px), calc(var(--cg-size, 170px) * 2.6)) !important; max-width: min(78vw, calc(var(--cg-size, 170px) * 2.6)) !important; }
 }
 body.tesla-ua .cg-fl img { max-height: min(calc(100vh - 330px), calc(var(--cg-size, 170px) * 2.6)) !important; }
+
+/* Puma-Symbol links: ganz links, wenn die Auswahlliste aus ist */
+body:not(.sidebar-open) .egg-l { left: 10px; }
+
+/* Suchfeld der Einstellungen bleibt am Handy immer sichtbar (über den Reitern) */
+@media (max-width: 700px) {
+  #codeForm .set-search { position: sticky; top: 0; z-index: 8; background: var(--panel, #111); padding: 6px 0; margin: 0; }
+  #codeForm .set-topics { top: 52px; z-index: 6; }
+}
+
+/* Diagramme */
+.st-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin: 10px 0; }
+.st-card { border: 1px solid var(--line, #888); border-radius: 14px; padding: 10px 12px; background: var(--panel-2, transparent); }
+.st-card h4 { margin: 0 0 8px; }
+.st-pies { display: flex; gap: 14px; flex-wrap: wrap; justify-content: space-around; }
+.st-pie { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.st-leg { display: flex; flex-direction: column; gap: 2px; font-size: 12px; }
+.st-l i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 2px; box-shadow: inset 0 0 0 1px var(--line, #888); }
+.st-wide { margin: 10px 0; }
+.st-wide .st-leg { flex-direction: row; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+.st-bar { display: grid; grid-template-columns: 110px 1fr 56px; gap: 8px; align-items: center; margin: 6px 0; }
+.st-track { display: flex; height: 18px; border-radius: 9px; overflow: hidden; background: color-mix(in srgb, var(--muted, #888) 18%, transparent); }
+.st-track i { display: block; height: 100%; }
+.st-bv { text-align: right; font-size: 12px; }
+.st-tab { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 13px; }
+.st-tab th, .st-tab td { padding: 4px 6px; border-bottom: 1px solid var(--line, #888); text-align: right; }
+.st-tab th:first-child, .st-tab td:first-child { text-align: left; }

@@ -220,6 +220,32 @@
     /* Reihenfolge: Neu laden · Startseite · Galerie · Anmeldefenster · Bearbeitungsmodus · Erweiterte Optionen */
     ["advReload", "advToStart", "advToGal", "advStart", "advEdit", "advAdvanced"].forEach((i) => { const e = $(i); if (e) box.append(e); });
   }
+  /* Einstellungen öffnen: im Tesla (oder per Einstellung) sofort die Tesla-Seite */
+  wrap("openCode", (orig) => function () {
+    const r = orig.apply(this, arguments);
+    try {
+      const f = $("codeForm");
+      setTimeout(() => {
+        if (!f || !f.classList.contains("settings-mode")) return;
+        const m = lsv("setStart", "auto"), tesla = typeof isTesla === "function" && isTesla();
+        if (m === "tesla" || (m === "auto" && tesla)) {
+          const top = document.body.classList.contains("tesla-tab-top");
+          if (top) { state.sub = "tesla"; showSetTab("allgemein"); }
+          else { state.sub = "einst"; showSetTab("allgemein"); try { V119.apply("tesla", true); } catch { /* egal */ } }
+        }
+      }, 0);
+    } catch { /* egal */ }
+    return r;
+  });
+  /* Startseite im Vollbild (Auswahlliste aus), wenn über × (lange) oder nach der ersten Anmeldung geöffnet */
+  try {
+    if (sessionStorage.getItem("startFull") === "1") {
+      sessionStorage.removeItem("startFull");
+      let n = 0; const iv = setInterval(() => { try { if (typeof setSidebar === "function") setSidebar(false); } catch { /* egal */ } if (++n > 6) clearInterval(iv); }, 400);
+    }
+  } catch { /* egal */ }
+  /* Suchfeld in den Einstellungen bleibt beim Tippen sichtbar */
+  document.addEventListener("focusin", (e) => { if (e.target && e.target.id === "setSearch") setTimeout(() => { try { e.target.scrollIntoView({ block: "nearest" }); } catch { /* egal */ } }, 350); });
   window.V131 = { playSimilar, similar, load, paintBtn };
   const boot = () => { if (/Tesla/i.test(navigator.userAgent)) document.body.classList.add("tesla-ua"); paintBtn(); load(); quick(); [2500, 6000, 12000].forEach((t) => setTimeout(() => { defaultList(); try { fillPlaylists(); } catch { /* egal */ } }, t)); };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
