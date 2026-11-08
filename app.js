@@ -3243,7 +3243,7 @@ const SV_ITEMS = [
 ];
 const SV_KEYS = SV_ITEMS.map((x) => "sv_" + x[0]);
 const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBarAlways", "verBarFade", "srcTagsFade", "fadeSec", "lyricPos", "flugPos", "rcIdleSec", "holdGuard", "holdHint", "eggMode", "eggFall", "eggGif", "startGif", "themeShown", "themeTabs", "themeOrder", "themeTabList", "themeCustom", "themeNames", "skinProf", "coverMode", "coverFlip", "coverSet", "musikLang", "langWarnOff", "startMode", "startFolders", "startOrder", "startSec", "startFade", "skinOnlyActive", "skinOnlyMode", "sidebarW", "topOffMain", "topOffSet", "startGif", "ludwtSingle", "listRepeat", "srcTags", "favPlace", "favSeek", "showExtra", "karaokeOnly", "srcFilter", "sync-auto-max", "lyricAlign", "skipSec", "skipBack", "skipFwd", "fehlMode", "fehlNotify", "fehlAll", "fehlHelpSeen", "fehlLang", "startShow", "startSizes", "castMode", "startCarSec", "startCarMs", "galNoKar", "galNoKarAmt", "galMini", "npLayout", "lyrColOn", "lyrColOff", "skinFilterMode", "fehlSkip", "fehlLog", "startBarOpen", "startTrans", "startCar3d", "startFloatSpd", "resumeMode", "autoTap", "autoMute", "rateOn", "rateName", "rateAnon", "ampelOn", "kiScanAcc", "kiFirst", "kvSync", "kvWide", "aiAcc", STORAGE.scale, STORAGE.listSize];
-SETTING_KEYS.push(...SV_KEYS, "mediaKeys", "mediaHold", "svHints", "kiHide", "galAdj", "galSizes", "startAdj", "startImgFit", "ampelLong", "rcListenStart", "galNoKar", "galNoKarAmt", "galMini", "npLayout", "castMode", "musikLang", "langWarnOff", "startAnim", "startFolders", "startOrder", "selBar");
+SETTING_KEYS.push(...SV_KEYS, "teslaTab", "simBtn", "simMin", "mediaKeys", "mediaHold", "svHints", "kiHide", "galAdj", "galSizes", "startAdj", "startImgFit", "ampelLong", "rcListenStart", "galNoKar", "galNoKarAmt", "galMini", "npLayout", "castMode", "musikLang", "langWarnOff", "startAnim", "startFolders", "startOrder", "selBar");
 const isSettingKey = (k) => SETTING_KEYS.includes(k) || /^fehl(?:[TL]|Hide|Inc)_/.test(k);
 const syncSettingsOn = () => false;   // Einstellungen werden jetzt über den Benutzer gespeichert
 function collectSettings() {
@@ -4334,9 +4334,14 @@ const PRESETS = [
     fields: [{ key: "startShow", t: "Anzeige", o: [["image", "Bild"], ["chor", "Video"], ["carousel", "Karussell"], ["fade", "Überblenden"], ["float", "Schweben"]], dv: "image" }, { key: "startTrans", t: "Übergang", o: [["fade","Überblenden"],["stack","Kartenstapel"],["slide","Schieben"],["zoom","Zoom"],["flip","Drehen"],["mosaic","Mosaik"],["rand","Zufällig"]], dv: "fade" }, { key: "startCar3d", t: "3D", o: BOOL, dv: "1" }, { key: "startSec", t: "Sekunden", n: [2, 120], dv: "6" }] },
   { id: "resume", label: "Nach Rückkehr in den Browser: Pause bleibt Pause", keys: ["resumeMode", "autoTap", "autoMute"], def: { resumeMode: "auto", autoTap: "1", autoMute: "1" },
     fields: [{ key: "resumeMode", t: "Danach", o: [["pause", "Pause bleibt"], ["auto", "wie bisher"], ["always", "immer weiter"]], dv: "pause" }, { key: "autoTap", t: "Tipp startet", o: BOOL, dv: "1" }, { key: "autoMute", t: "Stumm starten, wenn blockiert", o: BOOL, dv: "1" }] },
-  { id: "kitext", label: "KI-Text beim Lied: Genauigkeit des Scans und KI-Text zuerst verwenden", keys: ["kiScanAcc", "kiFirst"], def: { kiScanAcc: "high", kiFirst: "1" },
-    fields: [{ key: "kiScanAcc", t: "Genauigkeit", o: [["low", "schwach"], ["normal", "normal"], ["high", "sehr genau"]], dv: "high" }, { key: "kiFirst", t: "KI-Text zuerst", o: BOOL, dv: "1" }] },
-  { id: "einfach", label: "Einfache Ansicht: Knöpfe ohne Lupe", keys: SV_KEYS, def: Object.fromEntries(SV_ITEMS.map((x) => ["sv_" + x[0], x[3]])), fields: SV_ITEMS.map((x) => ({ key: "sv_" + x[0], t: x[1], o: BOOL, dv: x[3] })) },
+  { id: "kitext", label: "KI-Text beim Lied: Genauigkeit des Scans und KI-Text zuerst verwenden", keys: ["kiScanAcc", "kiFirst", "kiHide"], def: { kiScanAcc: "high", kiFirst: "1", kiHide: "1" },
+    fields: [{ key: "kiScanAcc", t: "Genauigkeit", o: [["low", "schwach"], ["normal", "normal"], ["high", "sehr genau"]], dv: "high" }, { key: "kiFirst", t: "KI-Text zuerst", o: BOOL, dv: "1" }, { key: "kiHide", t: "Knopf nur bei neuem Text", o: BOOL, dv: "1" }] },
+  { id: "einfach", label: "Einfache Ansicht: Knöpfe ohne Lupe", keys: [...SV_KEYS, "svHints"], def: { ...Object.fromEntries(SV_ITEMS.map((x) => ["sv_" + x[0], x[3]])), svHints: "1" }, fields: [...SV_ITEMS.map((x) => ({ key: "sv_" + x[0], t: x[1], o: BOOL, dv: x[3] })), { key: "svHints", t: "Hinweise zu langem Drücken", o: BOOL, dv: "1" }] },
+  { id: "teslakeys", label: "Tesla: Tab-Knopf und kleine Tasten (Lied vor/zurück oder Spulen)", keys: ["teslaTab", "mediaKeys", "mediaHold"], def: { teslaTab: "auto", mediaKeys: "step", mediaHold: "1" },
+    fields: [{ key: "teslaTab", t: "Tesla-Knopf", o: [["auto", "automatisch"], ["top", "oben (groß)"], ["list", "in der Liste"]], dv: "auto" }, { key: "mediaKeys", t: "Tasten", o: [["step", "Lied vor/zurück"], ["seek", "Spulen"]], dv: "step" }, { key: "mediaHold", t: "Halten = Spulen", o: BOOL, dv: "1" }] },
+  { id: "sim", label: "Ähnliche Lieder: Knopf im Player und Mindest-Ähnlichkeit", keys: ["simBtn", "simMin"], def: { simBtn: "1", simMin: "30" },
+    fields: [{ key: "simBtn", t: "Knopf im Player", o: BOOL, dv: "1" }, { key: "simMin", t: "Genauigkeit", o: [["60", "sehr genau"], ["45", "genau"], ["30", "normal"], ["22", "locker"], ["15", "sehr locker"]], dv: "30" }] },
+  { id: "posadj", label: "Positionen und Größen der Ansichten (Startseite und Galerie)", keys: ["startAdj", "galAdj", "galSizes"] },
   { id: "ki", label: "Bewertungen und KI-Verlauf", keys: ["rateOn", "rateName", "rateAnon", "ampelOn", "kvSync", "kvWide", "ampelLong"], def: { rateOn: "1", ampelOn: "1", kvSync: "0", kvWide: "0", ampelLong: "1" }, fields: [{ key: "rateOn", t: "Bewertung zeigen", o: BOOL, dv: "1" }, { key: "ampelOn", t: "Korrektur-Status zeigen", o: BOOL, dv: "1" }, { key: "ampelLong", t: "Status lang drücken", o: BOOL, dv: "1" }, { key: "kvSync", t: "gemeinsam scrollen", o: BOOL, dv: "0" }, { key: "kvWide", t: "breit", o: BOOL, dv: "0" }] },
   { id: "gal", label: "Galerie: Lieder ohne Karaoke, Mini-Ansicht", keys: ["galNoKar", "galNoKarAmt", "galMini"] },
   { id: "playerlay", label: "Player: Anordnung und Übertragen", keys: ["npLayout", "castMode"] },
@@ -4349,9 +4354,10 @@ const PRESETS = [
 const PRESET_GROUPS = [
   ["Wiedergabe", ["auto", "resume", "karonly", "skip", "lupeopt", "rcidle"]],
   ["Einfache Ansicht (ohne Lupe)", ["einfach"]],
+  ["Tesla und Ähnliche Lieder", ["teslakeys", "sim"]],
   ["KI und Bewertungen", ["kitext", "ki"]],
   ["Liste und Auswahl", ["extra", "tags", "verbar", "srcfilter", "fav", "fontlist", "sidebar"]],
-  ["Karaoke-Text und Cover", ["fontkar", "lyricalign", "lyricpos", "cover", "gal", "musiklang", "startgif", "startshow", "startdet"]],
+  ["Karaoke-Text und Cover", ["fontkar", "lyricalign", "lyricpos", "cover", "gal", "posadj", "musiklang", "startgif", "startshow", "startdet"]],
   ["Design und Anzeige", ["theme", "hold", "topoff", "themeshown", "playerlay", "listen"]],
   ["Abgleich", ["fehl", "syncmax"]]
 ];
@@ -4360,7 +4366,7 @@ const PRESET_TIP = {
   extra: "Instrumental, Zusammenkünfte, Video in der Liste.", tags: "Kleine Buchstaben unter den Liedern.", verbar: "Art-Buttons und ihr Ausblenden.", srcfilter: "Welche Arten gerade gezeigt werden.", fav: "Wo der Stern erscheint.", fontlist: "Schrift in der Liste.", sidebar: "Breite der Liste.",
   fontkar: "Schrift des Karaoke-Textes.", lyricalign: "Links, Mitte oder rechts.", lyricpos: "Wo die aktive Zeile steht.", cover: "Neue oder alte Cover.", startgif: "Chor-GIF auf der Startseite.",
   theme: "Welches Design und wann.", hold: "Lupe nur nach langem Drücken.", topoff: "Platz oben (z. B. für Tesla).", themeshown: "Welche Designs im Hauptfenster stehen.",
-  einfach: "Welche Knöpfe ohne Lupe sichtbar sind.", ki: "Bewertung, Korrektur-Status, KI-Verlauf.",
+  einfach: "Welche Knöpfe ohne Lupe sichtbar sind.", teslakeys: "Tesla-Knopf und Tasten Lied vor/zurück.", sim: "Ähnliche Lieder: Knopf und Genauigkeit.", posadj: "Verschiebung und Größe der Ansichten.", ki: "Bewertung, Korrektur-Status, KI-Verlauf.",
   fehl: "Prüfung auf fehlende Lieder.", syncmax: "Automatisch abgleichen bis zu dieser Anzahl gelöschter Lieder."
 };
 /* Standard für neue Benutzer (beste Werte am Desktop); über den Namen „standard“ mit dem Schreib-Passwort änderbar */

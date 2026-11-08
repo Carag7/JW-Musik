@@ -1,0 +1,24 @@
+.sim-btn{font-size:1.15rem;line-height:1}
+body.sim-off #similarBtn{display:none}
+.sim-bar{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;padding:8px 10px}
+.sim-bar select{max-width:100%}
+.sim-bar .sim-rng{display:flex;align-items:center;gap:8px;flex:1 1 200px}
+.sim-bar input[type=range]{flex:1;min-width:90px}
+.sim-pct{margin-left:auto;font-style:normal;font-weight:700;font-size:.85em;padding:2px 8px;border-radius:999px;background:rgba(80,160,255,.18);white-space:nowrap}
+.song-btn .sim-pct{flex:none}
+
+/* v131: alle Eingabefelder / Auswahlen in den Einstellungen gleich groß (wie die bisherigen Felder: 40 px hoch, 16 px Schrift) */
+#codeForm .set-row select, #codeForm .set-row input[type="text"], #codeForm .set-row input[type="number"],
+#codeForm select.tz-sel, #codeForm .v130-pos input, #codeForm .preset-field select, #codeForm .preset-field input:not([type="checkbox"]) {
+  background: var(--panel-2); color: var(--text); border: 1px solid var(--line); border-radius: 10px;
+  min-height: 40px; font-size: 16px; padding: 0 8px; box-sizing: border-box;
+}
+#codeForm .set-row input[type="number"], #codeForm .v130-pos input { width: 84px; text-align: center; }
+#codeForm .set-row select { max-width: 100%; }
+#codeForm .set-row.v130-tempo button.chip, #codeForm .set-row .chip { min-height: 40px; font-size: 14px; }
+
+/* QR-Fenster im Querformat: Link und Protokoll werden nicht mehr zusammengedrückt (Link überlappte das Protokoll) */
+#codeForm > #syncQr, #codeForm > #syncLink, #codeForm > #qrLog, #syncQr, #syncLink, #qrLog { flex: 0 0 auto !important; }
+#syncLink { min-height: 2.6em; max-height: 90px; overflow: auto; box-sizing: border-box; }
+#qrLog { position: static; margin: 12px 0 8px; clear: both; }
+#qrLog > pre { max-height: 24vh; overflow: auto; }
