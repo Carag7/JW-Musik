@@ -280,6 +280,16 @@
   }
   window.V131.wipeAll = wipeAll;
 
+  /* Größe der Auswahlmenüs: automatisch (Tesla: sehr groß), normal, groß, sehr groß, riesig */
+  function applySel() {
+    try {
+      let v = lsv("selSize", "auto"); if (!["auto", "normal", "gross", "sehr", "riesig"].includes(v)) v = "auto";
+      if (v === "auto") v = /Tesla/i.test(navigator.userAgent) ? "sehr" : "normal";
+      document.documentElement.dataset.selsize = v;
+    } catch { /* egal */ }
+  }
+  applySel(); window.V131.applySel = applySel;
+
   const boot = () => { if (/Tesla/i.test(navigator.userAgent)) document.body.classList.add("tesla-ua"); paintBtn(); load(); quick(); [2500, 6000, 12000].forEach((t) => setTimeout(() => { defaultList(); try { fillPlaylists(); } catch { /* egal */ } }, t)); };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
   window.addEventListener("storage", paintBtn);

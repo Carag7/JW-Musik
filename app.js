@@ -3243,7 +3243,7 @@ const SV_ITEMS = [
 ];
 const SV_KEYS = SV_ITEMS.map((x) => "sv_" + x[0]);
 const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBarAlways", "verBarFade", "srcTagsFade", "fadeSec", "lyricPos", "flugPos", "rcIdleSec", "holdGuard", "holdHint", "eggMode", "eggFall", "eggGif", "startGif", "themeShown", "themeTabs", "themeOrder", "themeTabList", "themeCustom", "themeNames", "skinProf", "coverMode", "coverFlip", "coverSet", "musikLang", "langWarnOff", "startMode", "startFolders", "startOrder", "startSec", "startFade", "skinOnlyActive", "skinOnlyMode", "sidebarW", "topOffMain", "topOffSet", "startGif", "ludwtSingle", "listRepeat", "srcTags", "favPlace", "favSeek", "showExtra", "karaokeOnly", "srcFilter", "sync-auto-max", "lyricAlign", "skipSec", "skipBack", "skipFwd", "fehlMode", "fehlNotify", "fehlAll", "fehlHelpSeen", "fehlLang", "startShow", "startSizes", "castMode", "startCarSec", "startCarMs", "galNoKar", "galNoKarAmt", "galMini", "npLayout", "lyrColOn", "lyrColOff", "skinFilterMode", "fehlSkip", "fehlLog", "startBarOpen", "startTrans", "startCar3d", "startFloatSpd", "resumeMode", "autoTap", "autoMute", "rateOn", "rateName", "rateAnon", "ampelOn", "kiScanAcc", "kiFirst", "kvSync", "kvWide", "aiAcc", STORAGE.scale, STORAGE.listSize];
-SETTING_KEYS.push(...SV_KEYS, "teslaTab", "simBtn", "simMin", "plHold", "startOpen", "setStart", "simTop", "simPct", "simFill", "simOpRef", "simOpFill", "mediaKeys", "mediaHold", "svHints", "kiHide", "galAdj", "galSizes", "startAdj", "startImgFit", "ampelLong", "rcListenStart", "galNoKar", "galNoKarAmt", "galMini", "npLayout", "castMode", "musikLang", "langWarnOff", "startAnim", "startFolders", "startOrder", "selBar");
+SETTING_KEYS.push(...SV_KEYS, "selSize", "teslaTab", "simBtn", "simMin", "plHold", "startOpen", "setStart", "simTop", "simPct", "simFill", "simOpRef", "simOpFill", "mediaKeys", "mediaHold", "svHints", "kiHide", "galAdj", "galSizes", "startAdj", "startImgFit", "ampelLong", "rcListenStart", "galNoKar", "galNoKarAmt", "galMini", "npLayout", "castMode", "musikLang", "langWarnOff", "startAnim", "startFolders", "startOrder", "selBar");
 const isSettingKey = (k) => SETTING_KEYS.includes(k) || /^fehl(?:[TL]|Hide|Inc)_/.test(k);
 const syncSettingsOn = () => false;   // Einstellungen werden jetzt über den Benutzer gespeichert
 function collectSettings() {
@@ -3285,6 +3285,7 @@ function applySettings(obj) {
   try { if (window.THEME) window.THEME.apply(true); } catch { /* egal */ }
   try { state.scale = Number(localStorage.getItem(STORAGE.scale) || 42); applyScale(); state.listSize = Number(localStorage.getItem(STORAGE.listSize) || 16); applyListSize(); applyLyricAlign(); const sw = Number(localStorage.getItem("sidebarW")); if (sw >= 180) document.documentElement.style.setProperty("--sidebar", `${sw}px`); } catch { /* egal */ }
   try { applyTopOffsets(); } catch { /* egal */ }
+  try { if (window.V131 && V131.applySel) V131.applySel(); } catch { /* egal */ }
   try { updateSkipLabels(); updateAutoIcon(); updateVersionBar(); rebuildExtras(); applyStartGif(); } catch { /* egal */ }
 }
 async function runSync(code, silent, typedPass) {
@@ -4343,6 +4344,7 @@ const PRESETS = [
     fields: [{ key: "simBtn", t: "Knopf im Player", o: BOOL, dv: "1" }, { key: "simMin", t: "Genauigkeit", o: [["auto", "Automatik"], ["60", "sehr genau"], ["45", "genau"], ["30", "normal"], ["22", "locker"], ["15", "sehr locker"]], dv: "30" }, { key: "simTop", t: "Automatik: Anzahl", n: [1, 60], dv: "10" }, { key: "simPct", t: "Prozent zeigen", o: BOOL, dv: "1" }, { key: "simFill", t: "Füllstand", o: BOOL, dv: "1" }, { key: "simOpRef", t: "Deckung Bezug %", n: [0, 100], dv: "35" }, { key: "simOpFill", t: "Deckung Füllung %", n: [0, 100], dv: "28" }] },
   { id: "startopen", label: "Startseite öffnen mit … / Einstellungen öffnen mit …", keys: ["startOpen", "setStart"], def: { startOpen: "first", setStart: "tesla" },
     fields: [{ key: "startOpen", t: "Startseite", o: [["first", "erstes Bild"], ["image", "Bild"], ["chor", "Video"], ["carousel", "Karussell"], ["fade", "Überblenden"], ["float", "Schweben"], ["last", "zuletzt"], ["random", "Zufall"]], dv: "first" }, { key: "setStart", t: "Einstellungen", o: [["auto", "automatisch"], ["tesla", "Tesla-Seite"], ["last", "zuletzt"]], dv: "auto" }] },
+  { id: "selsize", label: "Größe der Auswahlmenüs in den Einstellungen", keys: ["selSize"], def: { selSize: "sehr" }, fields: [{ key: "selSize", t: "Größe", o: [["auto", "automatisch"], ["normal", "normal"], ["gross", "groß"], ["sehr", "sehr groß"], ["riesig", "riesig"]], dv: "auto" }] },
   { id: "plhold", label: "Eigene Listen: lange drücken = Umbenennen/Löschen (Sekunden)", keys: ["plHold"], def: { plHold: "2" }, fields: [{ key: "plHold", n: [2, 10], dv: "2" }] },
   { id: "posadj", label: "Positionen und Größen der Ansichten (Startseite und Galerie)", keys: ["startAdj", "galAdj", "galSizes", "startSizes"],
     def: { startSizes: '{"image":105,"chor":105,"carousel":105,"fade":105,"float":100}', galSizes: '{"grid":180,"list":180,"flow":360}' } },
@@ -4363,7 +4365,7 @@ const PRESETS = [
 const PRESET_GROUPS = [
   ["Wiedergabe", ["auto", "resume", "karonly", "skip", "lupeopt", "rcidle"]],
   ["Einfache Ansicht (ohne Lupe)", ["einfach"]],
-  ["Tesla und Ähnliche Lieder", ["teslakeys", "startopen", "sim", "plhold"]],
+  ["Tesla und Ähnliche Lieder", ["teslakeys", "startopen", "selsize", "sim", "plhold"]],
   ["KI und Bewertungen", ["kitext", "ki"]],
   ["Liste und Auswahl", ["extra", "tags", "verbar", "srcfilter", "fav", "fontlist", "sidebar"]],
   ["Karaoke-Text und Cover", ["fontkar", "lyricalign", "lyricpos", "lyrcol", "cover", "coverset", "gal", "posadj", "startmore", "musiklang", "startgif", "startshow", "startdet"]],
@@ -4375,7 +4377,7 @@ const PRESET_TIP = {
   extra: "Instrumental, Zusammenkünfte, Video in der Liste.", tags: "Kleine Buchstaben unter den Liedern.", verbar: "Art-Buttons und ihr Ausblenden.", srcfilter: "Welche Arten gerade gezeigt werden.", fav: "Wo der Stern erscheint.", fontlist: "Schrift in der Liste.", sidebar: "Breite der Liste.",
   fontkar: "Schrift des Karaoke-Textes.", lyricalign: "Links, Mitte oder rechts.", lyricpos: "Wo die aktive Zeile steht.", cover: "Neue oder alte Cover.", startgif: "Chor-GIF auf der Startseite.",
   theme: "Welches Design und wann.", hold: "Lupe nur nach langem Drücken.", topoff: "Platz oben (z. B. für Tesla).", themeshown: "Welche Designs im Hauptfenster stehen.",
-  einfach: "Welche Knöpfe ohne Lupe sichtbar sind.", teslakeys: "Tesla-Knopf und Tasten Lied vor/zurück.", sim: "Ähnliche Lieder: Knopf und Genauigkeit.", plhold: "Lange drücken auf eine Liste.", startopen: "Welche Ansicht die Startseite zeigt.", posadj: "Verschiebung und Größe der Ansichten.", ki: "Bewertung, Korrektur-Status, KI-Verlauf.",
+  einfach: "Welche Knöpfe ohne Lupe sichtbar sind.", teslakeys: "Tesla-Knopf und Tasten Lied vor/zurück.", sim: "Ähnliche Lieder: Knopf und Genauigkeit.", plhold: "Lange drücken auf eine Liste.", selsize: "Größe der Auswahlmenüs.", startopen: "Welche Ansicht die Startseite zeigt.", posadj: "Verschiebung und Größe der Ansichten.", ki: "Bewertung, Korrektur-Status, KI-Verlauf.",
   fehl: "Prüfung auf fehlende Lieder.", syncmax: "Automatisch abgleichen bis zu dieser Anzahl gelöschter Lieder."
 };
 /* Standard für neue Benutzer (beste Werte am Desktop); über den Namen „standard“ mit dem Schreib-Passwort änderbar */

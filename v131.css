@@ -136,16 +136,23 @@ body:not(.sidebar-open) .egg-l { left: 10px; }
 .st-vc small { position: static; display: block; height: 0; overflow: visible; font-size: 10px; line-height: 1.1; margin-top: 4px; color: var(--muted, #888); word-break: break-word; }
 .st-sec h3 { margin: 14px 0 4px; }
 
-/* Tesla: Auswahlfelder und Zahlenfelder deutlich größer (gut treffbar im Auto) */
-body.tesla-ua #codeForm select, body.tesla-ua #codeForm .set-row input[type="number"], body.tesla-ua #codeForm .set-row input[type="text"],
-body.tesla-ua #codeForm .preset-field select, body.tesla-ua #codeForm .preset-field input:not([type="checkbox"]), #codeForm.sub-tesla select, #codeForm.sub-tesla .set-row input[type="number"],
-#codeForm.sub-tesla .preset-field select, #codeForm.sub-tesla .preset-field input:not([type="checkbox"]) {
-  min-height: 56px !important; font-size: 20px !important; padding: 0 14px !important; border-radius: 12px !important;
+/* Größe der Auswahlmenüs (Einstellung selSize: automatisch / normal / groß / sehr groß / riesig) */
+html[data-selsize="gross"] { --sf-h: 52px; --sf-fs: 18px; --sf-n: 96px; --tz-h: 76px; --tz-fs: 26px; --tz-w: 260px; }
+html[data-selsize="sehr"] { --sf-h: 64px; --sf-fs: 22px; --sf-n: 112px; --tz-h: 92px; --tz-fs: 30px; --tz-w: 320px; }
+html[data-selsize="riesig"] { --sf-h: 76px; --sf-fs: 26px; --sf-n: 128px; --tz-h: 110px; --tz-fs: 36px; --tz-w: 380px; }
+html[data-selsize="gross"] #codeForm :is(select:not(.tz-sel), .set-row input[type="number"], .set-row input[type="text"], .preset-field input:not([type="checkbox"])),
+html[data-selsize="sehr"] #codeForm :is(select:not(.tz-sel), .set-row input[type="number"], .set-row input[type="text"], .preset-field input:not([type="checkbox"])),
+html[data-selsize="riesig"] #codeForm :is(select:not(.tz-sel), .set-row input[type="number"], .set-row input[type="text"], .preset-field input:not([type="checkbox"])) {
+  min-height: var(--sf-h) !important; font-size: var(--sf-fs) !important; padding: 0 14px !important; border-radius: 12px !important;
 }
-body.tesla-ua #codeForm .set-row input[type="number"], body.tesla-ua #codeForm .preset-field input[type="number"], #codeForm.sub-tesla .set-row input[type="number"], #codeForm.sub-tesla .preset-field input[type="number"] { width: 112px !important; }
-body.tesla-ua #codeForm .preset-field select, #codeForm.sub-tesla .preset-field select { max-width: 260px !important; min-width: 130px; }
-body.tesla-ua #codeForm .set-row select, #codeForm.sub-tesla .set-row select { min-width: 150px; }
-body.tesla-ua #codeForm .preset-field, #codeForm.sub-tesla .preset-field { font-size: 16px; }
+html[data-selsize="gross"] #codeForm :is(.set-row input[type="number"], .preset-field input[type="number"]),
+html[data-selsize="sehr"] #codeForm :is(.set-row input[type="number"], .preset-field input[type="number"]),
+html[data-selsize="riesig"] #codeForm :is(.set-row input[type="number"], .preset-field input[type="number"]) { width: var(--sf-n) !important; }
+html[data-selsize="gross"] #codeForm .preset-field select, html[data-selsize="sehr"] #codeForm .preset-field select, html[data-selsize="riesig"] #codeForm .preset-field select { max-width: min(100%, 340px) !important; min-width: 130px; }
+html[data-selsize="gross"] #codeForm .set-row select, html[data-selsize="sehr"] #codeForm .set-row select, html[data-selsize="riesig"] #codeForm .set-row select { min-width: 150px; }
+html[data-selsize="gross"] .tz-sel, html[data-selsize="sehr"] .tz-sel, html[data-selsize="riesig"] .tz-sel { min-height: var(--tz-h) !important; font-size: var(--tz-fs) !important; min-width: var(--tz-w) !important; max-width: 100% !important; }
+html[data-selsize="gross"] .tz-row, html[data-selsize="sehr"] .tz-row, html[data-selsize="riesig"] .tz-row { flex-wrap: wrap; min-height: calc(var(--tz-h) + 20px); }
+html[data-selsize="gross"] .tz-row .tz-l, html[data-selsize="sehr"] .tz-row .tz-l, html[data-selsize="riesig"] .tz-row .tz-l { flex: 1 1 260px; }
 
 /* Einstellungsfenster beginnt unter der Kopfleiste, falls diese darüber liegt (Suchfeld nicht verdeckt) */
 #codeModal { padding-top: max(var(--set-off, 0px), var(--set-auto, 0px)); }
