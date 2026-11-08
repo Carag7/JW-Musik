@@ -4337,12 +4337,18 @@ const PRESETS = [
   { id: "kitext", label: "KI-Text beim Lied: Genauigkeit des Scans und KI-Text zuerst verwenden", keys: ["kiScanAcc", "kiFirst", "kiHide"], def: { kiScanAcc: "high", kiFirst: "1", kiHide: "1" },
     fields: [{ key: "kiScanAcc", t: "Genauigkeit", o: [["low", "schwach"], ["normal", "normal"], ["high", "sehr genau"]], dv: "high" }, { key: "kiFirst", t: "KI-Text zuerst", o: BOOL, dv: "1" }, { key: "kiHide", t: "Knopf nur bei neuem Text", o: BOOL, dv: "1" }] },
   { id: "einfach", label: "Einfache Ansicht: Knöpfe ohne Lupe", keys: [...SV_KEYS, "svHints"], def: { ...Object.fromEntries(SV_ITEMS.map((x) => ["sv_" + x[0], x[3]])), svHints: "1" }, fields: [...SV_ITEMS.map((x) => ({ key: "sv_" + x[0], t: x[1], o: BOOL, dv: x[3] })), { key: "svHints", t: "Hinweise zu langem Drücken", o: BOOL, dv: "1" }] },
-  { id: "teslakeys", label: "Tesla: Tab-Knopf und kleine Tasten (Lied vor/zurück oder Spulen)", keys: ["teslaTab", "mediaKeys", "mediaHold"], def: { teslaTab: "auto", mediaKeys: "step", mediaHold: "1" },
+  { id: "teslakeys", label: "Tesla: Tab-Knopf und kleine Tasten (Lied vor/zurück oder Spulen)", keys: ["teslaTab", "mediaKeys", "mediaHold"], def: { teslaTab: "top", mediaKeys: "step", mediaHold: "1" },
     fields: [{ key: "teslaTab", t: "Tesla-Knopf", o: [["auto", "automatisch"], ["top", "oben (groß)"], ["list", "in der Liste"]], dv: "auto" }, { key: "mediaKeys", t: "Tasten", o: [["step", "Lied vor/zurück"], ["seek", "Spulen"]], dv: "step" }, { key: "mediaHold", t: "Halten = Spulen", o: BOOL, dv: "1" }] },
-  { id: "sim", label: "Ähnliche Lieder: Knopf im Player und Mindest-Ähnlichkeit", keys: ["simBtn", "simMin", "simTop", "simPct", "simFill", "simOpRef", "simOpFill"], def: { simBtn: "1", simMin: "30", simTop: "10", simPct: "1", simFill: "1", simOpRef: "35", simOpFill: "28" },
+  { id: "sim", label: "Ähnliche Lieder: Knopf im Player und Mindest-Ähnlichkeit", keys: ["simBtn", "simMin", "simTop", "simPct", "simFill", "simOpRef", "simOpFill"], def: { simBtn: "1", simMin: "auto", simTop: "10", simPct: "1", simFill: "1", simOpRef: "35", simOpFill: "28" },
     fields: [{ key: "simBtn", t: "Knopf im Player", o: BOOL, dv: "1" }, { key: "simMin", t: "Genauigkeit", o: [["auto", "Automatik"], ["60", "sehr genau"], ["45", "genau"], ["30", "normal"], ["22", "locker"], ["15", "sehr locker"]], dv: "30" }, { key: "simTop", t: "Automatik: Anzahl", n: [1, 60], dv: "10" }, { key: "simPct", t: "Prozent zeigen", o: BOOL, dv: "1" }, { key: "simFill", t: "Füllstand", o: BOOL, dv: "1" }, { key: "simOpRef", t: "Deckung Bezug %", n: [0, 100], dv: "35" }, { key: "simOpFill", t: "Deckung Füllung %", n: [0, 100], dv: "28" }] },
   { id: "plhold", label: "Eigene Listen: lange drücken = Umbenennen/Löschen (Sekunden)", keys: ["plHold"], def: { plHold: "2" }, fields: [{ key: "plHold", n: [2, 10], dv: "2" }] },
-  { id: "posadj", label: "Positionen und Größen der Ansichten (Startseite und Galerie)", keys: ["startAdj", "galAdj", "galSizes"] },
+  { id: "posadj", label: "Positionen und Größen der Ansichten (Startseite und Galerie)", keys: ["startAdj", "galAdj", "galSizes", "startSizes"],
+    def: { startSizes: '{"image":105,"chor":105,"carousel":110,"fade":105,"float":100}', galSizes: '{"grid":220,"list":200,"flow":360}' } },
+  { id: "startmore", label: "Startseite: Karussell-Dauer, Bildanpassung, Überblenden", keys: ["startCarMs", "startImgFit", "startFade", "startMode", "startBarOpen"] },
+  { id: "lyrcol", label: "Karaoke-Schriftfarben", keys: ["lyrColOn", "lyrColOff"] },
+  { id: "skinfilter", label: "Design-Auswahl: Filter", keys: ["skinOnlyActive", "skinOnlyMode", "skinFilterMode"] },
+  { id: "coverset", label: "Cover-Serie", keys: ["coverSet"] },
+  { id: "aiacc", label: "KI-Genauigkeit (Bewertung)", keys: ["aiAcc"] },
   { id: "ki", label: "Bewertungen und KI-Verlauf", keys: ["rateOn", "rateName", "rateAnon", "ampelOn", "kvSync", "kvWide", "ampelLong"], def: { rateOn: "1", ampelOn: "1", kvSync: "0", kvWide: "0", ampelLong: "1" }, fields: [{ key: "rateOn", t: "Bewertung zeigen", o: BOOL, dv: "1" }, { key: "ampelOn", t: "Korrektur-Status zeigen", o: BOOL, dv: "1" }, { key: "ampelLong", t: "Status lang drücken", o: BOOL, dv: "1" }, { key: "kvSync", t: "gemeinsam scrollen", o: BOOL, dv: "0" }, { key: "kvWide", t: "breit", o: BOOL, dv: "0" }] },
   { id: "gal", label: "Galerie: Lieder ohne Karaoke, Mini-Ansicht", keys: ["galNoKar", "galNoKarAmt", "galMini"] },
   { id: "playerlay", label: "Player: Anordnung und Übertragen", keys: ["npLayout", "castMode"] },
@@ -4358,7 +4364,7 @@ const PRESET_GROUPS = [
   ["Tesla und Ähnliche Lieder", ["teslakeys", "sim", "plhold"]],
   ["KI und Bewertungen", ["kitext", "ki"]],
   ["Liste und Auswahl", ["extra", "tags", "verbar", "srcfilter", "fav", "fontlist", "sidebar"]],
-  ["Karaoke-Text und Cover", ["fontkar", "lyricalign", "lyricpos", "cover", "gal", "posadj", "musiklang", "startgif", "startshow", "startdet"]],
+  ["Karaoke-Text und Cover", ["fontkar", "lyricalign", "lyricpos", "lyrcol", "cover", "coverset", "gal", "posadj", "startmore", "musiklang", "startgif", "startshow", "startdet"]],
   ["Design und Anzeige", ["theme", "hold", "topoff", "themeshown", "playerlay", "listen"]],
   ["Abgleich", ["fehl", "syncmax"]]
 ];
@@ -4371,7 +4377,7 @@ const PRESET_TIP = {
   fehl: "Prüfung auf fehlende Lieder.", syncmax: "Automatisch abgleichen bis zu dieser Anzahl gelöschter Lieder."
 };
 /* Standard für neue Benutzer (beste Werte am Desktop); über den Namen „standard“ mit dem Schreib-Passwort änderbar */
-const HANDY_EXTRA = { startShow: "image", startTrans: "slide", startCar3d: "0", themeMode: "manual", theme: "hy-amoled", holdGuard: "0", [STORAGE.listSize]: "18", sidebarW: "0" };
+const HANDY_EXTRA = { startSizes: '{"image":105,"chor":105,"carousel":110,"fade":105,"float":100}', galSizes: '{"grid":170,"list":170,"flow":360}', svHints: "1", simMin: "30", startShow: "image", startTrans: "slide", startCar3d: "0", themeMode: "manual", theme: "hy-amoled", holdGuard: "0", [STORAGE.listSize]: "18", sidebarW: "0" };
 const STD_VALS = { startShow: "image", karaokeOnly: "0", verBarFade: "1", srcTagsFade: "1", fadeSec: "4", autoStart: "0", showExtra: "1", srcTags: "1", favPlace: "both", favSeek: "off", verBarAlways: "1", holdGuard: "0", holdHint: "0", themeMode: "device", [STORAGE.scale]: "42", [STORAGE.listSize]: "16", sidebarW: "300", skipBack: "15", skipFwd: "15", "sync-auto-max": "2", startShow: "carousel", startTrans: "stack", startCar3d: "1", startSec: "6", resumeMode: "pause", autoTap: "1", autoMute: "1", kiScanAcc: "high", kiFirst: "1" };
 const SYS = { tesla: "_tesla", standard: "_standard", handy: "_handy" };
 const SYS_LABEL = { tesla: "Tesla", standard: "Standard", handy: "Handy" };

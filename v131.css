@@ -70,6 +70,9 @@ body.sim-off #similarBtn{display:none}
   :root { --safe-bottom: calc(env(safe-area-inset-bottom, 0px) * 0.3); }
   html[data-theme^="sk-pro"] .flyer { bottom: 4px !important; }
   body.edit-mode .lyrics { padding-top: 0 !important; }
+  body.edit-mode #aiTools, body.edit-mode #aiLegend, body.edit-mode #editHead { margin: 0 0 2px !important; padding-bottom: 2px !important; gap: 4px 6px !important; }
+  body.edit-mode #lyrics .lyric-line { padding-top: 3px !important; padding-bottom: 3px !important; margin-top: 0 !important; margin-bottom: 0 !important; min-height: 0 !important; }
+  body.edit-mode #lyrics::before, body.edit-mode #lyrics > :first-child:empty { display: none !important; }
   body.edit-mode .stage > .now { margin-bottom: 0; padding-bottom: 0; }
 }
 
@@ -90,3 +93,9 @@ body.sim-off #similarBtn{display:none}
   .cg-minithumb { height: 36px; }
   .cg-minibtn.big { width: 38px; height: 38px; padding: 9px; }
 }
+
+/* Cover-Karussell: Hochformat-Handy und Tesla – so groß wie sichtbar möglich */
+@media (max-width: 700px) and (orientation: portrait) {
+  .cg-fl img { max-height: min(calc(100vh - 340px), calc(var(--cg-size, 170px) * 2.6)) !important; max-width: min(78vw, calc(var(--cg-size, 170px) * 2.6)) !important; }
+}
+body.tesla-ua .cg-fl img { max-height: min(calc(100vh - 330px), calc(var(--cg-size, 170px) * 2.6)) !important; }

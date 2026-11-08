@@ -194,6 +194,10 @@
           ...reg(mSelect("mediaKeys", "Die kleinen Tasten sollen sein", [["step", "Lied vor / Lied zurück (Standard)"], ["seek", "Vor- / Zurückspulen"]], "step", "Standard: die Tasten funktionieren so, wie sie angezeigt werden – Lied vor und Lied zurück. Auch nach dem Ändern am besten ein Lied neu wählen.")),
           ...reg(mCheck("mediaHold", "Lange gedrückt halten = vor- bzw. zurückspulen", "1", "Kurz drücken wechselt das Lied (mit kurzer Verzögerung von etwa 0,4 s), gehalten spult. Aus: Taste wirkt sofort, kein Spulen."))
         ]),
+        box("Fernsteuerung", [u("advRcIdle")])
+      ] },
+      { id: "listen", name: "Listen und ähnliche Lieder", desc: "Eigene und thematische Wiedergabelisten, ähnliche Lieder mit Prozent und Füllstand.", boxes: [
+        $("listenBox"),
         box("Ähnliche Lieder", [
           ...reg(mCheck("simBtn", "Knopf „Ähnliche Lieder“ in der Titelzeile des Players zeigen", "1", "Tippen: ähnliche Lieder spielen als Nächstes, wie eine Wiedergabeliste. Auch unter „Listen“ gibt es „Ähnliche Lieder“ mit Prozentwerten.")),
           ...reg(mSelect("simMin", "Genauigkeit (Mindest-Ähnlichkeit)", [["auto", "Automatik – immer die ähnlichsten N Lieder"], ["60", "sehr genau – nur sehr ähnliche (ab 60 %)"], ["45", "genau (ab 45 %)"], ["30", "normal (ab 30 %)"], ["22", "locker (ab 22 %)"], ["15", "sehr locker (ab 15 %)"]], "30", "Je strenger, desto weniger Lieder. In „Listen“ gibt es dafür zusätzlich einen Schieberegler.")),
@@ -204,10 +208,8 @@
           ...reg(mNum("simOpFill", "Deckung der Füllung bei den anderen Liedern (%)", 0, 100, "28"))
         ]),
         box("Eigene Wiedergabelisten", [
-          ...reg(mNum("plHold", "Lange drücken auf eine Liste (Sekunden, mind. 2) = Umbenennen/Löschen", 2, 10, "2", "Unter „Listen“ eine eigene Liste lange gedrückt halten, dann erscheinen Umbenennen und Löschen – ohne die Lupe einzuschalten. Nochmal lange drücken blendet sie wieder aus."))
-        ]),
-        box("Fernsteuerung", [u("advRcIdle")]),
-        $("listenBox")
+          ...reg(mNum("plHold", "Lange drücken auf eine Liste (Sekunden, mind. 2) = Umbenennen/Löschen (nur mit aktiver Lupe)", 2, 10, "2", "Bei aktiver Lupe unter „Listen“ eine eigene Liste lange gedrückt halten: dann erscheinen Umbenennen und Löschen. Sie verschwinden wieder, sobald eine andere Liste gewählt wird."))
+        ])
       ] },
       { id: "ki", name: "KI und Bewertungen", desc: "KI-Abstimmung, KI-Text beim Lied, Bewertungen und Verlauf.", boxes: [
         box("KI-Text beim Lied (Scan im ＋-Fenster)", [

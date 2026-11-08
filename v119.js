@@ -7,15 +7,16 @@
   const TOPICS = [
     ["alle", "Alle anzeigen"],
     ["start", "Startseite"],
-    ["wieder", "Wiedergabe"],
     ["liste", "Liedliste"],
+    ["listen", "Listen und ähnliche Lieder"],
+    ["wieder", "Wiedergabe"],
+    ["player", "Player und Fernsteuerung"],
     ["text", "Karaoke-Text"],
     ["cover", "Cover"],
     ["gal", "Galerie"],
-    ["player", "Player und Fernsteuerung"],
-    ["ki", "KI und Bewertungen"],
     ["einfach", "Einfache Ansicht"],
     ["anz", "Abstände und Schutz"],
+    ["ki", "KI und Bewertungen"],
     ["tesla", "Tesla (im Auto)"],
     ["sonst", "Schnellaktionen"]
   ];

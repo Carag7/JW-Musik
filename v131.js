@@ -8,6 +8,7 @@
   let DATA = null, loading = null;
   const ID = "similar-auto";
   const thr = () => Math.max(10, Math.min(90, Number(lsv("simMin", "30")) || 30));
+  const glassOn = () => { const w = $("lyricSearchWrap"); return !!(w && !w.hidden); };
   const cur = () => (typeof state !== "undefined" && state.songs[state.index]) || null;
   function load() {
     if (DATA) return Promise.resolve(DATA);
@@ -162,14 +163,14 @@
         chip.onclick = (e) => { e.stopPropagation(); prev = prev || { mode: "playlists", activePlaylist: state.activePlaylist, selectMode: false }; startSim(); };
         box.prepend(chip);
         box.querySelectorAll(".chip:not(.sim-chip)").forEach((c) => {
-          c.addEventListener("click", (e) => { if (c._lp) { e.stopImmediatePropagation(); e.preventDefault(); c._lp = false; return; } state.simOn = false; state.plEdit = false; }, true);
+          c.addEventListener("click", (e) => { if (c._lp) { e.stopImmediatePropagation(); e.preventDefault(); c._lp = false; return; } state.simOn = false; state.plEdit = false; state.plEditId = ""; setTimeout(() => { try { updateEditTools(); } catch { /* egal */ } }, 0); }, true);
           const l = state.playlists.find((x) => x.name === c.textContent && x.id !== ID);
           if (!l) return;
           let t = null; const stop = () => clearTimeout(t);
-          c.addEventListener("pointerdown", () => { stop(); t = setTimeout(() => {
-            c._lp = true; state.simOn = false; state.activePlaylist = l.id; state.plEdit = !(state.plEdit && state.activePlaylist === l.id && c.dataset.ed === "1");
+          c.addEventListener("pointerdown", () => { stop(); if (!glassOn()) return; t = setTimeout(() => {
+            c._lp = true; state.simOn = false; state.activePlaylist = l.id; state.plEdit = !(state.plEdit && state.plEditId === l.id); state.plEditId = state.plEdit ? l.id : "";
             fillPlaylists(); renderList(); try { updateEditTools(); } catch { /* egal */ }
-            const pe = $("playlistEdit"); if (pe) pe.hidden = false;
+            try { updateEditTools(); } catch { /* egal */ }
           }, Math.max(2, Number(lsv("plHold", "2")) || 2) * 1000); });
           ["pointerup", "pointerleave", "pointercancel"].forEach((ev) => c.addEventListener(ev, stop));
           c.addEventListener("contextmenu", (e) => e.preventDefault());
@@ -181,7 +182,7 @@
   });
   wrap("updateEditTools", (orig) => function () {
     const r = orig.apply(this, arguments);
-    try { const e = $("playlistEdit"); if (e && (state.activePlaylist === ID || state.simOn)) e.hidden = true; else if (e && state.plEdit && state.activePlaylist) e.hidden = false; } catch { /* egal */ }
+    try { const e = $("playlistEdit"); if (e) { const ok = !!(state.plEdit && state.plEditId === state.activePlaylist && state.activePlaylist && state.activePlaylist !== ID && !state.simOn && glassOn()); e.hidden = !ok; } } catch { /* egal */ }
     return r;
   });
   /* Neue Benutzer: Liste „meine Liste“, falls noch keine eigene Wiedergabeliste existiert */
@@ -216,9 +217,11 @@
     const mk = (id, txt, fn) => { const b = h("button", "chip", txt); b.id = id; b.type = "button"; b.onclick = () => { const c = $("codeModal"); if (c) c.hidden = true; try { fn(); } catch { /* egal */ } }; box.append(b); };
     mk("advToStart", "Startseite öffnen", () => window.V116 && V116.toStart());
     mk("advToGal", "Galerie öffnen", () => window.COVERS && COVERS.openGallery());
+    /* Reihenfolge: Neu laden · Startseite · Galerie · Anmeldefenster · Bearbeitungsmodus · Erweiterte Optionen */
+    ["advReload", "advToStart", "advToGal", "advStart", "advEdit", "advAdvanced"].forEach((i) => { const e = $(i); if (e) box.append(e); });
   }
   window.V131 = { playSimilar, similar, load, paintBtn };
-  const boot = () => { paintBtn(); load(); quick(); [2500, 6000, 12000].forEach((t) => setTimeout(() => { defaultList(); try { fillPlaylists(); } catch { /* egal */ } }, t)); };
+  const boot = () => { if (/Tesla/i.test(navigator.userAgent)) document.body.classList.add("tesla-ua"); paintBtn(); load(); quick(); [2500, 6000, 12000].forEach((t) => setTimeout(() => { defaultList(); try { fillPlaylists(); } catch { /* egal */ } }, t)); };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
   window.addEventListener("storage", paintBtn);
 })();
