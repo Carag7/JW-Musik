@@ -161,13 +161,17 @@ html[data-selsize="gross"] .tz-row .tz-l, html[data-selsize="sehr"] .tz-row .tz-
 /* Zeiten übertragen: Auswahlliste */
 .zt-tools { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
 .zt-list { max-height: 52vh; overflow: auto; border: 1px solid var(--line, #888); border-radius: 12px; margin: 6px 0 10px; }
-.zt-row { display: grid; grid-template-columns: 28px minmax(0, 1fr) 80px; gap: 4px 10px; align-items: center; padding: 8px 10px; border-bottom: 1px solid var(--line, #888); cursor: pointer; }
+.zt-row { display: grid; grid-template-columns: 28px minmax(0, 1fr) 54px 54px 90px; gap: 4px 8px; align-items: center; padding: 8px 10px; border-bottom: 1px solid var(--line, #888); }
+.zt-head { position: sticky; top: 0; background: var(--panel, #fff); font-size: 11px; color: var(--muted, #888); font-weight: 700; z-index: 1; }
+.zt-n { text-align: center; font-size: 13px; }
+.zt-n.bad { color: #d64545; font-weight: 800; }
+.zt-head .zt-n { font-size: 10px; line-height: 1.1; }
 .zt-row input { width: 22px; height: 22px; }
 .zt-row.warn { background: color-mix(in srgb, var(--accent, #e8912d) 10%, transparent); }
-.zt-m { display: flex; flex-direction: column; min-width: 0; }
-.zt-m small { color: var(--muted, #888); }
-.zt-bar { height: 10px; border-radius: 5px; background: color-mix(in srgb, var(--muted, #888) 20%, transparent); overflow: hidden; }
-.zt-bar i { display: block; height: 100%; background: var(--accent, #e8912d); }
+.zt-t { text-align: left; background: none; border: 0; color: inherit; font: inherit; padding: 6px 0; cursor: pointer; min-width: 0; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--accent, #e8912d) 60%, transparent); text-underline-offset: 3px; }
+.zt-bar { height: 22px; padding: 0; border: 0; border-radius: 11px; background: color-mix(in srgb, var(--muted, #888) 20%, transparent); overflow: hidden; cursor: pointer; display: block; }
+.zt-bar i { display: block; height: 100%; background: #3b82c4; }
+.zt-tab td { vertical-align: top; }
 .zt-pc { grid-column: 2 / -1; font-size: 12px; color: var(--muted, #888); }
 
 /* Große Auswahl im Thema Tesla (ersetzt das kleine Systemmenü) */
@@ -186,3 +190,4 @@ html[data-selsize="riesig"] .tz-pick { min-height: 120px !important; font-size: 
 .tz-cancel { text-align: center; opacity: .85; }
 html[data-selsize="sehr"] .tz-opt { min-height: 100px; font-size: 34px; }
 html[data-selsize="riesig"] .tz-opt { min-height: 120px; font-size: 40px; }
+.zt-row.done { opacity: .55; }
