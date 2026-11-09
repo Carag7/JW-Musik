@@ -1,0 +1,114 @@
+/* v148: zusätzliche Farbvarianten (Handy, Tesla groß) – abgeleitet von den Grunddesigns */
+html[data-theme="tx-orange"] {
+  --bg: #0e0f12; --panel: #17181c; --panel-2: #22242a; --line: rgba(255,255,255,.16); --text: #f5f6f8; --muted: #a3a7b0;
+  --accent: #ff8a3d; --accent-rgb: 255, 138, 61; --accent-2: #ffd19a; --accent2-rgb: 255, 209, 154; --accent3: #c9cdd4; --ink-rgb: 255, 255, 255;
+  --on-accent: #1f0f00; --on-accent-2: #1f0f00; --lyric-active: #ffffff; --sel-bg: #5a2e12; --sel-text: #f5f6f8; --strong: #f5f6f8;
+  --bar-bg: color-mix(in srgb, #0e0f12 94%, transparent); --side-bg: color-mix(in srgb, #17181c 96%, transparent); --flyer-bg: color-mix(in srgb, #0e0f12 96%, transparent);
+  --glow1: rgba(255, 138, 61, .12); --glow2: rgba(255, 209, 154, .08); --ok: #3ecf6b; --info: #c9cdd4;
+  color-scheme: dark;
+}
+
+html[data-theme="tx-orange"] {
+  --sk-r: 18px; --sk-btn: #22242a; --sk-bd: 1px solid rgba(255,255,255,.18); --sk-play-bg: #ff8a3d; --sk-play-r: 22px; --sk-play-sh: 0 4px 14px rgba(255, 138, 61,.35); --flyer-h: 136px;
+  --ic-play: "▶"; --ic-pause: "❚❚"; --ic-prev: "◀"; --ic-next: "▶"; --ic-fav: "☆"; --ic-fav-on: "★"; --sk-ic: 34px; --sk-ic2: 28px; --sk-ic3: 34px;
+  --sk-track: 12px; --sk-track-bg: #3a3d46; --sk-thumb: 34px; --sk-thumb-bg: #ffffff; --sk-thumb-sh: 0 0 0 5px rgba(255, 138, 61,.55); --sk-list-r: 14px; --sk-in-r: 14px;
+}
+
+html[data-theme="tx-sand"] {
+  --bg: #f5efe3; --panel: #ffffff; --panel-2: #e8dcc6; --line: rgba(30,22,12,.28); --text: #101216; --muted: #4c525c;
+  --accent: #c2410c; --accent-rgb: 194, 65, 12; --accent-2: #7c2d12; --accent2-rgb: 124, 45, 18; --accent3: #b45309; --ink-rgb: 23, 26, 32;
+  --on-accent: #ffffff; --on-accent-2: #ffffff; --lyric-active: #7c2d12; --sel-bg: #fbd9b8; --sel-text: #101216; --strong: #101216;
+  --bar-bg: color-mix(in srgb, #f5efe3 94%, transparent); --side-bg: color-mix(in srgb, #ffffff 96%, transparent); --flyer-bg: color-mix(in srgb, #f5efe3 96%, transparent);
+  --glow1: rgba(194, 65, 12, .12); --glow2: rgba(124, 45, 18, .08); --ok: #3ecf6b; --info: #b45309;
+  color-scheme: light;
+}
+
+html[data-theme="tx-sand"] {
+  --sk-r: 18px; --sk-btn: #e8dcc6; --sk-bd: 2px solid rgba(30,22,12,.35); --sk-play-bg: #c2410c; --sk-play-r: 22px; --sk-play-sh: 0 4px 14px rgba(194, 65, 12,.35); --flyer-h: 136px;
+  --ic-play: "▶"; --ic-pause: "❚❚"; --ic-prev: "◀"; --ic-next: "▶"; --ic-fav: "☆"; --ic-fav-on: "★"; --sk-ic: 34px; --sk-ic2: 28px; --sk-ic3: 34px;
+  --sk-track: 12px; --sk-track-bg: #cbbd9f; --sk-thumb: 34px; --sk-thumb-bg: #c2410c; --sk-thumb-sh: 0 0 0 5px rgba(194, 65, 12,.3); --sk-list-r: 14px; --sk-in-r: 14px;
+}
+
+html[data-theme="tx-cyan"] {
+  --bg: #000000; --panel: #0a0a0a; --panel-2: #1a1a1a; --line: rgba(255,255,255,.45); --text: #ffffff; --muted: #bdbdbd;
+  --accent: #00e5ff; --accent-rgb: 0, 229, 255; --accent-2: #ffd400; --accent2-rgb: 255, 212, 0; --accent3: #7dff7d; --ink-rgb: 255, 255, 255;
+  --on-accent: #000000; --on-accent-2: #000000; --lyric-active: #00e5ff; --sel-bg: #003a40; --sel-text: #ffffff; --strong: #ffffff;
+  --bar-bg: color-mix(in srgb, #000000 94%, transparent); --side-bg: color-mix(in srgb, #0a0a0a 96%, transparent); --flyer-bg: color-mix(in srgb, #000000 96%, transparent);
+  --glow1: rgba(0, 229, 255, .12); --glow2: rgba(255, 212, 0, .08); --ok: #3ecf6b; --info: #7dff7d;
+  color-scheme: dark;
+}
+
+html[data-theme="tx-cyan"] {
+  --sk-r: 14px; --sk-btn: #000; --sk-bd: 3px solid #fff; --sk-play-bg: #00e5ff; --sk-play-bd: 3px solid #fff; --sk-play-r: 20px; --sk-play-sh: none; --flyer-h: 140px;
+  --ic-play: "▶"; --ic-pause: "❚❚"; --ic-prev: "◀"; --ic-next: "▶"; --ic-fav: "☆"; --ic-fav-on: "★"; --sk-ic: 36px; --sk-ic2: 30px; --sk-ic3: 36px;
+  --sk-track: 18px; --sk-track-r: 6px; --sk-track-bg: #333; --sk-track-bd: 2px solid #fff; --sk-thumb: 38px; --sk-thumb-r: 8px; --sk-thumb-bg: #00e5ff; --sk-thumb-bd: 3px solid #000; --sk-thumb-sh: 0 0 0 3px #fff;
+  --sk-list-r: 10px; --sk-list-bd: 2px solid rgba(255,255,255,.35); --sk-in-r: 10px; --sk-flyer-bd: 3px solid #fff;
+}
+
+html[data-theme="hy-ozean"] {
+  --bg: #000000; --panel: #0c0c0e; --panel-2: #17171b; --line: rgba(255,255,255,.10); --text: #f2f2f4; --muted: #8d8d96;
+  --accent: #4cc2ff; --accent-rgb: 76, 194, 255; --accent-2: #818cf8; --accent2-rgb: 129, 140, 248; --accent3: #fda4af; --ink-rgb: 255, 255, 255;
+  --on-accent: #00212e; --on-accent-2: #00212e; --lyric-active: #bae6fd; --sel-bg: #0c3347; --sel-text: #f2f2f4; --strong: #f2f2f4;
+  --bar-bg: color-mix(in srgb, #000000 94%, transparent); --side-bg: color-mix(in srgb, #0c0c0e 96%, transparent); --flyer-bg: color-mix(in srgb, #000000 96%, transparent);
+  --glow1: rgba(76, 194, 255, .12); --glow2: rgba(129, 140, 248, .08); --ok: #3ecf6b; --info: #fda4af;
+  color-scheme: dark;
+}
+
+html[data-theme="hy-ozean"] {
+  --sk-r: 16px; --sk-btn: #17171b; --sk-bd: 0; --sk-play-bg: #4cc2ff; --sk-play-r: 50%; --sk-play-sh: 0 0 0 6px rgba(76, 194, 255,.15); --sk-ic: 20px;
+  --ic-play: "▶"; --ic-pause: "❚❚"; --ic-prev: "‹"; --ic-next: "›"; --ic-fav: "♡"; --ic-fav-on: "♥"; --sk-ic2: 30px; --sk-ic3: 24px;
+  --sk-track: 4px; --sk-track-bg: #2a2a31; --sk-thumb: 18px; --sk-thumb-bg: #4cc2ff; --sk-thumb-sh: 0 0 0 4px rgba(76, 194, 255,.2); --sk-list-r: 14px; --sk-in-r: 14px; --sk-flyer-bd: 0 solid transparent;
+}
+
+html[data-theme="hy-minze"] {
+  --bg: #eef8f6; --panel: #ffffff; --panel-2: #d6eeea; --line: rgba(18,48,45,.14); --text: #12302d; --muted: #4b6b67;
+  --accent: #0d9488; --accent-rgb: 13, 148, 136; --accent-2: #38bdf8; --accent2-rgb: 56, 189, 248; --accent3: #e08a1e; --ink-rgb: 23, 26, 32;
+  --on-accent: #ffffff; --on-accent-2: #ffffff; --lyric-active: #0f766e; --sel-bg: #c8efe9; --sel-text: #12302d; --strong: #12302d;
+  --bar-bg: color-mix(in srgb, #eef8f6 94%, transparent); --side-bg: color-mix(in srgb, #ffffff 96%, transparent); --flyer-bg: color-mix(in srgb, #eef8f6 96%, transparent);
+  --glow1: rgba(13, 148, 136, .12); --glow2: rgba(56, 189, 248, .08); --ok: #3ecf6b; --info: #e08a1e;
+  color-scheme: light;
+}
+
+html[data-theme="hy-minze"] {
+  --sk-r: 22px; --sk-btn: #ffffff; --sk-bd: 0; --sk-sh: 0 6px 16px rgba(13, 148, 136,.18); --sk-play-bg: linear-gradient(135deg, #0d9488, #38bdf8); --sk-play-r: 26px; --sk-play-sh: 0 10px 22px rgba(13, 148, 136,.4);
+  --ic-play: "▶"; --ic-pause: "❚❚"; --ic-prev: "❮"; --ic-next: "❯"; --ic-fav: "♡"; --ic-fav-on: "♥"; --sk-ic: 22px; --sk-ic2: 20px;
+  --sk-track: 8px; --sk-track-bg: #bfe3de; --sk-thumb: 22px; --sk-thumb-bg: #ffffff; --sk-thumb-bd: 4px solid #0d9488; --sk-thumb-sh: 0 4px 10px rgba(13, 148, 136,.4); --sk-list-r: 18px; --sk-in-r: 18px; --sk-flyer-sh: 0 -8px 24px rgba(13, 148, 136,.18);
+}
+
+html[data-theme="hy-wald"] {
+  --bg: #0d1a12; --panel: #16281c; --panel-2: #21382a; --line: rgba(217, 249, 157,.22); --text: #f0fff4; --muted: #9ab8a3;
+  --accent: #7bd88f; --accent-rgb: 123, 216, 143; --accent-2: #d9f99d; --accent2-rgb: 217, 249, 157; --accent3: #34d399; --ink-rgb: 255, 255, 255;
+  --on-accent: #06200f; --on-accent-2: #06200f; --lyric-active: #e7fbc0; --sel-bg: #1f5a35; --sel-text: #f0fff4; --strong: #f0fff4;
+  --bar-bg: color-mix(in srgb, #0d1a12 94%, transparent); --side-bg: color-mix(in srgb, #16281c 96%, transparent); --flyer-bg: color-mix(in srgb, #0d1a12 96%, transparent);
+  --glow1: rgba(123, 216, 143, .12); --glow2: rgba(217, 249, 157, .08); --ok: #3ecf6b; --info: #34d399;
+  color-scheme: dark;
+}
+
+html[data-theme="hy-wald"] {
+  --sk-r: 20px; --sk-btn: rgba(255,255,255,.08); --sk-bd: 1px solid rgba(217, 249, 157,.3); --sk-play-bg: linear-gradient(135deg, #7bd88f, #34d399); --sk-play-r: 28px; --sk-play-sh: 0 8px 22px rgba(52, 211, 153,.45);
+  --ic-play: "▶"; --ic-pause: "❚❚"; --ic-prev: "«"; --ic-next: "»"; --ic-fav: "☆"; --ic-fav-on: "★"; --sk-ic: 22px; --sk-ic2: 28px;
+  --sk-track: 6px; --sk-track-bg: linear-gradient(90deg, rgba(123, 216, 143,.6), rgba(52, 211, 153,.25)); --sk-thumb: 20px; --sk-thumb-bg: #d9f99d; --sk-thumb-sh: 0 0 0 5px rgba(217, 249, 157,.28); --sk-list-r: 16px; --sk-in-r: 16px;
+}
+
+
+/* v148: Lesbarkeit – Kontrast-Korrekturen (automatisch geprüft, Ziel mindestens 4,5 : 1 bei Text) */
+.topbar .top-actions #autoStartBtn, .topbar #closeSidebar { opacity: .85; }
+html[data-theme^="sk-atelier"] .topbar #themeBtn, html[data-theme^="sk-atelier"] .topbar #autoStartBtn, html[data-theme^="sk-atelier"] .topbar #closeSidebar,
+html[data-theme^="sk-jwl"] .topbar #autoStartBtn, html[data-theme^="sk-jwl"] .topbar #closeSidebar { opacity: 1 !important; }
+html[data-theme="graphit"] .eyebrow, html[data-theme="sk-kontur"] .eyebrow, html[data-theme="sk-stream-hell"] .eyebrow, html[data-theme="sk-stream-violett"] .eyebrow,
+html[data-theme="tx-nacht"] .eyebrow, html[data-theme="tx-blau"] .eyebrow, html[data-theme="hy-pastell"] .eyebrow, html[data-theme="hy-minze"] .eyebrow,
+html[data-theme="tx-sand"] .eyebrow { color: color-mix(in srgb, var(--accent) 45%, var(--text)); }
+/* Tasten auf der zweiten Akzentfarbe (Alle Lieder / Favoriten): dunkle Schrift auf hellen Flächen */
+html[data-theme="tx-blau"], html[data-theme="tx-nacht"] { --on-accent-2: #0b1a3a; }
+html[data-theme="tx-karte"] { --on-accent-2: #1a1200; }
+html[data-theme="tx-energie"] { --on-accent-2: #04170a; }
+html[data-theme="tx-bernstein"] { --on-accent-2: #1f1300; }
+html[data-theme="tx-violett"] { --on-accent-2: #1a1030; --on-accent: #120a2a; }
+html[data-theme="tx-rot"] { --on-accent-2: #2a0000; --on-accent: #200000; }
+html[data-theme="an-disco"] { --on-accent-2: #00222a; }
+html[data-theme="hy-pastell"] { --on-accent-2: #3a0a24; }
+html[data-theme="hy-minze"] { --on-accent-2: #00222e; }
+html[data-theme="hy-pastell"] .song-btn strong { color: #b0407a; }
+html[data-theme="hy-minze"] .song-btn strong { color: #0e7490; }
+html[data-theme="sk-neon"] .round.play { color: #ffd9f7; }
+html[data-theme="sk-stream-hell"] #currentStatus:not([class*="is-"]), html[data-theme="sk-stream-violett"] #currentStatus:not([class*="is-"]) { color: color-mix(in srgb, var(--muted) 50%, var(--text)); }

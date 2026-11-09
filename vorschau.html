@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex" />
+<title>Design-Vorschau</title>
+<link rel="stylesheet" href="style.css" />
+<link rel="stylesheet" href="skins.css" />
+<link rel="stylesheet" href="skins2.css" />
+<link rel="stylesheet" href="skins3.css" />
+<link rel="stylesheet" href="skins4.css" />
+<link rel="stylesheet" href="covers.css" />
+<link rel="stylesheet" href="v116.css" />
+<link rel="stylesheet" href="v118.css" />
+<link rel="stylesheet" href="v119.css" />
+<link rel="stylesheet" href="v124.css" />
+<link rel="stylesheet" href="v125.css" />
+<link rel="stylesheet" href="v126.css" />
+<link rel="stylesheet" href="v128.css" />
+<link rel="stylesheet" href="v130.css" />
+<link rel="stylesheet" href="v131.css" />
+<style>#toTopBtn,.tags-mini,.egg{display:none!important} html,body{overflow:hidden} body *{pointer-events:none} #loginGate,#titleIntro{display:none!important}</style>
+</head>
+<body class="no-verbar tesla-tab-list">
+<header class="topbar">
+    <div class="tb-main">
+      <button id="menuToggle" class="lieder-toggle" type="button" aria-expanded="true">Lieder</button>
+      <button id="eigeneToggle" class="lieder-toggle" type="button" aria-pressed="false">Listen</button>
+      <button id="ludwtToggle" class="lieder-toggle" type="button" aria-pressed="false">LuD+WT</button>
+    </div>
+    <div class="tb-tools">
+    <div id="listTools" class="list-tools" hidden>
+      <button id="listSmaller" class="ghost" type="button" aria-label="Liste kleiner">A−</button>
+      <button id="listLarger" class="ghost" type="button" aria-label="Liste größer">A+</button>
+      <button id="coverGalleryBtn" class="ghost cover-gal-btn" type="button" aria-label="Cover-Galerie" title="Cover-Galerie"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="currentColor"><path d="M3 3h8v8H3zm10 0h8v8h-8zM3 13h8v8H3zm10 0h8v8h-8z"/></svg></button>
+      <button id="splitLeft" class="ghost" type="button" aria-label="Liste schmaler">←</button>
+      <button id="splitRight" class="ghost" type="button" aria-label="Liste breiter">→</button>
+    </div>
+    <div id="favTools" class="fav-tools-main" hidden>
+      <button id="syncFav" class="chip" type="button">Einstellungen</button>
+    </div>
+    <div class="top-actions">
+      <button id="smallerBtn" class="ghost" type="button" aria-label="Schrift kleiner">A−</button>
+      <button id="largerBtn" class="ghost" type="button" aria-label="Schrift größer">A+</button>
+      <button id="themeBtn" class="ghost" type="button" aria-label="Design wechseln" title="Design wechseln">◐</button>
+      <button id="remoteBtn" class="ghost" type="button" hidden title="Sync mit anderem Gerät (Fernsteuerung)">Sync</button>
+      <button id="fullscreenBtn" class="ghost" type="button">Vollbild</button>
+      <button id="autoStartBtn" class="ghost auto-ico" type="button" aria-pressed="false" aria-label="Autoplay beim Öffnen">⏵</button>
+      <button id="refreshBtn" class="ghost" type="button" hidden>Neu laden</button>
+      <a id="lyricsLink" class="ghost text-link" href="https://www.jw.org/en/library/music-songs/sing-out-joyfully/" target="_blank" rel="noopener">Text</a>
+      <button id="closeSidebar" class="ghost x-ico" type="button" aria-label="Auswahlliste ausblenden" title="Auswahlliste ausblenden">×</button>
+      <button id="logoutBtn" class="ghost" type="button" hidden>Logout</button>
+    </div>
+    </div>
+  </header>
+  <div class="app">
+    <aside id="sidebar" class="sidebar">
+      <header class="brand">
+        <div>
+          <p class="eyebrow">Sing Out Joyfully</p>
+          <h1><button id="homeBtn" class="home-link" type="button">Karaoke</button><button id="ludwtSingle" class="mode-ico" type="button" aria-pressed="false" aria-label="Lieder einzeln abspielen (danach stoppen)" title="Lieder einzeln: nach jedem Lied stoppen. Aus: alle der Reihe nach.">■</button><button id="listRepeat" class="mode-ico" type="button" aria-pressed="true" aria-label="Liste wiederholen" title="Liste nach dem Ende wiederholen (auch im Zufallsmodus)">↻</button></h1>
+        </div>
+        <button id="playerToggle" class="ghost player-icon" type="button" aria-label="Player" aria-pressed="true"></button>
+        <button id="lyricSearchToggle" class="ghost" type="button" aria-label="im Liedtext suchen"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="10" cy="10" r="6.5"/><path d="M15 15l6 6"/></svg></button>
+      </header>
+
+      <div id="playlistBar" class="playlist-bar" hidden>
+        <label id="playlistSelectWrap" class="search-wrap" hidden>
+          <span class="sr-only">Liste</span>
+          <select id="playlistSelect">
+            <option value="">Liste wählen</option>
+          </select>
+        </label>
+        <div id="playlistButtons" class="playlist-list"></div>
+        <div id="playlistCreateBox" class="playlist-create" hidden>
+          <input id="playlistName" type="text" placeholder="Name der Liste" autocomplete="off" />
+          <button id="playlistCreate" class="chip" type="button">Erstellen</button>
+        </div>
+        <div id="playlistEdit" class="edit-tools" hidden>
+          <input id="playlistRename" type="text" placeholder="Name ändern" autocomplete="off" />
+          <button id="playlistRenameBtn" class="chip" type="button">Umbenennen</button>
+          <button id="playlistDelete" class="chip danger" type="button">Löschen</button>
+          <button id="playlistDeleteConfirm" class="chip danger" type="button" hidden>Wirklich löschen?</button>
+        </div>
+      </div>
+
+      <div id="ludwtBar" class="playlist-bar ludwt-bar" hidden>
+        <label class="search-wrap">
+          <span class="sr-only">Woche</span>
+          <select id="ludwtWeek" aria-label="Woche wählen"></select>
+        </label>
+        <button id="ludwtPlay" class="chip" type="button">▶ Woche abspielen</button>
+        <div class="ludwt-nav">
+          <button id="ludwtPrev" class="chip" type="button" aria-label="Woche davor"><span class="nv-t">◀ Woche zurück</span><small class="nv-d"></small></button>
+          <button id="ludwtNext" class="chip" type="button" aria-label="Woche danach"><span class="nv-t">Woche vor ▶</span><small class="nv-d"></small></button>
+        </div>
+        <p id="ludwtInfo" class="ludwt-info"></p>
+      </div>
+
+      <label id="lyricSearchWrap" class="search-wrap" hidden>
+        <span class="sr-only">im Liedtext suchen</span>
+        <input id="lyricSearch" type="search" inputmode="search" placeholder="im Liedtext suchen" autocomplete="off" />
+      </label>
+
+      <label class="search-wrap">
+        <span class="sr-only">Lied suchen</span>
+        <input id="songSearch" type="search" inputmode="search" placeholder="Nummer oder Titel" autocomplete="off" />
+      </label>
+
+      <label class="search-wrap">
+        <span class="sr-only">Kategorie</span>
+        <select id="categoryFilter">
+          <option value="">Alle Kategorien</option>
+        </select>
+      </label>
+      <div id="categoryList" class="cat-list" hidden></div>
+      <div id="sourceFilter" class="source-filter" hidden></div>
+
+      <div class="filters">
+        <button id="tagsBtn" class="lang-mini tags-mini" type="button" aria-pressed="false" title="Kleine Kennzeichen (Icons) bei den Liedern: kurz / immer / aus"></button>
+        <button id="favoritesToggle" class="chip" type="button" aria-pressed="false">alle Lieder</button>
+        <button id="shuffleBtn" class="chip" type="button" aria-pressed="false">Zufall</button>
+        <span id="songCount" class="count">137</span>
+      </div>
+
+      <ul id="songList" class="song-list" aria-label="Lieder"><li class="song-row"><button type="button" class="song-btn"><strong>001</strong><span>Jehovah’s Attributes</span></button></li><li class="song-row"><button type="button" class="song-btn"><strong>002</strong><span>Jehovah Is Your Name</span></button></li><li class="song-row"><button type="button" class="song-btn"><strong>003</strong><span>Our Strength, Our Hope, Our Confidence</span></button></li><li class="song-row"><button type="button" class="song-btn active"><strong>004</strong><span>“Jehovah Is My Shepherd”</span></button></li><li class="song-row"><button type="button" class="song-btn"><strong>005</strong><span>God’s Wondrous Works</span></button></li><li class="song-row"><button type="button" class="song-btn"><strong>006</strong><span>The Heavens Declare God’s Glory</span></button></li><li class="song-row"><button type="button" class="song-btn"><strong>007</strong><span>Jehovah, Our Strength</span></button></li></ul>
+      <label id="sortWrap" class="search-wrap sort-wrap" hidden>
+        <span class="sr-only">Sortieren</span>
+        <select id="sortSel"><option value="">Sortieren nach … (Standard: Nummer)</option><option value="num">Lied-Nummer</option><option value="name">Name des Liedes</option><option value="cat">Kategorie</option></select>
+      </label>
+      <div id="listFoot" class="list-foot">
+        <button id="footToggle" class="foot-toggle" type="button" aria-expanded="false" aria-label="Weitere Tasten ein-/ausblenden">›</button>
+        <div id="footBtns" class="foot-btns" hidden>
+          <button id="footSettings" class="chip" type="button">Einstellungen</button>
+          <button id="footAdvanced" class="chip" type="button">Erweiterte Optionen</button>
+          <button id="footGallery" class="chip" type="button">Galerie</button>
+        </div>
+      </div>
+    </aside>
+    <button id="toTopBtn" class="to-top" type="button" aria-label="Nach oben">↑</button>
+    <button id="panelShow" class="chip panel-show" type="button" hidden>Panel</button>
+    <div id="splitHandle" class="split-handle" hidden></div>
+
+    <main class="stage">
+      <section class="now">
+        <div class="title-row" id="titleRow">
+          <p id="currentNumber" class="eyebrow song-number">004</p>
+          <button id="favoriteBtn" class="star-btn" type="button" aria-pressed="false" aria-label="Favorit" hidden>☆</button>
+        </div>
+        <h2 id="currentTitle">“Jehovah Is My Shepherd”</h2>
+        <div class="meta-row">
+          <p id="currentCategory" class="meta">Vertrauen auf Jehova</p>
+          <p id="currentStatus" class="is-play">Läuft</p>
+        </div>
+      <div id="versionBar" class="version-bar" hidden>
+        <div class="seg" role="group" aria-label="Fassung">
+          <button class="seg-btn" type="button" data-ver="karaoke" aria-pressed="true">Karaoke</button>
+          <button class="seg-btn" type="button" data-ver="meeting" aria-pressed="false">Instrumental</button>
+          <button class="seg-btn" type="button" data-ver="video" aria-pressed="false">Video</button>
+          <button class="seg-btn" type="button" data-ver="sung" aria-pressed="false">Zusammenkünfte</button>
+        </div>
+        <button id="verText" class="seg-btn text-opt" type="button" aria-pressed="false" hidden>Karaoketext anzeigen</button>
+        <button id="verView" class="seg-btn text-opt" type="button" aria-pressed="false" hidden>Text statt Video</button>
+      </div>
+      </section>
+
+      <section id="lyrics" class="lyrics"><p class="lyric-line">Jehova ist mein Hirte,</p><p class="lyric-line active">mir fehlt es an nichts.</p><p class="lyric-line">Er führt mich auf grüne Auen</p><p class="lyric-line">und lässt mich zur Ruhe kommen.</p></section>
+    </main>
+  </div>
+
+  <footer class="flyer" aria-label="Wiedergabe">
+    <div class="transport">
+      <button id="back15" class="round" type="button" aria-label="15 Sekunden zurück">−15</button>
+      <button id="prevBtn" class="round nav" type="button" aria-label="Vorheriges Lied">◀</button>
+      <button id="playBtn" class="round play" type="button" aria-label="Play">▶</button>
+      <button id="nextBtn" class="round nav" type="button" aria-label="Nächstes Lied">▶</button>
+      <button id="fwd15" class="round" type="button" aria-label="15 Sekunden vor">+15</button>
+      <button id="favoriteBtn2" class="round fav2" type="button" aria-pressed="false" aria-label="Favorit">☆</button>
+      <div id="bufBar" class="buf-bar" aria-hidden="true"><i></i></div>
+    </div>
+    <div class="timeline">
+      <div class="nav-row"><p id="prevSong" class="nav-song">003 Our Strength, Our Hope</p><button id="waveToggle" class="chip wave-toggle" type="button" hidden>Welle</button></div>
+      <div class="bar-row">
+        <button id="currentTime" class="time-btn" type="button" title="Lied neu starten">0:00</button>
+        <input id="progressBar" type="range" min="0" max="1000" value="0" aria-label="Position" />
+        <span id="duration">0:00</span>
+      </div>
+      <canvas id="spectrum" class="spectrum" hidden></canvas>
+      <p id="nextSong" class="nav-song">—</p>
+    </div>
+  </footer>
+<script>
+/* Vorschau-Seite: zeigt die Oberfläche mit einem bestimmten Design (kein Programmcode der App). Aufruf: vorschau.html?t=<id>&s=1&l=0&v=list|play */
+(function(){
+  var q=new URLSearchParams(location.search), r=document.documentElement, t=q.get("t")||"klassisch";
+  if(t!=="klassisch") r.setAttribute("data-theme",t);
+  if(q.get("l")==="1") r.setAttribute("data-light","1");
+  if(q.get("s")==="1") r.setAttribute("data-skin",t);
+  r.setAttribute("data-selsize","normal");
+  var v=q.get("v")||"play";
+  document.body.classList.add("pv-"+v);
+})();
+</script>
+</body>
+</html>

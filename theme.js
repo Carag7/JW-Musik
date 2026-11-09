@@ -58,6 +58,9 @@
     { id: "tx-nacht", name: "Tesla Nacht", bar: "#0e0f12", light: false, skin: true, grp: "Tesla", sw: ["#0e0f12", "#22242a", "#e82127"], hint: "Tesla: große Tasten, dunkel, wenig Blendung" },
     { id: "tx-tag", name: "Tesla Tag", bar: "#f2f4f7", light: true, skin: true, grp: "Tesla", sw: ["#f2f4f7", "#e1e5ea", "#1c5fe0"], hint: "Tesla: große Tasten, hell, hoher Kontrast" },
     { id: "tx-kontrast", name: "Tesla Kontrast", bar: "#000000", light: false, skin: true, grp: "Tesla", sw: ["#000000", "#1a1a1a", "#ffd400"], hint: "Tesla: Schwarz-Gelb, extra dicke Balken" },
+    { id: "tx-orange", name: "Tesla Nacht Orange", bar: "#0e0f12", light: false, skin: true, grp: "Tesla", sw: ["#0e0f12", "#22242a", "#ff8a3d"], hint: "Tesla: große Tasten, dunkel, Orange" },
+    { id: "tx-sand", name: "Tesla Tag Sand", bar: "#f5efe3", light: true, skin: true, grp: "Tesla", sw: ["#f5efe3", "#e8dcc6", "#c2410c"], hint: "Tesla: große Tasten, hell, warmes Sand" },
+    { id: "tx-cyan", name: "Tesla Kontrast Cyan", bar: "#000000", light: false, skin: true, grp: "Tesla", sw: ["#000000", "#1a1a1a", "#00e5ff"], hint: "Tesla: Schwarz-Cyan, extra dicke Balken" },
     { id: "tx-blau", name: "Tesla Blau", bar: "#171a20", light: false, skin: true, grp: "Tesla", sw: ["#171a20", "#2b303a", "#3e6ae1"], hint: "Tesla: Anthrazit mit Tesla-Blau, weiche Kacheln" },
     { id: "tx-karte", name: "Tesla Karte", bar: "#121a26", light: false, skin: true, grp: "Tesla", sw: ["#121a26", "#25354a", "#4fc3f7"], hint: "Tesla: Nacht-Kartenblau mit Cyan und Gelb" },
     { id: "tx-energie", name: "Tesla Energie", bar: "#0f1512", light: false, skin: true, grp: "Tesla", sw: ["#0f1512", "#223027", "#3ecf6b"], hint: "Tesla: Dunkelgrün wie die Energie-Anzeige" },
@@ -66,7 +69,10 @@
     { id: "tx-rot", name: "Tesla Rot", bar: "#1a0f10", light: false, skin: true, grp: "Tesla", sw: ["#1a0f10", "#35201f", "#ff5a5f"], hint: "Tesla: Kacheln in Rot" },
     { id: "hy-amoled", name: "Handy AMOLED", bar: "#000000", light: false, skin: true, grp: "Handy", sw: ["#000000", "#17171b", "#5eead4"], hint: "Handy: Reinschwarz, Mint, kompakt" },
     { id: "hy-pastell", name: "Handy Pastell", bar: "#f3effb", light: true, skin: true, grp: "Handy", sw: ["#f3effb", "#e6def7", "#8b5cf6"], hint: "Handy: hell, weiche Karten, Flieder" },
-    { id: "hy-sunset", name: "Handy Sunset", bar: "#1b0f1f", light: false, skin: true, grp: "Handy", sw: ["#1b0f1f", "#3a1f3f", "#ff7a45"], hint: "Handy: Abendrot-Verlauf, Daumen-freundlich" }
+    { id: "hy-sunset", name: "Handy Sunset", bar: "#1b0f1f", light: false, skin: true, grp: "Handy", sw: ["#1b0f1f", "#3a1f3f", "#ff7a45"], hint: "Handy: Abendrot-Verlauf, Daumen-freundlich" },
+    { id: "hy-ozean", name: "Handy Ozean", bar: "#000000", light: false, skin: true, grp: "Handy", sw: ["#000000", "#17171b", "#4cc2ff"], hint: "Handy: Reinschwarz, Himmelblau, kompakt" },
+    { id: "hy-minze", name: "Handy Minze", bar: "#eef8f6", light: true, skin: true, grp: "Handy", sw: ["#eef8f6", "#d6eeea", "#0d9488"], hint: "Handy: hell, weiche Karten, Minze" },
+    { id: "hy-wald", name: "Handy Wald", bar: "#0d1a12", light: false, skin: true, grp: "Handy", sw: ["#0d1a12", "#21382a", "#7bd88f"], hint: "Handy: dunkles Grün, Daumen-freundlich" }
   ];
   const REC_SHOWN = ["klassisch", "graphit", "tag", "amber", "sk-studio", "sk-retro", "tx-nacht", "tx-tag", "hy-amoled", "an-weltall"];
   const REC = { day: ["tag"], night: ["amber"] };
@@ -114,6 +120,8 @@
     { id: "f-atl", name: "Atelier", ids: ["sk-atelier", "sk-atelier-saphir", "sk-atelier-rose", "sk-atelier-salbei", "sk-atelier-kupfer", "sk-atelier-elfenbein"], hint: "Magazin-Aufbau, Serifenschrift – 6 Farben" },
     { id: "f-stream", name: "Streaming", ids: ["sk-stream", "sk-stream-violett", "sk-stream-blau", "sk-stream-hell", "sk-stream-gruen", "sk-stream-rot"], hint: "Player-Leiste mit Fortschritt oben, Fettschrift – 6 Farben" },
     { id: "f-klang", name: "Klang", ids: ["sk-klang", "sk-klang-blau", "sk-klang-rosa", "sk-klang-orange", "sk-klang-violett", "sk-klang-rot"], hint: "Karten-Aufbau, Liedtext groß auf Farbfläche – 6 Farben" },
+    { id: "f-txg", name: "Tesla Groß", ids: ["tx-nacht", "tx-tag", "tx-kontrast", "tx-orange", "tx-sand", "tx-cyan"], hint: "Große Tasten fürs Auto – 3 dunkel, 1 hell, 1 Sand, 1 Kontrast" },
+    { id: "f-hy", name: "Handy", ids: ["hy-amoled", "hy-pastell", "hy-sunset", "hy-ozean", "hy-minze", "hy-wald"], hint: "Kompakt für das Handy – 4 dunkel, 2 hell" },
     { id: "f-txk", name: "Tesla Kacheln", ids: ["tx-blau", "tx-karte", "tx-energie", "tx-bernstein", "tx-violett", "tx-rot"], hint: "Tesla-Bildschirm-Look – 6 Farben" },
     { id: "f-farb", name: "Farbdesigns", ids: ["klassisch", "graphit", "tag", "amber", "mitternacht", "wald", "rubin", "himmel", "sand"], hint: "gleiches Aussehen, nur andere Farben" }
   ];
@@ -262,7 +270,9 @@
       const dn = h("button", "ghost shown-mv", "▼"); dn.type = "button"; dn.disabled = idx === list.length - 1; dn.setAttribute("aria-label", "nach unten");
       up.addEventListener("click", () => { move(t.id, -1); again(); });
       dn.addEventListener("click", () => { move(t.id, 1); again(); });
-      row.append(lab, sel, up, dn);
+      const ey = h("button", "ghost shown-mv shown-eye", "👁"); ey.type = "button"; ey.title = "Vorschau"; ey.setAttribute("aria-label", "Vorschau von " + t.name);
+      ey.addEventListener("click", () => openPreview(t.id));
+      row.append(lab, ey, sel, up, dn);
       return row;
     };
     TL.forEach(([tk, tn]) => {
@@ -455,6 +465,7 @@
         b.append(sw, document.createTextNode(t.name)); b.title = t.hint;
         b.setAttribute("aria-pressed", String(t.id === c.theme));
         b.addEventListener("click", () => { put("theme", t.id); redraw(); });
+        eyeFor(b, t);
         seg.append(b);
       });
       root.append(seg);
@@ -569,6 +580,66 @@
     g.addEventListener("click", go); g.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") go(e); });
     btn.append(g);
   }
+  /* ---------- Vorschau (v148): zeigt die echte Oberfläche mit dem Design, bevor man es wählt ---------- */
+  function openPreview(startId) {
+    const ids = ordered().map((x) => x.id);
+    let idx = Math.max(0, ids.indexOf(startId)), mode = "play";
+    const old = document.getElementById("themePv"); if (old) old.remove();
+    const box = h("div", "theme-pv"); box.id = "themePv"; box.setAttribute("role", "dialog"); box.setAttribute("aria-label", "Design-Vorschau");
+    const card = h("div", "theme-pv-card");
+    const head = h("div", "theme-pv-head");
+    const prev = h("button", "theme-pv-nav", "‹"); prev.type = "button"; prev.setAttribute("aria-label", "Vorheriges Design");
+    const next = h("button", "theme-pv-nav", "›"); next.type = "button"; next.setAttribute("aria-label", "Nächstes Design");
+    const ttl = h("div", "theme-pv-ttl"); const nm = h("b"); const hn = h("small"); ttl.append(nm, hn);
+    const x = h("button", "theme-pv-x", "✕"); x.type = "button"; x.setAttribute("aria-label", "Schließen");
+    head.append(prev, ttl, next, x);
+    const tabs = h("div", "theme-pv-tabs");
+    const mk = (id, label) => { const b = h("button", "", label); b.type = "button"; b.dataset.v = id; b.addEventListener("click", () => { mode = id; show(); }); tabs.append(b); };
+    mk("play", "Wiedergabe"); mk("list", "Lieder-Liste");
+    const stage = h("div", "theme-pv-stage"); const fr = document.createElement("iframe");
+    fr.setAttribute("title", "Vorschau"); fr.setAttribute("tabindex", "-1"); fr.setAttribute("loading", "eager"); stage.append(fr);
+    const foot = h("div", "theme-pv-foot");
+    const cnt = h("span", "theme-pv-cnt");
+    const use = h("button", "chip theme-pv-use", "Dieses Design wählen"); use.type = "button";
+    foot.append(cnt, use);
+    card.append(head, tabs, stage, foot); box.append(card);
+    let size = [1000, 600];
+    const fit = () => {
+      const w = stage.clientWidth || 600, maxH = Math.max(200, window.innerHeight * 0.58);
+      const s = Math.min(w / size[0], maxH / size[1]);
+      fr.style.width = size[0] + "px"; fr.style.height = size[1] + "px"; fr.style.transform = `scale(${s})`;
+      stage.style.height = Math.round(size[1] * s) + "px";
+      fr.style.left = Math.round((w - size[0] * s) / 2) + "px";
+    };
+    function show() {
+      const th = byId(ids[idx]); if (!th) return;
+      nm.textContent = th.name; hn.textContent = th.hint || "";
+      cnt.textContent = `${idx + 1} von ${ids.length}`;
+      size = th.id.indexOf("hy-") === 0 ? [390, 780] : [1000, 600];
+      tabs.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === mode)));
+      const tid = th.custom ? th.base : th.id;
+      fr.src = `vorschau.html?t=${encodeURIComponent(tid)}&s=${th.skin ? 1 : 0}&l=${th.light ? 1 : 0}&v=${mode}`;
+      use.setAttribute("aria-pressed", String(current === th.id));
+      fit();
+    }
+    const go = (d) => { idx = (idx + d + ids.length) % ids.length; show(); };
+    const close = () => { box.remove(); window.removeEventListener("resize", fit); document.removeEventListener("keydown", key, true); };
+    const key = (e) => {
+      if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); close(); }
+      else if (e.key === "ArrowLeft") { e.preventDefault(); go(-1); } else if (e.key === "ArrowRight") { e.preventDefault(); go(1); }
+    };
+    prev.addEventListener("click", () => go(-1)); next.addEventListener("click", () => go(1)); x.addEventListener("click", close);
+    box.addEventListener("click", (e) => { if (e.target === box) close(); });
+    use.addEventListener("click", () => { put("themeMode", "manual"); put("theme", ids[idx]); apply(true); close(); const r = document.getElementById("themeBox"); if (r && typeof api.mountUi === "function") { try { mountUi(r); } catch { /* egal */ } } });
+    window.addEventListener("resize", fit); document.addEventListener("keydown", key, true);
+    document.body.append(box); show(); requestAnimationFrame(fit);
+  }
+  function eyeFor(btn, th) {
+    const e = h("span", "theme-eye", "👁"); e.setAttribute("role", "button"); e.tabIndex = 0; e.title = "Vorschau: so sieht „" + th.name + "“ aus"; e.setAttribute("aria-label", "Vorschau von " + th.name);
+    const go = (ev) => { ev.preventDefault(); ev.stopPropagation(); openPreview(th.id); };
+    e.addEventListener("click", go); e.addEventListener("keydown", (ev) => { if (ev.key === "Enter" || ev.key === " ") go(ev); });
+    btn.append(e);
+  }
   function famCard(f, mem, cur, pick) {
     const shownSet = new Set(shownIds());
     const card = h("div", "theme-fam" + (mem.some((x) => shownSet.has(x.id)) ? " has-shown" : ""));
@@ -584,7 +655,7 @@
       const sw = h("span", "theme-sw"); x.sw.forEach((col) => { const i = h("i"); i.style.background = col; sw.append(i); });
       b.append(sw, document.createTextNode(shortName(x, f)));
       b.addEventListener("click", () => pick(x));
-      gearFor(b, x);
+      gearFor(b, x); eyeFor(b, x);
       chips.append(b);
     });
     card.append(chips);
@@ -611,7 +682,7 @@
       if (shownNow.has(th.id)) b.classList.add("is-shown");
       b.append(preview(th), h("span", "theme-pick-name", th.name), h("small", "theme-pick-hint", th.hint));
       b.addEventListener("click", () => pick(th));
-      gearFor(b, th);
+      gearFor(b, th); eyeFor(b, th);
       body.append(b);
     });
   }
