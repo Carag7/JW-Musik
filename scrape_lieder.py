@@ -108,6 +108,24 @@ class FetchError(Exception):
     pass
 
 
+def _snip(html: str, n: int = 160) -> str:
+    """Kurzer Textausschnitt (Titel/Text) für das Fehlerprotokoll."""
+    m = re.search(r"<title[^>]*>(.*?)</title>", html, re.S | re.I)
+    title = re.sub(r"\s+", " ", m.group(1)).strip() if m else ""
+    body = re.sub(r"<(script|style)[^>]*>.*?</\1>", " ", html, flags=re.S | re.I)
+    text = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", body)).strip()
+    return f"Titel={title[:60]!r}, Text={text[:n]!r}"
+
+
+def has_week_links(html: str) -> bool:
+    return bool(DOC_RE.search(html))
+
+
+def has_doc_content(html: str) -> bool:
+    low = html.lower()
+    return "<article" in low or 'id="article"' in low or "lied " in low
+
+
 def make_session() -> requests.Session:
     s = requests.Session()
     retry = Retry(total=2, backoff_factor=1.5, status_forcelist=[429, 500, 502, 503, 504])
@@ -149,6 +167,11 @@ class Fetcher:
             browser = p.chromium.launch()
             page = browser.new_page(user_agent=UA_CHROME, locale="de-DE")
             page.goto(url, wait_until="networkidle", timeout=60000)
+            try:  # auf den nachgeladenen Inhalt warten (Seite wird per JavaScript aufgebaut)
+                page.wait_for_selector("a[href*='/wol/d/'], article, #article", timeout=20000)
+            except Exception:  # noqa: BLE001
+                pass
+            page.wait_for_timeout(1500)
             html = page.content()
             browser.close()
         return html
@@ -158,7 +181,9 @@ class Fetcher:
         head = html[:4000].lower()
         return len(html) > 1500 and "just a moment" not in head and "cf-chl" not in head
 
-    def get(self, url: str) -> str:
+    def get(self, url: str, check=None) -> str:
+        """`check(html)` prüft, ob die Seite den erwarteten Inhalt hat; sonst nächste Option
+        (z. B. Headless-Browser, wenn der einfache Abruf nur ein leeres JavaScript-Gerüst liefert)."""
         if url in self.cache:
             return self.cache[url]
         errors = []
@@ -167,6 +192,8 @@ class Fetcher:
                 html = getattr(self, f"_{name}")(url)
                 if not self._plausible(html):
                     raise FetchError("leere oder blockierte Antwort")
+                if check and not check(html):
+                    raise FetchError(f"Seite ohne erwarteten Inhalt ({len(html)} Zeichen: {_snip(html)})")
                 self.cache[url] = html
                 time.sleep(self.delay)
                 return html
@@ -330,12 +357,12 @@ def chain_find(fetcher: Fetcher, monday: date, known: dict[str, int]) -> tuple[i
     doc_id = known[ref]
     steps = (monday - date.fromisoformat(ref)).days // 7
     for _ in range(abs(steps)):
-        html = fetcher.get(DOC_URL.format(doc_id=doc_id))
+        html = fetcher.get(DOC_URL.format(doc_id=doc_id), has_doc_content)
         nxt, prv = next_prev_ids(html, doc_id)
         doc_id = nxt if steps > 0 else prv
         if doc_id is None:
             return None
-    html = fetcher.get(DOC_URL.format(doc_id=doc_id))
+    html = fetcher.get(DOC_URL.format(doc_id=doc_id), has_doc_content)
     return (doc_id, html) if matches_week(html, monday) else None
 
 
@@ -351,7 +378,7 @@ def predict_find(fetcher: Fetcher, monday: date, known: dict[str, int], kind: st
     base = known[ref] + weeks * STEPS[kind]
     for cand in (base, base + 1, base - 1, base + 2, base - 2):
         try:
-            html = fetcher.get(DOC_URL.format(doc_id=cand))
+            html = fetcher.get(DOC_URL.format(doc_id=cand), has_doc_content)
         except FetchError:
             continue
         if matches_week(html, monday):
@@ -365,16 +392,16 @@ def resolve_week(fetcher: Fetcher, monday: date, known: dict[str, dict[str, int]
 
     # Option A: Wochenseite
     try:
-        page = fetcher.get(WEEK_URL.format(year=iso.year, week=iso.week))
+        page = fetcher.get(WEEK_URL.format(year=iso.year, week=iso.week), has_week_links)
         diag: list[str] = []
         links = parse_week_page(page, diag)
         if not links:
-            doc_links = "; ".join(diag[:8]) or "keine Dokument-Links (/wol/d/...) im HTML (%d Zeichen)" % len(page)
+            doc_links = "; ".join(diag[:8]) or "keine Dokument-Links im HTML (%d Zeichen: %s)" % (len(page), _snip(page))
             record("Wochenseite auswerten", WEEK_URL.format(year=iso.year, week=iso.week),
                    "Seite geladen, aber keine Links zu Leben und Dienst / Wachtturm gefunden. Gefunden: " + doc_links)
         for kind, (doc_id, url) in links.items():
             try:
-                part = build_part(kind, doc_id, fetcher.get(url), "wochenseite")
+                part = build_part(kind, doc_id, fetcher.get(url, has_doc_content), "wochenseite")
                 if part:
                     parts[kind] = part
             except FetchError as exc:
