@@ -200,7 +200,7 @@ html[data-theme^="sk-pro"] .rc-now, html[data-theme^="sk-pro"] .rc-song { backgr
 /* ============================================================
    3) TESLA-SKINS (tx-blau, tx-karte, tx-energie): Tesla-Bildschirm-Look – große Tasten, weiche Kacheln, ruhige Farben
    ============================================================ */
-html[data-theme="tx-blau"], html[data-theme="tx-karte"], html[data-theme="tx-energie"] {
+html[data-theme="tx-blau"], html[data-theme="tx-karte"], html[data-theme="tx-energie"], html[data-theme="tx-bernstein"], html[data-theme="tx-violett"], html[data-theme="tx-rot"] {
   --sk-r: 18px; --sk-bd: 1px solid rgba(255,255,255,.14); --sk-play-r: 22px; --flyer-h: 136px;
   --ic-play: "▶"; --ic-pause: "❚❚"; --ic-prev: "◀"; --ic-next: "▶"; --ic-fav: "☆"; --ic-fav-on: "★"; --sk-ic: 34px; --sk-ic2: 28px; --sk-ic3: 34px;
   --sk-track: 12px; --sk-thumb: 34px; --sk-thumb-bg: #ffffff; --sk-list-r: 14px; --sk-in-r: 14px;
@@ -224,6 +224,24 @@ html[data-theme="tx-energie"] {
   --on-accent: #04170a; --sel-bg: #1c4a2c; --bar-bg: color-mix(in srgb, #0f1512 94%, transparent); --side-bg: color-mix(in srgb, #172019 96%, transparent); --flyer-bg: color-mix(in srgb, #0f1512 96%, transparent);
   --glow1: rgba(62,207,107,.14); --glow2: rgba(155,231,180,.08); --info: #9be7b4;
   --sk-btn: #223027; --sk-play-bg: #3ecf6b; --sk-play-sh: 0 4px 16px rgba(62,207,107,.4); --sk-track-bg: #34483a; --sk-thumb-sh: 0 0 0 5px rgba(62,207,107,.5);
+}
+html[data-theme="tx-bernstein"] {
+  --bg: #15110a; --panel: #201a10; --panel-2: #32281a; --accent: #ffb020; --accent-rgb: 255, 176, 32; --accent-2: #ffd98a; --accent2-rgb: 255, 217, 138; --accent3: #cfd2d8;
+  --on-accent: #1f1300; --sel-bg: #593e0b; --bar-bg: color-mix(in srgb, #15110a 94%, transparent); --side-bg: color-mix(in srgb, #201a10 96%, transparent); --flyer-bg: color-mix(in srgb, #15110a 96%, transparent);
+  --glow1: rgba(255, 176, 32,.14); --glow2: rgba(255, 217, 138,.08); --info: #ffd98a;
+  --sk-btn: #32281a; --sk-play-bg: #ffb020; --sk-play-sh: 0 4px 16px rgba(255, 176, 32,.4); --sk-track-bg: #4c350a; --sk-thumb-sh: 0 0 0 5px rgba(255, 176, 32,.5);
+}
+html[data-theme="tx-violett"] {
+  --bg: #14101f; --panel: #1c1730; --panel-2: #2b2446; --accent: #a78bfa; --accent-rgb: 167, 139, 250; --accent-2: #d3c6ff; --accent2-rgb: 211, 198, 255; --accent3: #cfd2d8;
+  --on-accent: #ffffff; --sel-bg: #3a3158; --bar-bg: color-mix(in srgb, #14101f 94%, transparent); --side-bg: color-mix(in srgb, #1c1730 96%, transparent); --flyer-bg: color-mix(in srgb, #14101f 96%, transparent);
+  --glow1: rgba(167, 139, 250,.14); --glow2: rgba(211, 198, 255,.08); --info: #d3c6ff;
+  --sk-btn: #2b2446; --sk-play-bg: #a78bfa; --sk-play-sh: 0 4px 16px rgba(167, 139, 250,.4); --sk-track-bg: #322a4b; --sk-thumb-sh: 0 0 0 5px rgba(167, 139, 250,.5);
+}
+html[data-theme="tx-rot"] {
+  --bg: #1a0f10; --panel: #241517; --panel-2: #35201f; --accent: #ff5a5f; --accent-rgb: 255, 90, 95; --accent-2: #ffb0b3; --accent2-rgb: 255, 176, 179; --accent3: #cfd2d8;
+  --on-accent: #ffffff; --sel-bg: #591f21; --bar-bg: color-mix(in srgb, #1a0f10 94%, transparent); --side-bg: color-mix(in srgb, #241517 96%, transparent); --flyer-bg: color-mix(in srgb, #1a0f10 96%, transparent);
+  --glow1: rgba(255, 90, 95,.14); --glow2: rgba(255, 176, 179,.08); --info: #ffb0b3;
+  --sk-btn: #35201f; --sk-play-bg: #ff5a5f; --sk-play-sh: 0 4px 16px rgba(255, 90, 95,.4); --sk-track-bg: #4c1b1c; --sk-thumb-sh: 0 0 0 5px rgba(255, 90, 95,.5);
 }
 
 /* ============================================================
