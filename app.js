@@ -1158,6 +1158,26 @@ async function loadMedia(fresh) {
   } catch { /* Worker nicht erreichbar: alles bleibt wie bisher */ }
 }
 
+/* Titel nur in der gewählten Musik-Sprache (Standard Englisch): song.title liefert je nach Sprache den englischen oder deutschen Titel */
+function wrapTitles(list) {
+  (list || []).forEach((song) => {
+    if (Object.prototype.hasOwnProperty.call(song, "_en")) return;
+    const en = song.title, de = song._de;
+    Object.defineProperty(song, "_en", { value: en, writable: true, enumerable: false, configurable: true });
+    Object.defineProperty(song, "title", {
+      enumerable: true, configurable: true,
+      get() {
+        const n = song.number;
+        if (musikLang() === "de") return (window.LIEDTITEL_DE || {})[n] || song._de || song._en || (window.LIEDTITEL_EN || {})[n] || `Lied ${n}`;
+        return song._en || (window.LIEDTITEL_EN || {})[n] || `Lied ${n}`;
+      },
+      set(v) { song._en = v; }
+    });
+    if (de) Object.defineProperty(song, "_de", { value: de, writable: true, enumerable: false, configurable: true });
+  });
+  return list;
+}
+
 /* Lieder, die nur als Instrumental/Video vorliegen (nicht in songs.json), spielbar machen – z. B. für LuD+WT */
 const showExtraSongs = () => { try { return localStorage.getItem("showExtra") === "1"; } catch { return false; } };
 
@@ -1188,7 +1208,7 @@ function addMissingSongs() {
   let added = false;
   for (const n of wanted) {
     if (have.has(n) || !(mediaKey("meeting", n) || mediaKey("video", n) || mediaKey("sung", n))) continue;
-    state.songs.push({ id: String(n).padStart(3, "0"), number: n, title: titles.get(n) || (window.LIEDTITEL_DE || {})[n] || `Lied ${n}`, category: "", extra: true });
+    state.songs.push(wrapTitles([{ id: String(n).padStart(3, "0"), number: n, title: (window.LIEDTITEL_EN || {})[n] || "", _de: titles.get(n) || "", category: "", extra: true }])[0]);
     have.add(n);
     added = true;
   }
@@ -1346,6 +1366,14 @@ async function pickSource(song, want) {
   if (want === "sung" && sung) return { version: "sung", url: mediaUrl(sung) };
   if (want === "video" && video) return { version: "video", url: mediaUrl(video) };
   if ((want === "video" || want === "meeting") && meet) return { version: "meeting", url: mediaUrl(meet) };
+  if (de) {
+    /* Deutsch: fehlt das deutsche Karaoke, zuerst in derselben Sprache bleiben – Instrumental, dann Zusammenkünfte, dann Video */
+    const kDe = mediaKey("karaoke", n);
+    if (kDe) return { version: "karaoke", url: mediaUrl(kDe) };
+    state.langFallback = false;
+    const alt = meet ? ["meeting", meet] : sung ? ["sung", sung] : video ? ["video", video] : null;
+    if (alt) { state.langFallback = false; return { version: alt[0], url: mediaUrl(alt[1]), fallback: true }; }
+  }
   const kKey = mk("karaoke");
   if (kKey) return { version: "karaoke", url: mediaUrl(kKey) };
   if (!song.extra) {
@@ -1933,7 +1961,7 @@ function loadSongsFromCache() {
   try {
     const t = localStorage.getItem("songsCache"); if (!t) return false;
     const data = JSON.parse(t); if (!Array.isArray(data) || !data.length) return false;
-    state.songs = data; state.songsFromCache = true;
+    wrapTitles(data); state.songs = data; state.songsFromCache = true;
     fillCategories(); renderList();
     el.status.textContent = `${data.length} Lieder bereit`;
     return true;
@@ -1959,15 +1987,15 @@ async function loadSongs() {
     if (state.songsFromCache) {
       state.songsFromCache = false;
       const old = state.songs.filter((x) => !x.extra);
-      if (JSON.stringify(old) === JSON.stringify(data)) return;   // unverändert: nichts neu aufbauen
+      if (JSON.stringify(old.map((x) => ({ ...x, title: x._en }))) === JSON.stringify(data)) return;   // unverändert: nichts neu aufbauen
       const cur = state.songs[state.index];
-      state.songs = data;
+      wrapTitles(data); state.songs = data;
       if (state.media) addMissingSongs();
       if (cur) state.index = state.songs.findIndex((x) => x.id === cur.id);
       fillCategories(); renderList();
       return;
     }
-    state.songs = data;
+    wrapTitles(data); state.songs = data;
     fillCategories();
     el.status.textContent = `${data.length} Lieder bereit`;
     if (el.startStatus) el.startStatus.textContent = `${data.length} Lieder bereit`;
