@@ -1,7 +1,59 @@
 {
-  "letzter_lauf": "2026-11-09T10:22:47Z",
+  "letzter_lauf": "2026-11-09T10:47:22Z",
   "letzter_erfolg": "2026-10-26T04:48:05Z",
   "laeufe": [
+    {
+      "zeit": "2026-11-09T10:47:22Z",
+      "ok": false,
+      "ausloeser": "workflow_dispatch",
+      "wochen_gefunden": 0,
+      "fehler": [
+        {
+          "zeit": "2026-11-09T10:44:51Z",
+          "schritt": "Wochenseite auswerten",
+          "ziel": "https://wol.jw.org/de/wol/meetings/r10/lp-x/2026/46",
+          "meldung": "Seite geladen, aber keine Links zu Leben und Dienst / Wachtturm gefunden. Gefunden: keine Dokument-Links (/wol/d/...) im HTML (2007 Zeichen)"
+        },
+        {
+          "zeit": "2026-11-09T10:44:54Z",
+          "schritt": "Aktuelle Woche auswerten",
+          "ziel": "",
+          "meldung": "Keine Lieder für 'leben_und_dienst' gefunden (Woche 2026-11-09)"
+        },
+        {
+          "zeit": "2026-11-09T10:44:54Z",
+          "schritt": "Aktuelle Woche auswerten",
+          "ziel": "",
+          "meldung": "Keine Lieder für 'wachtturm' gefunden (Woche 2026-11-09)"
+        }
+      ]
+    },
+    {
+      "zeit": "2026-11-09T10:44:08Z",
+      "ok": false,
+      "ausloeser": "workflow_dispatch",
+      "wochen_gefunden": 0,
+      "fehler": [
+        {
+          "zeit": "2026-11-09T10:41:38Z",
+          "schritt": "Wochenseite auswerten",
+          "ziel": "https://wol.jw.org/de/wol/meetings/r10/lp-x/2026/46",
+          "meldung": "Seite geladen, aber keine Links zu Leben und Dienst / Wachtturm gefunden. Gefunden: keine Dokument-Links (/wol/d/...) im HTML (2007 Zeichen)"
+        },
+        {
+          "zeit": "2026-11-09T10:41:40Z",
+          "schritt": "Aktuelle Woche auswerten",
+          "ziel": "",
+          "meldung": "Keine Lieder für 'leben_und_dienst' gefunden (Woche 2026-11-09)"
+        },
+        {
+          "zeit": "2026-11-09T10:41:40Z",
+          "schritt": "Aktuelle Woche auswerten",
+          "ziel": "",
+          "meldung": "Keine Lieder für 'wachtturm' gefunden (Woche 2026-11-09)"
+        }
+      ]
+    },
     {
       "zeit": "2026-11-09T10:22:47Z",
       "ok": false,
