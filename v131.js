@@ -294,3 +294,41 @@
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
   window.addEventListener("storage", paintBtn);
 })();
+
+/* v146: Kopieren-Knopf an jedem Protokoll (alle <pre>-Felder der App) */
+(() => {
+  const copyText = async (txt) => {
+    try { await navigator.clipboard.writeText(txt); return true; } catch { /* Fallback */ }
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = txt; ta.style.cssText = "position:fixed;left:-9999px;top:0";
+      document.body.append(ta); ta.select();
+      const ok = document.execCommand("copy"); ta.remove(); return ok;
+    } catch { return false; }
+  };
+  const add = (pre) => {
+    if (pre.dataset.cp || pre.closest("[data-nocopy]")) return;
+    pre.dataset.cp = "1";
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "chip log-copy"; b.textContent = "📋 Protokoll kopieren";
+    b.style.cssText = "margin:4px 0;display:inline-block";
+    b.addEventListener("click", async (e) => {
+      e.preventDefault(); e.stopPropagation();
+      const txt = (pre.textContent || "").trim();
+      if (!txt) { try { showToast("Protokoll ist leer"); } catch { /* egal */ } return; }
+      const ok = await copyText(txt);
+      const old = "📋 Protokoll kopieren";
+      b.textContent = ok ? "✓ Kopiert" : "Kopieren nicht möglich – Text markieren";
+      try { showToast(ok ? "Protokoll kopiert" : "Kopieren nicht möglich"); } catch { /* egal */ }
+      setTimeout(() => { b.textContent = old; }, 2200);
+    });
+    pre.parentNode.insertBefore(b, pre);
+  };
+  const scan = (root) => (root || document).querySelectorAll("pre").forEach(add);
+  const boot = () => {
+    scan();
+    new MutationObserver((ms) => { for (const m of ms) m.addedNodes.forEach((n) => { if (n.nodeType === 1) { if (n.tagName === "PRE") add(n); else scan(n); } }); })
+      .observe(document.body, { childList: true, subtree: true });
+  };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
+})();

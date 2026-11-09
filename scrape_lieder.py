@@ -187,8 +187,18 @@ def _classify(text: str) -> str | None:
     return None
 
 
-def parse_week_page(html: str) -> dict[str, tuple[int, str]]:
-    """Wochenseite -> {'leben_und_dienst': (doc_id, url), 'wachtturm': (doc_id, url)}."""
+def _kind_by_id(doc_id: int) -> str | None:
+    """Notfall-Erkennung über die Länge der Dokument-ID (LuD: 9 Ziffern, Wachtturm: 7)."""
+    n = len(str(doc_id))
+    return "leben_und_dienst" if n == 9 else "wachtturm" if n == 7 else None
+
+
+def parse_week_page(html: str, diag: list | None = None) -> dict[str, tuple[int, str]]:
+    """Wochenseite -> {'leben_und_dienst': (doc_id, url), 'wachtturm': (doc_id, url)}.
+
+    Erkennung in vier Stufen: Überschrift davor, Linktext, umgebende Elemente,
+    zuletzt Länge der Dokument-ID. Alle gefundenen Dokument-Links werden in
+    `diag` für das Protokoll gesammelt."""
     soup = BeautifulSoup(html, "html.parser")
     found: dict[str, tuple[int, str]] = {}
     section = ""
@@ -200,9 +210,23 @@ def parse_week_page(html: str) -> dict[str, tuple[int, str]]:
         m = DOC_RE.search(href)
         if not m:
             continue
-        kind = _classify(section) or _classify(el.get_text(" ", strip=True))
+        doc_id = int(m.group(1))
+        ctx = ""
+        parent = el
+        for _ in range(4):
+            parent = parent.parent
+            if parent is None or parent.name in ("body", "html"):
+                break
+            t = parent.get_text(" ", strip=True)
+            if len(t) > 300:
+                break
+            ctx = t
+        kind = (_classify(section) or _classify(el.get_text(" ", strip=True))
+                or _classify(ctx) or _kind_by_id(doc_id))
+        if diag is not None:
+            diag.append(f"{doc_id} | Text: {el.get_text(' ', strip=True)[:40]!r} | Abschnitt: {section[:40]!r} -> {kind}")
         if kind and kind not in found:
-            found[kind] = (int(m.group(1)), urljoin(BASE, href))
+            found[kind] = (doc_id, urljoin(BASE, href))
     return found
 
 
@@ -315,6 +339,26 @@ def chain_find(fetcher: Fetcher, monday: date, known: dict[str, int]) -> tuple[i
     return (doc_id, html) if matches_week(html, monday) else None
 
 
+STEPS = {"leben_und_dienst": 48, "wachtturm": 13}  # beobachtete ID-Schrittweite je Woche
+
+
+def predict_find(fetcher: Fetcher, monday: date, known: dict[str, int], kind: str) -> tuple[int, str] | None:
+    """Option C: Dokument-ID aus Startwert + Schrittweite berechnen und über das Wochendatum prüfen."""
+    if not known:
+        return None
+    ref = min(known, key=lambda k: abs((date.fromisoformat(k) - monday).days))
+    weeks = (monday - date.fromisoformat(ref)).days // 7
+    base = known[ref] + weeks * STEPS[kind]
+    for cand in (base, base + 1, base - 1, base + 2, base - 2):
+        try:
+            html = fetcher.get(DOC_URL.format(doc_id=cand))
+        except FetchError:
+            continue
+        if matches_week(html, monday):
+            return cand, html
+    return None
+
+
 def resolve_week(fetcher: Fetcher, monday: date, known: dict[str, dict[str, int]]) -> dict[str, dict]:
     parts: dict[str, dict] = {}
     iso = monday.isocalendar()
@@ -322,10 +366,12 @@ def resolve_week(fetcher: Fetcher, monday: date, known: dict[str, dict[str, int]
     # Option A: Wochenseite
     try:
         page = fetcher.get(WEEK_URL.format(year=iso.year, week=iso.week))
-        links = parse_week_page(page)
+        diag: list[str] = []
+        links = parse_week_page(page, diag)
         if not links:
+            doc_links = "; ".join(diag[:8]) or "keine Dokument-Links (/wol/d/...) im HTML (%d Zeichen)" % len(page)
             record("Wochenseite auswerten", WEEK_URL.format(year=iso.year, week=iso.week),
-                   "Seite geladen, aber keine Links zu Leben und Dienst / Wachtturm gefunden")
+                   "Seite geladen, aber keine Links zu Leben und Dienst / Wachtturm gefunden. Gefunden: " + doc_links)
         for kind, (doc_id, url) in links.items():
             try:
                 part = build_part(kind, doc_id, fetcher.get(url), "wochenseite")
@@ -347,6 +393,15 @@ def resolve_week(fetcher: Fetcher, monday: date, known: dict[str, dict[str, int]
                 parts[kind] = part
         except FetchError as exc:
             record(f"Dokument-Kette ({kind})", "", exc)
+        if kind in parts:
+            continue
+        try:
+            hit = predict_find(fetcher, monday, known.get(kind, {}), kind)
+            part = build_part(kind, hit[0], hit[1], "berechnet") if hit else None
+            if part:
+                parts[kind] = part
+        except FetchError as exc:
+            record(f"Dokument berechnen ({kind})", "", exc)
     return parts
 
 
