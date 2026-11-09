@@ -378,6 +378,7 @@
       vs = [{ ts: 0, type: "server", lrc: std, label: "Standardtext" }];
       body.append(h("small", "set-hint", "Noch kein Verlauf – links und rechts steht der Standardtext. Weitere Fassungen entstehen durch „KI-Sync“ oder Speichern."));
     }
+    if (KV.want) { const fi = (q) => vs.findIndex((v) => String(v.label).startsWith(q)); const a = fi(KV.want.l), b = fi(KV.want.r); if (a >= 0 && b >= 0) { KV.l = String(a); KV.r = String(b); } KV.want = null; }
     if (!KV.l || !vs[KV.l]) { KV.l = String(0); KV.r = String(vs.length - 1); }
     if (!vs[KV.r]) KV.r = String(vs.length - 1);
     const opt = (s, val) => { vs.forEach((v, i) => { const o = h("option", "", v.label); o.value = String(i); s.append(o); }); s.value = val; };
@@ -527,8 +528,8 @@
   /* ---------- Reiter-Gruppen ---------- */
   const GRP = {
     daten: ["Sichern", [["abgleich", "Favoriten-Abgleich"], ["sichern", "Daten"]]],
-    sync: ["Synchronisieren", [["fehlend", "Fehlende Lieder"], ["syncstat", "Diagramme"], ["zeit", "Zeiten EN⇄DE"], ["ludwt", "Wochenlieder LuD+WT"]]],
-    bewert: ["Anpassungen", [["bew", "Bewertungen"], ["kihist", "KI-Verlauf"], ["stat", "Diagramme"]]]
+    sync: ["Synchronisieren", [["fehlend", "Fehlende Lieder"], ["syncstat", "Diagramme"], ["ludwt", "Wochenlieder LuD+WT"]]],
+    bewert: ["Anpassungen", [["bew", "Bewertungen"], ["kihist", "KI-Verlauf"], ["stat", "Diagramme"], ["zeit", "Zeiten EN⇄DE"]]]
   };
   const grpOf = (t) => Object.keys(GRP).find((g) => GRP[g][1].some((x) => x[0] === t)) || "";
   const lastSub = {};
@@ -570,6 +571,6 @@
 
   document.addEventListener("DOMContentLoaded", () => { wireGrp(); setTimeout(loadIdx, 1500); });
   if (document.readyState !== "loading") setTimeout(loadIdx, 1500);
-  window.RATING = { loadIdx, mountBew, mountKih, paintAmpel, hadd, hget, mkLrc, curArt, curLang, AMP_NAME, getStatus: (id, art, lang) => ampel(id, art, lang),
+  window.RATING = { openSongEdit, kihCompare: (id, lq, rq) => { KV.id = id; KV.art = "karaoke"; KV.lang = "de"; KV.l = KV.r = ""; KV.sel = KV.selR = -1; KV.want = { l: lq, r: rq }; showSetTab("kihist"); }, loadIdx, mountBew, mountKih, paintAmpel, hadd, hget, mkLrc, curArt, curLang, AMP_NAME, getStatus: (id, art, lang) => ampel(id, art, lang),
     setStatus: async (id, art, lang, v) => { const res = await post("/api/rate", { id, op: "status", art, lang, value: v }); (IDX[id] = IDX[id] || {}).status = res.status; try { localStorage.setItem("rateIdx", JSON.stringify(IDX)); } catch { /* egal */ } paintAmpel(); return res; } };
 })();
