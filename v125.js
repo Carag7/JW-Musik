@@ -546,7 +546,7 @@
     document.querySelectorAll("#setTabs [data-grp]").forEach((b) => { if (b._v125) return; b._v125 = true; b.addEventListener("click", () => showSetTab(lastSub[b.dataset.grp] || GRP[b.dataset.grp][1][0][0])); });
     const o = window.showSetTab;
     if (typeof o === "function" && !o._v125) {
-      const w = function (t) { o(t); try { applyWide(); paintGrp(t); if (t === "bew") mountBew(); else if (t === "kihist") mountKih(); else if (t === "stat") mountStat(); else if (t === "syncstat") mountSyncStat(); else if (t === "zeit" && window.V132) V132.mount(); } catch (e) { console.error(e); } };
+      const w = function (t) { o(t); try { applyWide(); paintGrp(t); if (t === "bew") mountBew(); else if (t === "kihist") mountKih(); else if (t === "stat") mountStat(); else if (t === "syncstat") mountSyncStat(); else if (t === "zeit" && window.V132) V132.mount(); else if (t === "ludwt" && window.LUDWT && LUDWT.mountSync) LUDWT.mountSync(); } catch (e) { console.error(e); } };
       w._v125 = true; window.showSetTab = w;
     }
   }

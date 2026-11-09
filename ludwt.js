@@ -198,7 +198,7 @@
         try {
           const st = await getJson("status.json");
           if (st.letzter_lauf !== before) {
-            clearInterval(pollTimer);
+            clearInterval(pollTimer); setFail(null);
             await reload();
             if (window.LUDWT && typeof window.LUDWT.onChange === "function") window.LUDWT.onChange();
             const stillOpen = document.getElementById("ludwtSync");
@@ -207,7 +207,7 @@
             const msgRoot = document.getElementById("ludwtSync");
             if (msgRoot) say(msgRoot, ok ? "Update fertig." : "Update ist fehlgeschlagen – Details im Fehlerprotokoll.", ok ? "ok" : "bad");
           } else if (Date.now() - t0 > POLL_MAX_MS) {
-            clearInterval(pollTimer);
+            clearInterval(pollTimer); setFail("keine Rückmeldung nach 8 Minuten");
             say(root, "Noch keine Rückmeldung nach 8 Minuten. Bitte später erneut öffnen oder bei GitHub unter Actions nachsehen.", "bad");
             btn.disabled = false;
           }
@@ -215,6 +215,7 @@
       }, POLL_MS);
     }).catch((err) => {
       const setup = /GITHUB_TOKEN/.test(err.message) ? " Einmalige Einrichtung nötig: In Cloudflare unter Worker → Einstellungen → Variablen und Geheimnisse das Secret GITHUB_TOKEN anlegen (siehe Anleitung)." : "";
+      setFail(err.message);
       say(root, `Update konnte nicht gestartet werden: ${err.message}${setup}`, "bad");
       btn.disabled = false;
     });
@@ -233,6 +234,67 @@
     pop.hidden = false;
   }
 
+
+  /* ---------- Übersicht oben (grün = aktuell, orange = Aktualisierung hat nicht geklappt) ---------- */
+  const FAIL_KEY = "ludwtLastFail";
+  const failInfo = () => { try { return JSON.parse(localStorage.getItem(FAIL_KEY) || "null"); } catch { return null; } };
+  const setFail = (msg) => { try { if (msg) localStorage.setItem(FAIL_KEY, JSON.stringify({ ts: Date.now(), msg: String(msg).slice(0, 200) })); else localStorage.removeItem(FAIL_KEY); } catch { /* egal */ } };
+  const songInfo = (n) => (typeof state !== "undefined" && state.songs ? state.songs.find((s) => s.number === n) : null);
+  const tags = (n) => {
+    const out = [];
+    try {
+      if (typeof mediaKey === "function") {
+        if (mediaKey("karaoke", n) || (songInfo(n) && !songInfo(n).extra && (window.musikLang ? musikLang() !== "de" : true))) out.push(["K", "Karaoke"]);
+        if (mediaKey("meeting", n)) out.push(["♪", "Instrumental"]);
+        if (mediaKey("sung", n)) out.push(["Z", "Zusammenkünfte"]);
+        if (mediaKey("video", n)) out.push(["▶", "Video"]);
+      }
+    } catch { /* egal */ }
+    return out;
+  };
+  function detailCard(w, label) {
+    const card = h("div", `lw-card${isCurrent(w) ? " is-now" : ""}`);
+    card.append(h("div", "lw-h", `${label} · ${rangeLabel(w)} ${parseDay(w.montag).getFullYear()}`));
+    for (const kind of KINDS) {
+      const part = w[kind.key]; if (!part) continue;
+      card.append(h("div", "lw-k", kind.long + (part.thema ? ` – ${part.thema}` : "")));
+      for (const l of part.lieder) {
+        const si = songInfo(l.nummer), row = h("div", "lw-row");
+        row.append(h("b", "lw-n", String(l.nummer)), h("span", "lw-t", si ? si.title : `Lied ${l.nummer}`), h("small", "lw-p", POS[l.position] || l.position));
+        const tg = h("span", "lw-tags"); const t = tags(l.nummer);
+        if (t.length) t.forEach(([c, n]) => { const i = h("i", "lw-tag", c); i.title = n; tg.append(i); }); else tg.append(h("em", "lw-no", "keine Datei"));
+        row.append(tg); card.append(row);
+      }
+    }
+    return card;
+  }
+  function overview(root, list, runs, latest) {
+    const cur = list[currentIndex()], now = cur && isCurrent(cur) ? cur : null;
+    const ahead = list.filter((w) => w.montag > iso(new Date())).length;
+    const okMs = status && status.letzter_erfolg ? new Date(status.letzter_erfolg).getTime() : 0;
+    const fail = failInfo(), failNow = fail && fail.ts > okMs;
+    const old = okMs && Date.now() - okMs > 9 * 86400000;
+    let cls = "ok", title = "", sub = "";
+    if (!list.length) { cls = "warn"; title = "Noch keine Wochen geladen"; sub = "Tippe auf „Jetzt aktualisieren“."; }
+    else if (failNow) { cls = "warn"; title = "Aktualisierung hat nicht funktioniert"; sub = `${fmtTime(fail.ts)}: ${fail.msg}${okMs ? `. Letztes erfolgreiches Update: ${fmtTime(okMs)}` : ""}.`; }
+    else if (latest && !latest.ok) { cls = "warn"; title = "Das letzte Update ist fehlgeschlagen"; sub = `${fmtTime(latest.zeit)} (${trigger(latest.ausloeser)}). Die vorhandenen Wochen bleiben gültig. Details im Fehlerprotokoll (Knopf „i“).`; }
+    else if (!now) { cls = "warn"; title = "Die aktuelle Woche fehlt"; sub = `Vorhanden: ${list.length} Wochen${okMs ? `, letztes Update ${fmtTime(okMs)}` : ""}. Bitte jetzt aktualisieren.`; }
+    else if (old) { cls = "warn"; title = "Das Update ist schon älter"; sub = `Letztes erfolgreiches Update: ${fmtTime(okMs)}. Das wöchentliche Update scheint ausgeblieben zu sein.`; }
+    else { cls = "ok"; title = "Alles aktuell"; sub = `Die aktuelle Woche (${rangeLabel(now)}) und ${ahead} ${ahead === 1 ? "weitere Woche" : "weitere Wochen"} im Voraus sind geladen.${okMs ? ` Letztes erfolgreiches Update: ${fmtTime(okMs)}.` : ""}`; }
+    const box = h("div", `fo-banner fo-${cls}`);
+    const top = h("div", "fo-head"); const dot = h("span", `ls-dot ${cls === "ok" ? "ok" : "busy"}`); top.append(dot, h("b", "", (cls === "ok" ? "✓ " : "⚠ ") + title)); box.append(top, h("p", "fo-sub", sub));
+    const acts = h("div", "fo-acts");
+    const go = h("button", "chip", "Jetzt aktualisieren"); go.type = "button"; go.onclick = () => openPopup(root); acts.append(go);
+    box.append(acts);
+    const msg = h("p", "ls-msg"); box.append(msg);
+    // Zahlen
+    const tab = h("div", "lw-stats");
+    const a = list[0], b = list[list.length - 1];
+    [["Wochen geladen", String(list.length)], ["Zeitraum", list.length ? `${rangeLabel(a)} ${parseDay(a.montag).getFullYear()} – ${rangeLabel(b)} ${parseDay(b.montag).getFullYear()}` : "–"], ["Im Voraus", String(ahead)], ["Nächstes Update", nextAuto()]].forEach(([k, v]) => { tab.append(h("span", "lw-sk", k), h("span", "lw-sv", v)); });
+    box.append(tab);
+    return box;
+  }
+
   function build(root, keepOpen) {
     const wasOpen = keepOpen != null ? keepOpen : !!root.querySelector(".ls-all:not([hidden])");
     root.replaceChildren();
@@ -248,32 +310,11 @@
 
     const runs = (status && status.laeufe) || [];
     const latest = runs[0];
-    const statusLine = h("div", "ls-line");
-    const dot = h("span", `ls-dot ${!latest ? "" : latest.ok ? (latest.fehler && latest.fehler.length ? "warn" : "ok") : "bad"}`);
-    statusLine.append(dot, h("span", "", status && status.letzter_erfolg
-      ? `Letztes erfolgreiches Update: ${fmtTime(status.letzter_erfolg)}`
-      : "Noch kein erfolgreiches Update."));
-    root.append(statusLine);
-    if (latest) {
-      root.append(h("p", "ls-small", `Letzter Lauf: ${fmtTime(latest.zeit)} – ${trigger(latest.ausloeser)} – ${latest.ok ? "erfolgreich" : "FEHLGESCHLAGEN"}`));
-    }
-
-    root.append(h("p", "ls-small", `Nächstes automatisches Update: ${nextAuto()} (GitHub kann es um einige Minuten verzögern)`));
-
     const list = weeks();
-    if (list.length) {
-      const a = list[0], b = list[list.length - 1];
-      root.append(h("p", "ls-count", `Lieder für ${list.length} ${list.length === 1 ? "Woche" : "Wochen"} heruntergeladen`));
-      root.append(h("p", "ls-small", `${rangeLabel(a)} ${parseDay(a.montag).getFullYear()} bis ${rangeLabel(b)} ${parseDay(b.montag).getFullYear()}`));
-    } else {
-      root.append(h("p", "ls-count", "Noch keine Wochen heruntergeladen."));
-    }
-
-    root.append(h("p", "ls-msg"));
+    root.append(overview(root, list, runs, latest));
 
     if (list.length) {
-      root.append(h("p", "ls-small ls-title", "Aktuelle Woche"));
-      root.append(weekCard(list[currentIndex()]));
+      { const ci = currentIndex(); root.append(detailCard(list[ci], isCurrent(list[ci]) ? "Diese Woche" : "Nächste Woche")); if (list[ci + 1]) root.append(detailCard(list[ci + 1], "Nächste Woche")); }
       if (list.length > 1) {
         const toggle = h("button", "chip ls-toggle", "");
         toggle.type = "button";
