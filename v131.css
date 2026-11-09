@@ -191,3 +191,27 @@ html[data-selsize="riesig"] .tz-pick { min-height: 120px !important; font-size: 
 html[data-selsize="sehr"] .tz-opt { min-height: 100px; font-size: 34px; }
 html[data-selsize="riesig"] .tz-opt { min-height: 120px; font-size: 40px; }
 .zt-row.done { opacity: .55; }
+
+/* Fehlende Lieder: Übersicht (grün = aktuell, blau = neue Lieder, orange = Prüfung fehlgeschlagen) */
+.fo-banner { border: 2px solid var(--line, #888); border-radius: 16px; padding: 14px; margin: 10px 0; }
+.fo-ok { border-color: #3fae5a; background: color-mix(in srgb, #3fae5a 12%, transparent); }
+.fo-new { border-color: #3b82c4; background: color-mix(in srgb, #3b82c4 12%, transparent); }
+.fo-warn { border-color: #e8912d; background: color-mix(in srgb, #e8912d 14%, transparent); }
+.fo-head { display: flex; align-items: center; gap: 10px; font-size: 18px; }
+.fo-sub { margin: 6px 0 10px; font-size: 14px; }
+.fo-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.fo-go { background: #3b82c4 !important; color: #fff !important; border-color: #3b82c4 !important; }
+.fo-tab { display: grid; grid-template-columns: minmax(110px, 1.3fr) 1fr 0.8fr 1.4fr; gap: 6px 8px; align-items: center; font-size: 14px; }
+.fo-th { font-size: 11px; font-weight: 700; color: var(--muted, #888); text-transform: uppercase; }
+.fo-tab .r { text-align: right; }
+.fo-span { grid-column: 2 / -1; color: var(--muted, #888); font-size: 12px; }
+.fo-mini { min-height: 36px !important; padding: 0 12px !important; }
+.fo-okm { color: #3fae5a; font-weight: 700; }
+.fo-grey { color: var(--muted, #888); }
+.fo-mem { margin-top: 14px; }
+.fo-memt { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+.fo-bar { height: 14px; border-radius: 7px; background: color-mix(in srgb, var(--muted, #888) 22%, transparent); overflow: hidden; display: flex; }
+.fo-bar i { display: block; height: 100%; background: #3b82c4; }
+.fo-bar i.add { background: repeating-linear-gradient(45deg, #e8912d, #e8912d 6px, #f0b060 6px, #f0b060 12px); }
+.fo-mini { white-space: nowrap; font-size: 13px !important; }
+.fo-tab { grid-template-columns: minmax(96px, 1.1fr) 0.9fr 0.6fr 1.5fr; }

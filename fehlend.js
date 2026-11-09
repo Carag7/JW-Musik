@@ -190,7 +190,9 @@
       if (r.abgebrochen) { say(root, "Abgebrochen."); return; }
     } catch (err) {
       const setup = /GITHUB_TOKEN/.test(err.message) ? " Einmalige Einrichtung nötig: Secret GITHUB_TOKEN in Cloudflare (siehe Anleitung)." : "";
+      setFail(err.message);
       say(root, `Prüfung konnte nicht gestartet werden: ${err.message}${setup}`, "bad");
+      const lv = document.getElementById("fehlendBox"); if (lv) render(lv);
       return;
     }
     say(root, "Prüfung läuft bei GitHub, danach wird die Datei veröffentlicht (meist 1–3 Minuten) …", "busy");
@@ -200,12 +202,13 @@
       try {
         const d = await getJson(dataFile());
         if (d && d.stand && d.stand !== before) {
-          clearInterval(poll); data = d;
+          clearInterval(poll); data = d; setFail(null);
           const live = document.getElementById("fehlendBox");
           if (live) { render(live); say(live, "Prüfung fertig, die Liste ist aktuell.", "ok"); }
         } else if (Date.now() - t0 > 8 * 60000) {
           clearInterval(poll);
           const live = document.getElementById("fehlendBox");
+          setFail("keine Rückmeldung nach 8 Minuten");
           log("Keine Rückmeldung nach 8 Minuten – die Datei " + dataFile() + " wurde nicht neu geschrieben (GitHub Actions: Ablauf „Verfügbarkeit prüfen“ ansehen).");
           if (live) say(live, `Noch keine Rückmeldung nach 8 Minuten. ${lang() === "de" ? "Für Deutsch muss der neue GitHub-Ablauf (verfuegbar.yml + scrape_verfuegbar.py) hochgeladen sein. " : ""}Bitte bei GitHub unter Actions nachsehen. Das Protokoll unten zeigt Einzelheiten.`, "bad");
         }
@@ -256,6 +259,94 @@
 
   function scroller(root) { return root.closest("#codeForm") || root.closest(".login-card") || null; }
 
+
+  /* ---- Übersicht oben: aktuell oder neue Lieder? ---- */
+  const FAIL_KEY = "fehlLastFail";
+  const failInfo = () => { try { return JSON.parse(localStorage.getItem(FAIL_KEY) || "null"); } catch { return null; } };
+  const setFail = (msg) => { try { if (msg) localStorage.setItem(FAIL_KEY, JSON.stringify({ ts: Date.now(), msg: String(msg).slice(0, 200), lang: lang() })); else localStorage.removeItem(FAIL_KEY); } catch { /* egal */ } };
+  const fdate = (v) => new Intl.DateTimeFormat("de-AT", { dateStyle: "medium", timeStyle: "short" }).format(new Date(v));
+  function typeStats(m) {
+    return TYPES.filter((t) => opt(`fehlT_${t.id}`, true) || true).map((t) => {
+      const r = { t, hidden: hiddenT(t.id), have: 0, pub: 0, ready: [], bytes: 0, excl: 0, none: 0 };
+      m.rows.forEach((x) => {
+        const hv = m.has[t.id](x.n), pb = m.published(x.n, t.id);
+        if (hv) r.have++; if (pb) r.pub++;
+        if (!hv && pb) { if (willLoad(x.n, t.id)) { r.ready.push([x.n, t.id]); r.bytes += sizeOf(x.n, t.id); } else r.excl++; }
+        if (!hv && !pb) r.none++;
+      });
+      return r;
+    });
+  }
+  async function loadMany(root, list) {
+    const total = list.reduce((x, [n, t]) => x + sizeOf(n, t), 0);
+    const used = (state.media.speicher && state.media.speicher.gesamt) || 0, after = used + total;
+    const okGo = await uiConfirm({
+      eyebrow: "R2-Speicher", title: `${list.length} Dateien laden?`,
+      lines: [`Dazu kommen ca. ${fmtSize(total)}. Belegt wären danach ${fmtSize(after)} von ${fmtSize(LIMIT)}.`, after > LIMIT ? "ACHTUNG: Das überschreitet die kostenlose Grenze von 10 GB!" : "Das bleibt innerhalb der kostenlosen Grenze."],
+      ok: after > LIMIT ? "Trotzdem laden" : "Laden"
+    });
+    if (!okGo) return;
+    say(root, "Lade Dateien …", "busy");
+    let ok = 0, fail = 0, last = "";
+    for (let i = 0; i < list.length; i++) {
+      say(root, `Lade ${i + 1} von ${list.length} …`, "busy");
+      const r = await download(list[i][0], list[i][1]);
+      if (r.abbruch) break;
+      if (r.ok) ok++; else { fail++; last = r.fehler; if (/Schlüssel|WRITE_KEY/.test(last)) break; }
+    }
+    await loadMedia(true);
+    const live = document.getElementById("fehlendBox"); if (live) { render(live); say(live, `${ok} Dateien gespeichert${fail ? `, ${fail} fehlgeschlagen (${last})` : ""}.`, fail ? "bad" : "ok"); }
+  }
+  function overview(root, m) {
+    const st = typeStats(m), vis = st.filter((x) => !x.hidden);
+    const ready = vis.reduce((n, x) => n + x.ready.length, 0), bytes = vis.reduce((n, x) => n + x.bytes, 0);
+    const fail = failInfo(), standMs = data.stand ? new Date(data.stand).getTime() : 0;
+    const failNow = fail && fail.ts > standMs;
+    const old = standMs && (Date.now() - standMs) > 9 * 86400000;
+    const leer = data.stand && data.gefunden && !Object.values(data.gefunden).some((n) => n > 0);
+    const errs = (data.fehler || []);
+    let cls = "ok", title = "", sub = "";
+    const LN = lang() === "de" ? "deutschen " : "";
+    if (!data.stand) { cls = "warn"; title = "Noch keine Prüfung gelaufen"; sub = lang() === "de" ? "Für Deutsch gibt es noch keine Prüfung. Starte „Verfügbarkeit prüfen“ auf GitHub (Actions) einmal von Hand." : "Tippe auf „Jetzt bei jw.org prüfen“."; }
+    else if (failNow) { cls = "warn"; title = "Aktualisierung hat nicht funktioniert"; sub = `${fdate(fail.ts)}: ${fail.msg}. Stand der Liste: ${fdate(data.stand)}.`; }
+    else if (leer || errs.length) { cls = "warn"; title = "Prüfung hat Probleme gemeldet"; sub = `Die letzte Prüfung (${fdate(data.stand)}) hat auf jw.org keine ${LN}Lieder gefunden${errs.length ? " (" + errs[0] + ")" : ""}. Bitte später noch einmal prüfen.`; }
+    else if (old) { cls = "warn"; title = "Die Prüfung ist schon älter"; sub = `Letzte erfolgreiche Prüfung: ${fdate(data.stand)}. Die wöchentliche Prüfung scheint ausgeblieben zu sein – bitte jetzt prüfen.`; }
+    else if (ready) { cls = "new"; title = `${ready} neue ${ready === 1 ? "Datei" : "Dateien"} auf jw.org – noch nicht auf dem Server`; sub = `Zum Herunterladen bereit${bytes ? " (" + fmtSize(bytes) + ")" : ""}. Letzte Prüfung: ${fdate(data.stand)}.`; }
+    else { cls = "ok"; title = "Alles aktuell"; sub = `Alle auf jw.org veröffentlichten Lieder sind auf dem Server. Zuletzt geprüft: ${fdate(data.stand)}.`; }
+    const box = h("div", `fo-banner fo-${cls} fl-status`);
+    const top = h("div", "fo-head"); top.append(h("span", `ls-dot ${cls === "ok" ? "ok" : cls === "warn" ? "busy" : "ok"}`), h("b", "", (cls === "ok" ? "✓ " : cls === "warn" ? "⚠ " : "⬇ ") + title)); box.append(top, h("p", "fo-sub", sub));
+    const acts = h("div", "fo-acts");
+    if (ready) { const go = h("button", "chip fo-go", `Alle ${ready} laden${bytes ? " (" + fmtSize(bytes) + ")" : ""}`); go.type = "button"; go.onclick = () => loadMany(root, vis.flatMap((x) => x.ready)); acts.append(go); }
+    const chk = h("button", "chip", "Jetzt bei jw.org prüfen"); chk.type = "button"; chk.onclick = () => manual(root); acts.append(chk);
+    box.append(acts);
+    // je Art
+    const tab = h("div", "fo-tab");
+    ["Art", "Auf dem Server", "Auf jw.org", "Neu zum Laden"].forEach((x, i) => tab.append(h("span", "fo-th" + (i ? " r" : ""), x)));
+    st.forEach((x) => {
+      tab.append(h("span", `fo-nm fl-gn fl-t-${x.t.id}`, x.t.name));
+      if (x.hidden) { const c = h("span", "fo-c fo-span", "gleiche Dateien wie Englisch"); tab.append(c); return; }
+      tab.append(h("span", "fo-c r", `${x.have} / ${m.total}`), h("span", "fo-c r", String(x.pub)));
+      const c = h("span", "fo-c r");
+      if (x.ready.length) { const b = h("button", "chip fo-mini", `⬇ ${x.ready.length}${x.bytes ? " · " + fmtSize(x.bytes) : ""}`); b.type = "button"; b.title = `${x.t.name}: ${x.ready.length} Dateien laden`; b.onclick = () => loadMany(root, x.ready); c.append(b); }
+      else c.append(x.pub === 0 ? h("span", "fo-grey", "keine neuen") : h("span", "fo-okm", "✓ aktuell"));
+      tab.append(c);
+    });
+    box.append(tab);
+    // Speicher
+    const sp = state.media && state.media.speicher;
+    const mem = h("div", "fo-mem");
+    if (sp) {
+      const pct = Math.min(100, sp.gesamt / LIMIT * 100), after = sp.gesamt + bytes;
+      mem.append(h("div", "fo-memt", `Speicher in R2: ${fmtSize(sp.gesamt)} von ${fmtSize(LIMIT)} belegt (${Math.round(pct)} %) · frei ${fmtSize(Math.max(0, LIMIT - sp.gesamt))}`));
+      const bar = h("div", "fo-bar"); const f1 = h("i"); f1.style.width = pct + "%"; bar.append(f1);
+      if (bytes) { const f2 = h("i", "add"); f2.style.width = Math.min(100 - pct, bytes / LIMIT * 100) + "%"; bar.append(f2); }
+      mem.append(bar);
+      if (bytes) mem.append(h("small", after > LIMIT ? "set-hint bad" : "set-hint", `Nach dem Laden: ${fmtSize(after)} belegt${after > LIMIT ? " – ÜBER der kostenlosen Grenze!" : ""}`));
+    } else mem.append(h("small", "set-hint bad", "Speicher von R2 nicht verfügbar (Server nicht erreichbar)."));
+    box.append(mem);
+    return box;
+  }
+
   function render(root) {
     const m = model();
     if (!state.media) {
@@ -285,18 +376,10 @@
     again.addEventListener("click", () => showLast());
     root.append(again);
 
-    // Status: Punkt (grau/orange/grün/rot) + Meldung
-    const st = h("div", "ls-line fl-status");
-    st.append(h("span", `ls-dot ${data.stand ? "ok" : ""}`));
-    st.append(h("span", "", data.stand
-      ? `Zuletzt geprüft: ${new Intl.DateTimeFormat("de-AT", { dateStyle: "medium", timeStyle: "short" }).format(new Date(data.stand))}`
-      : "Noch keine Prüfung gelaufen."));
-    root.append(st);
+    // Übersicht: ist alles aktuell? (grün = aktuell, blau = neue Lieder auf jw.org, orange = Prüfung hat nicht geklappt)
+    root.append(overview(root, m));
     root.append(h("p", "fl-msg set-hint ls-msg", ""));
-    const leer = data.stand && data.gefunden && !Object.values(data.gefunden).some((n) => n > 0);
-    if (leer) root.append(h("p", "set-hint ls-msg", `Die letzte Prüfung hat auf jw.org keine ${lang() === "de" ? "deutschen " : ""}Lieder gefunden${(data.fehler || []).length ? " (" + data.fehler[0] + ")" : ""}. Bitte später noch einmal prüfen.`));
-    else if (!data.stand && lang() === "de") root.append(h("p", "set-hint ls-msg", "Für Deutsch gibt es noch keine Prüfung. Starte „Verfügbarkeit prüfen“ auf GitHub (Actions) einmal von Hand."));
-    root.append(h("p", "set-hint", `Nächste automatische Prüfung auf jw.org: ${nextCheck()}.${data.stand ? "" : " Du kannst sie auch über das „i“ oder auf GitHub unter Actions → „Verfügbarkeit prüfen“ starten."}`));
+    root.append(h("p", "set-hint", `Nächste automatische Prüfung auf jw.org: ${nextCheck()}.`));
 
     // Kurze Hilfe (beim ersten Mal offen)
     const help = h("details", "fl-help");
