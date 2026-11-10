@@ -420,15 +420,15 @@
     pad.append(h("span"), mk("▲", "Inhalt nach oben schieben", move(0, -1)), h("span"), mk("◀", "nach links", move(-1, 0)), h("span", "sa-mid", "↕↔"), mk("▶", "nach rechts", move(1, 0)), h("span"), mk("▼", "Inhalt nach unten schieben", move(0, 1)), h("span"));
     const sz = h("div", "sa-sz");
     sz.append(mk("Kleiner −", "Anzeige verkleinern", () => cfg.size(-(cfg.step || 5))), mk("Größer ＋", "Anzeige vergrößern", () => cfg.size(cfg.step || 5)), mk(cfg.fullLabel || "Ganzer Bereich", "Anzeige füllt den ganzen freien Platz", () => cfg.setSize(cfg.full)), mk(cfg.smallLabel || "Klein (80 %)", "Anzeige kleiner", () => cfg.setSize(cfg.small)));
+    let tp = null;
     if (cfg.top) {
-      const tp = h("div", "sa-sz sa-top");
+      tp = h("div", "sa-sz sa-top");
       tp.append(mk("Abstand oben −", "Bereich näher an die Menüs oben / nach oben schieben", () => cfg.top(-10)), mk("Abstand oben ＋", "mehr Abstand zwischen den Menüs oben und dem Bereich", () => cfg.top(10)));
-      sz.after(tp);
     }
     const ft = h("div", "sa-ft");
     ft.append(mk("Zurücksetzen", "Versatz und Größe dieser Ansicht zurücksetzen", () => cfg.reset()), mk("Fertig", "Schließen", () => { box.remove(); window.removeEventListener("resize", paint); }, "sa-ok"));
     function paint() { ttl.textContent = cfg.title(); info.textContent = cfg.info(); }
-    box.append(ttl, info, pad, sz, ft); document.body.append(box); paint();
+    box.append(ttl, info, pad, sz, ...(tp ? [tp] : []), ft); document.body.append(box); paint();
     window.addEventListener("resize", paint);
   }
   function paintDrawer() {
