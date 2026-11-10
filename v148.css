@@ -63,3 +63,7 @@
 .theme-pv-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .theme-pv-cnt { color: var(--muted); font-size: 12px; }
 .theme-pv-use { min-height: 44px; padding: 0 22px; font-weight: 800; }
+
+.theme-pv-bar { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center; }
+.theme-pv-tabs button { white-space: nowrap; }
+.theme-pv-dev button[aria-pressed="true"] { background: var(--accent-2, var(--accent)); color: var(--on-accent-2, var(--on-accent)); }

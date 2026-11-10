@@ -12,10 +12,35 @@
     { id: "himmel", name: "Himmel", bar: "#e6f0fa", light: true, sw: ["#e6f0fa", "#ffffff", "#0b7bbf"], hint: "helles Blau, frisch und klar" },
     { id: "sand", name: "Sand", bar: "#f3ead8", light: true, sw: ["#f3ead8", "#fffaf0", "#c2410c"], hint: "warmes Papier, augenschonend hell" },
     { id: "sk-studio", name: "Studio Glas", bar: "#0b1220", light: false, skin: true, grp: "Skin", sw: ["#0b1220", "#1a2540", "#4cc9f0"], hint: "Skin: Glas, runde Tasten, feine Linie" },
+    { id: "sk-studio-violett", name: "Studio Glas Violett", bar: "#1c0b20", light: false, skin: true, grp: "Skin", sw: ["#1c0b20", "#3b1a40", "#8e4cf0"], hint: "Skin: Glas, runde Tasten, feine Linie" },
+    { id: "sk-studio-rosa", name: "Studio Glas Rosa", bar: "#200b0b", light: false, skin: true, grp: "Skin", sw: ["#200b0b", "#401c1a", "#f04c92"], hint: "Skin: Glas, runde Tasten, feine Linie" },
+    { id: "sk-studio-orange", name: "Studio Glas Orange", bar: "#20200b", light: false, skin: true, grp: "Skin", sw: ["#20200b", "#3e401a", "#f0aa4c"], hint: "Skin: Glas, runde Tasten, feine Linie" },
+    { id: "sk-studio-lime", name: "Studio Glas Lime", bar: "#0b200b", light: false, skin: true, grp: "Skin", sw: ["#0b200b", "#1a401c", "#92f04c"], hint: "Skin: Glas, runde Tasten, feine Linie" },
+    { id: "sk-studio-gruen", name: "Studio Glas Grün", bar: "#0b2020", light: false, skin: true, grp: "Skin", sw: ["#0b2020", "#1a3e40", "#4cf0aa"], hint: "Skin: Glas, runde Tasten, feine Linie" },
     { id: "sk-retro", name: "Retro Deck", bar: "#1a1410", light: false, skin: true, grp: "Skin", sw: ["#1a1410", "#33271d", "#d9a441"], hint: "Skin: Hi-Fi-Deck, Messing, Segment-Balken" },
+    { id: "sk-retro-lime", name: "Retro Deck Lime", bar: "#161a10", light: false, skin: true, grp: "Skin", sw: ["#161a10", "#29331d", "#76d941"], hint: "Skin: Hi-Fi-Deck, Messing, Segment-Balken" },
+    { id: "sk-retro-gruen", name: "Retro Deck Grün", bar: "#101a14", light: false, skin: true, grp: "Skin", sw: ["#101a14", "#1d3327", "#41d9a4"], hint: "Skin: Hi-Fi-Deck, Messing, Segment-Balken" },
+    { id: "sk-retro-blau", name: "Retro Deck Blau", bar: "#10161a", light: false, skin: true, grp: "Skin", sw: ["#10161a", "#1d2933", "#4176d9"], hint: "Skin: Hi-Fi-Deck, Messing, Segment-Balken" },
+    { id: "sk-retro-violett", name: "Retro Deck Violett", bar: "#14101a", light: false, skin: true, grp: "Skin", sw: ["#14101a", "#271d33", "#a441d9"], hint: "Skin: Hi-Fi-Deck, Messing, Segment-Balken" },
+    { id: "sk-retro-rosa", name: "Retro Deck Rosa", bar: "#1a1016", light: false, skin: true, grp: "Skin", sw: ["#1a1016", "#331d29", "#d94176"], hint: "Skin: Hi-Fi-Deck, Messing, Segment-Balken" },
     { id: "sk-neon", name: "Neon Linie", bar: "#05060d", light: false, skin: true, grp: "Skin", sw: ["#05060d", "#12152b", "#00f0ff"], hint: "Skin: Neon-Umrisse mit Leuchten" },
+    { id: "sk-neon-violett", name: "Neon Linie Violett", bar: "#0d050a", light: false, skin: true, grp: "Skin", sw: ["#0d050a", "#2b1222", "#8e00ff"], hint: "Skin: Neon-Umrisse mit Leuchten" },
+    { id: "sk-neon-magenta", name: "Neon Linie Magenta", bar: "#0d0507", light: false, skin: true, grp: "Skin", sw: ["#0d0507", "#2b1217", "#fd00ff"], hint: "Skin: Neon-Umrisse mit Leuchten" },
+    { id: "sk-neon-rot", name: "Neon Linie Rot", bar: "#0d0b05", light: false, skin: true, grp: "Skin", sw: ["#0d0b05", "#2b2612", "#ff0002"], hint: "Skin: Neon-Umrisse mit Leuchten" },
+    { id: "sk-neon-gelb", name: "Neon Linie Gelb", bar: "#070d05", light: false, skin: true, grp: "Skin", sw: ["#070d05", "#172b12", "#fffd00"], hint: "Skin: Neon-Umrisse mit Leuchten" },
+    { id: "sk-neon-gruen", name: "Neon Linie Grün", bar: "#050d0b", light: false, skin: true, grp: "Skin", sw: ["#050d0b", "#122b26", "#02ff00"], hint: "Skin: Neon-Umrisse mit Leuchten" },
     { id: "sk-papier", name: "Papier Minimal", bar: "#f6f2ea", light: true, skin: true, grp: "Skin", sw: ["#f6f2ea", "#ebe5d8", "#1d1b17"], hint: "Skin: hell, feine Linien, Serifenschrift" },
+    { id: "sk-papier-gelb", name: "Papier Minimal Gelb", bar: "#f0f6ea", light: true, skin: true, grp: "Skin", sw: ["#f0f6ea", "#e1ebd8", "#b2b42b"], hint: "Skin: hell, feine Linien, Serifenschrift" },
+    { id: "sk-papier-gruen", name: "Papier Minimal Grün", bar: "#eaf6f0", light: true, skin: true, grp: "Skin", sw: ["#eaf6f0", "#d8ebe2", "#2bb42d"], hint: "Skin: hell, feine Linien, Serifenschrift" },
+    { id: "sk-papier-tuerkis", name: "Papier Minimal Türkis", bar: "#eaf0f6", light: true, skin: true, grp: "Skin", sw: ["#eaf0f6", "#d8e1eb", "#2bb2b4"], hint: "Skin: hell, feine Linien, Serifenschrift" },
+    { id: "sk-papier-blau", name: "Papier Minimal Blau", bar: "#f0eaf6", light: true, skin: true, grp: "Skin", sw: ["#f0eaf6", "#e2d8eb", "#2d2bb4"], hint: "Skin: hell, feine Linien, Serifenschrift" },
+    { id: "sk-papier-magenta", name: "Papier Minimal Magenta", bar: "#f6eaee", light: true, skin: true, grp: "Skin", sw: ["#f6eaee", "#ebd8de", "#b42b9b"], hint: "Skin: hell, feine Linien, Serifenschrift" },
     { id: "sk-kontur", name: "Kontur Pop", bar: "#fff6d6", light: true, skin: true, grp: "Skin", sw: ["#fff6d6", "#ffe58a", "#ff3d81"], hint: "Skin: dicke Rahmen, harte Schatten, bunt" },
+    { id: "sk-kontur-orange", name: "Kontur Pop Orange", bar: "#e6ffd6", light: true, skin: true, grp: "Skin", sw: ["#e6ffd6", "#b7ff8a", "#ff9b3d"], hint: "Skin: dicke Rahmen, harte Schatten, bunt" },
+    { id: "sk-kontur-lime", name: "Kontur Pop Lime", bar: "#d6ffef", light: true, skin: true, grp: "Skin", sw: ["#d6ffef", "#8affd2", "#a1ff3d"], hint: "Skin: dicke Rahmen, harte Schatten, bunt" },
+    { id: "sk-kontur-gruen", name: "Kontur Pop Grün", bar: "#d6e6ff", light: true, skin: true, grp: "Skin", sw: ["#d6e6ff", "#8ab7ff", "#3dff9b"], hint: "Skin: dicke Rahmen, harte Schatten, bunt" },
+    { id: "sk-kontur-cyan", name: "Kontur Pop Cyan", bar: "#efd6ff", light: true, skin: true, grp: "Skin", sw: ["#efd6ff", "#d28aff", "#3da1ff"], hint: "Skin: dicke Rahmen, harte Schatten, bunt" },
+    { id: "sk-kontur-violett", name: "Kontur Pop Violett", bar: "#ffd6e6", light: true, skin: true, grp: "Skin", sw: ["#ffd6e6", "#ff8ab7", "#9b3dff"], hint: "Skin: dicke Rahmen, harte Schatten, bunt" },
     { id: "sk-jwl", name: "Bibliothek", bar: "#4a6da7", light: true, skin: true, grp: "Pro", sw: ["#ececee", "#ffffff", "#4a6da7"], hint: "Skin: flach, Blau und Violett, Liste mit Trennlinien, runde Play-Taste" },
     { id: "sk-pro", name: "Aurora Pro", bar: "#07080d", light: false, skin: true, grp: "Pro", sw: ["#07080d", "#2a2650", "#8b7cff"], hint: "Skin: Premium mit Glas, schwebendem Player und großer Schrift" },
     { id: "sk-pro-gold", name: "Aurora Gold", bar: "#0a0805", light: false, skin: true, grp: "Pro", sw: ["#0a0805", "#3a2c12", "#f2c36b"], hint: "Aurora Pro in Gold und Bernstein" },
@@ -35,8 +60,11 @@
     { id: "sk-jwl-schiefer", name: "Bibliothek Schiefer", bar: "#1f4a47", light: false, skin: true, grp: "Pro", sw: ["#16191c", "#20262a", "#4fc6b5"], hint: "Bibliothek: dunkler Schiefer, Türkis" },
     { id: "sk-jwl-burgund", name: "Bibliothek Burgund", bar: "#5a1f33", light: false, skin: true, grp: "Pro", sw: ["#151012", "#231a1d", "#e5849a"], hint: "Bibliothek: dunkel, Burgund und Rosé" },
     { id: "an-disco", name: "Disco ✦ animiert", bar: "#12002b", light: false, skin: true, anim: true, grp: "Animiert", sw: ["#12002b", "#2c1066", "#ff2ea6"], hint: "Animiert: tanzende Farben, hüpfende Tasten" },
+    { id: "an-disco-gelb", name: "Disco Gelb ✦ animiert", bar: "#2b0003", light: false, skin: true, anim: true, grp: "Animiert", sw: ["#2b0003", "#66101f", "#ffef2e"], hint: "Animiert: tanzende Farben, hüpfende Tasten" },
     { id: "an-aquarium", name: "Aquarium ✦ animiert", bar: "#021b33", light: false, skin: true, anim: true, grp: "Animiert", sw: ["#021b33", "#0a3a66", "#2ee6c5"], hint: "Animiert: Blasen, Wellen, schwimmender Fisch" },
+    { id: "an-aquarium-magenta", name: "Aquarium Magenta ✦ animiert", bar: "#330a02", light: false, skin: true, anim: true, grp: "Animiert", sw: ["#330a02", "#66170a", "#e62e8c"], hint: "Animiert: Blasen, Wellen, schwimmender Fisch" },
     { id: "an-weltall", name: "Weltall ✦ animiert", bar: "#05030f", light: false, skin: true, anim: true, grp: "Animiert", sw: ["#05030f", "#17123a", "#ffb703"], hint: "Animiert: Sterne, Rakete, kreisende Planeten-Taste" },
+    { id: "an-weltall-tuerkis", name: "Weltall Türkis ✦ animiert", bar: "#0f0903", light: false, skin: true, anim: true, grp: "Animiert", sw: ["#0f0903", "#3a2412", "#03f3ff"], hint: "Animiert: Sterne, Rakete, kreisende Planeten-Taste" },
     { id: "sk-pro-flug", name: "Schwebend", bar: "#07080d", light: false, skin: true, grp: "Pro", sw: ["#07080d", "#2a2650", "#8b7cff"], hint: "Skin: alle Elemente schweben als eigene Karten, verschiebbar" },
     { id: "sk-pro-flug-gold", name: "Schwebend Gold", bar: "#0a0805", light: false, skin: true, grp: "Pro", sw: ["#0a0805", "#3a2c12", "#f2c36b"], hint: "Schwebend in Gold und Bernstein" },
     { id: "sk-pro-flug-ozean", name: "Schwebend Ozean", bar: "#040a12", light: false, skin: true, grp: "Pro", sw: ["#040a12", "#10284a", "#3da8ff"], hint: "Schwebend in Blau und Cyan" },
@@ -120,6 +148,12 @@
     { id: "f-atl", name: "Atelier", ids: ["sk-atelier", "sk-atelier-saphir", "sk-atelier-rose", "sk-atelier-salbei", "sk-atelier-kupfer", "sk-atelier-elfenbein"], hint: "Magazin-Aufbau, Serifenschrift – 6 Farben" },
     { id: "f-stream", name: "Streaming", ids: ["sk-stream", "sk-stream-violett", "sk-stream-blau", "sk-stream-hell", "sk-stream-gruen", "sk-stream-rot"], hint: "Player-Leiste mit Fortschritt oben, Fettschrift – 6 Farben" },
     { id: "f-klang", name: "Klang", ids: ["sk-klang", "sk-klang-blau", "sk-klang-rosa", "sk-klang-orange", "sk-klang-violett", "sk-klang-rot"], hint: "Karten-Aufbau, Liedtext groß auf Farbfläche – 6 Farben" },
+    { id: "f-studio", name: "Studio Glas", ids: ["sk-studio", "sk-studio-violett", "sk-studio-rosa", "sk-studio-orange", "sk-studio-lime", "sk-studio-gruen"], hint: "Glas, runde Tasten, feine Linie – 6 Farben" },
+    { id: "f-retro", name: "Retro Deck", ids: ["sk-retro", "sk-retro-lime", "sk-retro-gruen", "sk-retro-blau", "sk-retro-violett", "sk-retro-rosa"], hint: "Hi-Fi-Deck, Segment-Balken – 6 Farben" },
+    { id: "f-neon", name: "Neon Linie", ids: ["sk-neon", "sk-neon-violett", "sk-neon-magenta", "sk-neon-rot", "sk-neon-gelb", "sk-neon-gruen"], hint: "Neon-Umrisse mit Leuchten – 6 Farben" },
+    { id: "f-papier", name: "Papier Minimal", ids: ["sk-papier", "sk-papier-gelb", "sk-papier-gruen", "sk-papier-tuerkis", "sk-papier-blau", "sk-papier-magenta"], hint: "hell, feine Linien, Serifenschrift – 6 Farben" },
+    { id: "f-kontur", name: "Kontur Pop", ids: ["sk-kontur", "sk-kontur-orange", "sk-kontur-lime", "sk-kontur-gruen", "sk-kontur-cyan", "sk-kontur-violett"], hint: "dicke Rahmen, harte Schatten, bunt – 6 Farben" },
+    { id: "f-anim", name: "Animiert", ids: ["an-disco", "an-aquarium", "an-weltall", "an-weltall-tuerkis", "an-disco-gelb", "an-aquarium-magenta"], hint: "Bewegte Hintergründe und Tasten – 6 Designs" },
     { id: "f-txg", name: "Tesla Groß", ids: ["tx-nacht", "tx-tag", "tx-kontrast", "tx-orange", "tx-sand", "tx-cyan"], hint: "Große Tasten fürs Auto – 3 dunkel, 1 hell, 1 Sand, 1 Kontrast" },
     { id: "f-hy", name: "Handy", ids: ["hy-amoled", "hy-pastell", "hy-sunset", "hy-ozean", "hy-minze", "hy-wald"], hint: "Kompakt für das Handy – 4 dunkel, 2 hell" },
     { id: "f-txk", name: "Tesla Kacheln", ids: ["tx-blau", "tx-karte", "tx-energie", "tx-bernstein", "tx-violett", "tx-rot"], hint: "Tesla-Bildschirm-Look – 6 Farben" },
@@ -595,14 +629,20 @@
     head.append(prev, ttl, next, x);
     const tabs = h("div", "theme-pv-tabs");
     const mk = (id, label) => { const b = h("button", "", label); b.type = "button"; b.dataset.v = id; b.addEventListener("click", () => { mode = id; show(); }); tabs.append(b); };
-    mk("play", "Wiedergabe"); mk("list", "Lieder-Liste");
+    mk("play", "Wiedergabe"); mk("start", "Startseite"); mk("kar", "Karussell"); mk("gal", "Galerie"); mk("set", "Einstellungen");
+    /* Schalter Breit ⇄ Hochformat (Handy): gilt für alle Designs und alle Ansichten, bleibt gespeichert */
+    const dev = h("div", "theme-pv-tabs theme-pv-dev");
+    const rd = () => { try { return localStorage.getItem("pvDev") || ""; } catch { return ""; } };
+    const mkd = (id, label) => { const b = h("button", "", label); b.type = "button"; b.dataset.d = id; b.addEventListener("click", () => { try { localStorage.setItem("pvDev", id); } catch { /* egal */ } show(); }); dev.append(b); };
+    mkd("wide", "🖥 Breit"); mkd("tall", "📱 Hochformat");
+    const bar = h("div", "theme-pv-bar"); bar.append(tabs, dev);
     const stage = h("div", "theme-pv-stage"); const fr = document.createElement("iframe");
     fr.setAttribute("title", "Vorschau"); fr.setAttribute("tabindex", "-1"); fr.setAttribute("loading", "eager"); stage.append(fr);
     const foot = h("div", "theme-pv-foot");
     const cnt = h("span", "theme-pv-cnt");
     const use = h("button", "chip theme-pv-use", "Dieses Design wählen"); use.type = "button";
     foot.append(cnt, use);
-    card.append(head, tabs, stage, foot); box.append(card);
+    card.append(head, bar, stage, foot); box.append(card);
     let size = [1000, 600];
     const fit = () => {
       const w = stage.clientWidth || 600, maxH = Math.max(200, window.innerHeight * 0.58);
@@ -615,10 +655,12 @@
       const th = byId(ids[idx]); if (!th) return;
       nm.textContent = th.name; hn.textContent = th.hint || "";
       cnt.textContent = `${idx + 1} von ${ids.length}`;
-      size = th.id.indexOf("hy-") === 0 ? [390, 780] : [1000, 600];
+      const dv = rd() || (th.id.indexOf("hy-") === 0 ? "tall" : "wide");
+      size = dv === "tall" ? [390, 780] : [1000, 600];
       tabs.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === mode)));
+      dev.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.d === dv)));
       const tid = th.custom ? th.base : th.id;
-      fr.src = `vorschau.html?t=${encodeURIComponent(tid)}&s=${th.skin ? 1 : 0}&l=${th.light ? 1 : 0}&v=${mode}`;
+      fr.src = `vorschau.html?t=${encodeURIComponent(tid)}&s=${th.skin ? 1 : 0}&l=${th.light ? 1 : 0}&v=${mode}&b=${encodeURIComponent(typeof SYNC_BASE !== "undefined" ? SYNC_BASE : location.origin)}`;
       use.setAttribute("aria-pressed", String(current === th.id));
       fit();
     }
