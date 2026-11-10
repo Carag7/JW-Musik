@@ -130,3 +130,14 @@ html .cg .cg-flow .cg-fl img { max-width: 88vw !important; max-height: calc((100
 .pvw-box.pvw-big .pvw-right { height: calc(100vh - 190px); min-height: 300px; }
 .pvw-box.pvw-big .pvw-side { max-height: 22vh; overflow: auto; }
 html.pvw-big-on body { overflow: hidden; }
+
+/* v159: Größer-Knopf rechts (Vollbild-Symbol), Liste links/unten */
+.pvw-bigbtn { margin-left: auto; width: 40px; height: 38px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel-2); color: var(--text); display: grid; place-items: center; cursor: pointer; padding: 0; }
+.pvw-bigbtn:hover { border-color: var(--accent); }
+.pvw-umsg { color: var(--muted); min-height: 1em; display: block; }
+.pvw-box.pvw-lay-left .pvw-main { grid-template-columns: 290px 1fr !important; }
+.pvw-box.pvw-lay-left .pvw-right { order: 0; height: clamp(380px, 66vh, 760px); }
+.pvw-box.pvw-lay-left .pvw-side { display: flex !important; flex-direction: column; overflow: auto; max-height: clamp(380px, 66vh, 760px); }
+.pvw-box.pvw-big.pvw-lay-left .pvw-right { height: calc(100vh - 190px); }
+.pvw-box.pvw-big.pvw-lay-left .pvw-side { max-height: calc(100vh - 190px); }
+@media (max-width: 640px) { .pvw-box.pvw-lay-left .pvw-main { grid-template-columns: 1fr !important; } }

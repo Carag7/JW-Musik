@@ -138,14 +138,35 @@
       const devs = h("div", "pvw-devs");
       DEV.forEach((d) => { const b = h("button", "pvw-dev" + (d[0] === dev ? " on" : ""), d[1]); b.type = "button"; b.dataset.d = d[0]; b.addEventListener("click", () => { dev = d[0]; lss("pvwDev", dev); devs.querySelectorAll(".pvw-dev").forEach((x) => x.classList.toggle("on", x.dataset.d === dev)); fit(); reload(); }); devs.append(b); });
       const chk = (label, val, fn) => { const l = h("label", "pvw-lupe"); const c = h("input"); c.type = "checkbox"; c.checked = val; c.addEventListener("change", () => fn(c.checked)); l.append(c, document.createTextNode(" " + label)); return l; };
+      /* Benutzer wählen und gleich zu ihm umschalten */
+      const usr = h("select", "pvw-sel pvw-usr"); usr.setAttribute("aria-label", "Benutzer");
+      try {
+        const uk = typeof userKnown === "function" ? userKnown() : [], un = typeof userName === "function" ? userName() : "";
+        const add = (v, tx) => { const o = h("option", "", tx); o.value = v; usr.append(o); };
+        add("", "Benutzer: keiner"); uk.forEach((n) => add(n, "Benutzer: " + n)); usr.value = un && uk.includes(un) ? un : "";
+        if (!uk.length) usr.hidden = true;
+      } catch { usr.hidden = true; }
+      const umsg = h("small", "pvw-umsg", "");
+      usr.addEventListener("change", async () => {
+        umsg.textContent = "Bitte warten …";
+        try {
+          if (usr.value === "") { userLogout(); umsg.textContent = "Abgemeldet."; }
+          else { const r = await userLogin(usr.value, ""); umsg.textContent = r && r.msg ? r.msg : ""; }
+        } catch { umsg.textContent = "Umschalten nicht möglich."; }
+        setTimeout(() => { if (!box.classList.contains("tab-off")) { const keep = box.classList.contains("pvw-big"); build(box); if (keep) box.querySelector(".pvw-bigbtn").click(); } }, 900);
+      });
       const sel = h("select", "pvw-sel"); sel.setAttribute("aria-label", "Design der Vorschau");
       const T = window.THEME; const cur = themeId();
       const o0 = h("option", "", "Design: wie in der App"); o0.value = ""; sel.append(o0);
       (T && T.THEMES ? T.THEMES : []).forEach((x) => { const o = h("option", "", x.name); o.value = x.id; sel.append(o); });
       sel.value = lsv("pvwTheme", ""); sel.addEventListener("change", () => { lss("pvwTheme", sel.value); reload(); });
-      const big = h("button", "pvw-dev pvw-bigbtn", "⤢ Größer"); big.type = "button"; big.title = "Vorschau im ganzen Fenster anzeigen (Esc = zurück)";
-      big.addEventListener("click", () => { const on2 = box.classList.toggle("pvw-big"); big.textContent = on2 ? "⤡ Kleiner" : "⤢ Größer"; document.documentElement.classList.toggle("pvw-big-on", on2); setTimeout(fit, 50); setTimeout(fit, 350); });
-      bar.append(devs, big, chk("Lupe aktiv (zeigt alle Knöpfe)", lupe, (v) => { lupe = v; reload(); }), chk("Seitenleiste (Auswahlfenster) ausblenden", sideHidden(), (v) => { lss("sideHide", v ? "1" : "0"); applySide(); reload(); }), sel);
+      const big = h("button", "pvw-bigbtn"); big.type = "button"; big.innerHTML = FS_ON; big.title = "Vorschau im ganzen Fenster anzeigen (Esc = zurück)"; big.setAttribute("aria-label", big.title);
+      big.addEventListener("click", () => { const on2 = box.classList.toggle("pvw-big"); big.innerHTML = on2 ? FS_OFF : FS_ON; big.title = on2 ? "Vorschau wieder klein (Esc)" : "Vorschau im ganzen Fenster anzeigen (Esc = zurück)"; document.documentElement.classList.toggle("pvw-big-on", on2); setTimeout(fit, 50); setTimeout(fit, 350); });
+      /* Liste der Knöpfe: links neben der Vorschau oder darunter */
+      const lay = h("div", "pvw-devs pvw-lay"); lay.setAttribute("aria-label", "Liste der Knöpfe");
+      [["left", "◧ Liste links"], ["below", "⬓ Liste unten"]].forEach(([k, n]) => { const b = h("button", "pvw-dev" + (lsv("pvwLay", "below") === k ? " on" : ""), n); b.type = "button"; b.dataset.k = k; b.addEventListener("click", () => { lss("pvwLay", k); box.classList.toggle("pvw-lay-left", k === "left"); lay.querySelectorAll(".pvw-dev").forEach((x) => x.classList.toggle("on", x.dataset.k === k)); setTimeout(fit, 80); setTimeout(fit, 350); }); lay.append(b); });
+      box.classList.toggle("pvw-lay-left", lsv("pvwLay", "below") === "left");
+      bar.append(devs, lay, chk("Lupe aktiv (zeigt alle Knöpfe)", lupe, (v) => { lupe = v; reload(); }), chk("Seitenleiste (Auswahlfenster) ausblenden", sideHidden(), (v) => { lss("sideHide", v ? "1" : "0"); applySide(); reload(); }), sel, usr, big);
       const side = h("div", "pvw-side");
       side.append(h("p", "pvw-hint", "Haken = Knopf wird angezeigt (ohne Lupe)."));
       items().forEach((x) => {
@@ -157,7 +178,7 @@
       info = h("small", "pvw-info");
       const right = h("div", "pvw-right"); right.append(stage, info);
       const main = h("div", "pvw-main"); main.append(side, right);
-      box.append(bar, main);
+      box.append(bar, umsg, main);
       fr.src = url(); requestAnimationFrame(() => { fit(); setTimeout(fit, 300); });
     }
     function ensure() {
