@@ -67,3 +67,20 @@
 .theme-pv-bar { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center; }
 .theme-pv-tabs button { white-space: nowrap; }
 .theme-pv-dev button[aria-pressed="true"] { background: var(--accent-2, var(--accent)); color: var(--on-accent-2, var(--on-accent)); }
+
+/* Schalter Gruppiert ⇄ Liste */
+.theme-viewsw { display: flex; gap: 4px; padding: 4px; margin: 6px 0 8px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 14px; }
+.theme-viewsw button { flex: 1 1 0; min-height: 38px; padding: 0 10px; border: 0; border-radius: 10px; background: transparent; color: var(--muted); font-weight: 700; font-size: 13px; cursor: pointer; }
+.theme-viewsw button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
+/* Zeilenansicht: pro Design eine hohe, übersichtliche Zeile */
+.theme-pick.theme-row { grid-template-columns: 112px 1fr; column-gap: 16px; row-gap: 4px; min-height: 86px; padding: 12px 84px 12px 12px; }
+.theme-pick.theme-row .theme-prev { width: 112px; height: 68px; border-radius: 12px; }
+.theme-pick.theme-row .theme-prev-txt { font-size: 22px; left: 14px; top: 12px; }
+.theme-pick.theme-row .theme-prev-card { left: 8px; right: 40px; top: 8px; bottom: 22px; border-radius: 6px; }
+.theme-pick.theme-row .theme-prev-dot { right: 9px; top: 9px; width: 20px; height: 20px; }
+.theme-pick.theme-row .theme-prev-bar { left: 8px; right: 40px; bottom: 9px; height: 7px; }
+.theme-pick.theme-row .theme-pick-name { font-size: 16px; }
+.theme-pick.theme-row .theme-pick-hint { font-size: 12.5px; line-height: 1.4; white-space: normal; }
+.theme-pick.theme-row .theme-eye { top: 10px; right: 10px; }
+.theme-pick.theme-row .theme-gear { top: 10px; right: 10px; }
+.theme-pick.theme-row .theme-gear + .theme-eye { right: 46px; }

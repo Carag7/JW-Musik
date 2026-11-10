@@ -706,6 +706,23 @@
   /* kleines Symbol rechts oben im Auswahlfenster: alle Designs zeigen oder nur die aktivierten */
   const onlyActive = () => get("skinOnlyActive", "0") === "1";
   const onlyMode = () => { const v = get("skinOnlyMode", "reset"); return v === "0" || v === "1" ? v : "reset"; };
+  /* Ansicht der Designliste: "fam" = gruppiert (Farben als Chips), "rows" = eine Zeile pro Design mit Beschreibung */
+  function listMode() { try { return localStorage.getItem("themeListMode") === "rows" ? "rows" : "fam"; } catch { return "fam"; } }
+  function colName(hex) {
+    const m = /^#?([0-9a-f]{6})$/i.exec(hex || ""); if (!m) return "";
+    const r = parseInt(m[1].slice(0, 2), 16) / 255, g = parseInt(m[1].slice(2, 4), 16) / 255, b = parseInt(m[1].slice(4), 16) / 255;
+    const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn, l = (mx + mn) / 2;
+    if (d < 0.08) return l > 0.85 ? "Weiß" : l < 0.2 ? "Schwarz" : "Grau";
+    let hh = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; hh = (hh * 60 + 360) % 360;
+    const L = [[14, "Rot"], [40, "Orange"], [65, "Gelb"], [100, "Limette"], [165, "Grün"], [195, "Türkis"], [215, "Cyan"], [255, "Blau"], [290, "Violett"], [330, "Magenta"], [346, "Rosa"], [361, "Rot"]];
+    return (L.find((x) => hh < x[0]) || L[0])[1];
+  }
+  function describe(th) {
+    const bg = th.light ? "Heller Hintergrund" : (/^#0[0-3]/i.test(th.sw[0]) && parseInt(th.sw[0].slice(1, 3), 16) < 8 ? "Fast schwarzer Hintergrund" : "Dunkler Hintergrund");
+    const acc = colName(th.sw[2]), pan = colName(th.sw[1]);
+    const anim = th.anim ? " · bewegte Hintergründe" : "";
+    return `${bg}, Akzentfarbe ${acc}${pan && pan !== acc ? `, Flächen ${pan}` : ""}${anim}. ${th.hint || ""}`.trim();
+  }
   function renderThemeList(body, tab, cur, pick) {
     const shownNow = new Set(shownIds());
     const only = !gearOn && onlyActive();
@@ -715,14 +732,15 @@
     list.forEach((th) => {
       const f = famOf(th);
       const mem = f ? list.filter((x) => famOf(x) === f) : [];
-      const grouped = f && mem.length >= 2;
+      const rowsMode = listMode() === "rows";
+      const grouped = !rowsMode && f && mem.length >= 2;
       if (grouped && done.has(f.id)) return;
       if (tab === "normal" && !customOrder() && subOf(th) !== last && !(grouped && f.id === "f-farb" && last === "Farbdesigns")) { last = subOf(th); body.append(h("p", "theme-sub", last)); }
       if (grouped) { done.add(f.id); body.append(famCard(f, mem, cur, pick)); return; }
-      const b = h("button", "theme-pick"); b.type = "button";
+      const b = h("button", "theme-pick" + (rowsMode ? " theme-row" : "")); b.type = "button";
       if (th.id === cur) b.setAttribute("aria-pressed", "true");
       if (shownNow.has(th.id)) b.classList.add("is-shown");
-      b.append(preview(th), h("span", "theme-pick-name", th.name), h("small", "theme-pick-hint", th.hint));
+      b.append(preview(th), h("span", "theme-pick-name", th.name), h("small", "theme-pick-hint", rowsMode ? describe(th) : th.hint));
       b.addEventListener("click", () => pick(th));
       gearFor(b, th); eyeFor(b, th);
       body.append(b);
@@ -746,9 +764,14 @@
       renderThemeList(body, tab, cfg().mode === "manual" ? cfg().theme : "", pick);
     };
     TL.forEach(([k, n]) => { const b = h("button", "theme-tab", n); b.type = "button"; b.dataset.k = k; b.setAttribute("role", "tab"); b.addEventListener("click", () => { tab = k; put("themeTab", k); paint(); }); tabs.append(b); });
+    const vsw = h("div", "theme-viewsw"); vsw.setAttribute("role", "group"); vsw.setAttribute("aria-label", "Ansicht der Designliste");
+    const vb = (k, label, tip) => { const b = h("button", "", label); b.type = "button"; b.title = tip; b.dataset.m = k; b.addEventListener("click", () => { try { localStorage.setItem("themeListMode", k); } catch { /* egal */ } syncSw(); paint(); }); vsw.append(b); };
+    const syncSw = () => vsw.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.m === listMode())));
+    vb("fam", "▦ Gruppiert", "Kompakt: Farben einer Design-Art als Chips"); vb("rows", "☰ Liste mit Beschreibung", "Eine Zeile pro Design, mit Farbbild und Erklärung");
+    syncSw();
     const legend = h("small", "set-hint theme-legend", "");
     legend.innerHTML = '<i class="lg-on"></i> farbig hinterlegt = aktiv (wird vorne im Hauptfenster angeboten) &nbsp; <i class="lg-cur"></i> Rahmen = gerade benutzt';
-    if (opts.gear) card.append(legend, tabs, body); else card.append(tabs, body);
+    if (opts.gear) card.append(legend, vsw, tabs, body); else card.append(vsw, tabs, body);
     paint();
     return { paint };
   }
