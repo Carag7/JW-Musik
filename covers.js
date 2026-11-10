@@ -286,13 +286,14 @@
     b.addEventListener("click", async (e) => {
       e.stopPropagation();
       const ml = lsv("musikLang", "en") === "de" ? "de" : "en", LN = { de: "Deutsch", en: "Englisch" };
-      const buttons = SETS.map(([id, name]) => ({ value: id, kind: id === set ? "primary" : undefined, label: (id === set ? "✓ " : "") + name, sub: SET_LANG[id] && SET_LANG[id] !== ml ? `Musik wird auf ${LN[SET_LANG[id]]} umgestellt` : "" }));
+      const buttons = SETS.map(([id, name]) => ({ value: id, kind: id === set ? "primary" : undefined, label: (id === set ? "✓ " : "") + name, sub: SET_LANG[id] && SET_LANG[id] !== ml ? `Sprache ${LN[SET_LANG[id]]} – Musik ist ${LN[ml]}` : "" }));
+      let sw = lsv("galSetLang", "1") !== "0";
       buttons.push({ value: null, kind: "cancel", label: "Abbrechen" });
-      const r = await uiDialog({ eyebrow: "Galerie", title: "Cover-Serie wählen", lines: [`Aktuell: ${(SETS.find((x) => x[0] === set) || [0, set])[1]}. Die Sprache der Musik wechselt mit, wenn die Serie eine andere Sprache hat.`], buttons, cancelValue: null });
+      const r = await uiDialog({ eyebrow: "Galerie", title: "Cover-Serie wählen", lines: [`Aktuell: ${(SETS.find((x) => x[0] === set) || [0, set])[1]}. Bei Serien in einer anderen Sprache als die Musik kannst du mit dem Haken die Musik gleich mitwechseln.`], buttons, cancelValue: null, check: { label: "Sprache der Musik mitwechseln, wenn sie nicht zur Serie passt", value: sw, onChange: (v) => { sw = v; lss("galSetLang", v ? "1" : "0"); } } });
       if (!r || r === set) return;
       setSet(r);
       const nl = SET_LANG[r];
-      if (nl && nl !== ml && window.V116) { try { await V116.switchLang(nl); } catch { /* egal */ } }
+      if (sw && nl && nl !== ml && window.V116) { try { await V116.switchLang(nl); } catch { /* egal */ } }
       paintSetBtn();
     });
     paintSetBtn();
@@ -301,6 +302,7 @@
   function galApply() {
     if (!gal) return; const a = galJ("galAdj")[G.view] || [0, 0];
     gal.style.setProperty("--gdx", (Number(a[0]) || 0) + "px"); gal.style.setProperty("--gdy", (Number(a[1]) || 0) + "px");
+    gal.style.setProperty("--gtop", (Number(galJ("galTop")[G.view]) || 0) + "px");
     gal.style.setProperty("--cg-size", galSz() + "px"); gal.style.setProperty("--cg-n", String(parseInt(galSz())));
     { const s = gal.querySelector(".cg-size input"); if (s) s.value = String(galSz()); }
   }
@@ -310,12 +312,13 @@
     const v = view || G.view;
     V116.adjust({
       title: () => "Galerie anpassen: " + VN[v],
-      info: () => { const a = galJ("galAdj")[v] || [0, 0], b = gal && gal._r ? gal._r.body.getBoundingClientRect() : { width: 0, height: 0 }; return `Fenster ${window.innerWidth} × ${window.innerHeight} px · Fläche ${Math.round(b.width)} × ${Math.round(b.height)} px · Versatz ${a[0] || 0} / ${a[1] || 0} px · Cover-Größe ${galSz(v)} px`; },
+      info: () => { const a = galJ("galAdj")[v] || [0, 0], b = gal && gal._r ? gal._r.body.getBoundingClientRect() : { width: 0, height: 0 }; return `Fenster ${window.innerWidth} × ${window.innerHeight} px · Fläche ${Math.round(b.width)} × ${Math.round(b.height)} px · Versatz ${a[0] || 0} / ${a[1] || 0} px · Cover-Größe ${galSz(v)} px · Abstand oben ${Number(galJ("galTop")[v]) || 0} px`; },
       move: (dx, dy) => { const o = galJ("galAdj"), c = o[v] || [0, 0]; o[v] = [(Number(c[0]) || 0) + dx, (Number(c[1]) || 0) + dy]; lss("galAdj", JSON.stringify(o)); galApply(); },
       size: (d) => { const o = galJ("galSizes"); o[v] = Math.max(100, Math.min(360, galSz(v) + d)); lss("galSizes", JSON.stringify(o)); if (v === G.view) { G.size = o[v]; lss("coverSize", String(o[v])); } galApply(); },
       setSize: (x) => { const o = galJ("galSizes"); o[v] = x; lss("galSizes", JSON.stringify(o)); galApply(); },
       step: 20, full: 360, small: 140, fullLabel: "Groß (360)", smallLabel: "Klein (140)",
-      reset: () => { const a = galJ("galAdj"), z = galJ("galSizes"); delete a[v]; delete z[v]; lss("galAdj", JSON.stringify(a)); lss("galSizes", JSON.stringify(z)); galApply(); }
+      top: (d) => { const o = galJ("galTop"); o[v] = Math.max(-200, Math.min(300, (Number(o[v]) || 0) + d)); lss("galTop", JSON.stringify(o)); galApply(); },
+      reset: () => { const a = galJ("galAdj"), z = galJ("galSizes"), tp = galJ("galTop"); delete a[v]; delete z[v]; delete tp[v]; lss("galAdj", JSON.stringify(a)); lss("galSizes", JSON.stringify(z)); lss("galTop", JSON.stringify(tp)); galApply(); }
     });
   }
   function openGallery() {

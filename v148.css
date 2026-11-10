@@ -93,3 +93,9 @@
 html .cg .cg-flow .cg-fl img { max-width: 88vw !important; max-height: calc((100vh - 230px) * var(--cg-n, 180) / 360) !important; }
 @media (max-height: 520px) { html .cg .cg-flow .cg-fl img { max-height: calc((100vh - 175px) * var(--cg-n, 180) / 360) !important; } }
 .lang-mini.lang-set { min-width: 34px; height: 26px; font-size: 12px; font-weight: 800; color: var(--text); opacity: 1; border-color: var(--accent); }
+
+/* v153: einstellbarer Abstand zwischen den Menüs oben und dem Anzeigebereich der Galerie */
+.cg .cg-body { margin-top: var(--gtop, 0px); }
+.start-adj .sa-top { margin-top: 6px; }
+.cg .cg-top, .cg .cg-tools { position: relative; z-index: 3; }
+.cg .cg-top, .cg .cg-tools { background: var(--bg, #0b0b0f); }
