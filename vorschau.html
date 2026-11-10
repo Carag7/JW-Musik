@@ -376,10 +376,24 @@
     im.onerror=function(){ var d=document.createElement("span"); d.className=(cls||"")+" pv-cv"; var fixed=im.style.width; d.style.cssText=im.style.cssText; if(!fixed){ d.style.width="100%"; d.style.aspectRatio="1/1.475"; } d.style.display="flex"; d.style.alignItems="center"; d.style.justifyContent="center"; d.style.color="var(--on-accent)"; d.style.font="800 28px system-ui"; d.textContent=id; if(im.parentNode) im.replaceWith(d); };
     return im;
   }
+  /* Seitenleiste ein/aus (Einstellung der App) */
+  var sd=q.get("side"); if(sd){ var ap0=document.querySelector(".app"); if(ap0) ap0.classList.toggle("sidebar-hidden", sd==="0"); }
   var lyr=document.getElementById("lyrics"), now=document.querySelector(".now"), ttl=document.getElementById("currentTitle"), row=document.getElementById("titleRow");
   function setNow(title,status,cat,num){ ttl.textContent=title; document.getElementById("currentStatus").textContent=status; document.getElementById("currentCategory").textContent=cat; if(num){ row.hidden=false; document.getElementById("currentNumber").textContent=num; } else row.hidden=true; }
   if(v==="play"){
     setNow("“Jehovah Is My Shepherd”","Läuft","Vertrauen auf Jehova","004");
+    (function(){
+      var dy=(q.get("dyn")||"").split(",").filter(Boolean), tr=document.getElementById("titleRow");
+      function mk(tag,cls,txt,id){ var e=document.createElement(tag); if(cls) e.className=cls; if(txt) e.textContent=txt; if(id) e.id=id; return e; }
+      if(tr){ tr.hidden=false;
+        if(dy.indexOf("pl")>=0) tr.append(mk("button","star-btn","＋","plAddBtn"));
+        if(dy.indexOf("lang")>=0) tr.append(mk("button","lang-mini lang-title","EN"));
+        if(dy.indexOf("cast")>=0) tr.append(mk("button","lang-mini","⎘ Übertragen","castBtn"));
+        if(dy.indexOf("ki")>=0) tr.append(mk("button","lang-mini","KI","kiTextBtn"));
+      }
+      if(dy.indexOf("langList")>=0){ var sc=document.getElementById("songCount"); if(sc){ var w=mk("span","lang-filters",""); w.append(mk("button","lang-mini","EN"),mk("button","lang-mini","DE")); sc.after(w); } }
+      if(q.get("lupe")==="1"){ var lw=document.getElementById("lyricSearchWrap"); if(lw) lw.hidden=false; document.body.classList.add("glass-open"); }
+    })();
     lyr.innerHTML='<p class="lyric-line">Jehova ist mein Hirte,</p><p class="lyric-line active">mir fehlt es an nichts.</p><p class="lyric-line">Er führt mich auf grüne Auen</p><p class="lyric-line">und lässt mich zur Ruhe kommen.</p>';
   } else if(v==="start"){
     setNow("Königreichslieder","Bereit","",""); lyr.innerHTML=document.getElementById("tStart").innerHTML;

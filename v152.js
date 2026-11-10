@@ -98,65 +98,83 @@
     document.addEventListener("contextmenu", (e) => { if (e.target && e.target.closest && e.target.closest("#simOut, #simCnt")) e.preventDefault(); }, true);
   })();
 
-  /* ---------- Vorschau „Wiedergabe-Fenster“ in den Voreinstellungen ---------- */
+  /* ---------- Reiter „Vorschau“ (Einstellungen → Allgemein) ---------- */
   (function () {
     const lsv = (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : v; } catch { return d; } };
     const lss = (k, v) => { try { localStorage.setItem(k, v); } catch { /* egal */ } };
     const h = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
     /* Auflösungen aus den Screenshots: Desktop-Fenster 2032 × 1169 px, Handy 393 × 793 px, Tesla 804 × 638 px */
     const DEV = [["desk", "🖥 Desktop", 2032, 1169], ["phone", "📱 Handy", 393, 793], ["tesla", "🚗 Tesla", 804, 638]];
-    let dev = lsv("pvwDev", "desk"), lupe = false, ov = null, fr = null, stage = null, info = null, tmr = 0;
+    const DYN = ["pl", "lang", "cast", "ki", "langList"];   /* Knöpfe, die die App erst zur Laufzeit baut – die Vorschau zeichnet Platzhalter */
+    let dev = lsv("pvwDev", "desk"), lupe = false, fr = null, stage = null, info = null, tmr = 0, built = false;
     const items = () => (typeof SV_ITEMS !== "undefined" ? SV_ITEMS : []);
     const on = (x) => lsv("sv_" + x[0], x[3]) === "1";
+    const sideHidden = () => lsv("sideHide", "0") === "1";
+    const themeId = () => lsv("pvwTheme", "") || ((window.THEME && THEME.cfg && THEME.cfg().mode === "manual" && THEME.cfg().theme) || document.documentElement.getAttribute("data-skin") || document.documentElement.getAttribute("data-theme") || "klassisch");
     function url() {
-      const r = document.documentElement, th = r.getAttribute("data-theme") || "klassisch";
+      const T = window.THEME, id = themeId(), th = T && T.byId ? T.byId(id) : null;
       const hide = lupe ? [] : items().filter((x) => x[2] && !on(x)).map((x) => x[2]);
+      const dyn = items().filter((x) => DYN.includes(x[0]) && (lupe || on(x))).map((x) => x[0]);
+      const r = document.documentElement;
+      const sk = th ? (th.skin ? 1 : 0) : (r.hasAttribute("data-skin") ? 1 : 0), lt = th ? (th.light ? 1 : 0) : (r.getAttribute("data-light") === "1" ? 1 : 0);
       const d = DEV.find((x) => x[0] === dev) || DEV[0];
-      return `vorschau.html?t=${encodeURIComponent(th)}&s=${r.hasAttribute("data-skin") ? 1 : 0}&l=${r.getAttribute("data-light") === "1" ? 1 : 0}&v=play&b=${encodeURIComponent(typeof SYNC_BASE !== "undefined" ? SYNC_BASE : location.origin)}&hide=${encodeURIComponent(hide.join("|"))}&d=${d[0]}`;
+      return `vorschau.html?t=${encodeURIComponent(id)}&s=${sk}&l=${lt}&v=play&b=${encodeURIComponent(typeof SYNC_BASE !== "undefined" ? SYNC_BASE : location.origin)}&hide=${encodeURIComponent(hide.join("|"))}&dyn=${dyn.join(",")}&lupe=${lupe ? 1 : 0}&side=${sideHidden() ? 0 : 1}&d=${d[0]}&_=${Date.now() % 100000}`;
     }
     function fit() {
-      if (!ov || !stage || !fr) return;
+      if (!built || !stage || !fr || !stage.clientWidth) return;
       const d = DEV.find((x) => x[0] === dev) || DEV[0], W = d[2], H = d[3];
       const aw = stage.clientWidth - 8, ah = stage.clientHeight - 8, s = Math.max(0.05, Math.min(aw / W, ah / H, 1));
       fr.style.width = W + "px"; fr.style.height = H + "px"; fr.style.transform = `scale(${s})`;
       stage.firstChild.style.width = Math.round(W * s) + "px"; stage.firstChild.style.height = Math.round(H * s) + "px";
       info.textContent = `${d[1].replace(/^\S+\s/, "")} · ${W} × ${H} px · Anzeige ${Math.round(s * 100)} %`;
     }
-    function reload() { clearTimeout(tmr); tmr = setTimeout(() => { if (fr) fr.src = url(); }, 120); }
-    function build() {
-      ov = h("div", "pvw-ov"); const box = h("div", "pvw-box");
-      const head = h("div", "pvw-head"); const close = h("button", "pvw-x", "✕"); close.type = "button"; close.addEventListener("click", closeOv);
-      head.append(h("b", "", "Vorschau: Wiedergabe-Fenster"), close);
+    function reload() { clearTimeout(tmr); tmr = setTimeout(() => { if (fr) fr.src = url(); }, 100); }
+    function applySide() { try { if (typeof setSidebar === "function") setSidebar(!sideHidden()); } catch { /* egal */ } }
+    function build(box) {
+      box.replaceChildren(); built = true;
+      const head = h("p", "ap-title", "Vorschau: Wiedergabe-Fenster"); box.append(head);
+      box.append(h("small", "set-hint", "Zeigt die aktuellen Einstellungen. Änderungen hier gelten sofort auch für die App auf diesem Gerät."));
+      const bar = h("div", "pvw-bar");
       const devs = h("div", "pvw-devs");
       DEV.forEach((d) => { const b = h("button", "pvw-dev" + (d[0] === dev ? " on" : ""), d[1]); b.type = "button"; b.dataset.d = d[0]; b.addEventListener("click", () => { dev = d[0]; lss("pvwDev", dev); devs.querySelectorAll(".pvw-dev").forEach((x) => x.classList.toggle("on", x.dataset.d === dev)); fit(); reload(); }); devs.append(b); });
-      const lp = h("label", "pvw-lupe"); const cb = h("input"); cb.type = "checkbox"; cb.addEventListener("change", () => { lupe = cb.checked; reload(); }); lp.append(cb, document.createTextNode(" Lupe aktiv (zeigt alle Knöpfe)"));
-      const side = h("div", "pvw-side"); side.append(h("p", "pvw-hint", "Haken = Knopf wird angezeigt (ohne Lupe). Änderungen gelten sofort für dieses Gerät."));
+      const chk = (label, val, fn) => { const l = h("label", "pvw-lupe"); const c = h("input"); c.type = "checkbox"; c.checked = val; c.addEventListener("change", () => fn(c.checked)); l.append(c, document.createTextNode(" " + label)); return l; };
+      const sel = h("select", "pvw-sel"); sel.setAttribute("aria-label", "Design der Vorschau");
+      const T = window.THEME; const cur = themeId();
+      const o0 = h("option", "", "Design: wie in der App"); o0.value = ""; sel.append(o0);
+      (T && T.THEMES ? T.THEMES : []).forEach((x) => { const o = h("option", "", x.name); o.value = x.id; sel.append(o); });
+      sel.value = lsv("pvwTheme", ""); sel.addEventListener("change", () => { lss("pvwTheme", sel.value); reload(); });
+      bar.append(devs, chk("Lupe aktiv (zeigt alle Knöpfe)", lupe, (v) => { lupe = v; reload(); }), chk("Seitenleiste (Auswahlfenster) ausblenden", sideHidden(), (v) => { lss("sideHide", v ? "1" : "0"); applySide(); reload(); }), sel);
+      const side = h("div", "pvw-side");
+      side.append(h("p", "pvw-hint", "Haken = Knopf wird angezeigt (ohne Lupe)."));
       items().forEach((x) => {
         const row = h("label", "pvw-row"); const c = h("input"); c.type = "checkbox"; c.checked = on(x);
         c.addEventListener("change", () => { lss("sv_" + x[0], c.checked ? "1" : "0"); try { window.dispatchEvent(new Event("storage")); } catch { /* egal */ } reload(); });
         row.append(c, h("span", "", x[1])); side.append(row);
       });
-      stage = h("div", "pvw-stage"); const wrap = h("div", "pvw-wrap"); fr = h("iframe", "pvw-fr"); fr.setAttribute("title", "Vorschau"); fr.setAttribute("loading", "eager"); wrap.append(fr); stage.append(wrap);
+      stage = h("div", "pvw-stage"); const wrap = h("div", "pvw-wrap"); fr = h("iframe", "pvw-fr"); fr.setAttribute("title", "Vorschau"); wrap.append(fr); stage.append(wrap);
       info = h("small", "pvw-info");
-      const main = h("div", "pvw-main"); const right = h("div", "pvw-right"); right.append(stage, info); main.append(side, right);
-      box.append(head, h("div", "pvw-bar"), main); box.children[1].append(devs, lp);
-      ov.append(box); ov.addEventListener("click", (e) => { if (e.target === ov) closeOv(); });
-      document.body.append(ov);
+      const right = h("div", "pvw-right"); right.append(stage, info);
+      const main = h("div", "pvw-main"); main.append(side, right);
+      box.append(bar, main);
+      fr.src = url(); requestAnimationFrame(() => { fit(); setTimeout(fit, 300); });
     }
-    function openOv() {
-      if (ov) ov.remove(); build();
-      fr.src = url();
-      requestAnimationFrame(() => { fit(); setTimeout(fit, 250); });
-      window.addEventListener("resize", fit);
-    }
-    function closeOv() { if (ov) ov.remove(); ov = fr = stage = info = null; window.removeEventListener("resize", fit); }
-    document.addEventListener("keydown", (e) => { if (e.key === "Escape" && ov) closeOv(); });
     function ensure() {
-      const box = $("presetBox"); if (!box || $("pvwOpen")) return;
-      const b = h("button", "chip pvw-open", "👁 Vorschau Wiedergabe-Fenster (Desktop · Handy · Tesla)"); b.id = "pvwOpen"; b.type = "button"; b.addEventListener("click", openOv);
-      const anchor = box.querySelector("#sysEditor") || box.firstElementChild; box.insertBefore(b, anchor);
+      const tabs = $("subTabs"), pb = $("presetBox"); if (!tabs || !pb) return;
+      if (!tabs.querySelector('[data-sub="vorschau"]')) {
+        const b = h("button", "seg-btn", "Vorschau"); b.type = "button"; b.dataset.sub = "vorschau";
+        b.addEventListener("click", () => { try { state.sub = "vorschau"; showSetTab("allgemein"); } catch { /* egal */ } });
+        const after = tabs.querySelector('[data-sub="vor"]'); if (after) after.after(b); else tabs.append(b);
+      }
+      if (!$("pvwBox")) {
+        const box = h("div", "autoplay-box pvw-box tab-off"); box.id = "pvwBox"; box.dataset.tab = "allgemein"; box.dataset.sub = "vorschau";
+        pb.after(box);
+        new MutationObserver(() => { if (!box.classList.contains("tab-off")) { build(box); } else { built = false; fr = null; } }).observe(box, { attributes: true, attributeFilter: ["class"] });
+      }
     }
+    window.addEventListener("resize", fit);
     new MutationObserver(ensure).observe(document.body, { childList: true, subtree: true }); ensure();
+    /* Seitenleiste: gespeicherte Einstellung beim Start anwenden */
+    if (sideHidden()) [1200, 3500].forEach((ms) => setTimeout(applySide, ms));
   })();
 
   function ensureBtn() {

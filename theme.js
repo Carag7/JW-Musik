@@ -759,7 +759,12 @@
   function renderThemeList(body, tab, cur, pick) {
     const shownNow = new Set(shownIds());
     const only = !gearOn && onlyActive();
-    const list = ordered().filter((t) => tabOf(t) === tab && (!only || shownNow.has(t.id) || t.id === cur));
+    let list = ordered().filter((t) => tabOf(t) === tab && (!only || shownNow.has(t.id) || t.id === cur));
+    if (listMode() === "rows") {   /* Familien zusammenhalten, damit jede Gruppe nur eine Überschrift hat */
+      const seen = new Set(), out = [];
+      list.forEach((t) => { const f = famOf(t); if (!f) { out.push(t); return; } if (seen.has(f.id)) return; seen.add(f.id); list.filter((x) => famOf(x) === f).forEach((x) => out.push(x)); });
+      list = out;
+    }
     const done = new Set(); let last = "", lastFam = "";
     if (!customOrder() && TAB_HEAD[tab] && list.length) { body.append(h("p", "theme-sub", TAB_HEAD[tab])); body.append(h("small", "theme-sub-d", SUB_DESC[TAB_HEAD[tab]] || "")); }
     if (!list.length) body.append(h("p", "set-hint", only ? "In diesem Reiter ist kein Design aktiviert. Mit dem kleinen Symbol oben rechts siehst du alle Designs." : "In diesem Reiter sind noch keine Designs. Unter „Anzeigen & Reiter“ kannst du Designs hierher verschieben."));
