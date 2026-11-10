@@ -247,7 +247,7 @@
   } catch { /* egal */ }
   /* Suchfeld in den Einstellungen bleibt beim Tippen sichtbar */
   document.addEventListener("focusin", (e) => { if (e.target && e.target.id === "setSearch") setTimeout(() => { try { e.target.scrollIntoView({ block: "nearest" }); } catch { /* egal */ } }, 350); });
-  window.V131 = { playSimilar, similar, load, paintBtn };
+  window.V131 = { playSimilar, similar, load, paintBtn, refresh: () => { try { renderList(); } catch { /* egal */ } } };
   /* Einstellungsfenster liegt unter der Kopfleiste, wenn diese darüber gezeichnet wird (Handy hoch): Suchfeld bleibt sichtbar */
   function setAuto() {
     try {

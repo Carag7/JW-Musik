@@ -390,17 +390,20 @@
   const sizeOf = () => sizes()[startMode()] || 100;
   /* Versatz je Ansicht (Pixel) – per Anpassen-Fenster einstellbar (lange drücken auf die Ansicht-Taste) */
   const adjAll = () => { let o = {}; try { o = JSON.parse(lsv("startAdj", "{}")) || {}; } catch { o = {}; } return o; };
+  const topAll = () => { let o = {}; try { o = JSON.parse(lsv("startTop", "{}")) || {}; } catch { o = {}; } return o; };
+  const topOf = (m) => Number(topAll()[m || startMode()]) || 0;
   const adjOf = (m) => { const a = adjAll()[m || startMode()] || [0, 0]; return [Number(a[0]) || 0, Number(a[1]) || 0]; };
   /* Anpassen-Fenster (Startseite und Galerie): cfg = {title(), info(), move(dx,dy), size(d), setSize(v), reset()} */
   function startCfg() {
     return {
       title: () => "Anpassen: " + (SZ_NAME[startMode()] || startMode()),
-      info: () => { const m = startMode(), a = adjOf(m), pm = $("startMedia"), r = pm ? pm.getBoundingClientRect() : { width: 0, height: 0 }; return `Fenster ${window.innerWidth} × ${window.innerHeight} px · Fläche ${Math.round(r.width)} × ${Math.round(r.height)} px · Versatz ${a[0]} / ${a[1]} px · Größe ${sizes()[m]} %`; },
+      info: () => { const m = startMode(), a = adjOf(m), pm = $("startMedia"), r = pm ? pm.getBoundingClientRect() : { width: 0, height: 0 }; return `Fenster ${window.innerWidth} × ${window.innerHeight} px · Fläche ${Math.round(r.width)} × ${Math.round(r.height)} px · Abstand oben ${topOf()} px · Versatz ${a[0]} / ${a[1]} px · Größe ${sizes()[m]} %`; },
       move: (dx, dy) => { const m = startMode(), a = adjAll(), c = adjOf(m); a[m] = [c[0] + dx, c[1] + dy]; lss("startAdj", JSON.stringify(a)); fit(); },
       size: (d) => { const m = startMode(), o = sizes(); o[m] = Math.max(20, Math.min(300, o[m] + d)); lss("startSizes", JSON.stringify(o)); fit(); const f = $("advSz_" + m); if (f) f.value = String(o[m]); },
       setSize: (v) => { const m = startMode(), o = sizes(); o[m] = v; lss("startSizes", JSON.stringify(o)); fit(); const f = $("advSz_" + m); if (f) f.value = String(v); },
       full: 100, small: 80,
-      reset: () => { const m = startMode(), a = adjAll(); delete a[m]; lss("startAdj", JSON.stringify(a)); const o = sizes(); o[m] = SZ_DEF[m]; lss("startSizes", JSON.stringify(o)); fit(); }
+      top: (d) => { const m = startMode(), o = topAll(); o[m] = Math.max(-200, Math.min(300, topOf(m) + d)); lss("startTop", JSON.stringify(o)); fit(); },
+      reset: () => { const m = startMode(), a = adjAll(), tt = topAll(); delete tt[m]; lss("startTop", JSON.stringify(tt)); delete a[m]; lss("startAdj", JSON.stringify(a)); const o = sizes(); o[m] = SZ_DEF[m]; lss("startSizes", JSON.stringify(o)); fit(); }
     };
   }
   function adjustOverlay(cfg) {
@@ -441,6 +444,7 @@
   function fit() {
     const panel = $("startPanel"); if (!panel || panel.hidden) return;
     const fl = document.querySelector(".flyer");
+    panel.style.marginTop = topOf() + "px";
     const top = panel.getBoundingClientRect().top + window.scrollY;
     const free = window.innerHeight - (fl ? fl.offsetHeight : 70) - top - 10;
     panel.style.height = Math.max(300, Math.floor(free)) + "px";
