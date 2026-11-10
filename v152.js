@@ -143,11 +143,33 @@
       try {
         const uk = typeof userKnown === "function" ? userKnown() : [], un = typeof userName === "function" ? userName() : "";
         const add = (v, tx) => { const o = h("option", "", tx); o.value = v; usr.append(o); };
-        add("", "Benutzer: keiner"); uk.forEach((n) => add(n, "Benutzer: " + n)); usr.value = un && uk.includes(un) ? un : "";
-        if (!uk.length) usr.hidden = true;
+        add("", "Benutzer: keiner"); uk.forEach((n) => add(n, "Benutzer: " + n)); add("__other", "＋ Anderen Benutzer eingeben …"); usr.value = un && uk.includes(un) ? un : "";
       } catch { usr.hidden = true; }
       const umsg = h("small", "pvw-umsg", "");
+      /* Anderen Benutzer eingeben: nur anzeigen, wenn es ihn auf dem Server gibt; Haken = für immer in diesem Browser merken */
+      const uo = h("div", "pvw-uo"); uo.hidden = true;
+      const uin = h("input"); uin.type = "text"; uin.placeholder = "Benutzername"; uin.autocomplete = "off"; uin.autocapitalize = "off";
+      const ulab = h("label", "pvw-lupe"); const uck = h("input"); uck.type = "checkbox"; ulab.append(uck, document.createTextNode(" Für immer in diesem Browser anzeigen"));
+      const ugo = h("button", "chip", "Prüfen und umschalten"); ugo.type = "button";
+      uo.append(uin, ulab, ugo);
+      const switchTo = async (name) => {
+        umsg.textContent = "Bitte warten …";
+        try { const r = await userLogin(name, ""); umsg.textContent = r && r.msg ? r.msg : ""; } catch { umsg.textContent = "Umschalten nicht möglich."; }
+        setTimeout(() => { if (!box.classList.contains("tab-off")) { const keep = box.classList.contains("pvw-big"); build(box); if (keep) box.querySelector(".pvw-bigbtn").click(); } }, 900);
+      };
+      ugo.addEventListener("click", async () => {
+        const name = typeof userCleanName === "function" ? userCleanName(uin.value) : uin.value.trim().toLowerCase();
+        if (name.length < 2 || name.startsWith("_")) { umsg.textContent = "Benutzername: mindestens 2 Zeichen, nicht mit _ beginnen."; return; }
+        umsg.textContent = "Suche …";
+        let r; try { r = await fetchUser(name, ""); } catch { r = { state: "error" }; }
+        if (r.state === "error") { umsg.textContent = "Server nicht erreichbar."; return; }
+        if (r.state === "none") { umsg.textContent = `„${name}“ gibt es nicht.`; return; }
+        if (uck.checked) { try { userKnownAdd([name]); } catch { /* egal */ } }
+        await switchTo(name);
+      });
       usr.addEventListener("change", async () => {
+        if (usr.value === "__other") { uo.hidden = false; uin.focus(); umsg.textContent = ""; return; }
+        uo.hidden = true;
         umsg.textContent = "Bitte warten …";
         try {
           if (usr.value === "") { userLogout(); umsg.textContent = "Abgemeldet."; }
@@ -178,7 +200,7 @@
       info = h("small", "pvw-info");
       const right = h("div", "pvw-right"); right.append(stage, info);
       const main = h("div", "pvw-main"); main.append(side, right);
-      box.append(bar, umsg, main);
+      box.append(bar, uo, umsg, main);
       fr.src = url(); requestAnimationFrame(() => { fit(); setTimeout(fit, 300); });
     }
     function ensure() {
