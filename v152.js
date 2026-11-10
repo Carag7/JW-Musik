@@ -143,7 +143,9 @@
       const o0 = h("option", "", "Design: wie in der App"); o0.value = ""; sel.append(o0);
       (T && T.THEMES ? T.THEMES : []).forEach((x) => { const o = h("option", "", x.name); o.value = x.id; sel.append(o); });
       sel.value = lsv("pvwTheme", ""); sel.addEventListener("change", () => { lss("pvwTheme", sel.value); reload(); });
-      bar.append(devs, chk("Lupe aktiv (zeigt alle Knöpfe)", lupe, (v) => { lupe = v; reload(); }), chk("Seitenleiste (Auswahlfenster) ausblenden", sideHidden(), (v) => { lss("sideHide", v ? "1" : "0"); applySide(); reload(); }), sel);
+      const big = h("button", "pvw-dev pvw-bigbtn", "⤢ Größer"); big.type = "button"; big.title = "Vorschau im ganzen Fenster anzeigen (Esc = zurück)";
+      big.addEventListener("click", () => { const on2 = box.classList.toggle("pvw-big"); big.textContent = on2 ? "⤡ Kleiner" : "⤢ Größer"; document.documentElement.classList.toggle("pvw-big-on", on2); setTimeout(fit, 50); setTimeout(fit, 350); });
+      bar.append(devs, big, chk("Lupe aktiv (zeigt alle Knöpfe)", lupe, (v) => { lupe = v; reload(); }), chk("Seitenleiste (Auswahlfenster) ausblenden", sideHidden(), (v) => { lss("sideHide", v ? "1" : "0"); applySide(); reload(); }), sel);
       const side = h("div", "pvw-side");
       side.append(h("p", "pvw-hint", "Haken = Knopf wird angezeigt (ohne Lupe)."));
       items().forEach((x) => {
@@ -168,10 +170,11 @@
       if (!$("pvwBox")) {
         const box = h("div", "autoplay-box pvw-box tab-off"); box.id = "pvwBox"; box.dataset.tab = "allgemein"; box.dataset.sub = "vorschau";
         pb.after(box);
-        new MutationObserver(() => { if (!box.classList.contains("tab-off")) { build(box); } else { built = false; fr = null; } }).observe(box, { attributes: true, attributeFilter: ["class"] });
+        let wasOff = true; new MutationObserver(() => { const off = box.classList.contains("tab-off"); if (off === wasOff) return; wasOff = off; if (!off) { build(box); } else { built = false; fr = null; box.classList.remove("pvw-big"); document.documentElement.classList.remove("pvw-big-on"); } }).observe(box, { attributes: true, attributeFilter: ["class"] });
       }
     }
     window.addEventListener("resize", fit);
+    document.addEventListener("keydown", (e) => { const bx = $("pvwBox"); if (e.key === "Escape" && bx && bx.classList.contains("pvw-big")) { const b = bx.querySelector(".pvw-bigbtn"); if (b) b.click(); } });
     new MutationObserver(ensure).observe(document.body, { childList: true, subtree: true }); ensure();
     /* Seitenleiste: gespeicherte Einstellung beim Start anwenden */
     if (sideHidden()) [1200, 3500].forEach((ms) => setTimeout(applySide, ms));
