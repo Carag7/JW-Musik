@@ -88,3 +88,8 @@
 .theme-sub-d { display: block; margin: -2px 0 10px; color: var(--muted); font-size: 12.5px; line-height: 1.4; }
 .theme-grp { display: flex; flex-direction: column; gap: 2px; margin: 16px 0 6px; padding: 4px 0 4px 12px; border-left: 4px solid var(--accent); }
 .theme-grp b { font-size: 16px; } .theme-grp small { color: var(--muted); font-size: 12.5px; line-height: 1.4; }
+
+/* v152: Galerie-Karussell – der Größenregler wirkt über den ganzen Bereich (vorher bremste 46vmin ab der Mitte) */
+html .cg .cg-flow .cg-fl img { max-width: 88vw !important; max-height: calc((100vh - 230px) * var(--cg-n, 180) / 360) !important; }
+@media (max-height: 520px) { html .cg .cg-flow .cg-fl img { max-height: calc((100vh - 175px) * var(--cg-n, 180) / 360) !important; } }
+.lang-mini.lang-set { min-width: 34px; height: 26px; font-size: 12px; font-weight: 800; color: var(--text); opacity: 1; border-color: var(--accent); }

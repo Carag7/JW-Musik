@@ -56,6 +56,19 @@
   ["fullscreenchange", "webkitfullscreenchange"].forEach((ev) => document.addEventListener(ev, () => { if (!isFs() && $("startMedia") && $("startMedia").classList.contains("fs")) setFs(false); }));
   document.addEventListener("keydown", (e) => { if (e.key === "Escape" && $("startMedia") && $("startMedia").classList.contains("fs")) setFs(false); });
 
+
+  /* ---------- Pop-ups im Browser-Vollbild (Galerie): Dialog und Hinweis in das Vollbild-Element verschieben ---------- */
+  const POP = ["dialogModal", "toast"];
+  function movePops() {
+    const fe = document.fullscreenElement || document.webkitFullscreenElement;
+    POP.forEach((id) => { const n = $(id) || (pops[id]); if (!n) return; pops[id] = n; const host = fe && fe.tagName !== "VIDEO" ? fe : document.body; if (n.parentNode !== host) host.append(n); });
+  }
+  const pops = {};
+  POP.forEach((id) => { const n = $(id); if (n) pops[id] = n; });
+  ["fullscreenchange", "webkitfullscreenchange"].forEach((ev) => document.addEventListener(ev, movePops));
+  /* wird das Vollbild-Element (z. B. die Galerie) entfernt, die Pop-ups zurück in die Seite holen */
+  new MutationObserver(() => { POP.forEach((id) => { const n = pops[id]; if (n && !n.isConnected) document.body.append(n); }); }).observe(document.body, { childList: true });
+
   function ensureBtn() {
     const m = $("startMedia"); if (!m) return;
     if (!$("startFsBtn")) {

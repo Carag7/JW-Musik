@@ -100,7 +100,7 @@
     { const v = lsv("coverSet", "edel"); if (setOk(v) && v !== set) { set = v; readIdx(); lastKey = ""; load(true); if (gal && gal._dir) gal._dir.value = set; } }
     paintThumb();
     try { if (state.songs[state.index] && "mediaSession" in navigator && typeof setMediaSession === "function") setMediaSession(state.songs[state.index]); } catch { /* egal */ }
-    if (gal) paintGallery();
+    if (gal) { paintGallery(); paintSetBtn(); }
     if (np) paintNow(true);
   }
 
@@ -271,10 +271,38 @@
   /* Position und Größe je Ansicht (Raster / Liste / Karussell) */
   const galJ = (k) => { try { return JSON.parse(lsv(k, "{}")) || {}; } catch { return {}; } };
   const galSz = (v) => Number(galJ("galSizes")[v || G.view]) || G.size;
+  /* v152: kleiner Knopf oben rechts: Sprache der angezeigten Cover-Serie (DE/EN); Tippen öffnet die Auswahl der Serie (Goldrahmen / Modern) */
+  const SET_STYLE = { edel: "Gold", edel_eng: "Gold", modern: "Modern", modern_de: "Modern", alt: "Alt" };
+  function paintSetBtn() {
+    const b = gal && gal._sb; if (!b) return;
+    const l = SET_LANG[set] || "";
+    b.textContent = l ? l.toUpperCase() : "–";
+    const nm = (SETS.find((x) => x[0] === set) || [0, set])[1];
+    b.title = `Cover: ${nm} – antippen zum Umstellen`; b.setAttribute("aria-label", b.title);
+    b.dataset.style = SET_STYLE[set] || "";
+  }
+  function galSetBtn() {
+    const b = h("button", "lang-mini lang-gal lang-set"); b.type = "button"; gal._sb = b;
+    b.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const ml = lsv("musikLang", "en") === "de" ? "de" : "en", LN = { de: "Deutsch", en: "Englisch" };
+      const buttons = SETS.map(([id, name]) => ({ value: id, kind: id === set ? "primary" : undefined, label: (id === set ? "✓ " : "") + name, sub: SET_LANG[id] && SET_LANG[id] !== ml ? `Musik wird auf ${LN[SET_LANG[id]]} umgestellt` : "" }));
+      buttons.push({ value: null, kind: "cancel", label: "Abbrechen" });
+      const r = await uiDialog({ eyebrow: "Galerie", title: "Cover-Serie wählen", lines: [`Aktuell: ${(SETS.find((x) => x[0] === set) || [0, set])[1]}. Die Sprache der Musik wechselt mit, wenn die Serie eine andere Sprache hat.`], buttons, cancelValue: null });
+      if (!r || r === set) return;
+      setSet(r);
+      const nl = SET_LANG[r];
+      if (nl && nl !== ml && window.V116) { try { await V116.switchLang(nl); } catch { /* egal */ } }
+      paintSetBtn();
+    });
+    paintSetBtn();
+    return b;
+  }
   function galApply() {
     if (!gal) return; const a = galJ("galAdj")[G.view] || [0, 0];
     gal.style.setProperty("--gdx", (Number(a[0]) || 0) + "px"); gal.style.setProperty("--gdy", (Number(a[1]) || 0) + "px");
-    gal.style.setProperty("--cg-size", galSz() + "px");
+    gal.style.setProperty("--cg-size", galSz() + "px"); gal.style.setProperty("--cg-n", String(parseInt(galSz())));
+    { const s = gal.querySelector(".cg-size input"); if (s) s.value = String(galSz()); }
   }
   const VN = { grid: "Raster", list: "Liste", flow: "Karussell" };
   function galAdjust(view) {
@@ -313,7 +341,7 @@
     });
     const fsb = svgBtn("cg-btn", ic.full, "Browser-Vollbild"); fsb.addEventListener("click", () => fsToggle(gal));
     const pbtn = svgBtn("cg-btn cg-playerbtn", ic.player, "Player (Vollbild)"); pbtn.addEventListener("click", () => openNow());
-    top.append(close, ttl, q, seg, pbtn, ...(window.V116 ? [V116.langBtn("lang-gal")] : []), fsb);
+    top.append(close, ttl, q, seg, pbtn, galSetBtn(), fsb);
 
     const tools = h("div", "cg-tools");
     const chip = (label, get, set) => { const b = h("button", "cg-chip", label); b.type = "button"; b.setAttribute("aria-pressed", String(get())); b.addEventListener("click", () => { set(!get()); b.setAttribute("aria-pressed", String(get())); paintGallery(); }); return b; };
@@ -337,7 +365,7 @@
     srt.addEventListener("change", () => { G.sort = srt.value; paintGallery(); });
     const size = h("label", "cg-size"); size.append(h("span", "", "Größe"));
     const sz = document.createElement("input"); sz.type = "range"; sz.min = "100"; sz.max = "360"; sz.step = "10"; sz.value = String(G.size); sz.setAttribute("aria-label", "Größe der Cover");
-    sz.addEventListener("input", () => { G.size = Number(sz.value); lss("coverSize", String(G.size)); gal.style.setProperty("--cg-size", G.size + "px"); { const o = galJ("galSizes"); o[G.view] = G.size; lss("galSizes", JSON.stringify(o)); } });
+    sz.addEventListener("input", () => { G.size = Number(sz.value); lss("coverSize", String(G.size)); gal.style.setProperty("--cg-size", G.size + "px"); gal.style.setProperty("--cg-n", String(parseInt(G.size))); { const o = galJ("galSizes"); o[G.view] = G.size; lss("galSizes", JSON.stringify(o)); } });
     size.append(sz);
     const cnt = h("span", "cg-count"); cnt.id = "cgCount";
     tools.append(dirSel, cOnly, cFav, cMark, cat, srt, nxt, size, cnt);
@@ -350,7 +378,7 @@
     body.addEventListener("scroll", () => updJump(), { passive: true });
     gal.append(top, tools, body, mini, jump);
     gal.style.setProperty("--nk", String(nkAmt() / 100));
-    gal.style.setProperty("--cg-size", G.size + "px");
+    gal.style.setProperty("--cg-size", G.size + "px"); gal.style.setProperty("--cg-n", String(parseInt(G.size)));
     gal._r = { body, mini, cnt, size, cOnly, jump, last: "" };
     document.body.append(gal); document.body.classList.add("cg-open"); galApply();
     document.addEventListener("keydown", galKey, true);
@@ -459,7 +487,7 @@
     const withCover = state.songs.filter(has).length;
     r.cnt.textContent = `${list.length} Lieder · ${withCover} mit Cover`;
     gal.dataset.view = G.view;
-    const sig = G.view + "|" + list.map((s) => s.id).join(",") + "|" + Object.keys(map).length + "|" + (state.media ? 1 : 0) + lsv("musikLang", "en") + lsv("galNoKar", "1");
+    const sig = G.view + "|" + list.map((s) => s.id).join(",") + "|" + Object.keys(map).length + "|" + set + "|" + (state.media ? 1 : 0) + lsv("musikLang", "en") + lsv("galNoKar", "1");
     if (!force && sig === r.last) { markNow(); paintMini(); return; }
     const keep = r.body.scrollTop;
     r.last = sig; r.body.replaceChildren();
