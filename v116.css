@@ -81,3 +81,15 @@ body:not(.start-on) .start-ctl { }
 .ss-fade .sf-img.sf-out-flip { transform: rotateY(90deg); opacity: 1 !important; backface-visibility: hidden; transition: transform calc(var(--sf-ms, 900ms) * .55) ease-in; }
 .ss-fade .sf-mos { position: absolute; inset: 0; width: 100%; height: 100%; cursor: pointer; z-index: 6; }
 @media (prefers-reduced-motion: reduce) { .ss-fade .sf-img.sf-away { transition-duration: 1ms; } }
+
+/* v152: Video (Chor) als MP4, Vollbild-Knopf */
+#startPanel .start-media > video.start-vid { width: auto; height: auto; max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 18px; background: transparent; transform: scale(var(--ms, 1)); transform-origin: center; }
+#startPanel .start-media > .start-image.chor-hide { display: none; }
+.start-fs-btn { position: absolute; top: 8px; right: 8px; z-index: 6; width: 40px; height: 40px; border-radius: 12px; border: 1px solid rgba(255,255,255,.28); background: rgba(0,0,0,.45); color: #fff; display: grid; place-items: center; cursor: pointer; opacity: .75; padding: 0; backdrop-filter: blur(6px); }
+.start-fs-btn:hover, .start-fs-btn:focus-visible { opacity: 1; background: rgba(0,0,0,.7); }
+#startPanel .start-media.fs { position: fixed !important; inset: 0; z-index: 9500; width: 100vw; height: 100vh; height: 100dvh; background: #000; transform: none !important; --ms: 1 !important; --dx: 0px !important; --dy: 0px !important; }
+#startPanel .start-media.fs > .start-image, #startPanel .start-media.fs > video.start-vid { width: 100%; height: 100%; max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 0; transform: none; }
+#startPanel .start-media.fs > .start-show { width: 100%; height: 100%; border-radius: 0; }
+#startPanel .start-media.fs .start-fs-btn { top: max(10px, env(safe-area-inset-top)); right: max(10px, env(safe-area-inset-right)); }
+#startPanel .start-media:fullscreen { background: #000; }
+html.start-fs-active body { overflow: hidden; }

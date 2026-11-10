@@ -687,7 +687,7 @@
     const card = h("div", "theme-fam" + (mem.some((x) => shownSet.has(x.id)) ? " has-shown" : ""));
     const active = mem.find((x) => x.id === cur) || mem[0];
     const head = h("div", "theme-fam-head");
-    head.append(preview(active), (() => { const w = h("span", "theme-fam-txt"); w.append(h("b", "", f.name), h("small", "", f.hint + (mem.some((x) => x.id === cur) ? ` · aktiv: ${shortName(active, f)}` : ""))); return w; })());
+    head.append(preview(active), (() => { const w = h("span", "theme-fam-txt"); w.append(h("b", "", f.name), h("small", "", (FAM_DESC[f.id] || f.hint) + (mem.some((x) => x.id === cur) ? ` · aktiv: ${shortName(active, f)}` : ""))); return w; })());
     card.append(head);
     const chips = h("div", "theme-fam-chips");
     mem.forEach((x) => {
@@ -706,6 +706,34 @@
   /* kleines Symbol rechts oben im Auswahlfenster: alle Designs zeigen oder nur die aktivierten */
   const onlyActive = () => get("skinOnlyActive", "0") === "1";
   const onlyMode = () => { const v = get("skinOnlyMode", "reset"); return v === "0" || v === "1" ? v : "reset"; };
+  /* Beschreibung pro Design-Art: wie sehen die Designs aus */
+  const FAM_DESC = {
+    "f-farb": "Das gewohnte Aussehen der App – nur die Farben wechseln: dunkel, hell oder mit anderer Akzentfarbe.",
+    "f-flug": "Liste, Text und Player schweben als eigene runde Karten über dem Hintergrund; du kannst sie verschieben und in der Größe ändern. Dunkel, mit einer Akzentfarbe.",
+    "f-pro": "Premium-Look: Glasflächen, schwebender Player unten, große Schrift und sanfte Lichtverläufe im Hintergrund.",
+    "f-jwl": "Flach und ruhig wie eine Bibliothek: Liedliste mit feinen Trennlinien und runder Play-Taste, helle und dunkle Varianten.",
+    "f-atl": "Wie ein Magazin: Player-Leiste links, Verzeichnis rechts, edle Serifenschrift und feine Linien – Champagner auf Schwarz oder Elfenbein.",
+    "f-stream": "Wie ein Streaming-Dienst: schwarzer Hintergrund, Player-Leiste mit Fortschrittsbalken oben, große fette Schrift und eine leuchtende Akzentfarbe.",
+    "f-klang": "Schwarze Seitenleiste, Karten mit runden Ecken, der Liedtext groß auf einer Farbfläche und ein weißer Play-Kreis.",
+    "f-studio": "Studio-Look: Glasflächen, runde Tasten und feine Linien – ruhig und modern.",
+    "f-retro": "Wie ein altes Hi-Fi-Gerät: Messing-Töne, Segment-Balken statt Regler und Tasten wie an einem Deck.",
+    "f-neon": "Dunkel mit leuchtenden Neon-Umrissen: Tasten und Rahmen glühen in der Akzentfarbe.",
+    "f-papier": "Hell wie Papier: feine Linien, Serifenschrift und zurückhaltende Farben – gut lesbar bei Tageslicht.",
+    "f-kontur": "Bunt und kräftig: dicke Rahmen, harte Schatten und leuchtende Pastellflächen im Comic-Stil.",
+    "f-anim": "Bewegt: sich verändernde Farbhintergründe (Disco, Aquarium, Weltall) und hüpfende Tasten – eher zur Unterhaltung als zum Üben.",
+    "f-txg": "Fürs Auto: besonders große Tasten und Balken, wenig Blendung. Dunkle Nachtfarben, helle Tag-Varianten (Weiß, Sand) und ein Kontrast-Design.",
+    "f-hy": "Fürs Handy: kompakt, daumenfreundlich, weiche Karten – vier dunkle (Schwarz, Ozean, Sunset, Wald) und zwei helle Varianten.",
+    "f-txk": "Tesla-Bildschirm-Look: Anthrazit mit weichen Kacheln und kräftiger Akzentfarbe (Blau, Gelb, Grün, Bernstein, Violett, Rot)."
+  };
+  const SUB_DESC = {
+    "Farbdesigns": "Gleicher Aufbau, nur die Farben ändern sich.",
+    "Skins (Tasten, Regler, Menüs)": "Eigener Aufbau und eigene Formen für Tasten, Regler und Menüs.",
+    "Animiert": "Bewegte Hintergründe und Tasten.",
+    "Professionell": "Aufwendigere Aufbauten mit Glas, schwebendem Player oder Magazin-Layout.",
+    "Tesla": "Für den Tesla-Bildschirm: große Tasten, gut lesbar beim Fahren.",
+    "Handy": "Für kleine Bildschirme: kompakt und mit dem Daumen gut zu bedienen."
+  };
+  const TAB_HEAD = { pro: "Professionell", tesla: "Tesla", handy: "Handy" };
   /* Ansicht der Designliste: "fam" = gruppiert (Farben als Chips), "rows" = eine Zeile pro Design mit Beschreibung */
   function listMode() { try { return localStorage.getItem("themeListMode") === "rows" ? "rows" : "fam"; } catch { return "fam"; } }
   function colName(hex) {
@@ -727,7 +755,8 @@
     const shownNow = new Set(shownIds());
     const only = !gearOn && onlyActive();
     const list = ordered().filter((t) => tabOf(t) === tab && (!only || shownNow.has(t.id) || t.id === cur));
-    const done = new Set(); let last = "";
+    const done = new Set(); let last = "", lastFam = "";
+    if (!customOrder() && TAB_HEAD[tab] && list.length) { body.append(h("p", "theme-sub", TAB_HEAD[tab])); body.append(h("small", "theme-sub-d", SUB_DESC[TAB_HEAD[tab]] || "")); }
     if (!list.length) body.append(h("p", "set-hint", only ? "In diesem Reiter ist kein Design aktiviert. Mit dem kleinen Symbol oben rechts siehst du alle Designs." : "In diesem Reiter sind noch keine Designs. Unter „Anzeigen & Reiter“ kannst du Designs hierher verschieben."));
     list.forEach((th) => {
       const f = famOf(th);
@@ -735,7 +764,13 @@
       const rowsMode = listMode() === "rows";
       const grouped = !rowsMode && f && mem.length >= 2;
       if (grouped && done.has(f.id)) return;
-      if (tab === "normal" && !customOrder() && subOf(th) !== last && !(grouped && f.id === "f-farb" && last === "Farbdesigns")) { last = subOf(th); body.append(h("p", "theme-sub", last)); }
+      if (tab === "normal" && !customOrder() && subOf(th) !== last) { last = subOf(th); body.append(h("p", "theme-sub", last)); body.append(h("small", "theme-sub-d", SUB_DESC[last] || "")); }
+      if (rowsMode && f && f.id !== lastFam) {
+        lastFam = f.id;
+        if (f.name !== last) {
+        const gh = h("div", "theme-grp"); gh.append(h("b", "", f.name), h("small", "", FAM_DESC[f.id] || f.hint || "")); body.append(gh);
+        }
+      }
       if (grouped) { done.add(f.id); body.append(famCard(f, mem, cur, pick)); return; }
       const b = h("button", "theme-pick" + (rowsMode ? " theme-row" : "")); b.type = "button";
       if (th.id === cur) b.setAttribute("aria-pressed", "true");
