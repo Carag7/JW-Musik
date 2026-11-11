@@ -108,8 +108,41 @@
     const DYN = ["pl", "lang", "cast", "ki", "langList"];   /* Knöpfe, die die App erst zur Laufzeit baut – die Vorschau zeichnet Platzhalter */
     let dev = lsv("pvwDev", "desk"), lupe = false, fr = null, stage = null, info = null, tmr = 0, built = false;
     const items = () => (typeof SV_ITEMS !== "undefined" ? SV_ITEMS : []);
-    const on = (x) => lsv("sv_" + x[0], x[3]) === "1";
-    const sideHidden = () => lsv("sideHide", "0") === "1";
+    /* Entwurf: Änderungen in der Vorschau werden erst beim Speichern übernommen */
+    const draft = {};
+    const SAVED = { ly: () => String(Number(lsv("teslaKaraokeLyricsScale", "42")) || 42), ls: () => String(Number(lsv("teslaKaraokeListSize", "16")) || 16) };
+    const dget = (k, d) => (k in draft ? draft[k] : d);
+    const dirty = () => Object.keys(draft).length > 0;
+    const on = (x) => dget("sv_" + x[0], lsv("sv_" + x[0], x[3])) === "1";
+    const sideHidden = () => dget("sideHide", lsv("sideHide", "0")) === "1";
+    const fLy = () => Number(dget("ly", SAVED.ly())), fLs = () => Number(dget("ls", SAVED.ls()));
+    const setD = (k, v, saved) => { if (String(v) === String(saved)) delete draft[k]; else draft[k] = String(v); paintDirty(); };
+    let dirtyEl = null;
+    function paintDirty() { if (dirtyEl) { dirtyEl.hidden = !dirty(); } }
+    function save() {
+      Object.keys(draft).forEach((k) => {
+        if (k === "ly") { lss("teslaKaraokeLyricsScale", draft[k]); try { state.scale = Number(draft[k]); if (typeof applyScale === "function") applyScale(); } catch { /* egal */ } }
+        else if (k === "ls") { lss("teslaKaraokeListSize", draft[k]); try { state.listSize = Number(draft[k]); if (typeof applyListSize === "function") applyListSize(); } catch { /* egal */ } }
+        else lss(k, draft[k]);
+      });
+      const sideChanged = "sideHide" in draft;
+      Object.keys(draft).forEach((k) => delete draft[k]);
+      try { window.dispatchEvent(new Event("storage")); } catch { /* egal */ }
+      if (sideChanged) applySide();
+    }
+    function discard() { Object.keys(draft).forEach((k) => delete draft[k]); }
+    let asking = false;
+    async function leaveCheck() {
+      if (!dirty() || asking) return;
+      asking = true;
+      let r = "keep";
+      try {
+        r = await uiDialog({ eyebrow: "Vorschau", title: "Änderungen speichern?", lines: ["In der Vorschau wurde etwas geändert. Soll es übernommen werden, oder zurück zum Ausgangspunkt?"], buttons: [{ value: "save", kind: "primary", label: "Speichern" }, { value: "discard", label: "Verwerfen (zurücksetzen)" }, { value: "keep", kind: "cancel", label: "Weiter bearbeiten" }], cancelValue: "keep" });
+      } catch { r = "keep"; }
+      asking = false;
+      if (r === "save") save(); else if (r === "discard") discard();
+      else { try { state.sub = "vorschau"; showSetTab("allgemein"); } catch { /* egal */ } }
+    }
     const themeId = () => lsv("pvwTheme", "") || ((window.THEME && THEME.cfg && THEME.cfg().mode === "manual" && THEME.cfg().theme) || document.documentElement.getAttribute("data-skin") || document.documentElement.getAttribute("data-theme") || "klassisch");
     function url() {
       const T = window.THEME, id = themeId(), th = T && T.byId ? T.byId(id) : null;
@@ -118,7 +151,7 @@
       const r = document.documentElement;
       const sk = th ? (th.skin ? 1 : 0) : (r.hasAttribute("data-skin") ? 1 : 0), lt = th ? (th.light ? 1 : 0) : (r.getAttribute("data-light") === "1" ? 1 : 0);
       const d = DEV.find((x) => x[0] === dev) || DEV[0];
-      return `vorschau.html?t=${encodeURIComponent(id)}&s=${sk}&l=${lt}&v=play&b=${encodeURIComponent(typeof SYNC_BASE !== "undefined" ? SYNC_BASE : location.origin)}&hide=${encodeURIComponent(hide.join("|"))}&dyn=${dyn.join(",")}&lupe=${lupe ? 1 : 0}&side=${sideHidden() ? 0 : 1}&d=${d[0]}&_=${Date.now() % 100000}`;
+      return `vorschau.html?t=${encodeURIComponent(id)}&s=${sk}&l=${lt}&v=play&b=${encodeURIComponent(typeof SYNC_BASE !== "undefined" ? SYNC_BASE : location.origin)}&hide=${encodeURIComponent(hide.join("|"))}&dyn=${dyn.join(",")}&lupe=${lupe ? 1 : 0}&side=${sideHidden() ? 0 : 1}&ly=${fLy()}&ls=${fLs()}&d=${d[0]}&_=${Date.now() % 100000}`;
     }
     function fit() {
       if (!built || !stage || !fr || !stage.clientWidth) return;
@@ -184,23 +217,36 @@
       sel.value = lsv("pvwTheme", ""); sel.addEventListener("change", () => { lss("pvwTheme", sel.value); reload(); });
       const big = h("button", "pvw-bigbtn"); big.type = "button"; big.innerHTML = FS_ON; big.title = "Vorschau im ganzen Fenster anzeigen (Esc = zurück)"; big.setAttribute("aria-label", big.title);
       big.addEventListener("click", () => { const on2 = box.classList.toggle("pvw-big"); big.innerHTML = on2 ? FS_OFF : FS_ON; big.title = on2 ? "Vorschau wieder klein (Esc)" : "Vorschau im ganzen Fenster anzeigen (Esc = zurück)"; document.documentElement.classList.toggle("pvw-big-on", on2); setTimeout(fit, 50); setTimeout(fit, 350); });
-      /* Liste der Knöpfe: links neben der Vorschau oder darunter */
-      const lay = h("div", "pvw-devs pvw-lay"); lay.setAttribute("aria-label", "Liste der Knöpfe");
-      [["left", "◧ Liste links"], ["below", "⬓ Liste unten"]].forEach(([k, n]) => { const b = h("button", "pvw-dev" + (lsv("pvwLay", "below") === k ? " on" : ""), n); b.type = "button"; b.dataset.k = k; b.addEventListener("click", () => { lss("pvwLay", k); box.classList.toggle("pvw-lay-left", k === "left"); lay.querySelectorAll(".pvw-dev").forEach((x) => x.classList.toggle("on", x.dataset.k === k)); setTimeout(fit, 80); setTimeout(fit, 350); }); lay.append(b); });
-      box.classList.toggle("pvw-lay-left", lsv("pvwLay", "below") === "left");
-      bar.append(devs, lay, chk("Lupe aktiv (zeigt alle Knöpfe)", lupe, (v) => { lupe = v; reload(); }), chk("Seitenleiste (Auswahlfenster) ausblenden", sideHidden(), (v) => { lss("sideHide", v ? "1" : "0"); applySide(); reload(); }), sel, usr, big);
+      /* Liste der Knöpfe: ein Knopf wechselt zwischen „links neben der Vorschau“ und „darunter“ */
+      const lay = h("button", "pvw-dev pvw-laybtn"); lay.type = "button";
+      const layPaint = () => { const left = lsv("pvwLay", "below") === "left"; lay.textContent = left ? "◧ Liste links" : "⬓ Liste unten"; lay.title = "Liste der Knöpfe: links oder unten (antippen zum Wechseln)"; box.classList.toggle("pvw-lay-left", left); };
+      lay.addEventListener("click", () => { lss("pvwLay", lsv("pvwLay", "below") === "left" ? "below" : "left"); layPaint(); setTimeout(fit, 80); setTimeout(fit, 350); });
+      layPaint();
+      bar.append(devs, lay, chk("Lupe aktiv (zeigt alle Knöpfe)", lupe, (v) => { lupe = v; reload(); }), chk("Seitenleiste (Auswahlfenster) ausblenden", sideHidden(), (v) => { setD("sideHide", v ? "1" : "0", lsv("sideHide", "0")); reload(); }), sel, usr, big);
       const side = h("div", "pvw-side");
-      side.append(h("p", "pvw-hint", "Haken = Knopf wird angezeigt (ohne Lupe)."));
+      const fnt = (label, key, min, max, step, get, saved) => {
+        const row = h("label", "pvw-font"); const lab = h("span", "", label + ": "); const val = h("b", "", get() + " px");
+        const r = h("input"); r.type = "range"; r.min = String(min); r.max = String(max); r.step = String(step); r.value = String(get());
+        r.addEventListener("input", () => { val.textContent = r.value + " px"; setD(key, r.value, saved()); reload(); });
+        lab.append(val); row.append(lab, r); return row;
+      };
+      side.append(fnt("Schrift Karaoke-Text", "ly", 10, 200, 2, fLy, SAVED.ly), fnt("Schrift Seitenleiste", "ls", 12, 36, 1, fLs, SAVED.ls));
+      side.append(h("p", "pvw-hint", "Haken = Knopf wird angezeigt (ohne Lupe). Änderungen hier gelten erst nach „Speichern“."));
       items().forEach((x) => {
         const row = h("label", "pvw-row"); const c = h("input"); c.type = "checkbox"; c.checked = on(x);
-        c.addEventListener("change", () => { lss("sv_" + x[0], c.checked ? "1" : "0"); try { window.dispatchEvent(new Event("storage")); } catch { /* egal */ } reload(); });
+        c.addEventListener("change", () => { setD("sv_" + x[0], c.checked ? "1" : "0", lsv("sv_" + x[0], x[3])); reload(); });
         row.append(c, h("span", "", x[1])); side.append(row);
       });
       stage = h("div", "pvw-stage"); const wrap = h("div", "pvw-wrap"); fr = h("iframe", "pvw-fr"); fr.setAttribute("title", "Vorschau"); wrap.append(fr); stage.append(wrap);
       info = h("small", "pvw-info");
       const right = h("div", "pvw-right"); right.append(stage, info);
       const main = h("div", "pvw-main"); main.append(side, right);
-      box.append(bar, uo, umsg, main);
+      const act = h("div", "pvw-act");
+      const sv = h("button", "chip primary-chip", "💾 Speichern"); sv.type = "button"; sv.addEventListener("click", () => { save(); paintDirty(); umsg.textContent = "Gespeichert."; });
+      const rs = h("button", "chip", "↺ Zurücksetzen"); rs.type = "button"; rs.title = "Alle Änderungen verwerfen und zum gespeicherten Stand zurück"; rs.addEventListener("click", () => { discard(); build(box); });
+      dirtyEl = h("small", "pvw-dirty", "● nicht gespeichert"); dirtyEl.hidden = !dirty();
+      act.append(sv, rs, dirtyEl);
+      box.append(bar, act, uo, umsg, main);
       fr.src = url(); requestAnimationFrame(() => { fit(); setTimeout(fit, 300); });
     }
     function ensure() {
@@ -213,14 +259,58 @@
       if (!$("pvwBox")) {
         const box = h("div", "autoplay-box pvw-box tab-off"); box.id = "pvwBox"; box.dataset.tab = "allgemein"; box.dataset.sub = "vorschau";
         pb.after(box);
-        let wasOff = true; new MutationObserver(() => { const off = box.classList.contains("tab-off"); if (off === wasOff) return; wasOff = off; if (!off) { build(box); } else { built = false; fr = null; box.classList.remove("pvw-big"); document.documentElement.classList.remove("pvw-big-on"); } }).observe(box, { attributes: true, attributeFilter: ["class"] });
+        let wasOff = true; new MutationObserver(() => { const off = box.classList.contains("tab-off"); if (off === wasOff) return; wasOff = off; if (!off) { build(box); } else { built = false; fr = null; box.classList.remove("pvw-big"); document.documentElement.classList.remove("pvw-big-on"); leaveCheck(); } }).observe(box, { attributes: true, attributeFilter: ["class"] });
       }
     }
     window.addEventListener("resize", fit);
+    setInterval(() => { const bx = $("pvwBox"); if (dirty() && bx && !asking && bx.offsetParent === null && !bx.classList.contains("pvw-big")) leaveCheck(); }, 700);
     document.addEventListener("keydown", (e) => { const bx = $("pvwBox"); if (e.key === "Escape" && bx && bx.classList.contains("pvw-big")) { const b = bx.querySelector(".pvw-bigbtn"); if (b) b.click(); } });
     new MutationObserver(ensure).observe(document.body, { childList: true, subtree: true }); ensure();
     /* Seitenleiste: gespeicherte Einstellung beim Start anwenden */
     if (sideHidden()) [1200, 3500].forEach((ms) => setTimeout(applySide, ms));
+  })();
+
+  /* ---------- Abmelden (hinter einem Pfeil) in „Sichern“ und „Favoriten-Abgleich“/„Daten“ ---------- */
+  (function () {
+    const lsv = (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : v; } catch { return d; } };
+    const h = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
+    function make(tab) {
+      const wrap = h("div", "lo-wrap tab-off"); wrap.dataset.tab = tab; wrap.dataset.lo = "1";
+      const tg = h("button", "pw-toggle", "▸ Abmelden"); tg.type = "button"; tg.setAttribute("aria-expanded", "false");
+      const box = h("div", "lo-box"); box.hidden = true;
+      const st = h("small", "set-hint", "");
+      const paint = () => { const u = lsv("userName", ""), c = lsv("sync-code", ""); st.textContent = `Benutzer: ${u || "nicht angemeldet"} · Favoriten-Code: ${c || "keiner"}`; ub.disabled = !u; cb.disabled = !c; };
+      const ub = h("button", "chip", "Vom Benutzer abmelden"); ub.type = "button";
+      const cb = h("button", "chip", "Vom Favoriten-Code abmelden"); cb.type = "button";
+      const msg = h("small", "set-hint", "");
+      ub.addEventListener("click", async () => {
+        const ok = await uiConfirm({ eyebrow: "Abmelden", title: "Vom Benutzer abmelden?", lines: ["Die Werte auf diesem Gerät bleiben bestehen."], ok: "Abmelden", cancel: "Zurück" });
+        if (!ok) return;
+        try { userLogout(); } catch { /* egal */ }
+        try { if (typeof renderPresetBox === "function") renderPresetBox(); } catch { /* egal */ }
+        msg.textContent = "Vom Benutzer abgemeldet."; paint();
+      });
+      cb.addEventListener("click", async () => {
+        const ok = await uiConfirm({ eyebrow: "Abmelden", title: "Vom Favoriten-Code abmelden?", lines: ["Die Favoriten auf diesem Gerät bleiben bestehen, werden aber nicht mehr mit dem Code abgeglichen."], ok: "Abmelden", cancel: "Zurück" });
+        if (!ok) return;
+        ["sync-code", "sync-pass-for", "sync-pass-hash"].forEach((k) => { try { localStorage.removeItem(k); } catch { /* egal */ } });
+        try { if (typeof refreshSyncInfo === "function") refreshSyncInfo(); } catch { /* egal */ }
+        msg.textContent = "Vom Favoriten-Code abgemeldet."; paint();
+      });
+      tg.addEventListener("click", () => { const open = box.hidden; box.hidden = !open; tg.setAttribute("aria-expanded", String(open)); tg.textContent = (open ? "▾" : "▸") + " Abmelden"; if (open) paint(); });
+      const row = h("div", "adv-btns"); row.append(ub, cb);
+      box.append(st, row, msg); wrap.append(tg, box);
+      return wrap;
+    }
+    function ensure() {
+      const form = $("codeForm"); if (!form) return;
+      ["abgleich", "sichern"].forEach((tab) => {
+        if (form.querySelector(`.lo-wrap[data-tab="${tab}"]`)) return;
+        const first = form.querySelector(`[data-tab="${tab}"]:not(.lo-wrap)`); if (!first || !first.parentNode) return;
+        first.parentNode.insertBefore(make(tab), first);
+      });
+    }
+    new MutationObserver(ensure).observe(document.body, { childList: true, subtree: true }); ensure();
   })();
 
   function ensureBtn() {

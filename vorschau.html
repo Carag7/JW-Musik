@@ -365,6 +365,7 @@
   if(q.get("l")==="1") r.setAttribute("data-light","1");
   if(q.get("s")==="1") r.setAttribute("data-skin",t);
   r.setAttribute("data-selsize","normal");
+  if(q.get("ly")) r.style.setProperty("--lyrics", q.get("ly")+"px"); if(q.get("ls")) r.style.setProperty("--list-size", q.get("ls")+"px");
   var hd=q.get("hide"); if(hd){ var st=document.createElement("style"); st.textContent=hd.split("|").filter(Boolean).map(function(s){return s+"{display:none!important}";}).join("\n"); document.head.append(st); }
   document.body.classList.add("pv-"+v);
   if(innerWidth<=760&&(v==="play"||v==="start"||v==="kar")){ var ap=document.querySelector(".app"); if(ap) ap.classList.add("sidebar-hidden"); }
