@@ -1469,9 +1469,11 @@ function setMediaSession(song) {
   const optional = (action, handler) => {
     try { navigator.mediaSession.setActionHandler(action, handler); } catch { /* nicht überall unterstützt */ }
   };
-  /* Wie in der früher funktionierenden Fassung: Spul-Tasten immer anmelden (Tesla blendet Vor/Zurück sonst grau aus) */
-  optional("seekbackward", favSeek() === "back" ? toggleFavorite : () => skip(-skipSec(-1)));
-  optional("seekforward", favSeek() === "fwd" ? toggleFavorite : () => skip(skipSec(1)));
+  /* Tesla zeigt je nach Software Vor/Zurück oder Spul-Tasten: beide Paare anmelden. Standard: beide wechseln das Lied; „Spulen“ spult wirklich */
+  const mk = (() => { try { return localStorage.getItem("mediaKeys") || "step"; } catch { return "step"; } })();
+  optional("seekbackward", favSeek() === "back" ? toggleFavorite : (mk === "seek" ? () => skip(-skipSec(-1)) : () => keyStep(-1)));
+  optional("seekforward", favSeek() === "fwd" ? toggleFavorite : (mk === "seek" ? () => skip(skipSec(1)) : () => keyStep(1)));
+  optional("seekto", (details) => { if (details && Number.isFinite(details.seekTime)) el.audio.currentTime = details.seekTime; });
   };
   /* Der Tesla-Browser verwirft die Tasten-Anmeldung teils beim Quellenwechsel – deshalb mehrfach neu anmelden und die Position melden */
   state.mediaReg = () => { try { registerKeys(); } catch { /* egal */ } };

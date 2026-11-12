@@ -26,7 +26,7 @@
 
   /* ---------- Dreiecke ▸ ▾ ▴: Tesla-Schrift hat sie nicht (Rechtecke) → durch gezeichnete Dreiecke ersetzen ---------- */
   (function () {
-    const GL = { "▸": "r", "▾": "d", "▴": "u", "▼": "d", "▲": "u", "◂": "l" };
+    const GL = { "▸": "r", "▾": "d", "▴": "u", "▼": "d", "▲": "u", "◂": "l", "⏵": "r", "⏴": "l" };
     let missing = false;
     try {
       const cv = document.createElement("canvas").getContext("2d");
@@ -36,12 +36,12 @@
     } catch { /* egal */ }
     if (!missing && !(typeof isTesla === "function" && isTesla())) return;
     document.documentElement.classList.add("tesla-ua");
-    const RX = /[▸▾▴▼▲◂]/;
+    const RX = /[▸▾▴▼▲◂⏵⏴]/;
     const swap = (root) => {
       const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null); const list = [];
       for (let n = w.nextNode(); n; n = w.nextNode()) { if (RX.test(n.nodeValue) && !/^(SCRIPT|STYLE|TEXTAREA|OPTION)$/.test(n.parentNode.nodeName)) list.push(n); }
       list.forEach((n) => {
-        const parts = n.nodeValue.split(/([▸▾▴▼▲◂])/); const f = document.createDocumentFragment();
+        const parts = n.nodeValue.split(/([▸▾▴▼▲◂⏵⏴])/); const f = document.createDocumentFragment();
         parts.forEach((p) => { if (GL[p]) { const s = document.createElement("span"); s.className = "tri tri-" + GL[p]; s.setAttribute("aria-hidden", "true"); f.append(s); } else if (p) f.append(document.createTextNode(p)); });
         n.replaceWith(f);
       });

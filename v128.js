@@ -430,7 +430,7 @@
 
   /* ---------- Tesla: kein Apple-Music-Einsprung beim Liedwechsel (stilles Dauer-Signal, solange das nächste Lied lädt) ---------- */
   function installKeepAlive() {
-    if (!tesla() || window.__v128ka) return; window.__v128ka = true;
+    if (!(tesla() || !/Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "")) || window.__v128ka) return; window.__v128ka = true;
     const a = (typeof el !== "undefined" && el.audio) || $("audio"); if (!a) return;
     const wav = (() => { const n = 8000, b = new ArrayBuffer(44 + n * 2), v = new DataView(b); const w = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
       w(0, "RIFF"); v.setUint32(4, 36 + n * 2, true); w(8, "WAVEfmt "); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, 8000, true); v.setUint32(28, 16000, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, "data"); v.setUint32(40, n * 2, true);
