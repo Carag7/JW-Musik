@@ -245,7 +245,7 @@
           ...reg(mCheck("holdGuard", "Lupe und Player-Symbol nur nach langem Drücken", "0"))
         ])
       ] },
-      { id: "anz", name: "Abstände und Schutz", desc: "Platz am Rand, Schutz vor versehentlichem Tippen, Anzeigegröße.", boxes: [$("advView"), box("Größe der Auswahlmenüs", [...reg(mSelect("selSize", "Auswahlmenüs und Zahlenfelder", [["auto", "automatisch (im Tesla sehr groß)"], ["normal", "normal"], ["gross", "groß"], ["sehr", "sehr groß"], ["riesig", "riesig"]], "auto", "Gilt für die Auswahlmenüs in den Einstellungen, z. B. „Nach Rückkehr in den Browser“, „Tesla-Player: Taste = Favorit“ oder „Wo steht der Tesla-Knopf“."))])] },
+      { id: "anz", name: "Abstände und Schutz", desc: "Platz am Rand, Schutz vor versehentlichem Tippen, Anzeigegröße.", boxes: [$("advView"), box("Größe der Auswahlmenüs", [...reg(mSelect("selSize", "Auswahlmenüs und Zahlenfelder", [["auto", "automatisch (= normal)"], ["winzig", "sehr klein"], ["klein", "klein"], ["normal", "normal"], ["gross", "groß"], ["sehr", "sehr groß"], ["riesig", "riesig"]], "auto", "Gilt für die Auswahlmenüs in den Einstellungen, z. B. „Nach Rückkehr in den Browser“, „Tesla-Player: Taste = Favorit“ oder „Wo steht der Tesla-Knopf“."))])] },
       { id: "tesla", name: "Tesla (im Auto)", desc: "Große Tasten für die Fahrt. Nur nötig, wenn du im Auto sitzt.", only: true, boxes: [tzBox] },
       { id: "sonst", name: "Schnellaktionen", desc: "Seite neu laden, Anmeldefenster, Bearbeitungsmodus und erweiterte Optionen.", boxes: [$("toolsBox"), box("Einstellungen öffnen", [...reg(mSelect("setStart", "Beim Öffnen der Einstellungen zeigen", [["auto", "Tesla: Tesla-Seite, sonst zuletzt besuchte Seite"], ["tesla", "immer die Tesla-Seite"], ["last", "die zuletzt besuchte Seite"]], "auto", "Im Tesla sofort die Tesla-Seite zu zeigen spart Antippen."))])] }
     ];
@@ -321,7 +321,7 @@
     add(bigCheck("srcTagsOpt", "Kleine Kennzeichen (K, ♪, ▶, Z)"));
     add(bigSel("favSeekOpt", "Tesla-Player: Taste = Favorit"));
     sub("Größe der Auswahlmenüs");
-    add((() => { const s = h("select", "tz-sel"); [["auto", "automatisch (im Tesla sehr groß)"], ["normal", "normal"], ["gross", "groß"], ["sehr", "sehr groß"], ["riesig", "riesig"]].forEach(([v, n]) => { const o = h("option", "", n); o.value = v; s.append(o); });
+    add((() => { const s = h("select", "tz-sel"); [["auto", "automatisch (= normal)"], ["winzig", "sehr klein"], ["klein", "klein"], ["normal", "normal"], ["gross", "groß"], ["sehr", "sehr groß"], ["riesig", "riesig"]].forEach(([v, n]) => { const o = h("option", "", n); o.value = v; s.append(o); });
       const paint = () => { s.value = lsv("selSize", "auto"); }; s.onchange = () => applyKey("selSize", s.value); return bigRow("Größe der Auswahlmenüs", s, "Macht alle Auswahlmenüs in den Einstellungen größer oder kleiner.", paint); })());
     sub("Tesla-Knopf in den Einstellungen");
     add((() => { const s = h("select", "tz-sel"); [["auto", "automatisch (im Tesla oben, sonst links in der Liste)"], ["top", "oben groß (neben Einstellungen)"], ["list", "links in der Liste (klein)"]].forEach(([v, n]) => { const o = h("option", "", n); o.value = v; s.append(o); });

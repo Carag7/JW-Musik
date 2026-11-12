@@ -234,3 +234,15 @@ html[data-selsize="riesig"] .tz-opt { min-height: 120px; font-size: 40px; }
 .sim-bar #simOut, .sim-bar #simCnt { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; cursor: pointer; }
 /* v156: „Ähnliche Lieder“-Knopf: ohne Umrahmung, solange nicht aktiv (sonst sieht er ausgewählt aus) */
 #similarBtn:not(.sim-ref):not(.sim-play) { border-color: transparent !important; box-shadow: none !important; outline: none !important; }
+
+/* v168: zwei kleinere Größen für Auswahlmenüs und Zahlenfelder (klein, sehr klein) */
+html[data-selsize="klein"] { --sf-h: 34px; --sf-fs: 14px; --sf-n: 70px; --tz-h: 52px; --tz-fs: 18px; --tz-w: 170px; }
+html[data-selsize="winzig"] { --sf-h: 28px; --sf-fs: 12px; --sf-n: 58px; --tz-h: 42px; --tz-fs: 15px; --tz-w: 140px; }
+html[data-selsize="klein"] #codeForm :is(select:not(.tz-sel), .set-row input[type="number"], .set-row input[type="text"], .preset-field input:not([type="checkbox"])),
+html[data-selsize="winzig"] #codeForm :is(select:not(.tz-sel), .set-row input[type="number"], .set-row input[type="text"], .preset-field input:not([type="checkbox"])) {
+  min-height: var(--sf-h) !important; height: var(--sf-h) !important; font-size: var(--sf-fs) !important; padding: 0 8px !important; border-radius: 8px !important;
+}
+html[data-selsize="klein"] #codeForm :is(.set-row input[type="number"], .preset-field input[type="number"]),
+html[data-selsize="winzig"] #codeForm :is(.set-row input[type="number"], .preset-field input[type="number"]) { width: var(--sf-n) !important; }
+html[data-selsize="klein"] .tz-sel, html[data-selsize="winzig"] .tz-sel { min-height: var(--tz-h) !important; height: var(--tz-h) !important; font-size: var(--tz-fs) !important; min-width: var(--tz-w) !important; padding: 0 10px !important; }
+html[data-selsize="klein"] .tz-row, html[data-selsize="winzig"] .tz-row { min-height: calc(var(--tz-h) + 12px); }

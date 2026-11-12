@@ -283,7 +283,7 @@
   /* Größe der Auswahlmenüs: automatisch (Tesla: sehr groß), normal, groß, sehr groß, riesig */
   function applySel() {
     try {
-      let v = lsv("selSize", "auto"); if (!["auto", "normal", "gross", "sehr", "riesig"].includes(v)) v = "auto";
+      let v = lsv("selSize", "auto"); if (!["auto", "winzig", "klein", "normal", "gross", "sehr", "riesig"].includes(v)) v = "auto";
       if (v === "auto") v = "normal";
       document.documentElement.dataset.selsize = v;
     } catch { /* egal */ }
