@@ -4440,7 +4440,7 @@ const PRESETS = [
 const PRESET_GROUPS = [
   ["Wiedergabe", ["auto", "resume", "karonly", "skip", "lupeopt", "rcidle"]],
   ["Einfache Ansicht (ohne Lupe)", ["einfach"]],
-  ["Tesla und Ähnliche Lieder", ["teslakeys", "startopen", "selsize", "sim", "plhold"]],
+  ["Tesla und Ähnliche Lieder", ["teslakeys", "teslatest", "startopen", "selsize", "sim", "plhold"]],
   ["KI und Bewertungen", ["kitext", "ki"]],
   ["Liste und Auswahl", ["extra", "tags", "verbar", "srcfilter", "fav", "fontlist", "sidebar"]],
   ["Karaoke-Text und Cover", ["fontkar", "lyricalign", "lyricpos", "lyrcol", "cover", "coverset", "gal", "posadj", "startmore", "musiklang", "startgif", "startshow", "startdet"]],
@@ -4452,7 +4452,7 @@ const PRESET_TIP = {
   extra: "Instrumental, Zusammenkünfte, Video in der Liste.", tags: "Kleine Buchstaben unter den Liedern.", verbar: "Art-Buttons und ihr Ausblenden.", srcfilter: "Welche Arten gerade gezeigt werden.", fav: "Wo der Stern erscheint.", fontlist: "Schrift in der Liste.", sidebar: "Breite der Liste.",
   fontkar: "Schrift des Karaoke-Textes.", lyricalign: "Links, Mitte oder rechts.", lyricpos: "Wo die aktive Zeile steht.", cover: "Neue oder alte Cover.", startgif: "Chor-GIF auf der Startseite.",
   theme: "Welches Design und wann.", hold: "Lupe nur nach langem Drücken.", topoff: "Platz oben (z. B. für Tesla).", themeshown: "Welche Designs im Hauptfenster stehen.",
-  einfach: "Welche Knöpfe ohne Lupe sichtbar sind.", teslakeys: "Tesla-Knopf und Tasten Lied vor/zurück.", sim: "Ähnliche Lieder: Knopf und Genauigkeit.", plhold: "Lange drücken auf eine Liste.", selsize: "Größe der Auswahlmenüs.", startopen: "Welche Ansicht die Startseite zeigt.", posadj: "Verschiebung und Größe der Ansichten.", ki: "Bewertung, Korrektur-Status, KI-Verlauf.",
+  einfach: "Welche Knöpfe ohne Lupe sichtbar sind.", teslakeys: "Tesla-Knopf und Tasten Lied vor/zurück.", teslatest: "Tests für Media Session und stille Signale.", sim: "Ähnliche Lieder: Knopf und Genauigkeit.", plhold: "Lange drücken auf eine Liste.", selsize: "Größe der Auswahlmenüs.", startopen: "Welche Ansicht die Startseite zeigt.", posadj: "Verschiebung und Größe der Ansichten.", ki: "Bewertung, Korrektur-Status, KI-Verlauf.",
   fehl: "Prüfung auf fehlende Lieder.", syncmax: "Automatisch abgleichen bis zu dieser Anzahl gelöschter Lieder."
 };
 /* Standard für neue Benutzer (beste Werte am Desktop); über den Namen „standard“ mit dem Schreib-Passwort änderbar */
