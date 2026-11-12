@@ -1461,45 +1461,33 @@ function setMediaSession(song) {
     clearTimeout(hold.t); hold.t = setTimeout(() => { hold.t = 0; hold.d = 0; hold.seeking = false; }, 750);
     clearTimeout(hold.go); hold.go = setTimeout(() => { if (!hold.seeking) mediaStep(d); }, 420);
   };
-  const registerKeys = () => {
-  navigator.mediaSession.setActionHandler("previoustrack", () => keyStep(-1));
-  navigator.mediaSession.setActionHandler("nexttrack", () => keyStep(1));
-  navigator.mediaSession.setActionHandler("play", togglePlay);
-  navigator.mediaSession.setActionHandler("pause", togglePlay);
+  /* Tasten-Test (Einstellungen → Abstände und Schutz → Fehlersuche): verschiedene Anmelde-Varianten, um herauszufinden, was die Tesla-Software akzeptiert */
+  const kv = (() => { try { return localStorage.getItem("keyVar") || "0"; } catch { return "0"; } })();
+  const mk = (() => { try { return localStorage.getItem("mediaKeys") || "step"; } catch { return "step"; } })();
   const optional = (action, handler) => {
     try { navigator.mediaSession.setActionHandler(action, handler); } catch { /* nicht überall unterstützt */ }
   };
-  /* Tesla zeigt je nach Software Vor/Zurück oder Spul-Tasten: beide Paare anmelden. Standard: beide wechseln das Lied; „Spulen“ spult wirklich */
-  const mk = (() => { try { return localStorage.getItem("mediaKeys") || "step"; } catch { return "step"; } })();
-  optional("seekbackward", favSeek() === "back" ? toggleFavorite : (mk === "seek" ? () => skip(-skipSec(-1)) : () => keyStep(-1)));
-  optional("seekforward", favSeek() === "fwd" ? toggleFavorite : (mk === "seek" ? () => skip(skipSec(1)) : () => keyStep(1)));
-  optional("seekto", (details) => { if (details && Number.isFinite(details.seekTime)) el.audio.currentTime = details.seekTime; });
+  const registerKeys = () => {
+    navigator.mediaSession.setActionHandler("previoustrack", () => keyStep(-1));
+    navigator.mediaSession.setActionHandler("nexttrack", () => keyStep(1));
+    navigator.mediaSession.setActionHandler("play", togglePlay);
+    navigator.mediaSession.setActionHandler("pause", togglePlay);
+    const seekOn = !["1", "6"].includes(kv);
+    optional("seekbackward", !seekOn ? null : favSeek() === "back" ? toggleFavorite : (mk === "seek" ? () => skip(-skipSec(-1)) : () => keyStep(-1)));
+    optional("seekforward", !seekOn ? null : favSeek() === "fwd" ? toggleFavorite : (mk === "seek" ? () => skip(skipSec(1)) : () => keyStep(1)));
+    optional("seekto", ["1", "2", "6"].includes(kv) ? null : (details) => { if (details && Number.isFinite(details.seekTime)) el.audio.currentTime = details.seekTime; });
+    optional("stop", ["5", "6"].includes(kv) ? () => { try { el.audio.pause(); } catch { /* egal */ } } : null);
   };
   /* Der Tesla-Browser verwirft die Tasten-Anmeldung teils beim Quellenwechsel – deshalb mehrfach neu anmelden und die Position melden */
+  const lsT = (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : v; } catch { return d; } };
   const updatePos = () => {
-    if (!el.audio.duration || !Number.isFinite(el.audio.duration)) return;
-    try {
-      navigator.mediaSession.setPositionState({
-        duration: el.audio.duration,
-        position: Math.min(el.audio.currentTime || 0, el.audio.duration),
-        playbackRate: el.audio.playbackRate || 1
-      });
-    } catch { /* ältere Browser */ }
+    if (lsT("testPosAlways", "0") !== "1" || !el.audio.duration || !Number.isFinite(el.audio.duration)) return;
+    try { navigator.mediaSession.setPositionState({ duration: el.audio.duration, position: Math.min(el.audio.currentTime || 0, el.audio.duration), playbackRate: el.audio.playbackRate || 1 }); } catch { /* ältere Browser */ }
   };
-  state.mediaReg = () => {
-    try {
-      registerKeys();
-      updatePos();
-    } catch { /* egal */ }
-  };
+  if (!state.mediaPosBound) { state.mediaPosBound = true; el.audio.addEventListener("timeupdate", updatePos); el.audio.addEventListener("loadedmetadata", updatePos); }
+  state.mediaReg = () => { try { registerKeys(); updatePos(); } catch { /* egal */ } };
+  if (kv === "4") { try { ["previoustrack", "nexttrack", "seekbackward", "seekforward", "seekto"].forEach((x) => optional(x, null)); } catch { /* egal */ } clearTimeout(state.keyLate); state.keyLate = setTimeout(() => { try { registerKeys(); } catch { /* egal */ } }, 1500); return; }
   state.mediaReg();
-  // Position bei Wiedergabe aktuell halten
-  if (!state.mediaPosBound) {
-    state.mediaPosBound = true;
-    el.audio.addEventListener("play", () => { if (state.mediaReg) state.mediaReg(); });
-    el.audio.addEventListener("loadedmetadata", () => { if (state.mediaReg) state.mediaReg(); });
-    el.audio.addEventListener("timeupdate", updatePos);
-  }
 }
 
 async function selectSong(index, autoplay) {
@@ -3304,7 +3292,7 @@ const SV_ITEMS = [
 ];
 const SV_KEYS = SV_ITEMS.map((x) => "sv_" + x[0]);
 const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBarAlways", "verBarFade", "srcTagsFade", "fadeSec", "lyricPos", "flugPos", "rcIdleSec", "holdGuard", "holdHint", "eggMode", "eggFall", "eggGif", "startGif", "themeShown", "themeTabs", "themeOrder", "themeTabList", "themeCustom", "themeNames", "skinProf", "coverMode", "coverFlip", "coverSet", "musikLang", "langWarnOff", "startMode", "startFolders", "startOrder", "startSec", "startFade", "skinOnlyActive", "skinOnlyMode", "sidebarW", "topOffMain", "topOffSet", "startGif", "ludwtSingle", "listRepeat", "srcTags", "favPlace", "favSeek", "showExtra", "karaokeOnly", "srcFilter", "sync-auto-max", "lyricAlign", "skipSec", "skipBack", "skipFwd", "fehlMode", "fehlNotify", "fehlAll", "fehlHelpSeen", "fehlLang", "startShow", "startSizes", "castMode", "startCarSec", "startCarMs", "galNoKar", "galNoKarAmt", "galMini", "npLayout", "lyrColOn", "lyrColOff", "skinFilterMode", "fehlSkip", "fehlLog", "startBarOpen", "startTrans", "startCar3d", "startFloatSpd", "resumeMode", "autoTap", "autoMute", "rateOn", "rateName", "rateAnon", "ampelOn", "kiScanAcc", "kiFirst", "kvSync", "kvWide", "aiAcc", STORAGE.scale, STORAGE.listSize];
-SETTING_KEYS.push(...SV_KEYS, "sideHide", "selSize", "teslaTab", "simBtn", "simMin", "plHold", "startOpen", "setStart", "simTop", "simPct", "simFill", "simOpRef", "simOpFill", "mediaKeys", "mediaHold", "svHints", "kiHide", "galAdj", "galSizes", "galTop", "startTop", "startAdj", "startImgFit", "ampelLong", "rcListenStart", "galNoKar", "galNoKarAmt", "galMini", "npLayout", "castMode", "musikLang", "langWarnOff", "startAnim", "startFolders", "startOrder", "selBar", "testSilent", "testForceAudio", "testPosAlways", "testReReg");
+SETTING_KEYS.push(...SV_KEYS, "sideHide", "selSize", "teslaTab", "simBtn", "simMin", "plHold", "startOpen", "setStart", "simTop", "simPct", "simFill", "simOpRef", "simOpFill", "mediaKeys", "mediaHold", "svHints", "kiHide", "galAdj", "galSizes", "galTop", "startTop", "startAdj", "startImgFit", "ampelLong", "rcListenStart", "galNoKar", "galNoKarAmt", "galMini", "npLayout", "castMode", "musikLang", "langWarnOff", "startAnim", "startFolders", "startOrder", "selBar");
 const isSettingKey = (k) => SETTING_KEYS.includes(k) || /^fehl(?:[TL]|Hide|Inc)_/.test(k);
 const syncSettingsOn = () => false;   // Einstellungen werden jetzt über den Benutzer gespeichert
 function collectSettings() {
@@ -3648,13 +3636,8 @@ function fillSettingsFields() {
     r.onchange = () => { try { localStorage.setItem("favPlace", r.value); } catch { /* egal */ } applyFavPlace(); };
   });
   const fs = document.getElementById("favSeekOpt");
-  if (fs) { fs.value = favSeek(); fs.onchange = () => { try { localStorage.setItem("favSeek", fs.value); } catch { /* egal */ } setMediaSession(state.songs[state.index]); }; }
-  ["testSilent", "testForceAudio", "testPosAlways", "testReReg"].forEach((key) => {
-    const el = document.getElementById(key + "Opt");
-    if (!el) return;
-    el.checked = lsv(key, key === "testSilent" || key === "testPosAlways" || key === "testReReg" ? "1" : "0") === "1";
-    el.onchange = () => { try { localStorage.setItem(key, el.checked ? "1" : "0"); } catch { /* egal */ } };
-  });
+  fs.value = favSeek();
+  fs.onchange = () => { try { localStorage.setItem("favSeek", fs.value); } catch { /* egal */ } setMediaSession(state.songs[state.index]); };
   const st = document.getElementById("srcTagsOpt");
   st.checked = srcTagsOn();
   st.onchange = () => { try { localStorage.setItem("srcTags", st.checked ? "1" : "0"); } catch { /* egal */ } renderList(); };
@@ -4413,13 +4396,6 @@ const PRESETS = [
   { id: "einfach", label: "Einfache Ansicht: Knöpfe ohne Lupe", keys: [...SV_KEYS, "svHints"], def: { ...Object.fromEntries(SV_ITEMS.map((x) => ["sv_" + x[0], x[3]])), svHints: "1" }, fields: [...SV_ITEMS.map((x) => ({ key: "sv_" + x[0], t: x[1], o: BOOL, dv: x[3] })), { key: "svHints", t: "Hinweise zu langem Drücken", o: BOOL, dv: "1" }] },
   { id: "teslakeys", label: "Tesla: Tab-Knopf und kleine Tasten (Lied vor/zurück oder Spulen)", keys: ["teslaTab", "mediaKeys", "mediaHold"], def: { teslaTab: "top", mediaKeys: "step", mediaHold: "0" },
     fields: [{ key: "teslaTab", t: "Tesla-Knopf", o: [["auto", "automatisch"], ["top", "oben (groß)"], ["list", "in der Liste"]], dv: "auto" }, { key: "mediaKeys", t: "Tasten", o: [["step", "Lied vor/zurück"], ["seek", "Spulen"]], dv: "step" }, { key: "mediaHold", t: "Halten = Spulen", o: BOOL, dv: "0" }] },
-  { id: "teslatest", label: "Tesla-Tests: Media Session und stille Signale", keys: ["testSilent", "testForceAudio", "testPosAlways", "testReReg"], def: { testSilent: "1", testForceAudio: "0", testPosAlways: "1", testReReg: "1" },
-    fields: [
-      { key: "testSilent", t: "Stilles Dauersignal", o: BOOL, dv: "1" },
-      { key: "testForceAudio", t: "Audio-Element erzwingen (statt Video)", o: BOOL, dv: "0" },
-      { key: "testPosAlways", t: "Position dauernd melden", o: BOOL, dv: "1" },
-      { key: "testReReg", t: "Tasten nach jedem Lied neu anmelden", o: BOOL, dv: "1" }
-    ] },
   { id: "sim", label: "Ähnliche Lieder: Knopf im Player und Mindest-Ähnlichkeit", keys: ["simBtn", "simMin", "simTop", "simPct", "simFill", "simOpRef", "simOpFill"], def: { simBtn: "1", simMin: "auto", simTop: "10", simPct: "1", simFill: "1", simOpRef: "35", simOpFill: "28" },
     fields: [{ key: "simBtn", t: "Knopf im Player", o: BOOL, dv: "1" }, { key: "simMin", t: "Genauigkeit", o: [["auto", "Automatik"], ["60", "sehr genau"], ["45", "genau"], ["30", "normal"], ["22", "locker"], ["15", "sehr locker"]], dv: "30" }, { key: "simTop", t: "Automatik: Anzahl", n: [1, 60], dv: "10" }, { key: "simPct", t: "Prozent zeigen", o: BOOL, dv: "1" }, { key: "simFill", t: "Füllstand", o: BOOL, dv: "1" }, { key: "simOpRef", t: "Deckung Bezug %", n: [0, 100], dv: "35" }, { key: "simOpFill", t: "Deckung Füllung %", n: [0, 100], dv: "28" }] },
   { id: "startopen", label: "Startseite öffnen mit … / Einstellungen öffnen mit …", keys: ["startOpen", "setStart"], def: { startOpen: "first", setStart: "tesla" },
@@ -4445,7 +4421,7 @@ const PRESETS = [
 const PRESET_GROUPS = [
   ["Wiedergabe", ["auto", "resume", "karonly", "skip", "lupeopt", "rcidle"]],
   ["Einfache Ansicht (ohne Lupe)", ["einfach"]],
-  ["Tesla und Ähnliche Lieder", ["teslakeys", "teslatest", "startopen", "selsize", "sim", "plhold"]],
+  ["Tesla und Ähnliche Lieder", ["teslakeys", "startopen", "selsize", "sim", "plhold"]],
   ["KI und Bewertungen", ["kitext", "ki"]],
   ["Liste und Auswahl", ["extra", "tags", "verbar", "srcfilter", "fav", "fontlist", "sidebar"]],
   ["Karaoke-Text und Cover", ["fontkar", "lyricalign", "lyricpos", "lyrcol", "cover", "coverset", "gal", "posadj", "startmore", "musiklang", "startgif", "startshow", "startdet"]],
@@ -4457,7 +4433,7 @@ const PRESET_TIP = {
   extra: "Instrumental, Zusammenkünfte, Video in der Liste.", tags: "Kleine Buchstaben unter den Liedern.", verbar: "Art-Buttons und ihr Ausblenden.", srcfilter: "Welche Arten gerade gezeigt werden.", fav: "Wo der Stern erscheint.", fontlist: "Schrift in der Liste.", sidebar: "Breite der Liste.",
   fontkar: "Schrift des Karaoke-Textes.", lyricalign: "Links, Mitte oder rechts.", lyricpos: "Wo die aktive Zeile steht.", cover: "Neue oder alte Cover.", startgif: "Chor-GIF auf der Startseite.",
   theme: "Welches Design und wann.", hold: "Lupe nur nach langem Drücken.", topoff: "Platz oben (z. B. für Tesla).", themeshown: "Welche Designs im Hauptfenster stehen.",
-  einfach: "Welche Knöpfe ohne Lupe sichtbar sind.", teslakeys: "Tesla-Knopf und Tasten Lied vor/zurück.", teslatest: "Tests für Media Session und stille Signale.", sim: "Ähnliche Lieder: Knopf und Genauigkeit.", plhold: "Lange drücken auf eine Liste.", selsize: "Größe der Auswahlmenüs.", startopen: "Welche Ansicht die Startseite zeigt.", posadj: "Verschiebung und Größe der Ansichten.", ki: "Bewertung, Korrektur-Status, KI-Verlauf.",
+  einfach: "Welche Knöpfe ohne Lupe sichtbar sind.", teslakeys: "Tesla-Knopf und Tasten Lied vor/zurück.", sim: "Ähnliche Lieder: Knopf und Genauigkeit.", plhold: "Lange drücken auf eine Liste.", selsize: "Größe der Auswahlmenüs.", startopen: "Welche Ansicht die Startseite zeigt.", posadj: "Verschiebung und Größe der Ansichten.", ki: "Bewertung, Korrektur-Status, KI-Verlauf.",
   fehl: "Prüfung auf fehlende Lieder.", syncmax: "Automatisch abgleichen bis zu dieser Anzahl gelöschter Lieder."
 };
 /* Standard für neue Benutzer (beste Werte am Desktop); über den Namen „standard“ mit dem Schreib-Passwort änderbar */

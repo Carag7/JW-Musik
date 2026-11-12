@@ -15,6 +15,13 @@
   const persist = () => { clearTimeout(saveT); saveT = setTimeout(() => { try { localStorage.setItem(KEY, JSON.stringify(log.slice(-250))); } catch { /* egal */ } }, 600); };
   const add = (kind, text) => { log.push(`${hms()}  ${kind.padEnd(8)} ${text}`); if (log.length > 400) log.splice(0, log.length - 400); persist(); };
   window.DBG = { add };
+  /* Test: echtes Audio-Element statt Video-Element (muss vor app.js passieren) */
+  try {
+    if (localStorage.getItem("testForceAudio") === "1") {
+      const v = document.getElementById("audio");
+      if (v && v.tagName === "VIDEO") { const au = document.createElement("audio"); au.id = "audio"; au.preload = "none"; if (v.className) au.className = v.className; v.replaceWith(au); log.push(`${hms()}  TEST     <audio> statt <video> eingesetzt`); }
+    }
+  } catch { /* egal */ }
   add("START", `Seite geladen (${location.pathname})`);
 
   window.addEventListener("error", (e) => add("FEHLER", `${e.message} @ ${tail(e.filename)}:${e.lineno}`));
@@ -79,6 +86,7 @@
       p("Player-Element", `<${a.tagName.toLowerCase()}> paused=${a.paused} ended=${a.ended} t=${(a.currentTime || 0).toFixed(1)}/${Number.isFinite(a.duration) ? a.duration.toFixed(1) : "?"} ready=${a.readyState} net=${a.networkState} muted=${a.muted} vol=${a.volume} Fehler=${a.error ? a.error.code : "–"}`);
       p("Quelle", tail(a.currentSrc || a.src) || "–");
     }
+    p("Tasten-Tests", `silent=${lget("testSilent","1")} forceAudio=${lget("testForceAudio","0")} posAlways=${lget("testPosAlways","0")} reReg=${lget("testReReg","1")} keyVar=${lget("keyVar","0")}`);
     p("Tasten-Einstellungen", `mediaKeys=${lget("mediaKeys", "step")} · mediaHold=${lget("mediaHold", "–")} · favSeek=${lget("favSeek", "off")} · skipBack/Fwd=${lget("skipBack", "–")}/${lget("skipFwd", "–")}`);
     p("Weitere Einstellungen", `autoStart=${lget("autoStart", "–")} · resumeMode=${lget("resumeMode", "–")} · selSize=${lget("selSize", "auto")} · karaokeOnly=${lget("karaokeOnly", "–")} · musikLang=${lget("musikLang", "–")} · preset=${lget("presetActive", "–")}`);
     p("Stilles Dauersignal (Apple-Music-Schutz)", window.__v128ka ? "installiert" : "NICHT installiert");
@@ -98,18 +106,25 @@
   }
 
   /* ---------- Oberfläche unter „Anzeigegröße genau messen“ ---------- */
+  const mkBtn = (t, fn) => { const b = document.createElement("button"); b.type = "button"; b.className = "chip"; b.textContent = t; b.onclick = fn; return b; };
+  /* Anzeige-Protokoll: Knopf direkt unter „Anzeigegröße genau messen“ */
   function build() {
-    const anchor = $("advMeasureOut"); if (!anchor || $("dbgBox")) return;
-    const mk = (t, fn) => { const b = document.createElement("button"); b.type = "button"; b.className = "chip"; b.textContent = t; b.onclick = fn; return b; };
+    const anchor = $("advMeasureOut"); if (!anchor || $("dspSaveBtn")) return;
     const msg = document.createElement("small"); msg.className = "set-hint"; msg.style.cssText = "display:block;word-break:break-all;user-select:text";
-    /* Anzeige-Protokoll speichern */
-    const dsp = mk("Anzeige-Protokoll auf dem Server speichern", async () => {
+    const dsp = mkBtn("Anzeige-Protokoll auf dem Server speichern", async () => {
       const text = `=== Anzeige-Protokoll ${new Date().toLocaleString("de-AT")} ===\n${($("advInfo") && $("advInfo").textContent) || ""}\n\n${($("advMeasureOut") && $("advMeasureOut").textContent) || "(noch nicht gemessen – erst „Anzeigegröße genau messen“ drücken)"}\n\nBrowserkennung: ${navigator.userAgent}\nBildschirm ${screen.width}×${screen.height}, Fenster ${innerWidth}×${innerHeight}, Pixeldichte ${devicePixelRatio}, selsize=${document.documentElement.dataset.selsize || "–"}\n`;
       msg.textContent = "Wird gespeichert …";
       try { const u = await toServer("protokoll-anzeige", text); msg.textContent = `Gespeichert: ${u}`; } catch (e) { msg.textContent = "Speichern nicht möglich: " + e.message; }
     });
-    const box = document.createElement("div"); box.id = "dbgBox"; if (anchor.getAttribute("data-tab")) { box.setAttribute("data-tab", anchor.getAttribute("data-tab")); if (anchor.dataset.sub) box.dataset.sub = anchor.dataset.sub; }
-    box.style.cssText = "display:grid;gap:8px;margin-top:10px";
+    dsp.id = "dspSaveBtn";
+    anchor.after(dsp, msg);
+  }
+  /* Eigenes Untermenü „Fehlersuche“ (wird von v128.js eingebaut) */
+  function makeBox() {
+    const mk = mkBtn;
+    const msg = document.createElement("small"); msg.className = "set-hint"; msg.style.cssText = "display:block;word-break:break-all;user-select:text";
+    const box = document.createElement("div"); box.id = "dbgBox"; box.className = "autoplay-box";
+    box.style.cssText = "display:grid;gap:8px";
     const h = document.createElement("b"); h.textContent = "Fehlersuche: Tasten und Gerät";
     const info = document.createElement("small"); info.className = "set-hint"; info.textContent = "Zeigt, was der Browser meldet und welche Tasten-Signale ankommen. Auf dem Server speichern, dann kann der Inhalt von dort abgerufen werden.";
     const ta = document.createElement("textarea"); ta.readOnly = true; ta.rows = 12; ta.style.cssText = "width:100%;font:12px/1.35 monospace;box-sizing:border-box"; ta.onclick = () => ta.select();
@@ -118,10 +133,25 @@
     row.append(mk("Protokoll anzeigen / aktualisieren", refresh),
       mk("Auf dem Server speichern", async () => { msg.textContent = "Wird gespeichert …"; try { const u = await toServer("protokoll-tasten", await snapshot()); await refresh(); msg.textContent = `Gespeichert: ${u}`; } catch (e) { msg.textContent = "Speichern nicht möglich: " + e.message; } }),
       mk("Ereignisse leeren", () => { log = []; try { localStorage.removeItem(KEY); } catch { /* egal */ } add("START", "Protokoll geleert"); refresh(); }));
-    box.append(h, info, row, ta);
-    anchor.after(dsp, box); dsp.after(msg);
+    /* Tasten-Tests (wirken nach Neuladen) */
+    const tests = document.createElement("div"); tests.style.cssText = "display:grid;gap:6px;border:1px dashed currentColor;border-radius:10px;padding:8px 10px";
+    const tt = document.createElement("b"); tt.textContent = "Tasten-Tests (Tesla)"; tests.append(tt);
+    const cb = (key, def, text) => { const l = document.createElement("label"); l.className = "set-row check"; const i = document.createElement("input"); i.type = "checkbox"; i.checked = lget(key, def) === "1"; i.onchange = () => { try { localStorage.setItem(key, i.checked ? "1" : "0"); } catch { /* egal */ } add("TEST", `${key}=${i.checked ? 1 : 0}`); }; l.append(i, " " + text); tests.append(l); };
+    cb("testSilent", "1", "Stilles Dauersignal (Apple-Music-Schutz) aktiv");
+    cb("testForceAudio", "0", "Echtes Audio-Element statt Video-Element verwenden");
+    cb("testPosAlways", "0", "Position und Dauer laufend an Tesla melden");
+    cb("testReReg", "1", "Tasten bei jedem Lied/Start neu anmelden");
+    const vl = document.createElement("label"); vl.className = "set-row"; vl.append("Anmelde-Variante ");
+    const sel = document.createElement("select"); [["0", "0 – Standard (Vor/Zurück + Spul-Tasten + seekto)"], ["1", "1 – nur Vor/Zurück"], ["2", "2 – Vor/Zurück + Spul-Tasten, ohne seekto"], ["4", "4 – erst 1,5 s nach Start anmelden"], ["5", "5 – wie 0 + Stopp-Taste"], ["6", "6 – nur Vor/Zurück + Stopp-Taste"]].forEach(([v, n]) => { const o = document.createElement("option"); o.value = v; o.textContent = n; sel.append(o); });
+    sel.value = lget("keyVar", "0"); sel.onchange = () => { try { localStorage.setItem("keyVar", sel.value); } catch { /* egal */ } add("TEST", `keyVar=${sel.value}`); };
+    vl.append(sel); tests.append(vl);
+    const rl = mk("Jetzt neu laden (Tests anwenden)", () => location.reload()); tests.append(rl);
+    const th = document.createElement("small"); th.className = "set-hint"; th.textContent = "Ablauf: eine Einstellung ändern, neu laden, ein Lied wählen, schauen ob die Tesla-Tasten schwarz (aktiv) sind, danach das Protokoll auf dem Server speichern."; tests.append(th);
+    box.append(h, info, tests, row, msg, ta);
     refresh();
+    return box;
   }
+  window.V167 = { makeBox };
   const mo = new MutationObserver(build); mo.observe(document.body, { childList: true, subtree: true });
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", build); else build();
 })();

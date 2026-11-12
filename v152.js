@@ -325,7 +325,7 @@
 
   /* ---------- Tesla-Medientasten: Anmeldung immer wieder erneuern ---------- */
   (function () {
-    const reg = () => { try { if (typeof state !== "undefined" && state.mediaReg) state.mediaReg(); } catch { /* egal */ } };
+    const reg = () => { try { if (localStorage.getItem("testReReg") === "0") return; if (typeof state !== "undefined" && state.mediaReg) state.mediaReg(); } catch { /* egal */ } };
     const wire = () => {
       const a = document.querySelector("audio"); if (!a || a._v163) return; a._v163 = true;
       ["playing", "play", "loadedmetadata", "durationchange", "emptied", "seeked"].forEach((ev) => a.addEventListener(ev, () => setTimeout(reg, 60)));

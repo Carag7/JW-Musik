@@ -246,6 +246,7 @@
         ])
       ] },
       { id: "anz", name: "Abstände und Schutz", desc: "Platz am Rand, Schutz vor versehentlichem Tippen, Anzeigegröße.", boxes: [$("advView"), box("Größe der Auswahlmenüs", [...reg(mSelect("selSize", "Auswahlmenüs und Zahlenfelder", [["auto", "automatisch (= normal)"], ["winzig", "sehr klein"], ["klein", "klein"], ["normal", "normal"], ["gross", "groß"], ["sehr", "sehr groß"], ["riesig", "riesig"]], "auto", "Gilt für die Auswahlmenüs in den Einstellungen, z. B. „Nach Rückkehr in den Browser“, „Tesla-Player: Taste = Favorit“ oder „Wo steht der Tesla-Knopf“."))])] },
+      { id: "dbg", name: "Fehlersuche", desc: "Protokoll, Tasten-Tests für den Tesla und Speichern auf dem Server.", boxes: [window.V167 && window.V167.makeBox ? window.V167.makeBox() : null] },
       { id: "tesla", name: "Tesla (im Auto)", desc: "Große Tasten für die Fahrt. Nur nötig, wenn du im Auto sitzt.", only: true, boxes: [tzBox] },
       { id: "sonst", name: "Schnellaktionen", desc: "Seite neu laden, Anmeldefenster, Bearbeitungsmodus und erweiterte Optionen.", boxes: [$("toolsBox"), box("Einstellungen öffnen", [...reg(mSelect("setStart", "Beim Öffnen der Einstellungen zeigen", [["auto", "Tesla: Tesla-Seite, sonst zuletzt besuchte Seite"], ["tesla", "immer die Tesla-Seite"], ["last", "die zuletzt besuchte Seite"]], "auto", "Im Tesla sofort die Tesla-Seite zu zeigen spart Antippen."))])] }
     ];
@@ -438,7 +439,7 @@
     const sil = new Audio(wav); sil.loop = true; sil.preload = "auto"; sil.setAttribute("playsinline", ""); sil.volume = 1;
     let cap = 0;
     const stop = () => { clearTimeout(cap); try { sil.pause(); } catch { /* egal */ } };
-    const go = () => { try { if (state.userPaused) return; sil.play().catch(() => {}); clearTimeout(cap); cap = setTimeout(stop, 12000); } catch { /* egal */ } };
+    const go = () => { try { if (state.userPaused || lsv("keyVar", "0") === "3" || lsv("testSilent", "1") === "0") return; sil.play().catch(() => {}); clearTimeout(cap); cap = setTimeout(stop, 12000); } catch { /* egal */ } };
     a.addEventListener("ended", go);
     a.addEventListener("loadstart", () => { if (state.wantPlay || !a.paused || a.ended) go(); });
     a.addEventListener("playing", () => { clearTimeout(cap); cap = setTimeout(stop, 1200); });

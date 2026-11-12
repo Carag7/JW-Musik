@@ -18,7 +18,8 @@
     ["anz", "Abstände und Schutz"],
     ["ki", "KI und Bewertungen"],
     ["tesla", "Tesla (im Auto)"],
-    ["sonst", "Schnellaktionen"]
+    ["sonst", "Schnellaktionen"],
+    ["dbg", "Fehlersuche"]
   ];
   const BY_ID = {};
   const BOX = { caragBox: "start" };
