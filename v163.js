@@ -262,6 +262,71 @@
     };
     card("user", "Benutzer (Einstellungen)", u, cache.user, lget("lastSyncUser", ""));
     card("fav", "Favoriten-Benutzer", c, cache.fav, lget("lastSyncFavOk", ""));
+    const ov = h("button", "chip v163-ov", "📋 Favoriten und Listen anzeigen (Tabelle, CSV)"); ov.type = "button"; ov.onclick = favOverview; b.append(ov);
+  }
+
+
+  /* ---------- Vorschau: alle Werte einer Voreinstellung, dann erst anwenden ---------- */
+  async function previewPreset(pn) {
+    let target, title;
+    try {
+      if (pn === "tesla") { target = presetTarget(await teslaData(), "tesla"); title = "Tesla"; }
+      else if (pn === "mine") { target = presetTarget(userData(), "user"); title = "Meine gespeicherten Werte"; }
+      else { target = presetTarget(await sysData(pn), "user"); title = SYSN[pn]; }
+    } catch { await uiAlert("Vorschau", "Die Werte konnten nicht geladen werden."); return; }
+    if (!target.length) { await uiAlert(title, "In dieser Voreinstellung sind keine Werte gespeichert."); return; }
+    const diff = target.filter((x) => lget(x.key, null) !== x.val).length;
+    const rows = [["Bereich", "Einstellung", "Wert", "Jetzt"], ...target.map((x) => { const cur = lget(x.key, null); return [x.label, x.key, niceVal(x.val), cur === x.val ? "gleich" : niceVal(cur)]; })];
+    const go = await uiDialog({ eyebrow: "Voreinstellung", title: `${title}: Vorschau`, cancelValue: false,
+      lines: [`${target.length} Werte sind hinterlegt, davon würden ${diff} etwas ändern.`, { table: rows }],
+      buttons: [{ value: true, kind: "primary", label: "Anwenden" }, { value: false, kind: "cancel", label: "Schließen" }] });
+    if (!go) return;
+    let ok;
+    if (pn === "tesla") ok = await applyTeslaPreset(true);
+    else if (pn === "mine") ok = await applyWithPreview(target, "", true);
+    else ok = await applyProfilePreset(pn, true);
+    if (ok) showToast(`${title} angewendet`);
+    try { paintPresets(); } catch { /* egal */ }
+  }
+
+  /* ---------- Favoriten & Listen als Tabelle + CSV ---------- */
+  const song = (id) => { const s = (state.songs || []).find((x) => x.id === id); return s ? { n: s.number, t: s.title } : { n: "", t: String(id) }; };
+  const byNum = (a, b) => (Number(a.n) || 99999) - (Number(b.n) || 99999);
+  function favRows(d) {
+    const fav = d.favorites.map(song).sort(byNum).map((s) => ["Favorit", "", s.n, s.t]);
+    const lists = [];
+    d.playlists.forEach((l) => { if (!l.songs.length) lists.push(["Liste", l.name || "Liste", "", "(leer)"]); l.songs.forEach((id) => { const s = song(id); lists.push(["Liste", l.name || "Liste", s.n, s.t]); }); });
+    return { fav, lists };
+  }
+  const csvEsc = (v) => `"${String(v == null ? "" : v).replace(/"/g, '""')}"`;
+  function downloadCsv(blocks) {
+    const out = [["Quelle", "Art", "Liste", "Nummer", "Titel"]];
+    blocks.forEach(({ src, d }) => { const r = favRows(d); [...r.fav, ...r.lists].forEach((x) => out.push([src, ...x])); });
+    const blob = new Blob(["\ufeff" + out.map((r) => r.map(csvEsc).join(";")).join("\r\n")], { type: "text/csv;charset=utf-8" });
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `favoriten-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.append(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  }
+  async function favOverview() {
+    const code = lget("sync-code", ""), local = syncSnapshot();
+    let srv = null, srvMsg = "";
+    if (code) { const { hash } = favStamps(); const r = await fetchFav(code, hash); if (r.state === "ok") srv = r.data; else srvMsg = r.state === "locked" ? "Passwort wird verlangt." : r.state === "none" ? "Der Speicher ist auf dem Server nicht vorhanden." : "Server nicht erreichbar."; }
+    for (;;) {
+      const lines = [];
+      const block = (title, d) => {
+        const r = favRows(d);
+        lines.push({ text: `${title}: ${totalsText(d)}`, cls: "dlg-store" });
+        lines.push({ table: [["Nr.", "Favorit (Lied)"], ...(r.fav.length ? r.fav.map((x) => [x[2], x[3]]) : [["", "keine Favoriten"]])] });
+        lines.push({ table: [["Liste", "Nr.", "Lied"], ...(r.lists.length ? r.lists.map((x) => [x[1], x[2], x[3]]) : [["", "", "keine Listen"]])] });
+      };
+      if (code) { if (srv) block(`Auf dem Server (Benutzer „${code}“)`, srv); else lines.push({ text: `Auf dem Server (Benutzer „${code}“): ${srvMsg}`, cls: "dlg-hint" }); }
+      else lines.push({ text: "Kein Favoriten-Benutzer angemeldet – nur dieses Gerät wird angezeigt.", cls: "dlg-hint" });
+      block("Auf diesem Gerät (Browser)", local);
+      const v = await uiDialog({ eyebrow: "Favoriten-Abgleich", title: "Favoriten und Listen", lines, cancelValue: null,
+        buttons: [{ value: "csv", kind: "primary", label: "Als CSV herunterladen" }, { value: null, kind: "cancel", label: "Schließen" }] });
+      if (v !== "csv") return;
+      downloadCsv([...(srv ? [{ src: `Server (${code})`, d: srv }] : []), { src: "Dieses Gerät", d: local }]);
+      showToast("CSV-Datei heruntergeladen");
+    }
   }
 
   /* ---------- Reiter „Voreinstellungen“ unter „Sichern“ ---------- */
@@ -276,13 +341,13 @@
     const anchor = $("syncDelete") || form.lastElementChild; if (!anchor) return;
     const wrap = h("div", "pt-wrap tab-off"); wrap.id = "presetTabBox"; wrap.dataset.tab = "voreinst";
     wrap.append(h("b", "", "Voreinstellungen"), h("p", "", "Setzt die Einstellungen dieses Geräts auf passende Startwerte. Vorher siehst du, was sich ändert, und kannst es ablehnen."));
-    const mk = (pn, ico, t, d) => { const b = h("button", "pt-btn", ""); b.type = "button"; b.dataset.pn = pn; b.append(h("span", "pt-ic", ico), (() => { const s = h("span", "pt-tx"); s.append(h("b", "", t), h("small", "", d), h("small", "pt-st", "")); return s; })()); b.onclick = () => applyPreset(pn); wrap.append(b); };
+    const mk = (pn, ico, t, d) => { const b = h("button", "pt-btn", ""); b.type = "button"; b.dataset.pn = pn; b.append(h("span", "pt-ic", ico), (() => { const s = h("span", "pt-tx"); s.append(h("b", "", t), h("small", "", d), h("small", "pt-st", "")); return s; })()); b.onclick = () => previewPreset(pn); wrap.append(b); };
     mk("handy", "📱", "Handy", "Design „Handy AMOLED“, größere Schrift im Auswahlfenster");
     mk("standard", "🖥", "Standard", "Grundwerte für Computer und Tablet");
     mk("tesla", "🚗", "Tesla", "Autoplay, große Bedienelemente, Tesla-Tasten");
     const mine = h("button", "pt-btn", ""); mine.type = "button"; mine.id = "presetTabMine";
     mine.append(h("span", "pt-ic", "👤"), (() => { const s = h("span", "pt-tx"); s.append(h("b", "", "Meine gespeicherten Werte"), h("small", "", "Die Einstellungen deines angemeldeten Benutzers vom Server")); return s; })());
-    mine.onclick = async () => { if (await applyWithPreview(presetTarget(userData(), "user"), "Gespeicherte Werte anwenden?")) showToast("Gespeicherte Werte angewendet"); };
+    mine.onclick = () => previewPreset("mine");
     wrap.append(mine);
     wrap.append(h("small", "set-hint", "Voreinstellungen ändern (nur für den Verwalter): Allgemein → Voreinstellungen, Benutzername „tesla“, „handy“ oder „standard“."));
     anchor.after(wrap);
@@ -298,5 +363,5 @@
   new MutationObserver(buildPresetTab).observe(document.body, { childList: true, subtree: true });
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 
-  window.V163 = { who, accountDialog, paintBanner, favConnect, userConnect, applyPreset, fetchFav };
+  window.V163 = { previewPreset, favOverview, who, accountDialog, paintBanner, favConnect, userConnect, applyPreset, fetchFav };
 })();
