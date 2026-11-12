@@ -1476,8 +1476,30 @@ function setMediaSession(song) {
   optional("seekto", (details) => { if (details && Number.isFinite(details.seekTime)) el.audio.currentTime = details.seekTime; });
   };
   /* Der Tesla-Browser verwirft die Tasten-Anmeldung teils beim Quellenwechsel – deshalb mehrfach neu anmelden und die Position melden */
-  state.mediaReg = () => { try { registerKeys(); } catch { /* egal */ } };
+  const updatePos = () => {
+    if (!el.audio.duration || !Number.isFinite(el.audio.duration)) return;
+    try {
+      navigator.mediaSession.setPositionState({
+        duration: el.audio.duration,
+        position: Math.min(el.audio.currentTime || 0, el.audio.duration),
+        playbackRate: el.audio.playbackRate || 1
+      });
+    } catch { /* ältere Browser */ }
+  };
+  state.mediaReg = () => {
+    try {
+      registerKeys();
+      updatePos();
+    } catch { /* egal */ }
+  };
   state.mediaReg();
+  // Position bei Wiedergabe aktuell halten
+  if (!state.mediaPosBound) {
+    state.mediaPosBound = true;
+    el.audio.addEventListener("play", () => { if (state.mediaReg) state.mediaReg(); });
+    el.audio.addEventListener("loadedmetadata", () => { if (state.mediaReg) state.mediaReg(); });
+    el.audio.addEventListener("timeupdate", updatePos);
+  }
 }
 
 async function selectSong(index, autoplay) {
