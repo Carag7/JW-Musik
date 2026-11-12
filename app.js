@@ -1461,6 +1461,7 @@ function setMediaSession(song) {
     clearTimeout(hold.t); hold.t = setTimeout(() => { hold.t = 0; hold.d = 0; hold.seeking = false; }, 750);
     clearTimeout(hold.go); hold.go = setTimeout(() => { if (!hold.seeking) mediaStep(d); }, 420);
   };
+  const registerKeys = () => {
   navigator.mediaSession.setActionHandler("previoustrack", () => keyStep(-1));
   navigator.mediaSession.setActionHandler("nexttrack", () => keyStep(1));
   navigator.mediaSession.setActionHandler("play", togglePlay);
@@ -1476,6 +1477,10 @@ function setMediaSession(song) {
   optional("seekto", (details) => {
     if (details && Number.isFinite(details.seekTime)) el.audio.currentTime = details.seekTime;
   });
+  };
+  /* Der Tesla-Browser verwirft die Tasten-Anmeldung teils beim Quellenwechsel – deshalb mehrfach neu anmelden und die Position melden */
+  state.mediaReg = () => { try { registerKeys(); } catch { /* egal */ } try { const d = el.audio.duration; if (Number.isFinite(d) && d > 0 && navigator.mediaSession.setPositionState) navigator.mediaSession.setPositionState({ duration: d, playbackRate: el.audio.playbackRate || 1, position: Math.min(el.audio.currentTime || 0, d) }); } catch { /* egal */ } };
+  state.mediaReg();
 }
 
 async function selectSong(index, autoplay) {
@@ -1745,6 +1750,7 @@ function updateWho() {
     const b = document.createElement("b"); b.textContent = v || "–"; sp.append(b);
     sp.title = v ? (pend ? "wird noch abgeglichen …" : "abgeglichen") : "nicht eingestellt";
     sp.addEventListener("click", () => {
+      if (window.V163 && window.V163.who) { window.V163.who(label === "Benutzer" ? "user" : "fav"); return; }
       if (label === "Benutzer" && window.V126 && window.V126.whoDialog) { window.V126.whoDialog(v, pend, stampKey); return; }
       const ts = Number(localStorage.getItem(stampKey)) || 0;
       const when = ts ? new Date(ts).toLocaleString("de-AT", { dateStyle: "medium", timeStyle: "medium" }) : "noch nicht in diesem Browser";
@@ -3230,7 +3236,7 @@ async function syncWithPass(code, pass) {
   lss("sync-code", store);
   let hash = "";
   if (pass) { hash = await storeHashOf(store, pass); storeRemember(store, hash); }
-  const msg = await runSync(store, true, !!pass);
+  const msg = await runSync(store, true, !!pass, true);
   if (pass && !/^(Abgebrochen|Server nicht|Passwort)/.test(msg || "")) await setStoreLock(store, hash);
   return msg;
 }
@@ -3316,7 +3322,7 @@ function applySettings(obj) {
   try { if (window.V131 && V131.applySel) V131.applySel(); } catch { /* egal */ }
   try { updateSkipLabels(); updateAutoIcon(); updateVersionBar(); rebuildExtras(); applyStartGif(); } catch { /* egal */ }
 }
-async function runSync(code, silent, typedPass) {
+async function runSync(code, silent, typedPass, ask) {
   const store = code.toLowerCase().replace(/[^a-z0-9-]/g, "");
   const on = syncSettingsOn();
   let raw = null;
@@ -3339,7 +3345,7 @@ async function runSync(code, silent, typedPass) {
   putHappened = false;
   let message;
   try {
-    message = await runSyncData(code, silent);
+    message = await runSyncData(code, silent, ask);
   } finally {
     // outSettings bleibt bis unten stehen
   }
@@ -3376,11 +3382,10 @@ function stampSync(direction) {
 function refreshSyncInfo() {
   const info = document.getElementById("syncInfo");
   if (!info) return;
-  const last = localStorage.getItem("sync-last");
-  const dir = localStorage.getItem("sync-dir") || "";
+  const last = Number(localStorage.getItem("lastSyncFavOk")) || 0;
   info.hidden = false;
   info.textContent = `Auf diesem Gerät: ${totalsText(syncSnapshot())}\n` + (last
-    ? `Letzter Abgleich: ${new Date(last).toLocaleString("de-AT", { dateStyle: "medium", timeStyle: "short" })} (${dir})`
+    ? `Letzter Abgleich: ${new Date(last).toLocaleString("de-AT", { dateStyle: "medium", timeStyle: "short" })}`
     : "Noch nie synchronisiert.");
 
   const lb = document.getElementById("syncLast");
@@ -3467,7 +3472,7 @@ function askSyncConflict(store, local, remote, lostLocal, lostRemote) {
   });
 }
 
-async function runSyncData(code, silent) {
+async function runSyncData(code, silent, ask) {
   const store = code.toLowerCase().replace(/[^a-z0-9-]/g, "");
   let res;
   try {
@@ -3478,7 +3483,7 @@ async function runSyncData(code, silent) {
   const local = syncSnapshot();
   if (res.status === 401) return "Passwort stimmt nicht.";
   if (!res.ok) {
-    if (silent) return "";
+    if (silent && !ask) return "";
     const answer = await uiDialog({
       eyebrow: "Synchronisieren",
       title: "Neuer Speicher",
@@ -3511,6 +3516,14 @@ async function runSyncData(code, silent) {
     const merged = threeWayMerge(base, local, remote);
     const changeLocal = !sameSync(merged, local);
     const changeRemote = !sameSync(merged, remote);
+    if (ask && (changeLocal || changeRemote)) {
+      /* Erst zeigen, was sich ändert – abgleichen wird erst nach „Abgleichen“ */
+      const choice = await uiDialog({ eyebrow: "Favoriten-Abgleich", title: "So würde abgeglichen", cancelValue: "cancel",
+        lines: [{ text: `Speicher: „${store}“`, cls: "dlg-store" }, `Dieses Gerät: ${totalsText(local)}`, `Server: ${totalsText(remote)}`, `Danach auf beiden: ${totalsText(merged)}`,
+          { details: { title: "Änderungen anzeigen", lines: syncReportLines(store, changeLocal ? [local, merged] : null, changeRemote ? [remote, merged] : null, merged) } }],
+        buttons: [{ value: "go", kind: "primary", label: "Abgleichen" }, { value: "other", kind: "", label: "Anderen Favoriten-Benutzer anmelden" }, { value: "new", kind: "", label: "Neuen Favoriten-Benutzer anlegen" }, { value: "cancel", kind: "cancel", label: "Abbrechen" }] });
+      if (choice !== "go") { state.syncSwitch = choice === "other" || choice === "new" ? choice : ""; return "Abgebrochen."; }
+    }
     if (changeLocal) applySyncData(merged);
     if (changeRemote) await putSync(store, merged);
     writeSyncBase(store, merged);
@@ -3531,7 +3544,7 @@ async function runSyncData(code, silent) {
       if (changeRemote) parts.push(`Server: ${shortDiff(dSrv)}`);
       return `Automatisch abgeglichen (${parts.join("; ")}). Gespeichert: ${totalsText(merged)}`;
     }
-    await syncReport(store, changeLocal ? [local, merged] : null, changeRemote ? [remote, merged] : null, merged);
+    if (!ask) await syncReport(store, changeLocal ? [local, merged] : null, changeRemote ? [remote, merged] : null, merged);
     return `Abgeglichen. Gespeichert: ${totalsText(merged)}`;
   }
 
@@ -3656,8 +3669,8 @@ async function syncFavoritesCore() {
       if (typed && !/^(Abgebrochen|Server nicht|Passwort)/.test(message || "")) { await setStoreLock(store, pHash); document.getElementById("syncPass").value = ""; }
       let extra = "";
       if (!/^(Abgebrochen|Server nicht)/.test(message || "")) {
-        const un = sameNameOn() ? code.toLowerCase() : document.getElementById("syncUser").value.trim();
-        const pw = sameNameOn() ? (state.syncTypedPass || "") : document.getElementById("syncUserPass").value;
+        const un = sameNameOn() ? code.toLowerCase() : "";
+        const pw = sameNameOn() ? (state.syncTypedPass || "") : "";
         if (un && userCleanName(un) !== userName() && !(sameNameOn() && SYS[un])) {
           const r = await userLogin(un, pw);
           if (r.sys) { await syncFavorites("allgemein"); state.sub = "vor"; showSetTab("allgemein"); await openSysEditor(r.sys); }
@@ -3728,7 +3741,7 @@ runSync = async function (...a) {
   state.syncRun = (state.syncRun || 0) + 1;
   try {
     const r = await _runSync0.apply(this, a);
-    if (typeof r === "string" && !/Passwort|Abgebrochen|nicht erreichbar|Fehler|fehlgeschlagen/i.test(r)) stampSync("lastSyncFav");
+    if (typeof r === "string" && !/Passwort|Abgebrochen|nicht erreichbar|Fehler|fehlgeschlagen/i.test(r)) { stampSync("lastSyncFav"); stampSync("lastSyncFavOk"); }
     return r;
   } finally { state.syncRun--; }
 };
@@ -4372,7 +4385,7 @@ const PRESETS = [
     fields: [{ key: "simBtn", t: "Knopf im Player", o: BOOL, dv: "1" }, { key: "simMin", t: "Genauigkeit", o: [["auto", "Automatik"], ["60", "sehr genau"], ["45", "genau"], ["30", "normal"], ["22", "locker"], ["15", "sehr locker"]], dv: "30" }, { key: "simTop", t: "Automatik: Anzahl", n: [1, 60], dv: "10" }, { key: "simPct", t: "Prozent zeigen", o: BOOL, dv: "1" }, { key: "simFill", t: "Füllstand", o: BOOL, dv: "1" }, { key: "simOpRef", t: "Deckung Bezug %", n: [0, 100], dv: "35" }, { key: "simOpFill", t: "Deckung Füllung %", n: [0, 100], dv: "28" }] },
   { id: "startopen", label: "Startseite öffnen mit … / Einstellungen öffnen mit …", keys: ["startOpen", "setStart"], def: { startOpen: "first", setStart: "tesla" },
     fields: [{ key: "startOpen", t: "Startseite", o: [["first", "erstes Bild"], ["image", "Bild"], ["chor", "Video"], ["carousel", "Karussell"], ["fade", "Überblenden"], ["float", "Schweben"], ["last", "zuletzt"], ["random", "Zufall"]], dv: "first" }, { key: "setStart", t: "Einstellungen", o: [["auto", "automatisch"], ["tesla", "Tesla-Seite"], ["last", "zuletzt"]], dv: "auto" }] },
-  { id: "selsize", label: "Größe der Auswahlmenüs in den Einstellungen", keys: ["selSize"], def: { selSize: "sehr" }, fields: [{ key: "selSize", t: "Größe", o: [["auto", "automatisch"], ["normal", "normal"], ["gross", "groß"], ["sehr", "sehr groß"], ["riesig", "riesig"]], dv: "auto" }] },
+  { id: "selsize", label: "Größe der Auswahlmenüs in den Einstellungen", keys: ["selSize"], def: { selSize: "normal" }, fields: [{ key: "selSize", t: "Größe", o: [["auto", "automatisch"], ["normal", "normal"], ["gross", "groß"], ["sehr", "sehr groß"], ["riesig", "riesig"]], dv: "auto" }] },
   { id: "plhold", label: "Eigene Listen: lange drücken = Umbenennen/Löschen (Sekunden)", keys: ["plHold"], def: { plHold: "2" }, fields: [{ key: "plHold", n: [2, 10], dv: "2" }] },
   { id: "posadj", label: "Positionen und Größen der Ansichten (Startseite und Galerie)", keys: ["startAdj", "galAdj", "galSizes", "galTop", "startTop", "startSizes"],
     def: { startSizes: '{"image":105,"chor":105,"carousel":105,"fade":105,"float":100}', galSizes: '{"grid":180,"list":180,"flow":360}' } },
@@ -4424,7 +4437,7 @@ const sysDefault = (n) => {
   else { Object.assign(vals, STD_VALS); if (n === "handy") Object.assign(vals, HANDY_EXTRA); }
   return { on: n === "tesla" ? Object.fromEntries(PRESETS.map((p) => [p.id, !!p.def])) : defaultOn(), vals };
 };
-const sameNameOn = () => lsv("sameName", "1") === "1";
+const sameNameOn = () => lsv("sameName", "0") === "1";
 const userName = () => lsv("userName", "");
 const srvName = (n) => SYS[n] || n;
 let sysKeyMem = "";   // Schreib-Passwort nur im Speicher: gilt, solange das Einstellungsfenster offen ist
@@ -4596,7 +4609,7 @@ async function userLogin(rawName, pass, firstTime) {
   try { localStorage.removeItem("presetActive"); } catch { /* egal */ }
   lss("userName", name); lss("userHash", hash); userSaveLocal(data); userBaseSet(data); userDirtySet(false);
   userKnownAdd([name, ...links]);
-  if (sameNameOn() || !lsv("sync-code", "")) lss("sync-code", name);
+  if (sameNameOn()) lss("sync-code", name);
   userSyncOk = true;
   const applied = await applyWithPreview(presetTarget(data, "user"), `Einstellungen von „${name}“ übernehmen?`, created || !!firstTime);
   return { ok: true, created, applied, msg: created ? `Neuer Benutzer „${name}“ angelegt.` : `Angemeldet als „${name}“.` };
@@ -4830,7 +4843,7 @@ async function openSysEditor(name) {
   if (!key || !(await verifyKey(name, key))) {
     key = await askKey(`${SYS_LABEL[name]} Voreinstellungen ändern`);
     if (!key) return;
-    if (!(await verifyKey(name, key))) { msg.textContent = "Schreib-Passwort falsch oder Server nicht erreichbar."; return; }
+    if (!(await verifyKey(name, key))) { msg.textContent = "Schreib-Passwort falsch oder Server nicht erreichbar."; await uiAlert("Passwort falsch", "Das Schreib-Passwort stimmt nicht (oder der Server ist nicht erreichbar). Die Voreinstellung wurde nicht geöffnet."); return; }
     sysKeyMem = key;
   }
   const r = await fetchUser(SYS[name], "");
@@ -5162,6 +5175,7 @@ function showLogin() {
   };
   if (document.getElementById("loginExtra").hidden) document.getElementById("loginMore").click();
   document.getElementById("loginSameRow").hidden = false;
+  { const ar = document.getElementById("loginAutoRow"); if (ar) ar.hidden = false; }   /* Voreinstellung (Tesla/Handy) auch beim erneuten Öffnen wählbar */
   document.getElementById("loginSyncRow").hidden = sameNameOn();
   document.getElementById("loginSyncName").value = lsv("sync-code", "");
   try { refreshSyncInfo(); } catch { /* egal */ }
@@ -5185,6 +5199,7 @@ async function loginExtras() {
     if (r.sys) { await syncFavorites("allgemein"); state.sub = "vor"; showSetTab("allgemein"); await openSysEditor(r.sys); }
     else {
       showToast(r.msg);
+      if (!r.ok && (r.locked || /Passwort/.test(r.msg || ""))) { try { await uiAlert("Passwort falsch", r.msg || "Das Passwort stimmt nicht."); } catch { /* egal */ } }
       if (r.ok && sameNameOn()) { try { const m = await syncWithPass(userCleanName(un), up); if (m) showToast(`Favoriten-Abgleich: ${m}`); } catch { /* egal */ } }
     }
     created = !!r.created;

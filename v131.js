@@ -284,7 +284,7 @@
   function applySel() {
     try {
       let v = lsv("selSize", "auto"); if (!["auto", "normal", "gross", "sehr", "riesig"].includes(v)) v = "auto";
-      if (v === "auto") v = /Tesla/i.test(navigator.userAgent) ? "sehr" : "normal";
+      if (v === "auto") v = "normal";
       document.documentElement.dataset.selsize = v;
     } catch { /* egal */ }
   }

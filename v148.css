@@ -147,3 +147,43 @@ html.pvw-big-on body { overflow: hidden; }
 .pvw-dirty { color: #f0a35a; font-weight: 700; }
 .pvw-font { display: flex; flex-direction: column; gap: 4px; padding: 8px 4px; font-size: 14px; border-bottom: 1px solid var(--line); }
 .pvw-font input[type=range] { width: 100%; accent-color: var(--accent); }
+
+/* v162: Sichern – klare Einleitung je Reiter, Abmelden unten */
+.sx-intro { border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 12px; background: var(--panel-2); padding: 12px 14px; margin: 4px 0 14px; display: block; }
+.sx-intro b { display: block; font-size: 16px; margin-bottom: 4px; }
+.sx-intro p { margin: 0 0 8px; color: var(--muted); font-size: 13.5px; line-height: 1.45; }
+.sx-intro small { color: var(--muted); font-size: 12.5px; }
+.sx-go { border: 0; background: none; color: var(--accent); font: 700 13px system-ui; cursor: pointer; padding: 4px 0; }
+.lo-wrap { margin-top: 18px; padding-top: 10px; border-top: 1px solid var(--line); }
+
+/* v163: Tesla-Browser – eigener Auswahlpfeil (der Systempfeil wird dort als Rechteck gezeigt) */
+body.tesla-ua select:not([multiple]):not([size]) { -webkit-appearance: none !important; appearance: none !important; padding-right: 44px !important; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 8l7 8 7-8z' fill='%23c9d1e0'/%3E%3C/svg%3E") !important; background-repeat: no-repeat !important; background-position: right 14px center !important; background-size: 22px 22px !important; }
+/* „Ähnliche Lieder“-Knopf: ohne Umrandung, solange nicht aktiv (auch gegen Design-Regeln) */
+html body #similarBtn:not(.sim-ref):not(.sim-play), html[data-skin] body #similarBtn:not(.sim-ref):not(.sim-play), html[data-theme] body #similarBtn:not(.sim-ref):not(.sim-play) { border: 0 !important; border-color: transparent !important; box-shadow: none !important; outline: 0 !important; }
+html body .sim-bar, html[data-skin] body .sim-bar { border: 0 !important; box-shadow: none !important; outline: 0 !important; }
+
+/* v163: Anmelde-Karten, Anmelde-Fenster, Voreinstellungs-Reiter */
+.v163-banner { display: grid; gap: 8px; }
+.v163-row { align-items: flex-start; flex-wrap: wrap; font-weight: 400 !important; }
+.v163-row .auth-tx { flex: 1 1 220px; display: grid; gap: 2px; }
+.v163-row .auth-tx b { font-size: 15px; }
+.v163-l { font-size: 13px; opacity: .85; }
+.v163-btns { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.v163-box { display: grid; gap: 8px; }
+.v163-seg { display: flex; gap: 6px; flex-wrap: wrap; }
+.v163-seg .chip { flex: 1 1 auto; }
+.v163-seg .chip[aria-pressed="true"] { outline: 2px solid currentColor; font-weight: 700; }
+.v163-err { margin: 0; padding: 8px 10px; border-radius: 10px; border: 2px solid #ef5350; background: color-mix(in srgb, #ef5350 18%, transparent); font-weight: 700; }
+.v163-pre { display: grid; gap: 4px; margin-top: 4px; }
+.pt-wrap { display: grid; gap: 8px; margin: 6px 0; }
+.pt-wrap.tab-off { display: none !important; }
+.pt-wrap p { margin: 0; font-size: 14px; opacity: .85; }
+.pt-btn { display: flex; gap: 12px; align-items: center; text-align: left; padding: 12px 14px; border-radius: 14px; border: 2px solid color-mix(in srgb, currentColor 25%, transparent); background: transparent; color: inherit; font: inherit; cursor: pointer; min-height: 56px; }
+.pt-btn:disabled { opacity: .45; cursor: default; }
+.pt-btn.is-active { border-color: #3fae6a; background: color-mix(in srgb, #3fae6a 14%, transparent); }
+.pt-ic { font-size: 26px; line-height: 1; }
+.pt-tx { display: grid; gap: 1px; }
+.pt-tx b { font-size: 16px; }
+.pt-tx small { opacity: .8; }
+/* alte „gleicher Name“-Schalter und doppeltes Benutzerfeld ausblenden (ersetzt durch die Anmelde-Karten) */
+#codeForm .set-row:has(.same-name-chk), #syncUserBox, #presetSameRow, #presetSameText { display: none !important; }

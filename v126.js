@@ -50,6 +50,7 @@
   function paintBanner() {
     const m = $("codeModal"); if (!m || m.hidden) return;
     const b = ensureBanner(); if (!b) return;
+    if (window.V163 && window.V163.paintBanner) { window.V163.paintBanner(b); return; }
     const u = lsv("userName", ""), c = lsv("sync-code", "");
     const key = u + "|" + c; if (b.dataset.k === key) return; b.dataset.k = key;
     b.replaceChildren();

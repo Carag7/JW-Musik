@@ -302,8 +302,6 @@
     b.append(h("p", "ap-title", "Tesla: schnell einstellen"));
     const add = (arr) => arr.forEach((n) => n && b.append(n));
     const sub = (t) => b.append(h("p", "tz-sub", t));
-    b.append(bigBtn("Tesla-Voreinstellung anwenden", () => { const x = $("teslaApply"); if (x) x.click(); }, "tz-primary"));
-    b.append(h("small", "tz-hint", "Setzt alle empfohlenen Werte für das Auto auf einmal. Danach kannst du hier einzelne Werte ändern."));
     sub("Wiedergabe");
     add(bigCheck("autoPlayOpt", "Beim Öffnen automatisch abspielen"));
     add(bigCheck("karaokeOnlyOpt", "Automatisch nur Karaoke-Lieder"));
@@ -340,6 +338,10 @@
     row.append(bigBtn("Seite neu laden", () => { const x = $("advReload"); if (x) x.click(); }), bigBtn("Design wählen", () => { const t = document.querySelector('#setTabs [data-settab="design"]'); if (t) t.click(); }), bigBtn("Schließen", () => { const x = $("codeX") || $("codeCancel"); if (x) x.click(); }));
     b.append(row);
     b.querySelectorAll("select.tz-sel").forEach(pickify);
+    sub("Alles auf einmal");
+    b.append(h("small", "tz-hint", "Setzt alle empfohlenen Werte für das Auto auf einmal. Danach kannst du hier einzelne Werte ändern."));
+    b.append(bigBtn("Tesla-Voreinstellung anwenden", () => { const x = $("teslaApply"); if (x) x.click(); }, "tz-primary"));
+
     return b;
   }
 

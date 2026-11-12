@@ -14,7 +14,7 @@
     const want = (im.getAttribute("src") || "").startsWith("chor.gif");
     let v = $("startChorVid");
     if (!want) { if (v) dropVideo(); showImg(true); failed = false; return; }
-    if (failed) { showImg(true); return; }
+    if (failed || /Tesla/i.test(navigator.userAgent)) { showImg(true); return; }   /* Tesla sperrt Video in Fahrt → gleich das GIF zeigen */
     if (!v) {
       v = document.createElement("video"); v.id = "startChorVid"; v.className = "start-vid";
       v.muted = true; v.defaultMuted = true; v.loop = true; v.autoplay = true; v.playsInline = true; v.controls = false;
@@ -304,13 +304,35 @@
     }
     function ensure() {
       const form = $("codeForm"); if (!form) return;
+      const INTRO = {
+        abgleich: ["Favoriten-Abgleich", "Hält deine Favoriten und Listen dauerhaft auf mehreren Geräten gleich. Du legst einen Code (und bei Bedarf ein Passwort) fest und gibst denselben Code auf jedem Gerät ein.", "Nur einmal übertragen oder eine Sicherung anlegen?", "sichern", "Zu „Daten“"],
+        sichern: ["Daten sichern und übertragen", "Einmalig von Hand: Favoriten und Listen als Code, QR oder Datei sichern und auf einem anderen Gerät laden. Es wird nichts dauerhaft abgeglichen.", "Dauerhaft auf mehreren Geräten gleich halten?", "abgleich", "Zu „Favoriten-Abgleich“"]
+      };
       ["abgleich", "sichern"].forEach((tab) => {
         if (form.querySelector(`.lo-wrap[data-tab="${tab}"]`)) return;
-        const first = form.querySelector(`[data-tab="${tab}"]:not(.lo-wrap)`); if (!first || !first.parentNode) return;
-        first.parentNode.insertBefore(make(tab), first);
+        const mine = [...form.querySelectorAll(`[data-tab="${tab}"]`)].filter((n) => !n.classList.contains("lo-wrap") && !n.classList.contains("sx-intro")); if (!mine.length) return;
+        const first = mine[0], last = mine[mine.length - 1]; if (!first.parentNode || !last.parentNode) return;
+        const I = INTRO[tab], card = h("div", "sx-intro tab-off"); card.dataset.tab = tab;
+        const go = h("button", "sx-go", I[4] + " →"); go.type = "button"; go.addEventListener("click", () => { try { showSetTab(I[3]); } catch { /* egal */ } });
+        card.append(h("b", "", I[0]), h("p", "", I[1]), h("small", "", I[2] + " "), go);
+        const hd = mine.find((n) => n.id === "authBanner");   /* Banner bleibt ganz oben */
+        (hd || first).parentNode.insertBefore(card, hd ? hd.nextSibling : first);
+        last.parentNode.insertBefore(make(tab), last.nextSibling);   /* Abmelden ganz unten */
       });
     }
     new MutationObserver(ensure).observe(document.body, { childList: true, subtree: true }); ensure();
+  })();
+
+  /* ---------- Tesla-Medientasten: Anmeldung immer wieder erneuern ---------- */
+  (function () {
+    const reg = () => { try { if (typeof state !== "undefined" && state.mediaReg) state.mediaReg(); } catch { /* egal */ } };
+    const wire = () => {
+      const a = document.querySelector("audio"); if (!a || a._v163) return; a._v163 = true;
+      ["playing", "play", "loadedmetadata", "durationchange", "emptied", "seeked"].forEach((ev) => a.addEventListener(ev, () => setTimeout(reg, 60)));
+    };
+    setInterval(() => { wire(); const a = document.querySelector("audio"); if (a && !a.paused) reg(); }, 4000);
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) reg(); });
+    wire();
   })();
 
   function ensureBtn() {
