@@ -7,7 +7,7 @@
 #codeForm .v128-box > .ap-title { margin-top: 0; }
 
 /* Tesla-Thema: große Tasten, viel Abstand (wie im Auswahlfenster) */
-.tz-box { padding: 12px 14px 18px; }
+.tz-box { padding: 12px 14px 160px; }
 .tz-box .tz-sub { margin: 20px 0 6px; font-size: 20px; font-weight: 800; color: var(--accent); }
 .tz-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 76px; padding: 10px 4px; border-bottom: 1px solid var(--line); }
 .tz-l { font-size: 22px; line-height: 1.25; font-weight: 600; flex: 1 1 auto; }

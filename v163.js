@@ -11,7 +11,7 @@
   const SYSN = { tesla: "Tesla", handy: "Handy", standard: "Standard" };
 
   /* Tesla-Browser erkennen (für Auswahlpfeil-Darstellung) */
-  try { if (/Tesla/i.test(navigator.userAgent) || /[?&]tesla=1/.test(location.search)) document.documentElement.classList.add("tesla-ua"); } catch { /* egal */ }
+  try { if ((typeof isTesla === "function" && isTesla()) || /[?&]tesla=1/.test(location.search)) document.documentElement.classList.add("tesla-ua"); } catch { /* egal */ }
   /* Tesla-Tasten: „Halten = Spulen“ verzögert das Lied-Weiterschalten – einmalig ausschalten (Tasten wirken wieder sofort) */
   try { if (!lget("mediaHoldMig164", "")) { lset("mediaHold", "0"); lset("mediaHoldMig164", "1"); } } catch { /* egal */ }
   /* Beim Löschen aller Browserdaten dürfen keine Werte mehr geschrieben werden (z. B. beim Schließen der Seite) */
@@ -22,6 +22,35 @@
 
   /* Früher wurde für Favoriten und Einstellungen automatisch derselbe Name genommen – jetzt getrennt (einmal zurücksetzen) */
   try { if (!lget("sameNameMig163", "")) { lset("sameName", "0"); lset("sameNameMig163", "1"); } } catch { /* egal */ }
+
+
+  /* ---------- Dreiecke ▸ ▾ ▴: Tesla-Schrift hat sie nicht (Rechtecke) → durch gezeichnete Dreiecke ersetzen ---------- */
+  (function () {
+    const GL = { "▸": "r", "▾": "d", "▴": "u", "▼": "d", "▲": "u", "◂": "l" };
+    let missing = false;
+    try {
+      const cv = document.createElement("canvas").getContext("2d");
+      cv.font = `16px ${getComputedStyle(document.body).fontFamily || "sans-serif"}`;
+      const bad = cv.measureText("\uE000").width;
+      missing = Object.keys(GL).some((g) => Math.abs(cv.measureText(g).width - bad) < 0.01);
+    } catch { /* egal */ }
+    if (!missing && !(typeof isTesla === "function" && isTesla())) return;
+    document.documentElement.classList.add("tesla-ua");
+    const RX = /[▸▾▴▼▲◂]/;
+    const swap = (root) => {
+      const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null); const list = [];
+      for (let n = w.nextNode(); n; n = w.nextNode()) { if (RX.test(n.nodeValue) && !/^(SCRIPT|STYLE|TEXTAREA|OPTION)$/.test(n.parentNode.nodeName)) list.push(n); }
+      list.forEach((n) => {
+        const parts = n.nodeValue.split(/([▸▾▴▼▲◂])/); const f = document.createDocumentFragment();
+        parts.forEach((p) => { if (GL[p]) { const s = document.createElement("span"); s.className = "tri tri-" + GL[p]; s.setAttribute("aria-hidden", "true"); f.append(s); } else if (p) f.append(document.createTextNode(p)); });
+        n.replaceWith(f);
+      });
+    };
+    let busy = false;
+    const run = () => { if (busy) return; busy = true; try { swap(document.body); } finally { busy = false; } };
+    new MutationObserver(() => { if (!busy) run(); }).observe(document.body, { childList: true, subtree: true, characterData: true });
+    run();
+  })();
 
   /* ---------- Server abfragen ---------- */
   async function fetchFav(store, hash) {

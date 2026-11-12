@@ -14,7 +14,7 @@
     const want = (im.getAttribute("src") || "").startsWith("chor.gif");
     let v = $("startChorVid");
     if (!want) { if (v) dropVideo(); showImg(true); failed = false; return; }
-    if (failed || /Tesla/i.test(navigator.userAgent)) { showImg(true); return; }   /* Tesla sperrt Video in Fahrt → gleich das GIF zeigen */
+    if (failed || (typeof isTesla === "function" && isTesla())) { showImg(true); return; }   /* Tesla sperrt Video in Fahrt → gleich das GIF zeigen */
     if (!v) {
       v = document.createElement("video"); v.id = "startChorVid"; v.className = "start-vid";
       v.muted = true; v.defaultMuted = true; v.loop = true; v.autoplay = true; v.playsInline = true; v.controls = false;

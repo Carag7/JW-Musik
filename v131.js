@@ -290,7 +290,7 @@
   }
   applySel(); window.V131.applySel = applySel;
 
-  const boot = () => { if (/Tesla/i.test(navigator.userAgent)) document.body.classList.add("tesla-ua"); paintBtn(); load(); quick(); [2500, 6000, 12000].forEach((t) => setTimeout(() => { defaultList(); try { fillPlaylists(); } catch { /* egal */ } }, t)); };
+  const boot = () => { if ((typeof isTesla === "function" ? isTesla() : /Tesla/i.test(navigator.userAgent))) document.body.classList.add("tesla-ua"); paintBtn(); load(); quick(); [2500, 6000, 12000].forEach((t) => setTimeout(() => { defaultList(); try { fillPlaylists(); } catch { /* egal */ } }, t)); };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
   window.addEventListener("storage", paintBtn);
 })();

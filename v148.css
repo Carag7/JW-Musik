@@ -187,3 +187,9 @@ html body .sim-bar, html[data-skin] body .sim-bar { border: 0 !important; box-sh
 .pt-tx small { opacity: .8; }
 /* alte „gleicher Name“-Schalter und doppeltes Benutzerfeld ausblenden (ersetzt durch die Anmelde-Karten) */
 #codeForm .set-row:has(.same-name-chk), #syncUserBox, #presetSameRow, #presetSameText { display: none !important; }
+/* v166: gezeichnete Dreiecke (ohne Schriftzeichen) */
+.tri { display: inline-block; width: 0; height: 0; vertical-align: middle; margin: 0 .35em 0 0; border: .36em solid transparent; }
+.tri-r { border-left: .55em solid currentColor; border-right: 0; }
+.tri-l { border-right: .55em solid currentColor; border-left: 0; }
+.tri-d { border-top: .55em solid currentColor; border-bottom: 0; }
+.tri-u { border-bottom: .55em solid currentColor; border-top: 0; }

@@ -1469,17 +1469,12 @@ function setMediaSession(song) {
   const optional = (action, handler) => {
     try { navigator.mediaSession.setActionHandler(action, handler); } catch { /* nicht überall unterstützt */ }
   };
-  /* Standard: keine Spul-Tasten anmelden, damit Tesla „Lied vor / zurück“ zeigt. Nur wenn gewünscht (Einstellung „Tesla-Player-Tasten“) */
-  const mk = (() => { try { return localStorage.getItem("mediaKeys") || "step"; } catch { return "step"; } })();
-  const wantSeek = mk === "seek" || favSeek() !== "off";
-  optional("seekbackward", wantSeek ? (favSeek() === "back" ? toggleFavorite : () => skip(-skipSec(-1))) : null);
-  optional("seekforward", wantSeek ? (favSeek() === "fwd" ? toggleFavorite : () => skip(skipSec(1))) : null);
-  optional("seekto", (details) => {
-    if (details && Number.isFinite(details.seekTime)) el.audio.currentTime = details.seekTime;
-  });
+  /* Wie in der früher funktionierenden Fassung: Spul-Tasten immer anmelden (Tesla blendet Vor/Zurück sonst grau aus) */
+  optional("seekbackward", favSeek() === "back" ? toggleFavorite : () => skip(-skipSec(-1)));
+  optional("seekforward", favSeek() === "fwd" ? toggleFavorite : () => skip(skipSec(1)));
   };
   /* Der Tesla-Browser verwirft die Tasten-Anmeldung teils beim Quellenwechsel – deshalb mehrfach neu anmelden und die Position melden */
-  state.mediaReg = () => { try { registerKeys(); } catch { /* egal */ } try { const d = el.audio.duration; if (Number.isFinite(d) && d > 0 && navigator.mediaSession.setPositionState) navigator.mediaSession.setPositionState({ duration: d, playbackRate: el.audio.playbackRate || 1, position: Math.min(el.audio.currentTime || 0, d) }); } catch { /* egal */ } };
+  state.mediaReg = () => { try { registerKeys(); } catch { /* egal */ } };
   state.mediaReg();
 }
 
@@ -2373,7 +2368,15 @@ function toggleAdvanced() {
 }
 
 /* Voreinstellungen für den Tesla-Browser (nur Werte, die noch nicht gesetzt sind; force = überschreiben) */
-const isTesla = () => /Tesla/i.test(navigator.userAgent);
+/* Tesla erkennen: Kennung im Browser, von Hand/Voreinstellung gemerkt, oder Linux-Touchscreen (neuere Tesla-Software nennt sich nicht immer „Tesla“) */
+const isTesla = () => {
+  try {
+    const ua = navigator.userAgent || "";
+    if (/Tesla|QtCarBrowser/i.test(ua)) return true;
+    const f = localStorage.getItem("forceTesla"); if (f === "1") return true; if (f === "0") return false;
+    return /X11; Linux/.test(ua) && !/Android/i.test(ua) && (navigator.maxTouchPoints || 0) > 0 && !!(window.matchMedia && matchMedia("(pointer: coarse)").matches);
+  } catch { return false; }
+};
 
 function bind() {
   setupViewport();
@@ -4339,7 +4342,7 @@ function setupAdvBox() {
   const hint = document.getElementById("advHint");
   hint.checked = holdHintOn();
   hint.onchange = () => { try { localStorage.setItem("holdHint", hint.checked ? "1" : "0"); } catch { /* egal */ } document.body.classList.toggle("hold-hint", hint.checked); };
-  document.getElementById("advInfo").textContent = `Fensterbereich dieser Seite: ${window.innerWidth} × ${window.innerHeight} px · Bildschirm: ${screen.width} × ${screen.height} · Pixeldichte: ${window.devicePixelRatio}${isTesla() ? " · Tesla-Browser erkannt" : ""}`;
+  document.getElementById("advInfo").textContent = `Fensterbereich dieser Seite: ${window.innerWidth} × ${window.innerHeight} px · Bildschirm: ${screen.width} × ${screen.height} · Pixeldichte: ${window.devicePixelRatio}${isTesla() ? " · Tesla erkannt" : ""} · Browser kennt sich als: ${navigator.userAgent.slice(0, 120)}`;
 }
 
 /* ---------- Benutzer und Voreinstellungen ---------- */
@@ -4541,13 +4544,13 @@ function markPreset(name) { state.presetStamp = Date.now(); lss("presetActive", 
 /* Handy- und Standard-Voreinstellung anwenden (vollständige Werte des Profils) */
 async function applyProfilePreset(name, silent) {
   const ok = await applyWithPreview(presetTarget(await sysData(name), "user"), `${SYS_LABEL[name]}-Voreinstellung anwenden?`, silent);
-  if (ok) { lss(name + "Preset", "1"); markPreset(name); }
+  if (ok) { lss(name + "Preset", "1"); lss("forceTesla", "0"); markPreset(name); }
   return ok;
 }
 /* Tesla-Voreinstellung anwenden (mit Vorschau der Änderungen, sofern nicht silent) */
 async function applyTeslaPreset(silent) {
   const ok = await applyWithPreview(presetTarget(await teslaData(), "tesla"), "Tesla-Voreinstellung anwenden?", silent);
-  if (ok) { lss("teslaPreset", "1"); markPreset("tesla"); }
+  if (ok) { lss("teslaPreset", "1"); lss("forceTesla", "1"); markPreset("tesla"); }
   return ok;
 }
 /* Speichern auf dem Server: normale Benutzer mit ihrem Passwort-Hash, „tesla“/„standard“ mit dem Schreib-Passwort */
