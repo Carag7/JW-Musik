@@ -157,7 +157,7 @@ html.pvw-big-on body { overflow: hidden; }
 .lo-wrap { margin-top: 18px; padding-top: 10px; border-top: 1px solid var(--line); }
 
 /* v163: Tesla-Browser – eigener Auswahlpfeil (der Systempfeil wird dort als Rechteck gezeigt) */
-body.tesla-ua select:not([multiple]):not([size]) { -webkit-appearance: none !important; appearance: none !important; padding-right: 44px !important; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 8l7 8 7-8z' fill='%23c9d1e0'/%3E%3C/svg%3E") !important; background-repeat: no-repeat !important; background-position: right 14px center !important; background-size: 22px 22px !important; }
+html.tesla-ua select:not([multiple]):not([size]) { -webkit-appearance: none !important; appearance: none !important; padding-right: 44px !important; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 8l7 8 7-8z' fill='%23c9d1e0'/%3E%3C/svg%3E") !important; background-repeat: no-repeat !important; background-position: right 14px center !important; background-size: 22px 22px !important; }
 /* „Ähnliche Lieder“-Knopf: ohne Umrandung, solange nicht aktiv (auch gegen Design-Regeln) */
 html body #similarBtn:not(.sim-ref):not(.sim-play), html[data-skin] body #similarBtn:not(.sim-ref):not(.sim-play), html[data-theme] body #similarBtn:not(.sim-ref):not(.sim-play) { border: 0 !important; border-color: transparent !important; box-shadow: none !important; outline: 0 !important; }
 html body .sim-bar, html[data-skin] body .sim-bar { border: 0 !important; box-shadow: none !important; outline: 0 !important; }

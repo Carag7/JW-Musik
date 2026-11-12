@@ -330,7 +330,7 @@
       const a = document.querySelector("audio"); if (!a || a._v163) return; a._v163 = true;
       ["playing", "play", "loadedmetadata", "durationchange", "emptied", "seeked"].forEach((ev) => a.addEventListener(ev, () => setTimeout(reg, 60)));
     };
-    setInterval(() => { wire(); const a = document.querySelector("audio"); if (a && !a.paused) reg(); }, 4000);
+    setInterval(wire, 4000);
     document.addEventListener("visibilitychange", () => { if (!document.hidden) reg(); });
     wire();
   })();

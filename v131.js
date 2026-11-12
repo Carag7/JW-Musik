@@ -265,18 +265,18 @@
   window.addEventListener("resize", setAuto); window.addEventListener("orientationchange", () => setTimeout(setAuto, 300));
   /* Alle Browserdaten löschen: Zustand wie im neuen Browser nach der ersten Anmeldung */
   async function wipeAll() {
-    const ok = await uiConfirm({ eyebrow: "Achtung", title: "Alle Browserdaten löschen?", lines: ["Gelöscht werden alle Einstellungen, Design, Favoriten-Code, eigene Listen, Bewertungen und der gespeicherte Zwischenspeicher dieses Browsers.", "Danach startet die App wie in einem neuen Browser nach der ersten Anmeldung und zeigt die Startseite.", "Auf dem Server gespeicherte Daten bleiben erhalten."], ok: "Alles löschen", cancel: "Abbrechen", danger: true });
+    const ok = await uiConfirm({ eyebrow: "Achtung", title: "Alle Browserdaten löschen?", lines: ["Gelöscht werden alle Einstellungen, Design, Favoriten-Code, eigene Listen, Bewertungen und der gespeicherte Zwischenspeicher dieses Browsers.", "Danach startet die App wie in einem neuen Browser und du musst dich neu anmelden.", "Auf dem Server gespeicherte Daten bleiben erhalten."], ok: "Alles löschen", cancel: "Abbrechen", danger: true });
     if (!ok) return;
     const c = $("codeModal"); if (c) c.hidden = true;
+    window.__wipe = true;
     try { localStorage.clear(); } catch { /* egal */ }
     try { sessionStorage.clear(); } catch { /* egal */ }
     try { document.cookie.split(";").forEach((k) => { const n = k.split("=")[0].trim(); if (n) document.cookie = n + "=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/"; }); } catch { /* egal */ }
     try { if (window.caches) for (const k of await caches.keys()) await caches.delete(k); } catch { /* egal */ }
     try { if (navigator.serviceWorker) for (const r of await navigator.serviceWorker.getRegistrations()) await r.unregister(); } catch { /* egal */ }
     try { if (indexedDB.databases) for (const d of await indexedDB.databases()) if (d.name) indexedDB.deleteDatabase(d.name); } catch { /* egal */ }
-    /* angemeldet bleiben, wie nach dem ersten Login mit „im Browser speichern“ */
-    try { localStorage.setItem(STORAGE.auth, "ok"); } catch { /* egal */ }
-    if (window.V116 && V116.toStart) V116.toStart(); else location.reload();
+    try { localStorage.clear(); sessionStorage.clear(); } catch { /* egal */ }
+    location.replace(location.pathname);   /* neu laden → Anmeldefenster wie im neuen Browser */
   }
   window.V131.wipeAll = wipeAll;
 

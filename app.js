@@ -1446,7 +1446,7 @@ function setMediaSession(song) {
   /* Tesla-Tasten: Doppelsignale (<350 ms) ignorieren; die Schutzsperre gegen Endlos-Wechsel gilt nur für automatische Wechsel */
   const mediaStep = (d) => { const t = Date.now(); if (state.lastMediaKey && t - state.lastMediaKey.t < 350 && state.lastMediaKey.d === d) return; state.lastMediaKey = { t, d }; try { el.status.textContent = d > 0 ? "Taste: nächstes Lied" : "Taste: voriges Lied"; } catch { /* egal */ } step(d); };
   /* Tesla-Tasten: kurz = Lied vor/zurück; lange gedrückt (Wiederholsignale) = vor-/zurückspulen */
-  const holdOn = () => { try { return localStorage.getItem("mediaHold") !== "0"; } catch { return true; } };
+  const holdOn = () => { try { return localStorage.getItem("mediaHold") === "1"; } catch { return false; } };
   const hold = { d: 0, n: 0, t: 0, last: 0, seeking: false };
   const keyStep = (d) => {
     if (!holdOn()) { mediaStep(d); return; }
@@ -4379,8 +4379,8 @@ const PRESETS = [
   { id: "kitext", label: "KI-Text beim Lied: Genauigkeit des Scans und KI-Text zuerst verwenden", keys: ["kiScanAcc", "kiFirst", "kiHide"], def: { kiScanAcc: "high", kiFirst: "1", kiHide: "1" },
     fields: [{ key: "kiScanAcc", t: "Genauigkeit", o: [["low", "schwach"], ["normal", "normal"], ["high", "sehr genau"]], dv: "high" }, { key: "kiFirst", t: "KI-Text zuerst", o: BOOL, dv: "1" }, { key: "kiHide", t: "Knopf nur bei neuem Text", o: BOOL, dv: "1" }] },
   { id: "einfach", label: "Einfache Ansicht: Knöpfe ohne Lupe", keys: [...SV_KEYS, "svHints"], def: { ...Object.fromEntries(SV_ITEMS.map((x) => ["sv_" + x[0], x[3]])), svHints: "1" }, fields: [...SV_ITEMS.map((x) => ({ key: "sv_" + x[0], t: x[1], o: BOOL, dv: x[3] })), { key: "svHints", t: "Hinweise zu langem Drücken", o: BOOL, dv: "1" }] },
-  { id: "teslakeys", label: "Tesla: Tab-Knopf und kleine Tasten (Lied vor/zurück oder Spulen)", keys: ["teslaTab", "mediaKeys", "mediaHold"], def: { teslaTab: "top", mediaKeys: "step", mediaHold: "1" },
-    fields: [{ key: "teslaTab", t: "Tesla-Knopf", o: [["auto", "automatisch"], ["top", "oben (groß)"], ["list", "in der Liste"]], dv: "auto" }, { key: "mediaKeys", t: "Tasten", o: [["step", "Lied vor/zurück"], ["seek", "Spulen"]], dv: "step" }, { key: "mediaHold", t: "Halten = Spulen", o: BOOL, dv: "1" }] },
+  { id: "teslakeys", label: "Tesla: Tab-Knopf und kleine Tasten (Lied vor/zurück oder Spulen)", keys: ["teslaTab", "mediaKeys", "mediaHold"], def: { teslaTab: "top", mediaKeys: "step", mediaHold: "0" },
+    fields: [{ key: "teslaTab", t: "Tesla-Knopf", o: [["auto", "automatisch"], ["top", "oben (groß)"], ["list", "in der Liste"]], dv: "auto" }, { key: "mediaKeys", t: "Tasten", o: [["step", "Lied vor/zurück"], ["seek", "Spulen"]], dv: "step" }, { key: "mediaHold", t: "Halten = Spulen", o: BOOL, dv: "0" }] },
   { id: "sim", label: "Ähnliche Lieder: Knopf im Player und Mindest-Ähnlichkeit", keys: ["simBtn", "simMin", "simTop", "simPct", "simFill", "simOpRef", "simOpFill"], def: { simBtn: "1", simMin: "auto", simTop: "10", simPct: "1", simFill: "1", simOpRef: "35", simOpFill: "28" },
     fields: [{ key: "simBtn", t: "Knopf im Player", o: BOOL, dv: "1" }, { key: "simMin", t: "Genauigkeit", o: [["auto", "Automatik"], ["60", "sehr genau"], ["45", "genau"], ["30", "normal"], ["22", "locker"], ["15", "sehr locker"]], dv: "30" }, { key: "simTop", t: "Automatik: Anzahl", n: [1, 60], dv: "10" }, { key: "simPct", t: "Prozent zeigen", o: BOOL, dv: "1" }, { key: "simFill", t: "Füllstand", o: BOOL, dv: "1" }, { key: "simOpRef", t: "Deckung Bezug %", n: [0, 100], dv: "35" }, { key: "simOpFill", t: "Deckung Füllung %", n: [0, 100], dv: "28" }] },
   { id: "startopen", label: "Startseite öffnen mit … / Einstellungen öffnen mit …", keys: ["startOpen", "setStart"], def: { startOpen: "first", setStart: "tesla" },
@@ -4824,11 +4824,13 @@ async function factoryReset() {
     buttons: [{ value: true, kind: "danger", label: "Ja, alles löschen" }, { value: false, kind: "cancel", label: "Abbrechen" }]
   });
   if (!second) return;
+  window.__wipe = true;
   try { sessionStorage.clear(); } catch { /* egal */ }
   try { localStorage.clear(); } catch { /* egal */ }
   try { if (window.caches) for (const k of await caches.keys()) await caches.delete(k); } catch { /* egal */ }
   try { if (navigator.serviceWorker) for (const r of await navigator.serviceWorker.getRegistrations()) await r.unregister(); } catch { /* egal */ }
   try { if (indexedDB && indexedDB.databases) for (const d of await indexedDB.databases()) if (d.name) indexedDB.deleteDatabase(d.name); } catch { /* egal */ }
+  try { localStorage.clear(); sessionStorage.clear(); } catch { /* egal */ }
   location.replace(location.pathname);
 }
 

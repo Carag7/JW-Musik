@@ -196,7 +196,7 @@
         box("Player", [unit("advNpLayout"), unit("advCastMode", 1), ...reg(mTempo())]),
         box("Tasten im Tesla-Player (unter den Fahrzeug-Infos)", [
           ...reg(mSelect("mediaKeys", "Die kleinen Tasten sollen sein", [["step", "Lied vor / Lied zurück (Standard)"], ["seek", "Vor- / Zurückspulen"]], "step", "Standard: die Tasten funktionieren so, wie sie angezeigt werden – Lied vor und Lied zurück. Auch nach dem Ändern am besten ein Lied neu wählen.")),
-          ...reg(mCheck("mediaHold", "Lange gedrückt halten = vor- bzw. zurückspulen", "1", "Kurz drücken wechselt das Lied (mit kurzer Verzögerung von etwa 0,4 s), gehalten spult. Aus: Taste wirkt sofort, kein Spulen."))
+          ...reg(mCheck("mediaHold", "Lange gedrückt halten = vor- bzw. zurückspulen", "0", "Kurz drücken wechselt das Lied (mit kurzer Verzögerung von etwa 0,4 s), gehalten spult. Aus: Taste wirkt sofort, kein Spulen."))
         ]),
         box("Fernsteuerung", [u("advRcIdle")])
       ] },
@@ -331,7 +331,7 @@
     sub("Tasten im Tesla-Player (unter den Fahrzeug-Infos)");
     add((() => { const s = h("select", "tz-sel"); [["step", "Lied vor / zurück"], ["seek", "Vor- / Zurückspulen"]].forEach(([v, n]) => { const o = h("option", "", n); o.value = v; s.append(o); });
       const paint = () => { s.value = lsv("mediaKeys", "step"); }; s.onchange = () => applyKey("mediaKeys", s.value); return bigRow("Die Tasten sollen sein", s, "Standard: Lied vor und Lied zurück. Danach ein Lied neu wählen.", paint); })());
-    add((() => { const b2 = h("button", "tz-sw"); b2.type = "button"; const paint = () => { const on = lsv("mediaHold", "1") === "1"; b2.textContent = on ? "EIN" : "AUS"; b2.setAttribute("aria-pressed", String(on)); }; b2.onclick = () => { applyKey("mediaHold", lsv("mediaHold", "1") === "1" ? "0" : "1"); paint(); }; paint(); return bigRow("Gehalten = vor- / zurückspulen", b2, "Kurz drücken wechselt das Lied (mit kurzer Verzögerung), gehalten spult.", paint); })());
+    add((() => { const b2 = h("button", "tz-sw"); b2.type = "button"; const paint = () => { const on = lsv("mediaHold", "0") === "1"; b2.textContent = on ? "EIN" : "AUS"; b2.setAttribute("aria-pressed", String(on)); }; b2.onclick = () => { applyKey("mediaHold", lsv("mediaHold", "0") === "1" ? "0" : "1"); paint(); }; paint(); return bigRow("Gehalten = vor- / zurückspulen", b2, "Kurz drücken wechselt das Lied (mit kurzer Verzögerung), gehalten spult.", paint); })());
     add(bigCheck("eggFall", "Video blockiert: GIF abspielen"));
     sub("Sonst");
     const row = h("div", "tz-btns");

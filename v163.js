@@ -10,6 +10,16 @@
   const cleanStore = (n) => String(n || "").trim().toLowerCase().replace(/[^a-z0-9-]/g, "");
   const SYSN = { tesla: "Tesla", handy: "Handy", standard: "Standard" };
 
+  /* Tesla-Browser erkennen (für Auswahlpfeil-Darstellung) */
+  try { if (/Tesla/i.test(navigator.userAgent) || /[?&]tesla=1/.test(location.search)) document.documentElement.classList.add("tesla-ua"); } catch { /* egal */ }
+  /* Tesla-Tasten: „Halten = Spulen“ verzögert das Lied-Weiterschalten – einmalig ausschalten (Tasten wirken wieder sofort) */
+  try { if (!lget("mediaHoldMig164", "")) { lset("mediaHold", "0"); lset("mediaHoldMig164", "1"); } } catch { /* egal */ }
+  /* Beim Löschen aller Browserdaten dürfen keine Werte mehr geschrieben werden (z. B. beim Schließen der Seite) */
+  try {
+    const rawSet = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (k, v) { if (window.__wipe) return; return rawSet.call(this, k, v); };
+  } catch { /* egal */ }
+
   /* Früher wurde für Favoriten und Einstellungen automatisch derselbe Name genommen – jetzt getrennt (einmal zurücksetzen) */
   try { if (!lget("sameNameMig163", "")) { lset("sameName", "0"); lset("sameNameMig163", "1"); } } catch { /* egal */ }
 
