@@ -3648,8 +3648,13 @@ function fillSettingsFields() {
     r.onchange = () => { try { localStorage.setItem("favPlace", r.value); } catch { /* egal */ } applyFavPlace(); };
   });
   const fs = document.getElementById("favSeekOpt");
-  fs.value = favSeek();
-  fs.onchange = () => { try { localStorage.setItem("favSeek", fs.value); } catch { /* egal */ } setMediaSession(state.songs[state.index]); };
+  if (fs) { fs.value = favSeek(); fs.onchange = () => { try { localStorage.setItem("favSeek", fs.value); } catch { /* egal */ } setMediaSession(state.songs[state.index]); }; }
+  ["testSilent", "testForceAudio", "testPosAlways", "testReReg"].forEach((key) => {
+    const el = document.getElementById(key + "Opt");
+    if (!el) return;
+    el.checked = lsv(key, key === "testSilent" || key === "testPosAlways" || key === "testReReg" ? "1" : "0") === "1";
+    el.onchange = () => { try { localStorage.setItem(key, el.checked ? "1" : "0"); } catch { /* egal */ } };
+  });
   const st = document.getElementById("srcTagsOpt");
   st.checked = srcTagsOn();
   st.onchange = () => { try { localStorage.setItem("srcTags", st.checked ? "1" : "0"); } catch { /* egal */ } renderList(); };
