@@ -199,9 +199,9 @@ html body .sim-bar, html[data-skin] body .sim-bar { border: 0 !important; box-sh
 .lyric-line.active + .lyric-sub { color: var(--lyric-active); opacity: .85; }
 body.edit-mode .lyric-sub { display: none !important; }
 
-/* v171: Einstellungen (Tesla/Querformat): Themenliste links endet über „Schließen“, „Schließen“ steht am Ende */
+/* v173: Einstellungen (Tesla/Querformat): Themenliste links fest und großzügig; „Schließen“ nur in der rechten Spalte, mit viel Luft darüber */
 @media (min-width: 640px) {
   #codeForm.topics-on > #setTopics { gap: 2px; }
-  #codeForm.topics-on > #setTopics .topic-btn { min-height: 32px !important; padding-top: 3px; padding-bottom: 3px; font-size: 15px; }
-  #codeForm.topics-on > #codeCancel { position: static !important; margin-top: 22px; margin-bottom: 8px; min-height: 46px; }
+  #codeForm.topics-on > #setTopics .topic-btn { min-height: 42px !important; }
+  #codeForm.topics-on > #codeCancel { grid-column: 2 !important; position: static !important; margin-top: 90px; margin-bottom: 120px; min-height: 50px; }
 }
