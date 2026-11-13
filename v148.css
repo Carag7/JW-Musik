@@ -193,3 +193,8 @@ html body .sim-bar, html[data-skin] body .sim-bar { border: 0 !important; box-sh
 .tri-l { border-right: .55em solid currentColor; border-left: 0; }
 .tri-d { border-top: .55em solid currentColor; border-bottom: 0; }
 .tri-u { border-bottom: .55em solid currentColor; border-top: 0; }
+
+/* v171: zweite Sprache klein unter der Karaoke-Zeile */
+.lyric-sub { margin: -6px 0 6px; padding: 0 8px 4px 12px; font-size: calc(var(--lyrics) * var(--sub-pct, .6)); line-height: 1.3; font-weight: 500; color: rgba(var(--ink-rgb), .38); cursor: default; white-space: normal; min-width: 0; }
+.lyric-line.active + .lyric-sub { color: var(--lyric-active); opacity: .85; }
+body.edit-mode .lyric-sub { display: none !important; }

@@ -970,9 +970,9 @@ function showLyricLink(song) {
 }
 
 /* Liedtext der gesungenen Karaoke-Fassung (Server -> Browser -> lyrics/ -> GitHub) */
-async function fetchKaraokeLines(song, stale) {
+async function fetchKaraokeLines(song, stale, forceLang) {
   state.lyricLang = "en";
-  if (musikLang() === "de") {
+  if ((forceLang || musikLang()) === "de") {
     /* deutscher Karaoketext: erst eigener Speicher (lrcde-<nr>), dann Datei in musik_de/ */
     try {
       let text = "";
@@ -1071,6 +1071,7 @@ async function loadLyrics(song, kind) {
     if (stale()) return;
     state.lyrics = lines;
     renderLyrics(lines);
+    try { if (window.V171) window.V171.apply(song, lines, token); } catch { /* egal */ }
     return;
   }
   const lines = (kind === "meeting" || kind === "video" || kind === "sung") ? await fetchMeetingLines(song, stale, kind === "sung" ? "lrcs" : "lrcm") : [];
@@ -3291,7 +3292,7 @@ const SV_ITEMS = [
   ["autolong", "Autoplay-Symbol: langes Drücken auch ohne Lupe", "", "0"]
 ];
 const SV_KEYS = SV_ITEMS.map((x) => "sv_" + x[0]);
-const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBarAlways", "verBarFade", "srcTagsFade", "fadeSec", "lyricPos", "flugPos", "rcIdleSec", "holdGuard", "holdHint", "eggMode", "eggFall", "eggGif", "startGif", "themeShown", "themeTabs", "themeOrder", "themeTabList", "themeCustom", "themeNames", "skinProf", "coverMode", "coverFlip", "coverSet", "musikLang", "langWarnOff", "startMode", "startFolders", "startOrder", "startSec", "startFade", "skinOnlyActive", "skinOnlyMode", "sidebarW", "topOffMain", "topOffSet", "startGif", "ludwtSingle", "listRepeat", "srcTags", "favPlace", "favSeek", "showExtra", "karaokeOnly", "srcFilter", "sync-auto-max", "lyricAlign", "skipSec", "skipBack", "skipFwd", "fehlMode", "fehlNotify", "fehlAll", "fehlHelpSeen", "fehlLang", "startShow", "startSizes", "castMode", "startCarSec", "startCarMs", "galNoKar", "galNoKarAmt", "galMini", "npLayout", "lyrColOn", "lyrColOff", "skinFilterMode", "fehlSkip", "fehlLog", "startBarOpen", "startTrans", "startCar3d", "startFloatSpd", "resumeMode", "autoTap", "autoMute", "rateOn", "rateName", "rateAnon", "ampelOn", "kiScanAcc", "kiFirst", "kvSync", "kvWide", "aiAcc", STORAGE.scale, STORAGE.listSize];
+const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBarAlways", "verBarFade", "srcTagsFade", "fadeSec", "lyricPos", "subLang", "subSize", "flugPos", "rcIdleSec", "holdGuard", "holdHint", "eggMode", "eggFall", "eggGif", "startGif", "themeShown", "themeTabs", "themeOrder", "themeTabList", "themeCustom", "themeNames", "skinProf", "coverMode", "coverFlip", "coverSet", "musikLang", "langWarnOff", "startMode", "startFolders", "startOrder", "startSec", "startFade", "skinOnlyActive", "skinOnlyMode", "sidebarW", "topOffMain", "topOffSet", "startGif", "ludwtSingle", "listRepeat", "srcTags", "favPlace", "favSeek", "showExtra", "karaokeOnly", "srcFilter", "sync-auto-max", "lyricAlign", "skipSec", "skipBack", "skipFwd", "fehlMode", "fehlNotify", "fehlAll", "fehlHelpSeen", "fehlLang", "startShow", "startSizes", "castMode", "startCarSec", "startCarMs", "galNoKar", "galNoKarAmt", "galMini", "npLayout", "lyrColOn", "lyrColOff", "skinFilterMode", "fehlSkip", "fehlLog", "startBarOpen", "startTrans", "startCar3d", "startFloatSpd", "resumeMode", "autoTap", "autoMute", "rateOn", "rateName", "rateAnon", "ampelOn", "kiScanAcc", "kiFirst", "kvSync", "kvWide", "aiAcc", STORAGE.scale, STORAGE.listSize];
 SETTING_KEYS.push(...SV_KEYS, "sideHide", "selSize", "teslaTab", "simBtn", "simMin", "plHold", "startOpen", "setStart", "simTop", "simPct", "simFill", "simOpRef", "simOpFill", "mediaKeys", "mediaHold", "svHints", "kiHide", "galAdj", "galSizes", "galTop", "startTop", "startAdj", "startImgFit", "ampelLong", "rcListenStart", "galNoKar", "galNoKarAmt", "galMini", "npLayout", "castMode", "musikLang", "langWarnOff", "startAnim", "startFolders", "startOrder", "selBar");
 const isSettingKey = (k) => SETTING_KEYS.includes(k) || /^fehl(?:[TL]|Hide|Inc)_/.test(k);
 const syncSettingsOn = () => false;   // Einstellungen werden jetzt über den Benutzer gespeichert

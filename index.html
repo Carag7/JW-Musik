@@ -508,6 +508,9 @@
         <small class="set-hint">„Design“ übernimmt die Ausrichtung des gewählten Designs. Sonst steht der Text immer links, in der Mitte oder rechts.</small>
         <label class="set-row">Höhe der aktiven Karaoke-Zeile (% von oben, Standard 33) <input id="advLyricPos" type="number" min="5" max="95" inputmode="numeric" /></label>
         <small class="set-hint">Wo die gerade gesungene Zeile auf dem Bildschirm steht, in Prozent von oben. Kleiner = weiter oben, dann siehst du mehr kommende Zeilen.</small>
+        <label class="set-row">Zweite Sprache klein darunter <select id="advSubLang"><option value="0">aus</option><option value="1">an</option></select></label>
+        <small class="set-hint">Zeigt unter jeder Zeile die andere Sprache (Deutsch bzw. Englisch) in kleiner Schrift mit demselben Timecode. Das geht auch im Menü am DE/EN-Knopf.</small>
+        <label class="set-row">Größe der kleinen Zeile (% der Karaoke-Schrift, 30 bis 100) <input id="advSubSize" type="number" min="30" max="100" inputmode="numeric" /></label>
         <label class="set-row">Cover anzeigen <select id="advCover"><option value="neu">Neu</option><option value="alt">Alt</option></select></label>
         <small class="set-hint">„Neu“ zeigt die gestalteten Cover, „Alt“ das ursprüngliche Bild des Liedes. Sichtbar bei aktiver Lupe.</small>
         <label class="set-row">Cover-Ordner <select id="advCoverSet"><option value="edel">Goldrahmen · Deutsch</option><option value="edel_eng">Goldrahmen · Englisch</option><option value="modern">Modern · Englisch</option><option value="modern_de">Modern · Deutsch</option><option value="alt">Original (altes Bild)</option></select></label>
@@ -662,5 +665,6 @@
   <script src="v132.js"></script>
   <script src="v152.js"></script>
   <script src="v163.js"></script>
+  <script src="v171.js"></script>
 </body>
 </html>

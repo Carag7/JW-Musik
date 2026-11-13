@@ -172,7 +172,7 @@
         $("extraBox"), $("tagsBox"), $("verBarBox"), $("favBox"), $("advList")
       ] },
       { id: "text", name: "Karaoke-Text", desc: "Wie der mitlaufende Text aussieht und in welcher Sprache die Musik läuft.", boxes: [
-        box("Schrift und Lage", [u("advScale", "advAlign", "advLyricPos")]),
+        box("Schrift und Lage", [u("advScale", "advAlign", "advLyricPos", "advSubLang", "advSubSize")]),
         box("Sprache der Musik", [u("advMusikLang", "advLangWarn")]),
         box("Schriftfarben", [(() => { const b = bigBtn("Karaoke-Schriftfarben im Reiter „Design“ ändern", () => { const t = document.querySelector('#setTabs [data-settab="design"]'); if (t) t.click(); }, "tz-small"); return b; })(), h("small", "set-hint", "Aktive Zeile und übrige Zeilen: Reiter „Design“ → Karaoke-Schriftfarbe.")])
       ] },

@@ -21,7 +21,7 @@
   }
   function langBtn(cls) {
     const b = h("button", `lang-mini${cls ? " " + cls : ""}`); b.type = "button";
-    b.addEventListener("click", (e) => { e.stopPropagation(); switchLang(lang() === "de" ? "en" : "de"); });
+    b.addEventListener("click", (e) => { e.stopPropagation(); if (window.V171) window.V171.menu(); else switchLang(lang() === "de" ? "en" : "de"); });
     langBtns.add(b); paintLang(b);
     return b;
   }
