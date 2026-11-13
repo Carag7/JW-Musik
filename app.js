@@ -1469,6 +1469,16 @@ function setMediaSession(song) {
     try { navigator.mediaSession.setActionHandler(action, handler); } catch { /* nicht überall unterstützt */ }
   };
   const registerKeys = () => {
+    if (kv === "7") {   /* „wie die alte Version“: nur zurück/vor/play/pause/Spulen, ohne Sonderlogik */
+      navigator.mediaSession.setActionHandler("previoustrack", () => { if (stepAllowed()) step(-1); });
+      navigator.mediaSession.setActionHandler("nexttrack", () => { if (stepAllowed()) step(1); });
+      navigator.mediaSession.setActionHandler("play", togglePlay);
+      navigator.mediaSession.setActionHandler("pause", togglePlay);
+      optional("seekbackward", favSeek() === "back" ? toggleFavorite : () => skip(-skipSec(-1)));
+      optional("seekforward", favSeek() === "fwd" ? toggleFavorite : () => skip(skipSec(1)));
+      optional("seekto", (details) => { if (details && Number.isFinite(details.seekTime)) el.audio.currentTime = details.seekTime; });
+      return;
+    }
     navigator.mediaSession.setActionHandler("previoustrack", () => keyStep(-1));
     navigator.mediaSession.setActionHandler("nexttrack", () => keyStep(1));
     navigator.mediaSession.setActionHandler("play", togglePlay);

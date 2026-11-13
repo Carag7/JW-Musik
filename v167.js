@@ -33,7 +33,7 @@
   /* Media Session: jede Anmeldung und jeden Tastendruck von Tesla mitschreiben */
   const handlers = {};
   try {
-    if ("mediaSession" in navigator && window.MediaSession) {
+    if ("mediaSession" in navigator && window.MediaSession && localStorage.getItem("keyVar") !== "7") {
       const proto = MediaSession.prototype, orig = proto.setActionHandler;
       proto.setActionHandler = function (action, fn) {
         handlers[action] = fn ? "angemeldet" : "abgemeldet";
@@ -142,7 +142,7 @@
     cb("testPosAlways", "0", "Position und Dauer laufend an Tesla melden");
     cb("testReReg", "1", "Tasten bei jedem Lied/Start neu anmelden");
     const vl = document.createElement("label"); vl.className = "set-row"; vl.append("Anmelde-Variante ");
-    const sel = document.createElement("select"); [["0", "0 – Standard (Vor/Zurück + Spul-Tasten + seekto)"], ["1", "1 – nur Vor/Zurück"], ["2", "2 – Vor/Zurück + Spul-Tasten, ohne seekto"], ["4", "4 – erst 1,5 s nach Start anmelden"], ["5", "5 – wie 0 + Stopp-Taste"], ["6", "6 – nur Vor/Zurück + Stopp-Taste"]].forEach(([v, n]) => { const o = document.createElement("option"); o.value = v; o.textContent = n; sel.append(o); });
+    const sel = document.createElement("select"); [["0", "0 – Standard (Vor/Zurück + Spul-Tasten + seekto)"], ["1", "1 – nur Vor/Zurück"], ["2", "2 – Vor/Zurück + Spul-Tasten, ohne seekto"], ["4", "4 – erst 1,5 s nach Start anmelden"], ["5", "5 – wie 0 + Stopp-Taste"], ["6", "6 – nur Vor/Zurück + Stopp-Taste"], ["7", "7 – wie die alte Version (ohne Protokoll der Tasten, ohne Zusätze)"]].forEach(([v, n]) => { const o = document.createElement("option"); o.value = v; o.textContent = n; sel.append(o); });
     sel.value = lget("keyVar", "0"); sel.onchange = () => { try { localStorage.setItem("keyVar", sel.value); } catch { /* egal */ } add("TEST", `keyVar=${sel.value}`); };
     vl.append(sel); tests.append(vl);
     const rl = mk("Jetzt neu laden (Tests anwenden)", () => location.reload()); tests.append(rl);

@@ -198,3 +198,9 @@ html body .sim-bar, html[data-skin] body .sim-bar { border: 0 !important; box-sh
 .lyric-sub { margin: -6px 0 6px; padding: 0 8px 4px 12px; font-size: calc(var(--lyrics) * var(--sub-pct, .6)); line-height: 1.3; font-weight: 500; color: rgba(var(--ink-rgb), .38); cursor: default; white-space: normal; min-width: 0; }
 .lyric-line.active + .lyric-sub { color: var(--lyric-active); opacity: .85; }
 body.edit-mode .lyric-sub { display: none !important; }
+
+/* v171: Einstellungen (Tesla/Querformat): Themenliste links endet über „Schließen“, „Schließen“ bleibt unten sichtbar */
+@media (min-width: 640px) {
+  #codeForm.topics-on > #setTopics { max-height: calc(var(--vvh, 100dvh) - var(--set-off, 0px) - 150px); overflow-y: auto; overscroll-behavior: contain; padding-bottom: 6px; }
+  #codeForm.topics-on > #codeCancel { position: sticky !important; bottom: 0; z-index: 6; margin-top: 12px; margin-bottom: 0; min-height: 46px; background: var(--panel, var(--bg, #111)); box-shadow: 0 -10px 12px -6px var(--panel, var(--bg, #111)); }
+}
