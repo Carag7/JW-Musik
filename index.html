@@ -334,28 +334,6 @@
         <button class="seg-btn" type="button" data-sub="vor">Voreinstellungen</button>
         <button class="seg-btn sub-tesla-btn" type="button" data-sub="tesla">🚗 Tesla</button>
       </div>
-      <div id="teslaTestBox" data-tab="allgemein" data-sub="tesla" class="autoplay-box" hidden>
-        <p class="ap-title">Tesla-Tests: Media Session (zusätzlich)</p>
-        <label class="set-row check"><input id="testSilentOpt" type="checkbox" /> Stilles Dauersignal aktiv</label>
-        <label class="set-row check"><input id="testForceAudioOpt" type="checkbox" /> Audio-Element erzwingen (statt Video)</label>
-        <label class="set-row check"><input id="testPosAlwaysOpt" type="checkbox" /> Position dauernd melden</label>
-        <label class="set-row check"><input id="testReRegOpt" type="checkbox" /> Tasten nach jedem Lied neu anmelden</label>
-        <label class="set-row">Anmelde-Variante (keyVar)
-          <select id="keyVarOpt">
-            <option value="0">0 – Standard</option>
-            <option value="1">1 – nur Vor/Zurück</option>
-            <option value="2">2 – Vor/Zurück + Spul, ohne seekto</option>
-            <option value="4">4 – erst 1,5 s nach Start anmelden</option>
-            <option value="5">5 – wie 0 + Stopp-Taste</option>
-            <option value="6">6 – nur Vor/Zurück + Stopp-Taste</option>
-            <option value="7">7 – wie die alte Version</option>
-            <option value="8">8 – Audio erzwingen + Position immer</option>
-            <option value="9">9 – Audio erzwingen + stilles Signal aus</option>
-            <option value="10">10 – Audio erzwingen + Handler nach play neu</option>
-          </select>
-        </label>
-        <small class="set-hint">Zum Testen der Tesla-Vor-/Zurück-Tasten. Nach Änderung Seite neu laden. Variante 8–10 schalten Audio-Element und stille Signale automatisch.</small>
-      </div>
       <div id="presetBox" data-tab="allgemein" data-sub="vor" class="autoplay-box" hidden>
         <button id="caragOpen2" class="carag-open" type="button" aria-label="Weitere Einstellungen"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M3 2.5l5.2 4h7.6l5.2-4V12c0 5.2-4 9.5-9 9.5S3 17.200 3 12zM8.600 11.200a1.100 1.100 0 100 2.200 1.100 1.100 0 000-2.200zm6.800 0a1.100 1.100 0 100 2.200 1.100 1.100 0 000-2.200zM12 15l-1.400 1.200h2.800z"/></svg></button>
         <div id="sysEditor" hidden>

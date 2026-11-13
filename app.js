@@ -1464,12 +1464,6 @@ function setMediaSession(song) {
   };
   /* Tasten-Test (Einstellungen → Abstände und Schutz → Fehlersuche): verschiedene Anmelde-Varianten, um herauszufinden, was die Tesla-Software akzeptiert */
   const kv = (() => { try { return localStorage.getItem("keyVar") || "0"; } catch { return "0"; } })();
-  // Neue Varianten 8–10: Audio erzwingen und stille Signale steuern
-  if (kv === "8" || kv === "9" || kv === "10") {
-    try { localStorage.setItem("testForceAudio", "1"); } catch {}
-    if (kv === "9") try { localStorage.setItem("testSilent", "0"); } catch {}
-    if (kv === "10") try { localStorage.setItem("testReReg", "1"); } catch {}
-  }
   const mk = (() => { try { return localStorage.getItem("mediaKeys") || "step"; } catch { return "step"; } })();
   const optional = (action, handler) => {
     try { navigator.mediaSession.setActionHandler(action, handler); } catch { /* nicht überall unterstützt */ }
@@ -3653,18 +3647,8 @@ function fillSettingsFields() {
     r.onchange = () => { try { localStorage.setItem("favPlace", r.value); } catch { /* egal */ } applyFavPlace(); };
   });
   const fs = document.getElementById("favSeekOpt");
-  if (fs) { fs.value = favSeek(); fs.onchange = () => { try { localStorage.setItem("favSeek", fs.value); } catch { /* egal */ } setMediaSession(state.songs[state.index]); }; }
-  ["testSilent", "testForceAudio", "testPosAlways", "testReReg"].forEach((key) => {
-    const el = document.getElementById(key + "Opt");
-    if (!el) return;
-    el.checked = lsv(key, "0") === "1";
-    el.onchange = () => { try { localStorage.setItem(key, el.checked ? "1" : "0"); } catch { /* egal */ } };
-  });
-  const kvSel = document.getElementById("keyVarOpt");
-  if (kvSel) {
-    kvSel.value = lsv("keyVar", "0");
-    kvSel.onchange = () => { try { localStorage.setItem("keyVar", kvSel.value); } catch { /* egal */ } };
-  }
+  fs.value = favSeek();
+  fs.onchange = () => { try { localStorage.setItem("favSeek", fs.value); } catch { /* egal */ } setMediaSession(state.songs[state.index]); };
   const st = document.getElementById("srcTagsOpt");
   st.checked = srcTagsOn();
   st.onchange = () => { try { localStorage.setItem("srcTags", st.checked ? "1" : "0"); } catch { /* egal */ } renderList(); };
