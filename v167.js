@@ -146,12 +146,68 @@
     sel.value = lget("keyVar", "0"); sel.onchange = () => { try { localStorage.setItem("keyVar", sel.value); } catch { /* egal */ } add("TEST", `keyVar=${sel.value}`); };
     vl.append(sel); tests.append(vl);
     const rl = mk("Jetzt neu laden (Tests anwenden)", () => location.reload()); tests.append(rl);
+    const ar = mk("▶ Geführten Testlauf starten (alle Varianten nacheinander)", startRun); ar.style.fontWeight = "800"; tests.insertBefore(ar, tests.children[1]);
     const th = document.createElement("small"); th.className = "set-hint"; th.textContent = "Ablauf: eine Einstellung ändern, neu laden, ein Lied wählen, schauen ob die Tesla-Tasten schwarz (aktiv) sind, danach das Protokoll auf dem Server speichern."; tests.append(th);
     box.append(h, info, tests, row, msg, ta);
     refresh();
     return box;
   }
-  window.V167 = { makeBox };
+
+  /* ---- Geführter Testlauf: stellt nacheinander alle Varianten ein, fragt je Variante „Tasten aktiv oder grau?“ und speichert alles im Protokoll ---- */
+  const RUNKEY = "testRun";
+  const VARS = [
+    ["Standard", { keyVar: "0", testSilent: "1", testForceAudio: "0", testPosAlways: "0", testReReg: "1" }],
+    ["wie die alte Version (7)", { keyVar: "7", testSilent: "1", testForceAudio: "0", testPosAlways: "0", testReReg: "1" }],
+    ["nur Vor/Zurück (1)", { keyVar: "1", testSilent: "1", testForceAudio: "0", testPosAlways: "0", testReReg: "1" }],
+    ["ohne seekto (2)", { keyVar: "2", testSilent: "1", testForceAudio: "0", testPosAlways: "0", testReReg: "1" }],
+    ["mit Stopp-Taste (5)", { keyVar: "5", testSilent: "1", testForceAudio: "0", testPosAlways: "0", testReReg: "1" }],
+    ["Audio-Element statt Video", { keyVar: "0", testSilent: "1", testForceAudio: "1", testPosAlways: "0", testReReg: "1" }],
+    ["Audio-Element, ohne stilles Signal", { keyVar: "0", testSilent: "0", testForceAudio: "1", testPosAlways: "0", testReReg: "1" }],
+    ["Position dauernd melden", { keyVar: "0", testSilent: "1", testForceAudio: "0", testPosAlways: "1", testReReg: "1" }],
+    ["alles abgespeckt (nur Vor/Zurück, Audio, ohne stilles Signal, ohne Neuanmeldung)", { keyVar: "1", testSilent: "0", testForceAudio: "1", testPosAlways: "0", testReReg: "0" }]
+  ];
+  const KEYS = ["keyVar", "testSilent", "testForceAudio", "testPosAlways", "testReReg"];
+  const rjson = () => { try { return JSON.parse(localStorage.getItem(RUNKEY) || "null"); } catch { return null; } };
+  const wjson = (o) => { try { if (o) localStorage.setItem(RUNKEY, JSON.stringify(o)); else localStorage.removeItem(RUNKEY); } catch { /* egal */ } };
+  const apply = (set) => KEYS.forEach((k) => { try { localStorage.setItem(k, set[k]); } catch { /* egal */ } });
+  function startRun() {
+    const orig = {}; KEYS.forEach((k) => { orig[k] = lget(k, ""); });
+    add("TESTLAUF", "Start (" + VARS.length + " Varianten)");
+    wjson({ i: 0, res: [], orig });
+    apply(VARS[0][1]); location.reload();
+  }
+  function endRun(run) {
+    KEYS.forEach((k) => { try { if (run.orig[k] === "") localStorage.removeItem(k); else localStorage.setItem(k, run.orig[k]); } catch { /* egal */ } });
+    wjson(null);
+    const sum = run.res.map((r, n) => `${n + 1}. ${VARS[n][0]}: ${r}`).join("\n");
+    add("TESTLAUF", "Ende\n" + sum);
+    return sum;
+  }
+  async function continueRun() {
+    const run = rjson(); if (!run || typeof uiDialog !== "function") return;
+    const i = run.i; if (i >= VARS.length) { endRun(run); return; }
+    /* warten, bis ein Lied spielt (max. 12 s) */
+    for (let n = 0; n < 24; n++) { try { if (el.audio && !el.audio.paused && el.audio.currentTime > 0.5) break; } catch { /* egal */ } await new Promise((r) => setTimeout(r, 500)); }
+    let playing = false, handlers = ""; try { playing = !el.audio.paused; handlers = String(navigator.mediaSession && navigator.mediaSession.playbackState); } catch { /* egal */ }
+    add("TESTLAUF", `Variante ${i + 1}/${VARS.length}: ${VARS[i][0]} · spielt=${playing} · Session=${handlers} · ${el.audio && el.audio.tagName}`);
+    const r = await uiDialog({ eyebrow: `Testlauf ${i + 1} von ${VARS.length}`, title: VARS[i][0],
+      lines: ["Schau jetzt auf die Tesla-Tasten (Zurück / Vor) und drücke sie einmal.", "Läuft kein Lied, starte bitte eins (Antippen), dann erst antworten.", "Wie sehen die Tasten aus?"],
+      buttons: [{ value: "ok", kind: "primary", label: "Aktiv (schwarz / funktioniert)" }, { value: "grau", label: "Grau" }, { value: "stop", kind: "cancel", label: "Testlauf beenden" }], cancelValue: "stop" });
+    if (r === "stop") { const sum = endRun(run); await finish(sum, true); return; }
+    run.res.push(r === "ok" ? "AKTIV" : "grau");
+    add("TESTLAUF", `Ergebnis ${i + 1}: ${run.res[i]}`);
+    run.i = i + 1;
+    if (run.i >= VARS.length) { const sum = endRun(run); await finish(sum, false); return; }
+    wjson(run); apply(VARS[run.i][1]); location.reload();
+  }
+  async function finish(sum, aborted) {
+    let u = "";
+    try { u = await toServer("protokoll-tasten", await snapshot()); } catch { u = "(Speichern auf dem Server fehlgeschlagen – im Protokoll-Feld kopieren)"; }
+    await uiDialog({ eyebrow: "Testlauf", title: aborted ? "Testlauf beendet" : "Testlauf fertig", lines: [sum.split("\n").join(" · "), "Protokoll gespeichert: " + u, "Deine vorherigen Einstellungen sind wieder hergestellt (Seite neu laden)."], buttons: [{ value: "ok", kind: "primary", label: "OK" }] });
+    location.reload();
+  }
+  if (rjson()) { const go = () => setTimeout(continueRun, 2500); if (document.readyState === "complete") go(); else window.addEventListener("load", go); }
+  window.V167 = { makeBox, startRun };
   const mo = new MutationObserver(build); mo.observe(document.body, { childList: true, subtree: true });
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", build); else build();
 })();
