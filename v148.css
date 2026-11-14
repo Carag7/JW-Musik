@@ -205,3 +205,9 @@ body.edit-mode .lyric-sub { display: none !important; }
   #codeForm.topics-on > #setTopics .topic-btn { min-height: 42px !important; }
   #codeForm.topics-on > #codeCancel { grid-column: 2 !important; position: static !important; margin-top: 90px; margin-bottom: 120px; min-height: 50px; }
 }
+
+/* v174: Design-Auswahl (Lupe → Design): Mittelteil scrollt, „Schließen“ bleibt unten erreichbar */
+.theme-picker-card { max-height: 88vh; max-height: 88dvh; display: flex !important; flex-direction: column; overflow: hidden !important; min-height: 0; }
+.theme-picker-card .theme-picker-holder { flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; touch-action: pan-y; }
+.theme-picker-card .theme-picker-body { overflow: visible; }
+.theme-picker-card > .theme-pick-close, .theme-picker-card > .theme-pick-edit, .theme-picker-card > .theme-filter-btn { flex: 0 0 auto; }
