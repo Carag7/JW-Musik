@@ -202,7 +202,6 @@ body.edit-mode .lyric-sub { display: none !important; }
 /* v173: Einstellungen (Tesla/Querformat): Themenliste links fest und großzügig; „Schließen“ nur in der rechten Spalte, mit viel Luft darüber */
 @media (min-width: 640px) {
   #codeForm.topics-on > #setTopics { gap: 2px; }
-  #codeForm.topics-on > #setTopics .topic-btn { min-height: 42px !important; }
   #codeForm.topics-on > #codeCancel { grid-column: 2 !important; position: static !important; margin-top: 90px; margin-bottom: 120px; min-height: 50px; }
 }
 
@@ -211,3 +210,11 @@ body.edit-mode .lyric-sub { display: none !important; }
 .theme-picker-card .theme-picker-holder { flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; touch-action: pan-y; }
 .theme-picker-card .theme-picker-body { overflow: visible; }
 .theme-picker-card > .theme-pick-close, .theme-picker-card > .theme-pick-edit, .theme-picker-card > .theme-filter-btn { flex: 0 0 auto; }
+
+/* v176: Themenliste der Einstellungen: jede Taste gleich hoch (zwei Zeilen), Text bricht um statt in die rechte Spalte zu laufen */
+#codeForm.topics-on > #setTopics { min-width: 0; }
+#codeForm.topics-on > #setTopics .topic-btn { white-space: normal !important; overflow: hidden; overflow-wrap: anywhere; hyphens: auto; line-height: 1.15; height: 64px; min-height: 64px !important; box-sizing: border-box; display: flex; align-items: center; justify-content: flex-start; text-align: left; padding-top: 6px; padding-bottom: 6px; }
+#codeForm.topics-on > #setTopics .topic-btn[data-topic="alle"] { margin-bottom: 8px; }
+@media (min-width: 640px) {
+  #codeForm.topics-on > #setTopics { max-height: calc(var(--vvh, 100dvh) - 16px); overflow-y: auto; overscroll-behavior: contain; }
+}
