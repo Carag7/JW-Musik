@@ -3302,7 +3302,7 @@ const SV_ITEMS = [
   ["autolong", "Autoplay-Symbol: langes Drücken auch ohne Lupe", "", "0"]
 ];
 const SV_KEYS = SV_ITEMS.map((x) => "sv_" + x[0]);
-const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBarAlways", "verBarFade", "srcTagsFade", "fadeSec", "lyricPos", "subLang", "subSize", "flugPos", "rcIdleSec", "holdGuard", "holdHint", "eggMode", "eggFall", "eggGif", "startGif", "themeShown", "themeTabs", "themeOrder", "themeTabList", "themeCustom", "themeNames", "skinProf", "coverMode", "coverFlip", "coverSet", "musikLang", "langWarnOff", "startMode", "startFolders", "startOrder", "startSec", "startFade", "skinOnlyActive", "skinOnlyMode", "sidebarW", "topOffMain", "topOffSet", "startGif", "ludwtSingle", "listRepeat", "srcTags", "favPlace", "favSeek", "showExtra", "karaokeOnly", "srcFilter", "sync-auto-max", "lyricAlign", "skipSec", "skipBack", "skipFwd", "fehlMode", "fehlNotify", "fehlAll", "fehlHelpSeen", "fehlLang", "startShow", "startSizes", "castMode", "startCarSec", "startCarMs", "galNoKar", "galNoKarAmt", "galMini", "npLayout", "lyrColOn", "lyrColOff", "skinFilterMode", "fehlSkip", "fehlLog", "startBarOpen", "startTrans", "startCar3d", "startFloatSpd", "resumeMode", "autoTap", "autoMute", "rateOn", "rateName", "rateAnon", "ampelOn", "kiScanAcc", "kiFirst", "kvSync", "kvWide", "aiAcc", STORAGE.scale, STORAGE.listSize];
+const SETTING_KEYS = ["theme", "themeMode", "themeDay", "themeNight", "themeShift", "autoStart", "verBarAlways", "verBarFade", "srcTagsFade", "fadeSec", "lyricPos", "subLang", "subSize", "flugPos", "rcIdleSec", "holdGuard", "holdHint", "eggMode", "eggFall", "eggGif", "startGif", "themeShown", "themeTabs", "themeOrder", "themeTabList", "themeCustom", "themeNames", "themeAll", "themeListMode", "skinProf", "coverMode", "coverFlip", "coverSet", "musikLang", "langWarnOff", "startMode", "startFolders", "startOrder", "startSec", "startFade", "skinOnlyActive", "skinOnlyMode", "sidebarW", "topOffMain", "topOffSet", "startGif", "ludwtSingle", "listRepeat", "srcTags", "favPlace", "favSeek", "showExtra", "karaokeOnly", "srcFilter", "sync-auto-max", "lyricAlign", "skipSec", "skipBack", "skipFwd", "fehlMode", "fehlNotify", "fehlAll", "fehlHelpSeen", "fehlLang", "startShow", "startSizes", "castMode", "startCarSec", "startCarMs", "galNoKar", "galNoKarAmt", "galMini", "npLayout", "lyrColOn", "lyrColOff", "skinFilterMode", "fehlSkip", "fehlLog", "startBarOpen", "startTrans", "startCar3d", "startFloatSpd", "resumeMode", "autoTap", "autoMute", "rateOn", "rateName", "rateAnon", "ampelOn", "kiScanAcc", "kiFirst", "kvSync", "kvWide", "aiAcc", STORAGE.scale, STORAGE.listSize];
 SETTING_KEYS.push(...SV_KEYS, "sideHide", "selSize", "teslaTab", "simBtn", "simMin", "plHold", "startOpen", "setStart", "simTop", "simPct", "simFill", "simOpRef", "simOpFill", "mediaKeys", "mediaHold", "svHints", "kiHide", "galAdj", "galSizes", "galTop", "startTop", "startAdj", "startImgFit", "ampelLong", "rcListenStart", "galNoKar", "galNoKarAmt", "galMini", "npLayout", "castMode", "musikLang", "langWarnOff", "startAnim", "startFolders", "startOrder", "selBar");
 const isSettingKey = (k) => SETTING_KEYS.includes(k) || /^fehl(?:[TL]|Hide|Inc)_/.test(k);
 const syncSettingsOn = () => false;   // Einstellungen werden jetzt über den Benutzer gespeichert
@@ -4394,7 +4394,7 @@ const PRESETS = [
   { id: "topoff", offByDefault: true, label: "Abstand oben (px): Hauptfenster / Einstellungen", keys: ["topOffMain", "topOffSet"], fields: [{ key: "topOffMain", t: "Haupt", n: [0, 300], dv: "0" }, { key: "topOffSet", t: "Einstellungen", n: [0, 300], dv: "0" }] },
   { id: "startgif", label: "Startseite: GIF „Chor“ statt des Bildes", keys: ["startGif"], def: { startGif: "0" }, fields: [{ key: "startGif", o: BOOL, dv: "0" }] },
   { id: "lupeopt", label: "Lupe-Optionen: LuD+WT einzeln (■) / Liste wiederholen (↻)", keys: ["ludwtSingle", "listRepeat"], fields: [{ key: "ludwtSingle", t: "einzeln", o: BOOL, dv: "0" }, { key: "listRepeat", t: "wiederholen", o: BOOL, dv: "1" }] },
-  { id: "themeshown", label: "Designs im Hauptfenster (Auswahl)", keys: ["themeShown", "themeTabs", "themeOrder", "themeTabList", "themeCustom", "themeNames", "skinProf", "flugPos"] },
+  { id: "themeshown", label: "Designs im Hauptfenster (Auswahl)", keys: ["themeShown", "themeTabs", "themeOrder", "themeTabList", "themeCustom", "themeNames", "themeAll", "themeListMode", "skinProf", "flugPos"] },
   { id: "skip", label: "Springen zurück / vor (Sekunden)", keys: ["skipSec", "skipBack", "skipFwd"],
     fields: [{ key: "skipBack", t: "zurück", n: [1, 300], dv: "15" }, { key: "skipFwd", t: "vor", n: [1, 300], dv: "15" }] },
   { id: "fehl", label: "Fehlend: Prüfung, Hinweis und Anzeige", keys: ["fehlMode", "fehlNotify", "fehlAll"], rx: /^fehl[TL]_/, fields: [{ key: "fehlNotify", t: "Hinweis", o: BOOL, dv: "1" }] },
@@ -4417,7 +4417,8 @@ const PRESETS = [
     def: { startSizes: '{"image":105,"chor":105,"carousel":105,"fade":105,"float":100}', galSizes: '{"grid":180,"list":180,"flow":360}' } },
   { id: "startmore", label: "Startseite: Karussell-Dauer, Bildanpassung, Überblenden", keys: ["startCarMs", "startImgFit", "startFade", "startMode", "startBarOpen"] },
   { id: "lyrcol", label: "Karaoke-Schriftfarben", keys: ["lyrColOn", "lyrColOff"] },
-  { id: "skinfilter", label: "Design-Auswahl: Filter", keys: ["skinOnlyActive", "skinOnlyMode", "skinFilterMode"] },
+  { id: "skinfilter", label: "Design-Auswahlfenster: nur aktivierte Designs zeigen", keys: ["skinOnlyMode", "skinFilterMode"], def: { skinOnlyMode: "reset" },
+    fields: [{ key: "skinOnlyMode", t: "Anzeige", o: [["reset", "bei jedem Öffnen nur aktivierte"], ["1", "immer nur aktivierte"], ["0", "immer alle"]], dv: "reset" }] },
   { id: "coverset", label: "Cover-Serie", keys: ["coverSet"] },
   { id: "aiacc", label: "KI-Genauigkeit (Bewertung)", keys: ["aiAcc"] },
   { id: "ki", label: "Bewertungen und KI-Verlauf", keys: ["rateOn", "rateName", "rateAnon", "ampelOn", "kvSync", "kvWide", "ampelLong"], def: { rateOn: "1", ampelOn: "1", kvSync: "0", kvWide: "0", ampelLong: "1" }, fields: [{ key: "rateOn", t: "Bewertung zeigen", o: BOOL, dv: "1" }, { key: "ampelOn", t: "Korrektur-Status zeigen", o: BOOL, dv: "1" }, { key: "ampelLong", t: "Status lang drücken", o: BOOL, dv: "1" }, { key: "kvSync", t: "gemeinsam scrollen", o: BOOL, dv: "0" }, { key: "kvWide", t: "breit", o: BOOL, dv: "0" }] },
@@ -4429,6 +4430,7 @@ const PRESETS = [
   { id: "syncmax", label: "Automatisch abgleichen, auch wenn bis zu … Lieder gelöscht wurden", keys: ["sync-auto-max"], def: { "sync-auto-max": "2" }, fields: [{ key: "sync-auto-max", n: [0, 999], dv: "0" }] }
 ];
 /* Themen für die Voreinstellungen: Überschrift, Zeilen und ein ganz kurzer Hinweis je Zeile */
+const DESIGN_ROWS = ["themeshown", "skinfilter"];   /* werden erst nach Rückfrage (v180.js) im Benutzer / in Voreinstellungen gespeichert */
 const PRESET_GROUPS = [
   ["Wiedergabe", ["auto", "resume", "karonly", "skip", "lupeopt", "rcidle"]],
   ["Einfache Ansicht (ohne Lupe)", ["einfach"]],
@@ -4436,14 +4438,14 @@ const PRESET_GROUPS = [
   ["KI und Bewertungen", ["kitext", "ki"]],
   ["Liste und Auswahl", ["extra", "tags", "verbar", "srcfilter", "fav", "fontlist", "sidebar"]],
   ["Karaoke-Text und Cover", ["fontkar", "lyricalign", "lyricpos", "lyrcol", "cover", "coverset", "gal", "posadj", "startmore", "musiklang", "startgif", "startshow", "startdet"]],
-  ["Design und Anzeige", ["theme", "hold", "topoff", "themeshown", "playerlay", "listen"]],
+  ["Design und Anzeige", ["theme", "themeshown", "skinfilter", "hold", "topoff", "playerlay", "listen"]],
   ["Abgleich", ["fehl", "syncmax"]]
 ];
 const PRESET_TIP = {
   auto: "Startet beim Öffnen von selbst.", resume: "Pausiertes Lied bleibt nach App-Wechsel pausiert.", startshow: "Karussell, Überblenden, Übergang, Zeit.", karonly: "Automatisch weiter nur mit Karaoke-Liedern.", skip: "Sekunden pro Tipp auf −/+.", lupeopt: "Einzeln spielen, Liste wiederholen.", rcidle: "Wie oft das Gerät im Ruhezustand nachfragt.", kitext: "Scan im ＋-Fenster: Genauigkeit; KI-Text vor dem gespeicherten Text zeigen.",
   extra: "Instrumental, Zusammenkünfte, Video in der Liste.", tags: "Kleine Buchstaben unter den Liedern.", verbar: "Art-Buttons und ihr Ausblenden.", srcfilter: "Welche Arten gerade gezeigt werden.", fav: "Wo der Stern erscheint.", fontlist: "Schrift in der Liste.", sidebar: "Breite der Liste.",
   fontkar: "Schrift des Karaoke-Textes.", lyricalign: "Links, Mitte oder rechts.", lyricpos: "Wo die aktive Zeile steht.", cover: "Neue oder alte Cover.", startgif: "Chor-GIF auf der Startseite.",
-  theme: "Welches Design und wann.", hold: "Lupe nur nach langem Drücken.", topoff: "Platz oben (z. B. für Tesla).", themeshown: "Welche Designs im Hauptfenster stehen.",
+  theme: "Welches Design und wann.", hold: "Lupe nur nach langem Drücken.", topoff: "Platz oben (z. B. für Tesla).", themeshown: "Welche Designs im Hauptfenster stehen, Reihenfolge, Reiter, eigene Anpassungen.", skinfilter: "Auswahlfenster: nur die aktivierten Designs oder alle.",
   einfach: "Welche Knöpfe ohne Lupe sichtbar sind.", teslakeys: "Tesla-Knopf und Tasten Lied vor/zurück.", sim: "Ähnliche Lieder: Knopf und Genauigkeit.", plhold: "Lange drücken auf eine Liste.", selsize: "Größe der Auswahlmenüs.", startopen: "Welche Ansicht die Startseite zeigt.", posadj: "Verschiebung und Größe der Ansichten.", ki: "Bewertung, Korrektur-Status, KI-Verlauf.",
   fehl: "Prüfung auf fehlende Lieder.", syncmax: "Automatisch abgleichen bis zu dieser Anzahl gelöschter Lieder."
 };
@@ -4935,7 +4937,7 @@ async function userSaveSettings() {
   if (!n) return;
   const d = userData();
   if (state.touched) { state.touched.forEach((id) => { d.on[id] = true; }); state.touched.clear(); }
-  presetCapture(d);
+  presetCapture(d, state.designSave ? undefined : PRESETS.map((p) => p.id).filter((id) => !DESIGN_ROWS.includes(id)));
   const before = lsv("userPresets", "");
   userSaveLocal(d);
   if (lsv("userPresets", "") !== before || userDirty()) await userPush(n, d);
@@ -4958,7 +4960,7 @@ async function userSaveSettings() {
     } catch { /* egal */ }
     try {
       const row = userName() && PRESETS.find((p) => p.keys.includes(k) || (p.rx && p.rx.test(k)));
-      if (row) {
+      if (row && !DESIGN_ROWS.includes(row.id)) {
         if (!state.applyingPreset && !row.offByDefault) state.touched.add(row.id);   // händische Änderung: Zeile wird (wieder) angehakt
         clearTimeout(t); state.setPending = true; t = setTimeout(flush, 1500);
       }

@@ -832,7 +832,7 @@
   function openPicker() {
     let box = document.getElementById("themePicker");
     if (box) box.remove();
-    if (onlyMode() === "reset") put("skinOnlyActive", "1");
+    { const m = onlyMode(); put("skinOnlyActive", m === "0" ? "0" : "1"); }
     box = h("div", "theme-picker"); box.id = "themePicker";
     const card = h("div", "theme-picker-card");
     card.append(h("p", "theme-picker-title", "Design wählen"));
