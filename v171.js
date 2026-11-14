@@ -76,5 +76,24 @@
   const cm = document.getElementById("codeModal");
   if (cm) new MutationObserver(() => { if (!cm.hidden) setTimeout(bind, 40); }).observe(cm, { attributes: true, attributeFilter: ["hidden"] });
   setTimeout(bind, 300);
+
+  /* Themenliste der Einstellungen: Höhe = sichtbarer Rest des Fensters, damit sie für sich scrollt */
+  (function topicsHeight() {
+    let t = 0;
+    const fit = () => {
+      t = 0;
+      const l = document.getElementById("setTopics"), f = document.getElementById("codeForm");
+      if (!l || !f || !f.classList.contains("topics-on") || !l.offsetParent) return;
+      if (getComputedStyle(l).flexDirection !== "column") return;
+      const vh = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+      const top = Math.max(0, l.getBoundingClientRect().top);
+      l.style.setProperty("max-height", Math.max(220, vh - top - 8) + "px", "important");
+    };
+    const q = () => { if (!t) t = requestAnimationFrame(fit); };
+    document.addEventListener("scroll", q, true);
+    window.addEventListener("resize", q);
+    new MutationObserver(q).observe(document.body, { attributes: true, subtree: true, attributeFilter: ["class", "hidden"] });
+    setTimeout(q, 500);
+  })();
   window.V171 = { apply, menu, refresh, bind };
 })();

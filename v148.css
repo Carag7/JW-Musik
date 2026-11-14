@@ -218,3 +218,6 @@ body.edit-mode .lyric-sub { display: none !important; }
 @media (min-width: 640px) {
   #codeForm.topics-on > #setTopics { max-height: calc(var(--vvh, 100dvh) - 16px); overflow-y: auto; overscroll-behavior: contain; }
 }
+
+/* v177: Themenliste scrollt für sich, mit zwei Leerzeilen unten (Höhe setzt v171.js passend zur sichtbaren Fläche) */
+#codeForm.topics-on > #setTopics { overflow-y: auto !important; overscroll-behavior: contain; padding-bottom: 130px !important; box-sizing: border-box; -webkit-overflow-scrolling: touch; }
