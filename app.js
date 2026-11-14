@@ -4761,8 +4761,8 @@ function buildPresetRows(rows, o) {
         inp.type = "number"; inp.min = f.n[0]; inp.max = f.n[1]; inp.inputMode = "numeric";
       }
       inp.value = String(shown);
-      if (o.live && o.mark && stored !== undefined) {
-        const diff = String(stored) !== String(devv === null ? f.dv : devv);
+      if (o.live && o.mark) {   /* grün = gleich wie hier, orange = anders; nichts gespeichert = es gilt der Wert hier (grün) */
+        const diff = stored !== undefined && String(stored) !== String(devv === null ? f.dv : devv);
         inp.classList.add(diff ? "pr-diff" : "pr-same"); rowDiff = rowDiff || diff;
       }
       inputs.push([f, inp]);
@@ -4786,9 +4786,9 @@ function buildPresetRows(rows, o) {
     };
     if (!(p.fields || []).length && o.live && o.mark) {
       const ks = presetKeys(p).filter((k) => data.vals[k] !== undefined);
-      if (ks.length) rowDiff = ks.some((k) => String(data.vals[k]) !== String(lsv(k, "")));
-      if (ks.length) wrap.classList.add(rowDiff ? "pr-rdiff" : "pr-rsame");
-    } else if (o.live && o.mark && inputs.length && inputs.some(([f]) => data.vals[f.key] !== undefined)) wrap.classList.add(rowDiff ? "pr-rdiff" : "pr-rsame");
+      rowDiff = ks.some((k) => String(data.vals[k]) !== String(lsv(k, "")));
+      wrap.classList.add(rowDiff ? "pr-rdiff" : "pr-rsame");
+    } else if (o.live && o.mark && inputs.length) wrap.classList.add(rowDiff ? "pr-rdiff" : "pr-rsame");
     if ((p.fields || []).length) wrap.append(fb);
     rows.append(wrap);
   });
