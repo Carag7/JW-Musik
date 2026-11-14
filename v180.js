@@ -1,22 +1,7 @@
-/* v180: Design-Änderungen (Auswahl, Reihenfolge, Reiter, Anpassungen, Filter) nach Rückfrage im Benutzer oder in einer Voreinstellung (Tesla/Handy/Standard) speichern */
+/* v180: Design-Änderungen werden still im angemeldeten Benutzer / Gerät gespeichert; dieser Knopf speichert zusätzlich in einen anderen Benutzer oder eine Voreinstellung */
 (function () {
   "use strict";
-  const WATCH = ["themeShown", "themeOrder", "themeTabs", "themeTabList", "themeCustom", "themeNames", "themeAll", "themeListMode", "skinOnlyMode", "skinProf"];
-  const T0 = Date.now();
-  let lastTap = 0, timer = 0, asking = false, quiet = false;
-  document.addEventListener("pointerdown", () => { lastTap = Date.now(); }, true);
-  document.addEventListener("keydown", () => { lastTap = Date.now(); }, true);
-
-  const orig = Storage.prototype.setItem;
-  Storage.prototype.setItem = function (k, v) {
-    const old = this === localStorage ? this.getItem(k) : null;
-    orig.call(this, k, v);
-    if (this !== localStorage || !WATCH.includes(k) || old === String(v)) return;
-    if (typeof state !== "undefined" && state.applyingPreset) return;
-    if (Date.now() - T0 < 8000 || Date.now() - lastTap > 20000 || quiet) return;
-    clearTimeout(timer); timer = setTimeout(ask, 4000);
-  };
-
+  let asking = false;
   const ids = ["themeshown", "skinfilter"];
   const el2 = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x) e.textContent = x; return e; };
   async function saveOther(name) {
@@ -69,9 +54,16 @@
       ["tesla", "handy", "standard"].forEach((k) => { const b = el2("button", "chip", `In Voreinstellung ${SYS_LABEL[k]} speichern`); b.type = "button"; b.style.cssText = "justify-self:start"; b.onclick = () => run(SYS_LABEL[k], () => saveSys(k), b); pre.append(b); });
       tog.onclick = () => { pre.hidden = !pre.hidden; tog.setAttribute("aria-expanded", String(!pre.hidden)); tog.textContent = (pre.hidden ? "▸" : "▾") + " Voreinstellungen (Tesla, Handy, Standard)"; };
       box.append(tog, pre);
-      await uiDialog({ eyebrow: "Designs", title: "Design-Änderungen zusätzlich speichern?", lines: [{ node: box }], buttons: [{ value: "ok", kind: "primary", label: "Fertig" }], cancelValue: "ok" });
-      quiet = true;
+      await uiDialog({ eyebrow: "Designs", title: "Designs zusätzlich speichern", lines: [{ node: box }], buttons: [{ value: "ok", kind: "primary", label: "Fertig" }], cancelValue: "ok" });
     } catch { /* egal */ } finally { asking = false; }
   }
+  /* Knopf am Ende jedes Design-Reiters (Einstellungen → Design) */
+  const addBtn = () => {
+    const root = document.getElementById("themeBox");
+    if (!root || root.querySelector(".v180-save") || !root.children.length) return;
+    const b = el2("button", "chip v180-save", "💾 Designs zusätzlich speichern …"); b.type = "button"; b.style.cssText = "margin:14px 0 40px";
+    b.onclick = ask; root.append(b);
+  };
+  new MutationObserver(addBtn).observe(document.body, { childList: true, subtree: true });
   window.V180 = { ask };
 })();

@@ -1442,7 +1442,7 @@ function setMediaSession(song) {
     title: `${state.favorites.has(song.id) ? "★ " : ""}${song.title}`,
     artist: "Sing Out Joyfully",
     album: song.category || "Karaoke",
-    artwork: window.COVERS ? COVERS.artwork(song) : []
+    artwork: (() => { const art = window.COVERS ? COVERS.artwork(song) : []; return art && art.length ? art : [{ src: "tesla-icon.png", sizes: "96x96", type: "image/png" }]; })()
   });
   /* Tesla-Tasten: Doppelsignale (<350 ms) ignorieren; die Schutzsperre gegen Endlos-Wechsel gilt nur für automatische Wechsel */
   const mediaStep = (d) => { const t = Date.now(); if (state.lastMediaKey && t - state.lastMediaKey.t < 350 && state.lastMediaKey.d === d) return; state.lastMediaKey = { t, d }; try { el.status.textContent = d > 0 ? "Taste: nächstes Lied" : "Taste: voriges Lied"; } catch { /* egal */ } step(d); };
