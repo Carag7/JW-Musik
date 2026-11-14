@@ -4430,7 +4430,6 @@ const PRESETS = [
   { id: "syncmax", label: "Automatisch abgleichen, auch wenn bis zu … Lieder gelöscht wurden", keys: ["sync-auto-max"], def: { "sync-auto-max": "2" }, fields: [{ key: "sync-auto-max", n: [0, 999], dv: "0" }] }
 ];
 /* Themen für die Voreinstellungen: Überschrift, Zeilen und ein ganz kurzer Hinweis je Zeile */
-const DESIGN_ROWS = ["themeshown", "skinfilter"];   /* werden erst nach Rückfrage (v180.js) im Benutzer / in Voreinstellungen gespeichert */
 const PRESET_GROUPS = [
   ["Wiedergabe", ["auto", "resume", "karonly", "skip", "lupeopt", "rcidle"]],
   ["Einfache Ansicht (ohne Lupe)", ["einfach"]],
@@ -4937,7 +4936,7 @@ async function userSaveSettings() {
   if (!n) return;
   const d = userData();
   if (state.touched) { state.touched.forEach((id) => { d.on[id] = true; }); state.touched.clear(); }
-  presetCapture(d, state.designSave ? undefined : PRESETS.map((p) => p.id).filter((id) => !DESIGN_ROWS.includes(id)));
+  presetCapture(d);
   const before = lsv("userPresets", "");
   userSaveLocal(d);
   if (lsv("userPresets", "") !== before || userDirty()) await userPush(n, d);
@@ -4960,7 +4959,7 @@ async function userSaveSettings() {
     } catch { /* egal */ }
     try {
       const row = userName() && PRESETS.find((p) => p.keys.includes(k) || (p.rx && p.rx.test(k)));
-      if (row && !DESIGN_ROWS.includes(row.id)) {
+      if (row) {
         if (!state.applyingPreset && !row.offByDefault) state.touched.add(row.id);   // händische Änderung: Zeile wird (wieder) angehakt
         clearTimeout(t); state.setPending = true; t = setTimeout(flush, 1500);
       }
