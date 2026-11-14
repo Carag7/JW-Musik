@@ -268,11 +268,11 @@
     /* Filter „nur aktivierte Designs“ im Auswahlfenster */
     const fr = h("label", "set-row"); fr.append(document.createTextNode("Auswahlfenster: nur aktivierte Designs zeigen "));
     const fs = document.createElement("select"); fs.setAttribute("aria-label", "Nur aktivierte Designs");
-    [["0", "aus"], ["1", "ein"], ["reset", "bei jedem Öffnen aus"]].forEach(([v, n]) => fs.append(new Option(n, v)));
+    [["0", "aus"], ["1", "ein"], ["reset", "bei jedem Öffnen ein (Standard)"]].forEach(([v, n]) => fs.append(new Option(n, v)));
     fs.value = onlyMode();
     fs.addEventListener("change", () => { put("skinOnlyMode", fs.value); if (fs.value !== "reset") put("skinOnlyActive", fs.value); });
     fr.append(fs); root.append(fr);
-    root.append(h("small", "set-hint", "Das Filter-Symbol oben rechts im Auswahlfenster schaltet zwischen „alle Designs“ und „nur aktivierte“ um. „bei jedem Öffnen aus“ (Standard): das Fenster zeigt beim Öffnen immer alle Designs."));
+    root.append(h("small", "set-hint", "Das Filter-Symbol oben rechts im Auswahlfenster schaltet zwischen „alle Designs“ und „nur aktivierte“ um. „bei jedem Öffnen ein“ (Standard): das Fenster zeigt beim Öffnen immer nur die aktivierten Designs (ca. 10); alle Designs siehst du mit dem Filter-Symbol."));
 
     /* Reiter verwalten */
     const mg = h("div", "tab-manager");
@@ -709,7 +709,7 @@
     return card;
   }
   /* kleines Symbol rechts oben im Auswahlfenster: alle Designs zeigen oder nur die aktivierten */
-  const onlyActive = () => get("skinOnlyActive", "0") === "1";
+  const onlyActive = () => get("skinOnlyActive", "1") === "1";
   const onlyMode = () => { const v = get("skinOnlyMode", "reset"); return v === "0" || v === "1" ? v : "reset"; };
   /* Beschreibung pro Design-Art: wie sehen die Designs aus */
   const FAM_DESC = {
@@ -832,7 +832,7 @@
   function openPicker() {
     let box = document.getElementById("themePicker");
     if (box) box.remove();
-    if (onlyMode() === "reset") put("skinOnlyActive", "0");
+    if (onlyMode() === "reset") put("skinOnlyActive", "1");
     box = h("div", "theme-picker"); box.id = "themePicker";
     const card = h("div", "theme-picker-card");
     card.append(h("p", "theme-picker-title", "Design wählen"));
