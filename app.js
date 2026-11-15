@@ -2030,7 +2030,7 @@ async function loadSongs() {
   }
 }
 
-function playRandom(favorites) {
+function playRandom(favorites, keepOrder) {
   const pool = favorites ? state.songs.filter((song) => state.favorites.has(song.id)) : state.songs;
   if (!pool.length) {
     if (favorites) {
@@ -2045,9 +2045,8 @@ function playRandom(favorites) {
     el.status.textContent = favorites ? "Keine Favoriten markiert" : "Keine Lieder";
     return;
   }
-  state.shuffle = true;
+  if (!keepOrder) { state.shuffle = true; el.shuffleBtn.setAttribute("aria-pressed", "true"); }
   state.playFavorites = favorites;
-  el.shuffleBtn.setAttribute("aria-pressed", "true");
   const pick = pool[Math.floor(Math.random() * pool.length)];
   selectSong(state.songs.indexOf(pick), true);
 }
@@ -2180,7 +2179,7 @@ function tryAutoStartNow() {
   const last = localStorage.getItem("lastSongId");
   const at = state.songs.findIndex((song) => song.id === last);
   if (at >= 0) selectSong(at, true);
-  else playRandom(state.favorites.size > 0);
+  else playRandom(state.favorites.size > 0, true);   /* Zufälliges Startlied, danach aber in Listenreihenfolge */
   setTimeout(() => { if (el.audio.paused) armTap(); }, 2500);
 }
 

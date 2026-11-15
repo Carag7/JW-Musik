@@ -221,3 +221,7 @@ body.edit-mode .lyric-sub { display: none !important; }
 
 /* v177: Themenliste scrollt für sich, mit zwei Leerzeilen unten (Höhe setzt v171.js passend zur sichtbaren Fläche) */
 #codeForm.topics-on > #setTopics { overflow-y: auto !important; overscroll-behavior: contain; padding-bottom: 130px !important; box-sizing: border-box; -webkit-overflow-scrolling: touch; }
+
+/* v184: Anzeige Wiedergabe-Reihenfolge über der Liste */
+.order-info { margin: 4px 0 8px; padding: 6px 12px; border-radius: 10px; font-size: .85rem; font-weight: 700; border: 1px solid rgba(120,200,140,.45); background: rgba(30,158,74,.14); }
+.order-info.is-shuffle { border-color: rgba(240,138,0,.6); background: rgba(240,138,0,.18); }
