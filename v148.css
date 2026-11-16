@@ -254,3 +254,16 @@ body.ludwt-mode .lib-switch { display: none; }
 .dash-go{white-space:nowrap}
 .dash-mem{margin:8px 0}.dash-memt{font-size:13px;margin-bottom:4px}
 .dash-big{font-size:42px;font-weight:800;margin:6px 0}
+/* v191: Dashboard-Balken, Umschalter besser sichtbar */
+.dash-big{font-size:30px}
+.dash-stack{margin:6px 0}
+.dash-sbar{display:flex;height:18px;border-radius:9px;overflow:hidden;background:rgba(127,127,127,.25)}
+.dash-sbar span{display:block;height:100%}
+.dash-kind{margin-top:8px}.dash-kind b{font-size:13px}
+.dash-kind .dash-sbar{height:12px}
+.dash-kind .st-leg{font-size:12px}
+.lib-switch .lib-btn{background:rgba(127,127,127,.18);color:inherit}
+.lib-switch .lib-btn[aria-pressed="true"]{background:#e8b84a;color:#1a1305;border-color:#ffd77a;box-shadow:0 0 0 2px rgba(232,184,74,.55);outline:none}
+body.lib-bes .lib-switch .lib-btn[data-lib="bes"]{background:#e8b84a;color:#1a1305}
+.lib-switch .lib-btn.busy{opacity:.7;pointer-events:none}
+.cg-lib{font-weight:700}

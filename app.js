@@ -1020,6 +1020,7 @@ async function fetchKaraokeLines(song, stale, forceLang) {
 
 /* Liedtext der Instrumental-Fassung (eigene Datei lrcm-<nr>) */
 async function fetchMeetingLines(song, stale, prefix = "lrcm") {
+  if (song.bes && window.BES && BES.fetchLrc && prefix === "lrcm") { const bl = await BES.fetchLrc(song, stale); if (bl.length || stale()) return bl; }
   try {
     const res = await fetch(`${SYNC_BASE}/sync/${prefix}-${song.id}`);
     if (stale()) return [];
@@ -4154,7 +4155,7 @@ async function saveTimecode(skipConfirm) {
   }).join("\n");
   const kind = curLrcKind(song);
   localStorage.setItem(`${kind}-${song.id}`, JSON.stringify(lines));
-  const putOnce = (k) => fetch(`${SYNC_BASE}/sync/${kind}-${song.id}`, { method: "PUT", headers: { "content-type": "text/plain", "x-write-key": k || "" }, body: lrc });
+  const putOnce = (k) => song.bes && window.BES && BES.putLrc ? BES.putLrc(song, lrc, k) : fetch(`${SYNC_BASE}/sync/${kind}-${song.id}`, { method: "PUT", headers: { "content-type": "text/plain", "x-write-key": k || "" }, body: lrc });
   const fail = async (why) => {
     try { localStorage.setItem(`pend-${kind}-${song.id}`, JSON.stringify({ lines, ts: Date.now(), why })); } catch { /* egal */ }
     document.dispatchEvent(new CustomEvent("pending-changed"));
@@ -4175,7 +4176,7 @@ async function saveTimecode(skipConfirm) {
       try { localStorage.removeItem(`pend-${kind}-${song.id}`); } catch { /* egal */ }
       document.dispatchEvent(new CustomEvent("pending-changed"));
       document.dispatchEvent(new CustomEvent("lrc-saved", { detail: { kind, id: song.id, lrc, key } }));
-      if (kind === "lrcm" && state.media) state.media.meeting.lrc[String(song.number)] = `meeting/lrc/${song.id}.lrc`;
+      if (kind === "lrcm" && state.media && !song.bes) state.media.meeting.lrc[String(song.number)] = `meeting/lrc/${song.id}.lrc`;
       if (kind === "lrcs" && state.media) (state.media.meeting.sungLrc = state.media.meeting.sungLrc || {})[String(song.number)] = `meeting/sung/lrc/${song.id}.lrc`;
       await uiAlert("Gespeichert", kind === "lrcm" ? "Text für die Instrumental-Fassung gespeichert, auf allen Geräten verfügbar." : kind === "lrcs" ? "Text für die Zusammenkünfte-Fassung gespeichert, auf allen Geräten verfügbar." : "Auf dem Server gespeichert, auf allen Geräten verfügbar.");
     } else await fail(res.status === 401 ? "Der Server hat den Schreib-Schlüssel abgelehnt (WRITE_KEY in Cloudflare prüfen)." : `Der Server meldet Fehler ${res.status}.`);

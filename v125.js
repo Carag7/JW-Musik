@@ -488,6 +488,11 @@
     w.append(h("div", "dash-memt", `${label}: ${fsz(used)} von ${fsz(limit)} (${Math.round(pct)} %)`));
     const bar = h("div", "fo-bar"), i = h("i"); i.style.width = pct + "%"; if (pct > 90) i.style.background = COL.red; else if (pct > 75) i.style.background = COL.orange; bar.append(i); w.append(bar); return w;
   }
+  function hstack(parts, total) {
+    const w = h("div", "dash-stack"), tot = total || parts.reduce((a, p) => a + p.v, 0) || 1;
+    const bar = h("div", "dash-sbar"); parts.forEach((p) => { if (p.v <= 0) return; const s = h("span"); s.style.width = (p.v / tot * 100) + "%"; s.style.background = p.c; s.title = `${p.n}: ${p.v}`; bar.append(s); });
+    w.append(bar, legend(parts, tot)); return w;
+  }
   function dashCard(title, tab, linkText) {
     const c = h("section", "st-card dash-card"); const hd = h("div", "dash-hd"); hd.append(h("h4", "", title));
     if (tab) { const b = h("button", "chip dash-go", linkText || "Öffnen →"); b.type = "button"; b.onclick = () => showSetTab(tab); hd.append(b); }
@@ -507,7 +512,7 @@
       if (!rows.length) { c.append(h("small", "set-hint bad", "Server-Zahlen nicht verfügbar. Bitte später noch einmal öffnen.")); grid.append(c); return; }
       const ready = rows.reduce((a, r) => a + r.ready, 0), none = rows.reduce((a, r) => a + r.none, 0), server = rows.reduce((a, r) => a + r.server, 0), tot = rows.reduce((a, r) => a + r.total, 0), bytes = rows.reduce((a, r) => a + (r.bytes || 0), 0);
       const pie = [{ n: "auf dem Server", v: server, c: COL.ok }, { n: "zum Laden bereit", v: ready, c: COL.orange }, { n: "fehlt", v: none, c: COL.miss }];
-      const pr = h("div", "st-pies"), p1 = h("div", "st-pie"); p1.append(donut(pie, 110, `Karaoke ${ln}`), legend(pie, tot)); pr.append(p1); c.append(pr);
+      c.append(h("div", "dash-big", `${server} / ${tot}`), hstack(pie, tot));
       c.append(h("small", ready ? "set-hint" : "set-hint ok", ready ? `${ready} Dateien warten auf jw.org-Abgleich/Download` : "✓ nichts zu laden"));
       c.append(h("small", "set-hint", `Speicher auf dem Server: ${fsz(bytes)}`));
       const ga = h("button", "chip dash-go", "Diagramme →"); ga.type = "button"; ga.onclick = () => showSetTab("syncstat"); c.append(ga);
@@ -520,18 +525,20 @@
     else {
       const have = bs.kinds.reduce((a, k) => a + k.have, 0), ready = bs.kinds.reduce((a, k) => a + k.ready, 0), nojw = bs.kinds.reduce((a, k) => a + (k.total - k.pub), 0), rb = bs.kinds.reduce((a, k) => a + k.bytes, 0);
       const pie = [{ n: "auf dem Server", v: have, c: COL.ok }, { n: "zum Laden bereit", v: ready, c: COL.orange }, { n: "nicht auf jw.org", v: nojw, c: COL.miss }];
-      const pr = h("div", "st-pies"), p1 = h("div", "st-pie"); p1.append(donut(pie, 110, "Besondere Lieder"), legend(pie, have + ready + nojw)); pr.append(p1); bc.append(pr);
-      bc.append(vbars(bs.kinds.map((k, i) => [k.name.replace("Englisch", "EN").replace("Deutsch", "DE"), k.have, [COL.ok, COL.green, COL.ed, COL.orange][i]]), bs.total, 90));
+      bc.append(h("div", "dash-big", `${have} / ${have + ready + nojw}`), hstack(pie, have + ready + nojw));
+      bs.kinds.forEach((k) => { const row = h("div", "dash-kind"); row.append(h("b", "", k.name), hstack([{ n: "da", v: k.have, c: COL.ok }, { n: "laden", v: k.ready, c: COL.orange }, { n: "nicht auf jw.org", v: k.total - k.pub, c: COL.miss }], k.total)); bc.append(row); });
       bc.append(h("small", ready ? "set-hint" : "set-hint ok", ready ? `${ready} Dateien (${fsz(rb)}) zum Laden bereit` : "✓ alles geladen"));
       bc.append(h("small", "set-hint", `Letzter Abgleich: ${bs.stand}`));
       if (bs.legacy) bc.append(h("small", "set-hint bad", `${bs.legacy} deutsche Dateien liegen noch in Backblaze (können gelöscht werden)`));
     }
     grid.append(bc);
     /* 3) Speicher */
-    const sc = dashCard("Speicherplatz", bs ? "bes" : "", "Einzelheiten →");
+    const sc = dashCard("Speicherplatz (alle drei)", "bes", "Einzelheiten →");
+    const r2 = st ? ["en", "de"].reduce((a, lg) => a + (st[lg] ? st[lg].rows.reduce((x, r) => x + (r.bytes || 0), 0) : 0), 0) : 0;
+    sc.append(dashBar("R2 (Karaoke, Cloudflare)", r2, 10 * 1024 ** 3));
     if (bs) { sc.append(dashBar("Backblaze (Englisch)", bs.usedB, bs.limit), dashBar("Oracle (Deutsch)", bs.usedO, bs.limit)); }
-    else sc.append(h("small", "set-hint", "Backblaze/Oracle: erst nach dem Abgleich unter „Besondere Lieder“."));
-    if (st) { const all = ["en", "de"].reduce((a, lg) => a + (st[lg] ? st[lg].rows.reduce((x, r) => x + (r.bytes || 0), 0) : 0), 0); sc.append(h("small", "set-hint", `Karaoke-Server (R2): ${fsz(all)}`)); }
+    else sc.append(h("small", "set-hint", "Backblaze und Oracle: erst nach dem Abgleich unter „Besondere Lieder“."));
+    sc.append(h("small", "set-hint", "Alle drei mit 10 GB gerechnet (Oracle ggf. mehr)."));
     grid.append(sc);
     /* 4) Texte (LRC) */
     const tc = dashCard("Karaoke-Texte", "syncstat", "Diagramme →");

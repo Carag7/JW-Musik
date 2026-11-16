@@ -98,6 +98,7 @@
   }
   function changed() {
     { const v = lsv("coverSet", "edel"); if (setOk(v) && v !== set) { set = v; readIdx(); lastKey = ""; load(true); if (gal && gal._dir) gal._dir.value = set; } }
+    if (gal && gal._lib) gal._lib.value = state.lib === "bes" ? "bes" : "main";
     paintThumb();
     try { if (state.songs[state.index] && "mediaSession" in navigator && typeof setMediaSession === "function") setMediaSession(state.songs[state.index]); } catch { /* egal */ }
     if (gal) { paintGallery(); paintSetBtn(); }
@@ -371,7 +372,12 @@
     sz.addEventListener("input", () => { G.size = Number(sz.value); lss("coverSize", String(G.size)); gal.style.setProperty("--cg-size", G.size + "px"); gal.style.setProperty("--cg-n", String(parseInt(G.size))); { const o = galJ("galSizes"); o[G.view] = G.size; lss("galSizes", JSON.stringify(o)); } });
     size.append(sz);
     const cnt = h("span", "cg-count"); cnt.id = "cgCount";
-    tools.append(dirSel, cOnly, cFav, cMark, cat, srt, nxt, size, cnt);
+    /* Lieder / Besondere Lieder umschalten */
+    const libSel = document.createElement("select"); libSel.className = "cg-sel cg-lib"; libSel.setAttribute("aria-label", "Liederbestand");
+    libSel.append(new Option("Normale Lieder", "main"), new Option("Besondere Lieder", "bes")); libSel.value = state.lib === "bes" ? "bes" : "main";
+    libSel.addEventListener("change", async () => { if (window.BES) await BES.switchLib(libSel.value); libSel.value = state.lib === "bes" ? "bes" : "main"; G.cat = ""; paintGallery(true); });
+    gal._lib = libSel;
+    tools.append(libSel, dirSel, cOnly, cFav, cMark, cat, srt, nxt, size, cnt);
     gal.classList.toggle("fav-mark", G.mark);
 
     const body = h("div", "cg-body"); body.id = "cgBody";
@@ -490,7 +496,7 @@
     const withCover = state.songs.filter(has).length;
     r.cnt.textContent = `${list.length} Lieder · ${withCover} mit Cover`;
     gal.dataset.view = G.view;
-    const sig = G.view + "|" + list.map((s) => s.id).join(",") + "|" + Object.keys(map).length + "|" + set + "|" + (state.media ? 1 : 0) + lsv("musikLang", "en") + lsv("galNoKar", "1");
+    const sig = (state.lib || "") + "|" + G.view + "|" + list.map((s) => s.id).join(",") + "|" + Object.keys(map).length + "|" + set + "|" + (state.media ? 1 : 0) + lsv("musikLang", "en") + lsv("galNoKar", "1");
     if (!force && sig === r.last) { markNow(); paintMini(); return; }
     const keep = r.body.scrollTop;
     r.last = sig; r.body.replaceChildren();
@@ -621,6 +627,7 @@
     setInterval(() => { const s = cur(); const k = s ? s.id : ""; if (boot.k !== k) { boot.k = k; paintThumb(); if (gal) paintGallery(); } if (gal) { paintMini(); updJump(); } }, 500);
     window.addEventListener("pagehide", () => { /* nichts */ });
   }
+  document.addEventListener("bes-covers", () => { try { lastKey = ""; changed(); if (gal) paintGallery(true); } catch { /* egal */ } });
   window.COVERS = { galAdjust, galApply, setSet, pick, setLang: (id) => SET_LANG[id === undefined ? set : id] || "", pairOf: (id) => SET_PAIR[id === undefined ? set : id] || "", loadSetMap, urlOfKey, get set() { return set; }, SETS, galleryNext, src, has, newUrl, artwork, load, mode, refresh: changed, openGallery, closeGallery, openNow, closeNow, get map() { return map; } };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 })();

@@ -27,7 +27,7 @@
     /* Titelliste leer, fehlt oder ist älter als der letzte Abgleich: Lieder direkt aus dem Abgleich (Backblaze, Oracle, jw.org) aufbauen */
     try {
       if (!m || !m.songs.length) { if (!P) await runCheck(() => {}); }
-      if (P) { const own = buildManifest(model()); if (!m || own.length > m.songs.length) m = { ok: true, updated: P.stand, songs: own }; }
+      if (P) { const own = buildManifest(model()); if (!m || own.length >= m.songs.length) m = { ok: true, updated: P.stand, songs: own }; }
     } catch (e) { if (!err) err = e; }
     if (!m || !m.songs.length) throw new Error(err ? ((err && err.message) || String(err)) : "noch keine Besonderen Lieder vorhanden – im Reiter „Besondere Lieder“ abgleichen und Dateien laden");
     manifest = m;
@@ -35,7 +35,15 @@
     return m;
   }
   /* aus der Titelliste: Lieder + Dateiverzeichnis im Format der App */
+  /* Titelbilder der jw.org-Seite (Größe wird einmal geprüft: lg, md, sm, sonst xs) */
+  let coverSize = "xs";
+  function probeCover(m) {
+    const s = (m.songs || []).find((x) => x.doc && (x.doc.en || x.doc.de)); if (!s) return;
+    const d = s.doc.en || s.doc.de, sizes = ["lg", "md", "sm", "xs"];
+    (async () => { for (const z of sizes) { const ok = await new Promise((r) => { const im = new Image(); im.onload = () => r(true); im.onerror = () => r(false); im.src = `https://assetsnffrgf-a.akamaihd.net/img/p/${d}/univ/art/${d}_univ_sqs_${z}.jpg`; }); if (ok) { coverSize = z; try { document.dispatchEvent(new Event("bes-covers")); } catch { /* egal */ } return; } } })();
+  }
   function build(m) {
+    probeCover(m);
     const empty = () => ({ karaoke: { audio: {}, lrc: {} }, meeting: { audio: {}, video: {}, lrc: {}, sung: {}, sungLrc: {} } });
     const media = empty(); media.de = empty();
     const songs = [];
@@ -46,11 +54,39 @@
       if (f.en && f.en.mp4) media.meeting.video[n] = f.en.mp4;
       if (f.de && f.de.mp3) media.de.meeting.audio[n] = f.de.mp3;
       if (f.de && f.de.mp4) media.de.meeting.video[n] = f.de.mp4;
-      songs.push({ id: pad(n) + "b", number: n, title: t.en || t.de || `Lied ${n}`, _de: t.de || t.en || "", category: "", bes: true, extra: false, cover: /^https:\/\//.test(s.img || "") ? s.img : "" });
+      const lr = s.lrc || {};
+      if (lr.en) media.meeting.lrc[n] = lr.en;
+      if (lr.de) media.de.meeting.lrc[n] = lr.de;
+      const song = { id: pad(n) + "b", number: n, title: t.en || t.de || `Lied ${n}`, _de: t.de || t.en || "", category: "", bes: true, extra: false, lrcEdit: s.lrcEdit || {}, doc: s.doc || {}, img: /^https:\/\//.test(s.img || "") ? s.img : "" };
+      Object.defineProperty(song, "cover", { enumerable: false, configurable: true, get() { const d = (song.doc && (song.doc[musikLang()] || song.doc.en || song.doc.de)) || 0; return d ? `https://assetsnffrgf-a.akamaihd.net/img/p/${d}/univ/art/${d}_univ_sqs_${coverSize}.jpg` : song.img; } });
+      songs.push(song);
     }
     wrapTitles(songs);
     songs.sort((a, b) => a.number - b.number);
     return { songs, media };
+  }
+
+  /* ---------- Liedtexte (LRC): lesen (bearbeitet vor Original) und speichern ---------- */
+  async function fetchLrc(song, stale) {
+    const lg = musikLang(), n = String(song.number);
+    const plain = mediaKey("lrcm", song.number) || (state.media && state.media.meeting && state.media.meeting.lrc && state.media.meeting.lrc[n]) || "";
+    for (const key of [song.lrcEdit && song.lrcEdit[lg], plain]) {
+      if (!key || !/^bes-Lieder-/.test(key)) continue;
+      try {
+        const res = await fetch(urlFor(key), { cache: "no-store" });
+        if (stale && stale()) return [];
+        if (res.ok) { const text = await res.text(); if (text.includes("[")) return parseLrc(text); }
+      } catch { /* nächste Quelle */ }
+    }
+    return [];
+  }
+  function putLrc(song, lrc, k) {
+    const lg = musikLang(), n = String(song.number);
+    const old = (song.lrcEdit && song.lrcEdit[lg]) || (state.media && (lg === "de" ? state.media.de : state.media).meeting.lrc[n]) || "";
+    const name = old ? old.split("/").pop() : `osg_${lg === "de" ? "X" : "E"}_${String(song.number).padStart(3, "0")}.lrc`;
+    const key = `bes-Lieder-${lg}-LRC-bearbeitet/${name}`;
+    return fetch(`${baseFor(key)}/lrc/${key.split("/").map(encodeURIComponent).join("/")}`, { method: "PUT", headers: { "content-type": "text/plain", ...(k ? { "x-write-key": k } : {}) }, body: lrc })
+      .then((r) => { if (r.ok) { song.lrcEdit = { ...(song.lrcEdit || {}), [lg]: key }; } return r; });
   }
 
   /* ---------- Umschalten ---------- */
@@ -116,7 +152,7 @@
         box.append(b);
       });
     }
-    box.querySelectorAll(".lib-btn").forEach((b) => { b.setAttribute("aria-pressed", String(b.dataset.lib === cur())); b.disabled = busy; });
+    box.querySelectorAll(".lib-btn").forEach((b) => { b.setAttribute("aria-pressed", String(b.dataset.lib === cur())); b.classList.toggle("busy", busy); });
   }
 
   /* ---------- Reiter „Besondere Lieder“ (gleiche Übersicht wie „Fehlende Lieder“) ---------- */
@@ -167,10 +203,10 @@
         const hh = Number(x.frameHeight || String(x.label || "").replace(/\D/g, "") || 0);
         const score = fmt === "mp3" ? 1 : (hh <= 720 ? hh : 1);
         const old = best.get(track);
-        if (!old || score > old.score) best.set(track, { track, title: String(x.title || "").replace(/\s+/g, " ").trim(), url, size: Number(x.filesize || 0), score, img: imgOf(x) });
+        if (!old || score > old.score) best.set(track, { track, title: String(x.title || "").replace(/\s+/g, " ").trim(), url, size: Number(x.filesize || 0), score, img: imgOf(x), doc: Number(x.docid || 0) });
       }
     }
-    return [...best.values()].map((it) => ({ track: it.track, title: it.title, url: it.url, size: it.size, img: it.img, key: `${FOLDER(lang, fmt)}/${decodeURIComponent(it.url.split("?")[0].split("/").pop())}` }));
+    return [...best.values()].map((it) => ({ track: it.track, title: it.title, url: it.url, size: it.size, img: it.img, doc: it.doc, key: `${FOLDER(lang, fmt)}/${decodeURIComponent(it.url.split("?")[0].split("/").pop())}` }));
   }
   async function jwList(lang, fmt) {
     const code = lang === "de" ? "X" : "E", ff = fmt === "mp3" ? "MP3" : "MP4,M4V";
@@ -199,25 +235,31 @@
     const oKeys = new Set(P.haveO.map((o) => o.key));
     const tracks = new Map();
     P.items.forEach((it) => {
-      const t = tracks.get(it.track) || { n: it.track, t: { en: "", de: "" }, img: "", k: {} };
+      const t = tracks.get(it.track) || { n: it.track, t: { en: "", de: "" }, img: "", doc: {}, lrc: {}, lrcEdit: {}, k: {} };
       if (it.title) t.t[it.lang] = it.title;
       if (it.img && !t.img) t.img = it.img;
+      if (it.doc) t.doc[it.lang] = it.doc;
       /* Deutsch zählt nur, wenn die Datei auf Oracle liegt, Englisch nur, wenn sie auf Backblaze liegt */
       const have = it.lang === "de" ? oKeys.has(it.key) : hv.has(it.key);
       t.k[kid(it.lang, it.fmt)] = { ...it, have, hsize: have ? hv.get(it.key) : 0 };
       tracks.set(it.track, t);
     });
+    /* Liedtexte (LRC): Ordner bes-Lieder-en-LRC (Backblaze) und bes-Lieder-de-LRC (Oracle), bearbeitete in …-LRC-bearbeitet */
+    const lrcNo = (key) => { const b = key.split("/").pop().replace(/\.lrc$/i, ""); const mm = b.match(/(\d+)(?!.*\d)/); return mm ? Number(mm[1]) : 0; };
+    const lrcs = [];
+    hv.forEach((size, key) => { const mm = key.match(/^bes-Lieder-(en|de)-LRC(-bearbeitet)?\/[^/]+\.lrc$/i); if (mm) lrcs.push({ key, lang: mm[1].toLowerCase(), edit: Boolean(mm[2]), n: lrcNo(key) }); });
+    lrcs.forEach((x) => { if (!x.n) return; let t = tracks.get(x.n); if (!t) { t = { n: x.n, t: { en: "", de: "" }, img: "", doc: {}, lrc: {}, lrcEdit: {}, k: {} }; tracks.set(x.n, t); } (x.edit ? t.lrcEdit : t.lrc)[x.lang] = x.key; });
     const known = new Set(P.items.map((i) => i.key));
-    const extra = [...hv.entries()].filter(([k]) => !known.has(k) && !/^bes-songs/.test(k) && (/^bes-Lieder-en-/.test(k) || oKeys.has(k))).map(([key, size]) => ({ key, size }));
-    const legacy = P.haveB.filter((o) => /^bes-Lieder-de-/.test(o.key));
-    return { tracks: [...tracks.values()].sort((a, b) => a.n - b.n), extra, legacy, oKeys, usedB: P.haveB.reduce((s, o) => s + o.size, 0), usedO: P.haveO.reduce((s, o) => s + o.size, 0) };
+    const extra = [...hv.entries()].filter(([k]) => !known.has(k) && !/^bes-songs/.test(k) && !/-LRC(-bearbeitet)?\//i.test(k) && (/^bes-Lieder-en-/.test(k) || oKeys.has(k))).map(([key, size]) => ({ key, size }));
+    const legacy = P.haveB.filter((o) => /^bes-Lieder-de-(mp3|mp4)\//.test(o.key));
+    return { lrcCount: { en: lrcs.filter((x) => x.lang === "en" && !x.edit).length, de: lrcs.filter((x) => x.lang === "de" && !x.edit).length, edit: lrcs.filter((x) => x.edit).length }, tracks: [...tracks.values()].sort((a, b) => a.n - b.n), extra, legacy, oKeys, usedB: P.haveB.reduce((s, o) => s + o.size, 0), usedO: P.haveO.reduce((s, o) => s + o.size, 0) };
   }
   function buildManifest(m) {
     const songs = [];
     m.tracks.forEach((t) => {
       const files = { en: {}, de: {} }; let any = false;
       for (const [l, f] of KINDS) { const k = t.k[kid(l, f)]; if (k && k.have) { files[l][f] = k.key; any = true; } }
-      if (any) songs.push({ n: t.n, title: t.t, img: t.img || "", files });
+      if (any) songs.push({ n: t.n, title: t.t, img: t.img || "", doc: t.doc || {}, lrc: t.lrc || {}, lrcEdit: t.lrcEdit || {}, files });
     });
     return songs;
   }
@@ -229,8 +271,8 @@
   /* eine Datei laden: Englisch über Backblaze, Deutsch über Oracle */
   async function fetchOne(it) {
     if (it.lang === "de") {
-      try { return await jget(`${oraBase()}/api/bes-sync?action=get&key=${encodeURIComponent(it.key)}`, { headers: wh() }, 2); }
-      catch (e) { if (e.fatal) return await jget(`${oraBase()}/api/bes-sync?action=get&key=${encodeURIComponent(it.key)}`, { headers: wh() }, 1); throw e; }
+      try { return await jget(`${oraBase()}/api/bes-sync?action=get&key=${encodeURIComponent(it.key)}&u=${encodeURIComponent(it.url)}`, { headers: wh() }, 2); }
+      catch (e) { if (e.fatal) return await jget(`${oraBase()}/api/bes-sync?action=get&key=${encodeURIComponent(it.key)}&u=${encodeURIComponent(it.url)}`, { headers: wh() }, 1); throw e; }
     }
     return jget(`${base()}/api/bes-sync?action=get&key=${encodeURIComponent(it.key)}&u=${encodeURIComponent(it.url)}`, { headers: wh() }, 2);
   }
@@ -282,8 +324,9 @@
       try {
         for (let i = 0; i < 400; i++) {
           msg(`Lösche … (${total} Einträge gelöscht)`, "busy");
-          const j = await jget(`${base()}/api/bes-sync?action=purge&prefix=${encodeURIComponent("bes-Lieder-de-")}`, { method: "POST", headers: wh() }, 2);
-          total += j.geloescht; if (!j.rest || !j.geloescht) break;
+          let rest = 0;
+          for (const px of ["bes-Lieder-de-mp3/", "bes-Lieder-de-mp4/"]) { const j = await jget(`${base()}/api/bes-sync?action=purge&prefix=${encodeURIComponent(px)}`, { method: "POST", headers: wh() }, 2); total += j.geloescht; if (j.rest && j.geloescht) rest = 1; }
+          if (!rest) break;
         }
         say0(`Backblaze: ${total} deutsche Einträge gelöscht.`);
       } catch (e) { say0("Löschen: " + e.message); msg("Löschen abgebrochen: " + e.message, "bad"); }
@@ -347,6 +390,7 @@
       const tl = h("button", "chip", "Titelliste speichern"); tl.type = "button"; tl.title = "Schreibt die Liste der vorhandenen Lieder, die der Player verwendet"; tl.onclick = async () => { if (!(await ensurePw())) return; try { const n = await postManifest(); say0(`Titelliste gespeichert (${n} Lieder).`); msg(`Titelliste gespeichert (${n} Lieder).`, "ok"); } catch (e) { say0("Titelliste: " + e.message); msg("Titelliste: " + e.message, "bad"); } }; acts.append(tl);
       const op = h("button", "chip", "Besondere Lieder öffnen"); op.type = "button"; op.onclick = async () => { await openBes(); }; acts.append(op);
       ban.append(acts);
+      ban.append(h("p", "fo-sub", `Liedtexte (LRC): Englisch ${m.lrcCount.en} · Deutsch ${m.lrcCount.de} · bearbeitet/KI ${m.lrcCount.edit} von ${m.tracks.length} Liedern`));
       const tab = h("div", "fo-tab");
       ["Art", "Auf dem Server", "Auf jw.org", "Neu zum Laden"].forEach((x, i) => tab.append(h("span", "fo-th" + (i ? " r" : ""), x)));
       stats.forEach((x) => {
@@ -464,5 +508,5 @@
     const kinds = KINDS.map(([l, f, name]) => { let have = 0, pub = 0, ready = 0, bytes = 0; m.tracks.forEach((t) => { const k = t.k[kid(l, f)]; if (!k) return; pub++; if (k.have) have++; else { ready++; bytes += k.size || 0; } }); return { name, have, pub, ready, bytes, total: m.tracks.length }; });
     return { stand: P.stand, total: m.tracks.length, kinds, usedB: m.usedB, usedO: m.usedO, limit: LIMIT, legacy: m.legacy.length, extra: m.extra.length };
   }
-  window.BES = { summary, openBes, base, oraBase, urlFor, mount, switchLib, build, loadManifest, current: cur };
+  window.BES = { fetchLrc, putLrc, summary, openBes, base, oraBase, urlFor, mount, switchLib, build, loadManifest, current: cur };
 })();
