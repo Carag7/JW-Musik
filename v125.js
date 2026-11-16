@@ -481,6 +481,75 @@
       sec.append(grid); box.append(sec);
     });
   }
+  /* ---------- Dashboard: alle Synchronisationen auf einen Blick ---------- */
+  const fsz = (b) => (b >= 1024 ** 3 ? (b / 1024 ** 3).toFixed(2) + " GB" : b >= 1024 ** 2 ? Math.round(b / 1024 ** 2) + " MB" : b ? Math.max(1, Math.round(b / 1024)) + " KB" : "0");
+  function dashBar(label, used, limit) {
+    const w = h("div", "dash-mem"), pct = Math.min(100, (used / (limit || 1)) * 100);
+    w.append(h("div", "dash-memt", `${label}: ${fsz(used)} von ${fsz(limit)} (${Math.round(pct)} %)`));
+    const bar = h("div", "fo-bar"), i = h("i"); i.style.width = pct + "%"; if (pct > 90) i.style.background = COL.red; else if (pct > 75) i.style.background = COL.orange; bar.append(i); w.append(bar); return w;
+  }
+  function dashCard(title, tab, linkText) {
+    const c = h("section", "st-card dash-card"); const hd = h("div", "dash-hd"); hd.append(h("h4", "", title));
+    if (tab) { const b = h("button", "chip dash-go", linkText || "Öffnen →"); b.type = "button"; b.onclick = () => showSetTab(tab); hd.append(b); }
+    c.append(hd); return c;
+  }
+  async function mountDash() {
+    const box = $("dashBox"); if (!box) return;
+    box.replaceChildren(h("p", "ap-title", "Dashboard: Synchronisationen auf einen Blick"), h("small", "set-hint", "Lade Zahlen …"));
+    let st = null; try { st = window.FEHLEND && await FEHLEND.stats(); } catch (e) { console.error(e); }
+    box.replaceChildren(h("p", "ap-title", "Dashboard: Synchronisationen auf einen Blick"));
+    box.append(h("small", "set-hint", "Tippe bei einer Karte auf den Knopf oben rechts, um zu den Einzelheiten zu springen."));
+    const grid = h("div", "st-grid dash-grid");
+    /* 1) Karaoke-Lieder (Fehlende Lieder) */
+    [["en", "Englisch"], ["de", "Deutsch"]].forEach(([lg, ln]) => {
+      const c = dashCard(`Karaoke · ${ln}`, "fehlend", "Fehlende Lieder →");
+      const rows = st && st[lg] ? st[lg].rows : [];
+      if (!rows.length) { c.append(h("small", "set-hint bad", "Server-Zahlen nicht verfügbar. Bitte später noch einmal öffnen.")); grid.append(c); return; }
+      const ready = rows.reduce((a, r) => a + r.ready, 0), none = rows.reduce((a, r) => a + r.none, 0), server = rows.reduce((a, r) => a + r.server, 0), tot = rows.reduce((a, r) => a + r.total, 0), bytes = rows.reduce((a, r) => a + (r.bytes || 0), 0);
+      const pie = [{ n: "auf dem Server", v: server, c: COL.ok }, { n: "zum Laden bereit", v: ready, c: COL.orange }, { n: "fehlt", v: none, c: COL.miss }];
+      const pr = h("div", "st-pies"), p1 = h("div", "st-pie"); p1.append(donut(pie, 110, `Karaoke ${ln}`), legend(pie, tot)); pr.append(p1); c.append(pr);
+      c.append(h("small", ready ? "set-hint" : "set-hint ok", ready ? `${ready} Dateien warten auf jw.org-Abgleich/Download` : "✓ nichts zu laden"));
+      c.append(h("small", "set-hint", `Speicher auf dem Server: ${fsz(bytes)}`));
+      const ga = h("button", "chip dash-go", "Diagramme →"); ga.type = "button"; ga.onclick = () => showSetTab("syncstat"); c.append(ga);
+      grid.append(c);
+    });
+    /* 2) Besondere Lieder */
+    const bc = dashCard("Besondere Lieder", "bes", "Besondere Lieder →");
+    const bs = window.BES && BES.summary ? BES.summary() : null;
+    if (!bs) { bc.append(h("small", "set-hint", "Noch nicht abgeglichen."), (() => { const b = h("button", "chip fo-go", "Jetzt abgleichen →"); b.type = "button"; b.onclick = () => showSetTab("bes"); return b; })()); }
+    else {
+      const have = bs.kinds.reduce((a, k) => a + k.have, 0), ready = bs.kinds.reduce((a, k) => a + k.ready, 0), nojw = bs.kinds.reduce((a, k) => a + (k.total - k.pub), 0), rb = bs.kinds.reduce((a, k) => a + k.bytes, 0);
+      const pie = [{ n: "auf dem Server", v: have, c: COL.ok }, { n: "zum Laden bereit", v: ready, c: COL.orange }, { n: "nicht auf jw.org", v: nojw, c: COL.miss }];
+      const pr = h("div", "st-pies"), p1 = h("div", "st-pie"); p1.append(donut(pie, 110, "Besondere Lieder"), legend(pie, have + ready + nojw)); pr.append(p1); bc.append(pr);
+      bc.append(vbars(bs.kinds.map((k, i) => [k.name.replace("Englisch", "EN").replace("Deutsch", "DE"), k.have, [COL.ok, COL.green, COL.ed, COL.orange][i]]), bs.total, 90));
+      bc.append(h("small", ready ? "set-hint" : "set-hint ok", ready ? `${ready} Dateien (${fsz(rb)}) zum Laden bereit` : "✓ alles geladen"));
+      bc.append(h("small", "set-hint", `Letzter Abgleich: ${bs.stand}`));
+      if (bs.legacy) bc.append(h("small", "set-hint bad", `${bs.legacy} deutsche Dateien liegen noch in Backblaze (können gelöscht werden)`));
+    }
+    grid.append(bc);
+    /* 3) Speicher */
+    const sc = dashCard("Speicherplatz", bs ? "bes" : "", "Einzelheiten →");
+    if (bs) { sc.append(dashBar("Backblaze (Englisch)", bs.usedB, bs.limit), dashBar("Oracle (Deutsch)", bs.usedO, bs.limit)); }
+    else sc.append(h("small", "set-hint", "Backblaze/Oracle: erst nach dem Abgleich unter „Besondere Lieder“."));
+    if (st) { const all = ["en", "de"].reduce((a, lg) => a + (st[lg] ? st[lg].rows.reduce((x, r) => x + (r.bytes || 0), 0) : 0), 0); sc.append(h("small", "set-hint", `Karaoke-Server (R2): ${fsz(all)}`)); }
+    grid.append(sc);
+    /* 4) Texte (LRC) */
+    const tc = dashCard("Karaoke-Texte", "syncstat", "Diagramme →");
+    if (st) {
+      const parts = []; [["en", "EN"], ["de", "DE"]].forEach(([lg, n]) => { (st[lg] ? st[lg].rows : []).forEach((r) => parts.push([`${n} ${r.name}`.slice(0, 14), r.lrc, r.lrcMiss, r.total])); });
+      const tot = parts.reduce((a, p) => Math.max(a, p[3]), 0);
+      tc.append(vbars(parts.map((p) => [p[0], p[1], COL.ok]), tot, 90));
+      tc.append(h("small", "set-hint", `Texte fehlen noch: ${parts.reduce((a, p) => a + p[2], 0)} (alle Arten zusammen)`));
+    } else tc.append(h("small", "set-hint bad", "Nicht verfügbar."));
+    grid.append(tc);
+    /* 5) Wochenlieder */
+    const wc = dashCard("Wochenlieder LuD+WT", "ludwt", "Wochenlieder →");
+    let wn = 0; try { wn = window.LUDWT && LUDWT.weekCount ? LUDWT.weekCount() : 0; } catch { /* egal */ }
+    wc.append(h("div", "dash-big", String(wn)), h("small", "set-hint", wn ? "Wochen in der Liste" : "Noch nicht geladen – im Reiter aktualisieren"));
+    grid.append(wc);
+    box.append(grid);
+  }
+
   async function mountStat() {
     const box = $("statBox"); if (!box) return;
     box.replaceChildren(h("p", "ap-title", "Diagramme: Stand der Karaoke-Texte"));
@@ -528,7 +597,7 @@
   /* ---------- Reiter-Gruppen ---------- */
   const GRP = {
     daten: ["Sichern", [["abgleich", "Favoriten-Abgleich"], ["sichern", "Daten"], ["voreinst", "Voreinstellungen"]]],
-    sync: ["Synchronisieren", [["fehlend", "Fehlende Lieder"], ["bes", "Besondere Lieder"], ["syncstat", "Diagramme"], ["ludwt", "Wochenlieder LuD+WT"]]],
+    sync: ["Synchronisieren", [["dash", "Dashboard"], ["fehlend", "Fehlende Lieder"], ["bes", "Besondere Lieder"], ["syncstat", "Diagramme"], ["ludwt", "Wochenlieder LuD+WT"]]],
     bewert: ["Anpassungen", [["bew", "Bewertungen"], ["kihist", "KI-Verlauf"], ["stat", "Diagramme"], ["zeit", "Zeiten EN⇄DE"]]]
   };
   const grpOf = (t) => Object.keys(GRP).find((g) => GRP[g][1].some((x) => x[0] === t)) || "";
@@ -546,7 +615,7 @@
     document.querySelectorAll("#setTabs [data-grp]").forEach((b) => { if (b._v125) return; b._v125 = true; b.addEventListener("click", () => showSetTab(lastSub[b.dataset.grp] || GRP[b.dataset.grp][1][0][0])); });
     const o = window.showSetTab;
     if (typeof o === "function" && !o._v125) {
-      const w = function (t) { o(t); try { applyWide(); paintGrp(t); if (t === "bew") mountBew(); else if (t === "kihist") mountKih(); else if (t === "stat") mountStat(); else if (t === "syncstat") mountSyncStat(); else if (t === "zeit" && window.V132) V132.mount(); else if (t === "ludwt" && window.LUDWT && LUDWT.mountSync) LUDWT.mountSync(); } catch (e) { console.error(e); } };
+      const w = function (t) { o(t); try { applyWide(); paintGrp(t); if (t === "bew") mountBew(); else if (t === "kihist") mountKih(); else if (t === "stat") mountStat(); else if (t === "syncstat") mountSyncStat(); else if (t === "dash") mountDash(); else if (t === "zeit" && window.V132) V132.mount(); else if (t === "ludwt" && window.LUDWT && LUDWT.mountSync) LUDWT.mountSync(); } catch (e) { console.error(e); } };
       w._v125 = true; window.showSetTab = w;
     }
   }

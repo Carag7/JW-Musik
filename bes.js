@@ -46,7 +46,7 @@
       if (f.en && f.en.mp4) media.meeting.video[n] = f.en.mp4;
       if (f.de && f.de.mp3) media.de.meeting.audio[n] = f.de.mp3;
       if (f.de && f.de.mp4) media.de.meeting.video[n] = f.de.mp4;
-      songs.push({ id: pad(n) + "b", number: n, title: t.en || t.de || `Lied ${n}`, _de: t.de || t.en || "", category: "", bes: true, extra: false });
+      songs.push({ id: pad(n) + "b", number: n, title: t.en || t.de || `Lied ${n}`, _de: t.de || t.en || "", category: "", bes: true, extra: false, cover: /^https:\/\//.test(s.img || "") ? s.img : "" });
     }
     wrapTitles(songs);
     songs.sort((a, b) => a.number - b.number);
@@ -78,6 +78,21 @@
     } catch (e) {
       if (!quiet) await uiAlert("Besondere Lieder", `Die Liste der Besonderen Lieder konnte nicht geladen werden (${(e && e.message) || e}). Prüfe im Reiter „Besondere Lieder“ die Worker-Adresse und gleiche mit jw.org ab.`);
     } finally { busy = false; paintSwitch(); }
+  }
+  /* Besondere Lieder zeigen: Einstellungen schließen, Liste umschalten bzw. neu aufbauen, Auswahlfenster öffnen */
+  async function openBes() {
+    manifest = null;
+    try {
+      if (cur() === "bes") {
+        const m = await loadManifest(true), n = build(m);
+        state.songs = n.songs; state.media = n.media; state.index = -1; state.category = "";
+        fillCategories(); renderList(); updateVersionBar();
+        el.status.textContent = `${state.songs.length} Besondere Lieder`;
+      } else await switchLib("bes");
+    } catch (e) { await uiAlert("Besondere Lieder", `Die Liste konnte nicht geladen werden (${(e && e.message) || e}).`); return; }
+    if (cur() !== "bes") return;
+    const f = document.getElementById("codeModal"); if (f) f.hidden = true;
+    try { if (state.mode !== "songs" || !state.sidebarOpen) document.getElementById("menuToggle").click(); } catch { /* egal */ }
   }
   /* geladene Standard-Funktionen dürfen den Bestand nicht überschreiben, solange „Besondere Lieder“ aktiv sind */
   function guard(name) {
@@ -140,6 +155,7 @@
   const wh = () => (pw() ? { "x-write-key": pw() } : {});
 
   /* Liste von jw.org: zuerst direkt, sonst über den Worker */
+  const imgOf = (x) => { const i = x.trackImage || x.image || {}; const u = i.url || (i.sizes && (i.sizes.md || i.sizes.lg || i.sizes.sm)) || ''; return /^https:\/\//.test(u) ? u : ''; };
   function parseJw(d, lang, fmt) {
     const code = lang === "de" ? "X" : "E";
     const files = (d.files && d.files[code]) || {};
@@ -151,10 +167,10 @@
         const hh = Number(x.frameHeight || String(x.label || "").replace(/\D/g, "") || 0);
         const score = fmt === "mp3" ? 1 : (hh <= 720 ? hh : 1);
         const old = best.get(track);
-        if (!old || score > old.score) best.set(track, { track, title: String(x.title || "").replace(/\s+/g, " ").trim(), url, size: Number(x.filesize || 0), score });
+        if (!old || score > old.score) best.set(track, { track, title: String(x.title || "").replace(/\s+/g, " ").trim(), url, size: Number(x.filesize || 0), score, img: imgOf(x) });
       }
     }
-    return [...best.values()].map((it) => ({ track: it.track, title: it.title, url: it.url, size: it.size, key: `${FOLDER(lang, fmt)}/${decodeURIComponent(it.url.split("?")[0].split("/").pop())}` }));
+    return [...best.values()].map((it) => ({ track: it.track, title: it.title, url: it.url, size: it.size, img: it.img, key: `${FOLDER(lang, fmt)}/${decodeURIComponent(it.url.split("?")[0].split("/").pop())}` }));
   }
   async function jwList(lang, fmt) {
     const code = lang === "de" ? "X" : "E", ff = fmt === "mp3" ? "MP3" : "MP4,M4V";
@@ -183,8 +199,9 @@
     const oKeys = new Set(P.haveO.map((o) => o.key));
     const tracks = new Map();
     P.items.forEach((it) => {
-      const t = tracks.get(it.track) || { n: it.track, t: { en: "", de: "" }, k: {} };
+      const t = tracks.get(it.track) || { n: it.track, t: { en: "", de: "" }, img: "", k: {} };
       if (it.title) t.t[it.lang] = it.title;
+      if (it.img && !t.img) t.img = it.img;
       /* Deutsch zählt nur, wenn die Datei auf Oracle liegt, Englisch nur, wenn sie auf Backblaze liegt */
       const have = it.lang === "de" ? oKeys.has(it.key) : hv.has(it.key);
       t.k[kid(it.lang, it.fmt)] = { ...it, have, hsize: have ? hv.get(it.key) : 0 };
@@ -200,7 +217,7 @@
     m.tracks.forEach((t) => {
       const files = { en: {}, de: {} }; let any = false;
       for (const [l, f] of KINDS) { const k = t.k[kid(l, f)]; if (k && k.have) { files[l][f] = k.key; any = true; } }
-      if (any) songs.push({ n: t.n, title: t.t, files });
+      if (any) songs.push({ n: t.n, title: t.t, img: t.img || "", files });
     });
     return songs;
   }
@@ -285,6 +302,24 @@
         inp.onchange = () => { lss(k, inp.value.trim() || def); manifest = null; }; row.append(inp); adr.append(row);
       });
       box.append(adr);
+      const tb = h("button", "chip", "Verbindung testen (Backblaze + Oracle)"); tb.type = "button";
+      tb.onclick = async () => {
+        tb.disabled = true; say0("— Verbindungstest —");
+        const one = async (label, b, key) => {
+          try { const j = await (await fetch(`${b}/api/status`)).json(); say0(`${label}: Worker „${j.name || "?"}“, Bucket „${j.bucket || "?"}“, konfiguriert: ${j.konfiguriert}`); } catch (e) { say0(`${label}: Status nicht lesbar (${e.message})`); }
+          if (!key) { say0(`${label}: keine Datei zum Testen bekannt – erst abgleichen`); return; }
+          const u = urlFor(key);
+          try { const r = await fetch(u, { headers: { range: "bytes=0-1" } }); say0(`${label}: ${u}\n   → HTTP ${r.status}, ${r.headers.get("content-type") || "ohne Typ"}, Länge ${r.headers.get("content-length")}, Bereich ${r.headers.get("content-range") || "–"}, Ranges ${r.headers.get("accept-ranges") || "–"}`); }
+          catch (e) { say0(`${label}: ${u}\n   → Fehler: ${e.message}`); }
+        };
+        const kB = P && (P.haveB.find((o) => /^bes-Lieder-en-mp4/.test(o.key)) || P.haveB.find((o) => /^bes-Lieder-en-/.test(o.key)));
+        const kO = P && (P.haveO.find((o) => /mp4/.test(o.key)) || P.haveO[0]);
+        await one("Backblaze (Englisch)", base(), kB && kB.key);
+        await one("Oracle (Deutsch)", oraBase(), kO && kO.key);
+        if (P) { const same = P.haveO.filter((o) => P.haveB.some((x) => x.key === o.key)).length; say0(`Dateien, die in BEIDEN Speichern liegen: ${same} (nach dem Löschen in Backblaze sollte 0 erscheinen)`); }
+        tb.disabled = false;
+      };
+      box.append(tb);
       if (!P) {
         const b = h("div", "fo-banner fo-warn fl-status"); const t = h("div", "fo-head"); t.append(h("span", "ls-dot busy"), h("b", "", "⚠ Noch nicht abgeglichen"));
         b.append(t, h("p", "fo-sub", "Englisch liegt bei Backblaze, Deutsch bei Oracle. Tippe auf „Mit jw.org abgleichen“, um zu sehen, was fehlt."));
@@ -310,7 +345,7 @@
       if (ready.length) { const g = h("button", "chip fo-go", `Alle ${ready.length} laden (${fmtSize(rbytes)})`); g.type = "button"; g.onclick = () => loadMany(ready, true); acts.append(g); }
       const c = h("button", "chip", "Mit jw.org abgleichen"); c.type = "button"; c.onclick = check; acts.append(c);
       const tl = h("button", "chip", "Titelliste speichern"); tl.type = "button"; tl.title = "Schreibt die Liste der vorhandenen Lieder, die der Player verwendet"; tl.onclick = async () => { if (!(await ensurePw())) return; try { const n = await postManifest(); say0(`Titelliste gespeichert (${n} Lieder).`); msg(`Titelliste gespeichert (${n} Lieder).`, "ok"); } catch (e) { say0("Titelliste: " + e.message); msg("Titelliste: " + e.message, "bad"); } }; acts.append(tl);
-      const op = h("button", "chip", "Besondere Lieder öffnen"); op.type = "button"; op.onclick = async () => { manifest = null; await switchLib("bes"); const f = document.getElementById("codeModal"); if (f && state.lib === "bes") f.hidden = true; }; acts.append(op);
+      const op = h("button", "chip", "Besondere Lieder öffnen"); op.type = "button"; op.onclick = async () => { await openBes(); }; acts.append(op);
       ban.append(acts);
       const tab = h("div", "fo-tab");
       ["Art", "Auf dem Server", "Auf jw.org", "Neu zum Laden"].forEach((x, i) => tab.append(h("span", "fo-th" + (i ? " r" : ""), x)));
@@ -422,5 +457,12 @@
     }
   }
   if (document.readyState === "complete") start(); else window.addEventListener("load", start);
-  window.BES = { base, oraBase, urlFor, mount, switchLib, build, loadManifest, current: cur };
+  /* Kurzfassung für das Dashboard */
+  function summary() {
+    if (!P) return null;
+    const m = model();
+    const kinds = KINDS.map(([l, f, name]) => { let have = 0, pub = 0, ready = 0, bytes = 0; m.tracks.forEach((t) => { const k = t.k[kid(l, f)]; if (!k) return; pub++; if (k.have) have++; else { ready++; bytes += k.size || 0; } }); return { name, have, pub, ready, bytes, total: m.tracks.length }; });
+    return { stand: P.stand, total: m.tracks.length, kinds, usedB: m.usedB, usedO: m.usedO, limit: LIMIT, legacy: m.legacy.length, extra: m.extra.length };
+  }
+  window.BES = { summary, openBes, base, oraBase, urlFor, mount, switchLib, build, loadManifest, current: cur };
 })();

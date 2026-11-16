@@ -1256,6 +1256,7 @@ function updateSourceFilterUi() {
   const chipRow = document.createElement("div"); chipRow.className = "src-chips";
   box.append(lab, chipRow);
   SRC_TYPES.forEach(([id, name]) => {
+    if (state.lib === "bes" && id === "sung") return;   /* Besondere Lieder: keine Zusammenkünfte */
     const b = document.createElement("button");
     b.type = "button"; b.className = `chip src-chip src-${id}`; b.textContent = name;
     b.setAttribute("aria-pressed", String(set.has(id)));
@@ -1341,6 +1342,7 @@ function updateVersionBar() {
   bar.querySelectorAll(".seg-btn[data-ver]").forEach((btn) => {
     const v = btn.dataset.ver;
     btn.disabled = !avail[v];
+    btn.hidden = Boolean(song.bes && v === "sung");   /* Besondere Lieder: keine Zusammenkünfte-Fassung */
     btn.setAttribute("aria-pressed", String(state.curVersion === v));
   });
   const view = document.getElementById("verView");
@@ -2166,6 +2168,8 @@ function armTap() {
     types.forEach((type) => document.removeEventListener(type, arm, true));
     state.armed = false;
     if (e && e.target && e.target.closest && e.target.closest("#playBtn, #autoStartBtn, #loginGate")) return;   // der Tipp selbst startet/steuert schon
+    /* Tipp auf Reiter oder Auswahlfenster: nicht losspielen (das würde das Auswahlfenster gleich wieder schließen), Tipp-Start bleibt scharf */
+    if (e && e.target && e.target.closest && e.target.closest("#menuToggle, #eigeneToggle, #ludwtToggle, #sidebar, #closeSidebar")) { setTimeout(armTap, 0); return; }
     if (el.audio.paused && !state.userPaused) togglePlay();
   };
   types.forEach((type) => document.addEventListener(type, arm, true));
@@ -2948,6 +2952,7 @@ function bind() {
       el.status.textContent = state.curVersion === "video"
         ? `Video lässt sich nicht abspielen (Fehler ${c}${c === 4 ? ": Datei nicht gefunden oder Format/Codec nicht unterstützt – bitte als MP4 mit H.264 + AAC ablegen" : ""}).`
         : `${state.curVersion === "sung" ? "Zusammenkünfte-Datei" : "Instrumental-Datei"} lässt sich nicht abspielen (Fehler ${c}).`;
+      if (song && song.bes) { try { const u = new URL(el.audio.currentSrc || el.audio.src); el.status.textContent += ` Quelle: ${u.host}${decodeURIComponent(u.pathname).slice(0, 60)}`; } catch { /* egal */ } }
       return;
     }
     const list = song ? audioCandidates(song) : [];

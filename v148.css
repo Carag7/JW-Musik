@@ -247,3 +247,10 @@ body.lib-bes .lib-switch .lib-btn[data-lib="bes"] { background: rgba(240,138,0,.
 .icon-pick[aria-pressed="true"]{border-color:#e8b84a}
 .icon-row{margin-top:6px}
 body.ludwt-mode .lib-switch { display: none; }
+/* v190: Dashboard */
+.dash-grid{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.dash-hd{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.dash-hd h4{margin:0}
+.dash-go{white-space:nowrap}
+.dash-mem{margin:8px 0}.dash-memt{font-size:13px;margin-bottom:4px}
+.dash-big{font-size:42px;font-weight:800;margin:6px 0}

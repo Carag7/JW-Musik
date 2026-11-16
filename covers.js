@@ -67,10 +67,10 @@
     return fetchMap(id, false).then((m) => { if (m && Object.keys(m).length) setMaps[id] = { t: Date.now(), map: m }; return m || {}; });
   }
   const urlOfKey = (key) => imgUrl(key);
-  const keyOf = (song) => { const n = numOf(song); return n ? map[String(n)] : ""; };
+  const keyOf = (song) => { if (song && song.bes) return ""; const n = numOf(song); return n ? map[String(n)] : ""; };
   const imgUrl = (key) => `${base()}/media/${key.split("/").map(encodeURIComponent).join("/")}`;
   /* neues Cover (Adresse) oder leer; immer, auch wenn die Anzeige auf „alt“ steht – für die Galerie */
-  const newUrl = (song) => { const k = keyOf(song); return k ? imgUrl(k) : ""; };
+  const newUrl = (song) => { if (song && song.bes) return song.cover || ""; const k = keyOf(song); return k ? imgUrl(k) : ""; };   /* Besondere Lieder: eigenes Cover (von jw.org), nie die Cover der normalen Lieder */
   /* Cover für die Anzeige im Programm: gemäß Einstellung, sonst das alte Bild */
   const src = (song) => (mode() === "neu" && song && newUrl(song)) || OLD;
   const has = (song) => !!(song && newUrl(song));
