@@ -17,19 +17,22 @@
   /* ---------- Titelliste laden ---------- */
   async function loadManifest(fresh) {
     if (!fresh && manifest) return manifest;
+    let m = null, err = null;
     try {
       const res = await fetch(`${base()}/bes/songs.json`, { cache: "no-store" });
       if (!res.ok) { let t = ""; try { t = ((await res.json()).fehler) || ""; } catch { /* egal */ } throw new Error(`HTTP ${res.status} ${t}`.trim()); }
-      const m = await res.json();
-      if (!m || !Array.isArray(m.songs)) throw new Error("keine Liste");
-      if (!m.songs.length) throw new Error("noch keine Titelliste – im Reiter „Besondere Lieder“ abgleichen und Dateien laden");
-      manifest = m;
-      try { localStorage.setItem("besCache", JSON.stringify(m)); } catch { /* egal */ }
-    } catch (e) {
-      try { manifest = JSON.parse(localStorage.getItem("besCache") || "null"); } catch { manifest = null; }
-      if (!manifest) throw e;
-    }
-    return manifest;
+      m = await res.json();
+      if (!m || !Array.isArray(m.songs)) { m = null; throw new Error("keine Liste"); }
+    } catch (e) { err = e; m = null; }
+    /* Titelliste leer, fehlt oder ist älter als der letzte Abgleich: Lieder direkt aus dem Abgleich (Backblaze, Oracle, jw.org) aufbauen */
+    try {
+      if (!m || !m.songs.length) { if (!P) await runCheck(() => {}); }
+      if (P) { const own = buildManifest(model()); if (!m || own.length > m.songs.length) m = { ok: true, updated: P.stand, songs: own }; }
+    } catch (e) { if (!err) err = e; }
+    if (!m || !m.songs.length) throw new Error(err ? ((err && err.message) || String(err)) : "noch keine Besonderen Lieder vorhanden – im Reiter „Besondere Lieder“ abgleichen und Dateien laden");
+    manifest = m;
+    try { localStorage.setItem("besCache", JSON.stringify(m)); } catch { /* egal */ }
+    return m;
   }
   /* aus der Titelliste: Lieder + Dateiverzeichnis im Format der App */
   function build(m) {
