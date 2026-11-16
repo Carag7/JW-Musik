@@ -246,3 +246,4 @@ body.lib-bes .lib-switch .lib-btn[data-lib="bes"] { background: rgba(240,138,0,.
 .icon-pick img{width:100%;aspect-ratio:1;border-radius:14px;display:block}
 .icon-pick[aria-pressed="true"]{border-color:#e8b84a}
 .icon-row{margin-top:6px}
+body.ludwt-mode .lib-switch { display: none; }

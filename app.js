@@ -1120,7 +1120,7 @@ async function toggleUnsynced() {
 }
 
 /* ---------- Fassungen: Karaoke / Instrumental / Video (Dateiverzeichnis aus dem Worker) ---------- */
-const mediaUrl = (key) => `${/^bes-Lieder-/.test(key) ? (window.BES ? window.BES.base() : SYNC_BASE) : SYNC_BASE}/media/${key.split("/").map(encodeURIComponent).join("/")}`;
+const mediaUrl = (key) => (/^bes-Lieder-/.test(key) && window.BES ? window.BES.urlFor(key) : `${SYNC_BASE}/media/${key.split("/").map(encodeURIComponent).join("/")}`);
 /* Sprache der Musik: "en" (Standard, Ordner karaoke/ + meeting/) oder "de" (R2-Ordner musik_de/, im media-index unter "de") */
 const emptyMedia = () => ({ karaoke: { audio: {}, lrc: {} }, meeting: { audio: {}, video: {}, lrc: {}, sung: {}, sungLrc: {} } });
 const musikLang = () => (lsv("musikLang", "en") === "de" ? "de" : "en");
