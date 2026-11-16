@@ -972,6 +972,7 @@ function showLyricLink(song) {
 /* Liedtext der gesungenen Karaoke-Fassung (Server -> Browser -> lyrics/ -> GitHub) */
 async function fetchKaraokeLines(song, stale, forceLang) {
   state.lyricLang = "en";
+  if (song.bes && window.BES && BES.fetchLrc) { const bl = await BES.fetchLrc(song, stale); state.lyricLang = musikLang(); return bl; }
   if ((forceLang || musikLang()) === "de") {
     /* deutscher Karaoketext: erst eigener Speicher (lrcde-<nr>), dann Datei in musik_de/ */
     try {

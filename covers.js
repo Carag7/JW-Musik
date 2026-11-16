@@ -364,6 +364,7 @@
     const cats = [...new Set(state.songs.map((s) => s.category).filter(Boolean))];
     cat.append(new Option("Alle Kategorien", "")); cats.forEach((c) => cat.append(new Option(c, c))); cat.value = G.cat;
     cat.addEventListener("change", () => { G.cat = cat.value; paintGallery(); });
+    gal._cat = cat;
     const srt = document.createElement("select"); srt.className = "cg-sel"; srt.setAttribute("aria-label", "Sortierung");
     [["num", "Nummer"], ["name", "Titel A–Z"], ["cat", "Kategorie"]].forEach(([v, n]) => srt.append(new Option(n, v))); srt.value = G.sort;
     srt.addEventListener("change", () => { G.sort = srt.value; paintGallery(); });
@@ -490,8 +491,19 @@
     im.src = u || OLD; if (!u) im.classList.add("old");
     return im;
   }
+  /* Kategorie-Auswahl immer passend zu den gerade geladenen Liedern (Lieder werden oft erst nach dem Öffnen geladen; Besondere Lieder haben keine Kategorien) */
+  function refillCats() {
+    const cat = gal && gal._cat; if (!cat) return;
+    const cats = [...new Set(state.songs.map((s) => s.category).filter(Boolean))].sort((a, b) => a.localeCompare(b, "de"));
+    const sig = cats.join("|"); if (cat._sig === sig) return;
+    cat._sig = sig; cat.replaceChildren(new Option("Alle Kategorien", ""));
+    cats.forEach((n) => cat.append(new Option(n, n)));
+    if (!cats.includes(G.cat)) G.cat = "";
+    cat.value = G.cat; cat.hidden = !cats.length;
+  }
   function paintGallery(force) {
     if (!gal) return;
+    refillCats();
     const r = gal._r, list = songsFiltered(), now = cur();
     const withCover = state.songs.filter(has).length;
     r.cnt.textContent = `${list.length} Lieder · ${withCover} mit Cover`;

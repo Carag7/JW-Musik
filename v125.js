@@ -482,10 +482,11 @@
     });
   }
   /* ---------- Dashboard: alle Synchronisationen auf einen Blick ---------- */
-  const fsz = (b) => (b >= 1024 ** 3 ? (b / 1024 ** 3).toFixed(2) + " GB" : b >= 1024 ** 2 ? Math.round(b / 1024 ** 2) + " MB" : b ? Math.max(1, Math.round(b / 1024)) + " KB" : "0");
-  function dashBar(label, used, limit) {
-    const w = h("div", "dash-mem"), pct = Math.min(100, (used / (limit || 1)) * 100);
-    w.append(h("div", "dash-memt", `${label}: ${fsz(used)} von ${fsz(limit)} (${Math.round(pct)} %)`));
+  const fsz = (b) => (b >= 1e9 ? (b / 1e9).toFixed(2) + " GB" : b >= 1e6 ? Math.round(b / 1e6) + " MB" : b ? Math.max(1, Math.round(b / 1e3)) + " KB" : "0");
+  const fgi = (b) => (b >= 1024 ** 3 ? (b / 1024 ** 3).toFixed(2) + " GiB" : b >= 1024 ** 2 ? Math.round(b / 1024 ** 2) + " MiB" : b ? Math.max(1, Math.round(b / 1024)) + " KiB" : "0");
+  function dashBar(label, used, limit, f) {
+    f = f || fsz; const w = h("div", "dash-mem"), pct = Math.min(100, (used / (limit || 1)) * 100);
+    w.append(h("div", "dash-memt", `${label}: ${f(used)} von ${f(limit)} (${Math.round(pct)} %)`));
     const bar = h("div", "fo-bar"), i = h("i"); i.style.width = pct + "%"; if (pct > 90) i.style.background = COL.red; else if (pct > 75) i.style.background = COL.orange; bar.append(i); w.append(bar); return w;
   }
   function hstack(parts, total) {
@@ -535,8 +536,8 @@
     /* 3) Speicher */
     const sc = dashCard("Speicherplatz (alle drei)", "bes", "Einzelheiten →");
     const r2 = st ? ["en", "de"].reduce((a, lg) => a + (st[lg] ? st[lg].rows.reduce((x, r) => x + (r.bytes || 0), 0) : 0), 0) : 0;
-    sc.append(dashBar("R2 (Karaoke, Cloudflare)", r2, 10 * 1024 ** 3));
-    if (bs) { sc.append(dashBar("Backblaze (Englisch)", bs.usedB, bs.limit), dashBar("Oracle (Deutsch)", bs.usedO, bs.limit)); }
+    sc.append(dashBar("R2 (Karaoke, Cloudflare)", r2, 10e9));
+    if (bs) { sc.append(dashBar("Backblaze (Englisch)", bs.usedB, bs.limB), dashBar("Oracle (Deutsch)", bs.usedO, bs.limO, fgi)); }
     else sc.append(h("small", "set-hint", "Backblaze und Oracle: erst nach dem Abgleich unter „Besondere Lieder“."));
     sc.append(h("small", "set-hint", "Alle drei mit 10 GB gerechnet (Oracle ggf. mehr)."));
     grid.append(sc);

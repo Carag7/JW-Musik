@@ -50,13 +50,13 @@
     for (const s of m.songs) {
       const n = Number(s.n); if (!n) continue;
       const f = s.files || {}, t = s.title || {};
-      if (f.en && f.en.mp3) media.meeting.audio[n] = f.en.mp3;
+      if (f.en && f.en.mp3) media.karaoke.audio[n] = f.en.mp3;
       if (f.en && f.en.mp4) media.meeting.video[n] = f.en.mp4;
-      if (f.de && f.de.mp3) media.de.meeting.audio[n] = f.de.mp3;
+      if (f.de && f.de.mp3) media.de.karaoke.audio[n] = f.de.mp3;
       if (f.de && f.de.mp4) media.de.meeting.video[n] = f.de.mp4;
       const lr = s.lrc || {};
-      if (lr.en) media.meeting.lrc[n] = lr.en;
-      if (lr.de) media.de.meeting.lrc[n] = lr.de;
+      if (lr.en) media.karaoke.lrc[n] = lr.en;
+      if (lr.de) media.de.karaoke.lrc[n] = lr.de;
       const song = { id: pad(n) + "b", number: n, title: t.en || t.de || `Lied ${n}`, _de: t.de || t.en || "", category: "", bes: true, extra: false, lrcEdit: s.lrcEdit || {}, doc: s.doc || {}, img: /^https:\/\//.test(s.img || "") ? s.img : "" };
       Object.defineProperty(song, "cover", { enumerable: false, configurable: true, get() { const d = (song.doc && (song.doc[musikLang()] || song.doc.en || song.doc.de)) || 0; return d ? `https://assetsnffrgf-a.akamaihd.net/img/p/${d}/univ/art/${d}_univ_sqs_${coverSize}.jpg` : song.img; } });
       songs.push(song);
@@ -69,8 +69,8 @@
   /* ---------- Liedtexte (LRC): lesen (bearbeitet vor Original) und speichern ---------- */
   async function fetchLrc(song, stale) {
     const lg = musikLang(), n = String(song.number);
-    const plain = mediaKey("lrcm", song.number) || (state.media && state.media.meeting && state.media.meeting.lrc && state.media.meeting.lrc[n]) || "";
-    for (const key of [song.lrcEdit && song.lrcEdit[lg], plain]) {
+    const plain = mediaKey("klrc", song.number) || mediaKey("lrcm", song.number) || "";
+    for (const key of [song.lrcEdit && song.lrcEdit[lg], plain, lg === "de" ? (song.lrcEdit && song.lrcEdit.en) || (state.media && state.media.karaoke.lrc[n]) : ""]) {
       if (!key || !/^bes-Lieder-/.test(key)) continue;
       try {
         const res = await fetch(urlFor(key), { cache: "no-store" });
@@ -82,7 +82,7 @@
   }
   function putLrc(song, lrc, k) {
     const lg = musikLang(), n = String(song.number);
-    const old = (song.lrcEdit && song.lrcEdit[lg]) || (state.media && (lg === "de" ? state.media.de : state.media).meeting.lrc[n]) || "";
+    const old = (song.lrcEdit && song.lrcEdit[lg]) || mediaKey("klrc", song.number) || "";
     const name = old ? old.split("/").pop() : `osg_${lg === "de" ? "X" : "E"}_${String(song.number).padStart(3, "0")}.lrc`;
     const key = `bes-Lieder-${lg}-LRC-bearbeitet/${name}`;
     return fetch(`${baseFor(key)}/lrc/${key.split("/").map(encodeURIComponent).join("/")}`, { method: "PUT", headers: { "content-type": "text/plain", ...(k ? { "x-write-key": k } : {}) }, body: lrc })
@@ -158,8 +158,10 @@
   /* ---------- Reiter „Besondere Lieder“ (gleiche Übersicht wie „Fehlende Lieder“) ---------- */
   const KINDS = [["en", "mp3", "Englisch MP3"], ["en", "mp4", "Englisch Video"], ["de", "mp3", "Deutsch MP3"], ["de", "mp4", "Deutsch Video"]];
   const FOLDER = (l, f) => `bes-Lieder-${l}-${f}`;
-  const LIMIT = 10 * 1024 ** 3;
-  const fmtSize = (b) => b >= 1024 ** 3 ? `${(b / 1024 ** 3).toFixed(2)} GB` : b >= 1024 ** 2 ? `${Math.round(b / 1024 ** 2)} MB` : `${Math.max(1, Math.round(b / 1024))} KB`;
+  /* Backblaze (und macOS/jw.org) rechnen dezimal: 1 GB = 1.000.000.000 Byte; Oracle zeigt GiB (1.073.741.824 Byte) */
+  const LIMB = 10e9, LIMO = 10 * 1024 ** 3;
+  const fmtSize = (b) => b >= 1e9 ? `${(b / 1e9).toFixed(2)} GB` : b >= 1e6 ? `${Math.round(b / 1e6)} MB` : `${Math.max(1, Math.round(b / 1e3))} KB`;
+  const fmtI = (b) => b >= 1024 ** 3 ? `${(b / 1024 ** 3).toFixed(2)} GiB` : b >= 1024 ** 2 ? `${Math.round(b / 1024 ** 2)} MiB` : `${Math.max(1, Math.round(b / 1024))} KiB`;
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const opt = (k, d) => lsv(k, d ? "1" : "0") === "1";
   const kid = (l, f) => `${l}-${f}`;
@@ -295,8 +297,8 @@
       if (ask) {
         const bB = list.filter((i) => i.lang === "en").reduce((s, i) => s + (i.size || 0), 0), bO = list.filter((i) => i.lang === "de").reduce((s, i) => s + (i.size || 0), 0);
         const lines = [`${list.length} Dateien, ca. ${fmtSize(bytes)}.`];
-        if (bB) lines.push(`Backblaze (Englisch): danach ${fmtSize(m.usedB + bB)} von ${fmtSize(LIMIT)}${m.usedB + bB > LIMIT ? " – ÜBER der kostenlosen Grenze!" : ""}.`);
-        if (bO) lines.push(`Oracle (Deutsch): danach ${fmtSize(m.usedO + bO)} von ${fmtSize(LIMIT)}${m.usedO + bO > LIMIT ? " – ÜBER dem gebuchten Speicher!" : ""}.`);
+        if (bB) lines.push(`Backblaze (Englisch): danach ${fmtSize(m.usedB + bB)} von ${fmtSize(LIMB)}${m.usedB + bB > LIMB ? " – ÜBER der kostenlosen Grenze!" : ""}.`);
+        if (bO) lines.push(`Oracle (Deutsch): danach ${fmtI(m.usedO + bO)} von ${fmtI(LIMO)}${m.usedO + bO > LIMO ? " – ÜBER dem gebuchten Speicher!" : ""}.`);
         const go = await uiConfirm({ eyebrow: "Besondere Lieder", title: `${list.length} Dateien laden?`, lines, ok: "Laden" });
         if (!go) return;
       }
@@ -392,7 +394,7 @@
       ban.append(acts);
       ban.append(h("p", "fo-sub", `Liedtexte (LRC): Englisch ${m.lrcCount.en} · Deutsch ${m.lrcCount.de} · bearbeitet/KI ${m.lrcCount.edit} von ${m.tracks.length} Liedern`));
       const tab = h("div", "fo-tab");
-      ["Art", "Auf dem Server", "Auf jw.org", "Neu zum Laden"].forEach((x, i) => tab.append(h("span", "fo-th" + (i ? " r" : ""), x)));
+      ["Art", "Auf dem Server", "Auf jw.org / Dateien", "Neu zum Laden"].forEach((x, i) => tab.append(h("span", "fo-th" + (i ? " r" : ""), x)));
       stats.forEach((x) => {
         tab.append(h("span", "fo-nm fl-gn", x.name), h("span", "fo-c r", `${x.have} / ${m.tracks.length}`), h("span", "fo-c r", String(x.pub)));
         const cc = h("span", "fo-c r");
@@ -400,14 +402,21 @@
         else cc.append(x.pub === 0 ? h("span", "fo-grey", "keine") : h("span", "fo-okm", "✓ aktuell"));
         tab.append(cc);
       });
+      [["en", "Englisch Text (LRC)"], ["de", "Deutsch Text (LRC)"]].forEach(([l, name]) => {
+        const withMp3 = m.tracks.filter((t) => t.k[kid(l, "mp3")] && t.k[kid(l, "mp3")].have), linked = withMp3.filter((t) => t.lrc[l] || t.lrcEdit[l]).length;
+        tab.append(h("span", "fo-nm fl-gn", name), h("span", "fo-c r", `${linked} / ${withMp3.length}`), h("span", "fo-c r", `${m.lrcCount[l]}${m.lrcCount.edit ? " + " + m.tracks.filter((t) => t.lrcEdit[l]).length + " bearb." : ""}`));
+        const cc = h("span", "fo-c r"); const miss = withMp3.length - linked;
+        cc.append(miss ? h("span", "fo-grey", `${miss} ohne Text`) : h("span", "fo-okm", "✓ verknüpft")); tab.append(cc);
+      });
       ban.append(tab);
       /* Speicher */
-      [["Backblaze (Englisch)", m.usedB, stats.filter((s) => s.l === "en").reduce((n, s) => n + s.bytes, 0)], ["Oracle (Deutsch)", m.usedO, stats.filter((s) => s.l === "de").reduce((n, s) => n + s.bytes, 0)]].forEach(([nm, used, add]) => {
-        const mem = h("div", "fo-mem"); const pct = Math.min(100, used / LIMIT * 100);
-        mem.append(h("div", "fo-memt", `Speicher ${nm}: ${fmtSize(used)} von ${fmtSize(LIMIT)} belegt (${Math.round(pct)} %) · frei ${fmtSize(Math.max(0, LIMIT - used))}`));
+      [["Backblaze (Englisch)", m.usedB, stats.filter((s) => s.l === "en").reduce((n, s) => n + s.bytes, 0), LIMB, fmtSize, "Backblaze zählt auch alte Versionen und Löschmarken; die App zählt nur die aktuellen Dateien."], ["Oracle (Deutsch)", m.usedO, stats.filter((s) => s.l === "de").reduce((n, s) => n + s.bytes, 0), LIMO, fmtI, ""]].forEach(([nm, used, add, lim, f, note]) => {
+        const mem = h("div", "fo-mem"); const pct = Math.min(100, used / lim * 100);
+        mem.append(h("div", "fo-memt", `Speicher ${nm}: ${f(used)} von ${f(lim)} belegt (${Math.round(pct)} %) · frei ${f(Math.max(0, lim - used))}`));
         const bar = h("div", "fo-bar"); const f1 = h("i"); f1.style.width = pct + "%"; bar.append(f1);
-        if (add) { const f2 = h("i", "add"); f2.style.width = Math.min(100 - pct, add / LIMIT * 100) + "%"; bar.append(f2); }
-        mem.append(bar); if (add) mem.append(h("small", used + add > LIMIT ? "set-hint bad" : "set-hint", `Nach dem Laden: ${fmtSize(used + add)}${used + add > LIMIT ? " – ÜBER der Grenze!" : ""}`));
+        if (add) { const f2 = h("i", "add"); f2.style.width = Math.min(100 - pct, add / lim * 100) + "%"; bar.append(f2); }
+        mem.append(bar); if (add) mem.append(h("small", used + add > lim ? "set-hint bad" : "set-hint", `Nach dem Laden: ${f(used + add)}${used + add > lim ? " – ÜBER der Grenze!" : ""}`));
+        if (note) mem.append(h("small", "set-hint", note));
         ban.append(mem);
       });
       box.append(ban);
@@ -432,7 +441,7 @@
       KINDS.forEach(([l, f, name]) => { const lab = h("label", "fl-mode"); const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = incK(l, f); cb.onchange = () => { lss(`besInc_${kid(l, f)}`, cb.checked ? "1" : "0"); render(); }; lab.append(cb, document.createTextNode(" " + name)); rowI.append(lab); });
       ib.append(rowI); box.append(ib);
       const modes = h("div", "fl-modes"); const mode0 = lsv("besMode", "missing");
-      [["missing", "Fehlende"], ["have", "Vorhandene"], ["both", "Beide"], ["nojw", "Nicht auf jw.org"]].forEach(([v, label]) => {
+      [["missing", "Fehlende"], ["have", "Vorhandene"], ["both", "Beide"], ["nojw", "Nicht auf jw.org"], ["notext", "Ohne Text (LRC)"]].forEach(([v, label]) => {
         const lab = h("label", "fl-mode"); const rb = document.createElement("input"); rb.type = "radio"; rb.name = "besMode"; rb.value = v; rb.checked = mode0 === v;
         rb.onchange = () => { if (rb.checked) { lss("besMode", v); refresh(); } }; lab.append(rb, document.createTextNode(" " + label)); modes.append(lab);
       });
@@ -451,7 +460,8 @@
         const groups = new Map();
         m.tracks.forEach((t) => {
           const miss = shown.filter(([l, f]) => t.k[kid(l, f)] && !t.k[kid(l, f)].have), pres = shown.filter(([l, f]) => t.k[kid(l, f)] && t.k[kid(l, f)].have), nojw = shown.filter(([l, f]) => !t.k[kid(l, f)]);
-          const show = mode === "both" || (mode === "missing" && miss.length) || (mode === "have" && pres.length) || (mode === "nojw" && nojw.length);
+          const noText = shown.some(([l, f]) => f === "mp3" && t.k[kid(l, "mp3")] && t.k[kid(l, "mp3")].have && !(t.lrc[l] || t.lrcEdit[l]));
+          const show = mode === "both" || (mode === "missing" && miss.length) || (mode === "have" && pres.length) || (mode === "nojw" && nojw.length) || (mode === "notext" && noText);
           const g = Math.floor(t.n / 100) * 100; if (!groups.has(g)) groups.set(g, { all: [], rows: [] });
           groups.get(g).all.push(t); if (show) groups.get(g).rows.push(t);
         });
@@ -473,6 +483,12 @@
               else if (k.have) pair.append(h("span", "fl-ok", `✓ ${name}${k.hsize ? ` (${fmtSize(k.hsize)})` : ""}`));
               else { const lab = `⬇ ${name}${k.size ? ` (${fmtSize(k.size)})` : ""}`; const b = h("button", "chip fl-dl", lab); b.type = "button"; b.onclick = async () => { b.disabled = true; b.textContent = "lädt …"; await loadMany([k], false); }; pair.append(b); }
               chips.append(pair);
+            });
+            [["en", "EN"], ["de", "DE"]].forEach(([l, ab]) => {
+              const k3 = t.k[kid(l, "mp3")]; if (!k3 || !k3.have || !shown.some(([sl, sf]) => sl === l && sf === "mp3")) return;
+              const ed = t.lrcEdit[l], ok = t.lrc[l];
+              const pair = h("span", `fl-pair ${ed || ok ? "has" : "no"}`);
+              pair.append(h("span", ed || ok ? "fl-ok" : "fl-no", ed ? `✓ Text ${ab} (bearbeitet)` : ok ? `✓ Text ${ab}` : `Text ${ab} fehlt`)); chips.append(pair);
             });
             row.append(chips); det.append(row);
           });
@@ -506,7 +522,7 @@
     if (!P) return null;
     const m = model();
     const kinds = KINDS.map(([l, f, name]) => { let have = 0, pub = 0, ready = 0, bytes = 0; m.tracks.forEach((t) => { const k = t.k[kid(l, f)]; if (!k) return; pub++; if (k.have) have++; else { ready++; bytes += k.size || 0; } }); return { name, have, pub, ready, bytes, total: m.tracks.length }; });
-    return { stand: P.stand, total: m.tracks.length, kinds, usedB: m.usedB, usedO: m.usedO, limit: LIMIT, legacy: m.legacy.length, extra: m.extra.length };
+    return { stand: P.stand, total: m.tracks.length, kinds, usedB: m.usedB, usedO: m.usedO, limB: LIMB, limO: LIMO, legacy: m.legacy.length, extra: m.extra.length };
   }
   window.BES = { fetchLrc, putLrc, summary, openBes, base, oraBase, urlFor, mount, switchLib, build, loadManifest, current: cur };
 })();
