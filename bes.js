@@ -15,7 +15,7 @@
     if (!fresh && manifest) return manifest;
     try {
       const res = await fetch(`${base()}/bes/songs.json`, { cache: "no-store" });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) { let t = ""; try { t = ((await res.json()).fehler) || ""; } catch { /* egal */ } throw new Error(`HTTP ${res.status} ${t}`.trim()); }
       const m = await res.json();
       if (!m || !Array.isArray(m.songs)) throw new Error("keine Liste");
       manifest = m;

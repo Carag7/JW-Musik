@@ -239,3 +239,10 @@ body.edit-mode .lyric-sub { display: none !important; }
 .lib-switch .lib-btn { flex: 1 1 0; font-weight: 700; }
 .lib-switch .lib-btn[aria-pressed="true"] { outline: 2px solid currentColor; }
 body.lib-bes .lib-switch .lib-btn[data-lib="bes"] { background: rgba(240,138,0,.22); }
+
+/* v187: Icon-Auswahl */
+.icon-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:10px;margin:10px 0}
+.icon-pick{padding:0;border:2px solid transparent;border-radius:16px;background:none;cursor:pointer;line-height:0}
+.icon-pick img{width:100%;aspect-ratio:1;border-radius:14px;display:block}
+.icon-pick[aria-pressed="true"]{border-color:#e8b84a}
+.icon-row{margin-top:6px}
