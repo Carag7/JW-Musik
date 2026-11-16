@@ -1,7 +1,33 @@
 {
-  "letzter_lauf": "2026-11-16T12:42:57Z",
-  "letzter_erfolg": "2026-11-16T12:42:57Z",
+  "letzter_lauf": "2026-11-16T12:47:02Z",
+  "letzter_erfolg": "2026-11-16T12:47:02Z",
   "laeufe": [
+    {
+      "zeit": "2026-11-16T12:47:02Z",
+      "ok": true,
+      "ausloeser": "schedule",
+      "wochen_gefunden": 28,
+      "fehler": [
+        {
+          "zeit": "2026-11-16T12:45:31Z",
+          "schritt": "Seitenabruf, Option 'requests'",
+          "ziel": "https://wol.jw.org/de/wol/meetings/r10/lp-x/2026/47",
+          "meldung": "Seite ohne erwarteten Inhalt (2007 Zeichen: Titel='', Text=\"JavaScript is disabled In order to continue, we need to verify that you're not a robot. This requires JavaScript. Enable JavaScript and then reload the page.\")"
+        },
+        {
+          "zeit": "2026-11-16T12:45:33Z",
+          "schritt": "Seitenabruf, Option 'requests'",
+          "ziel": "https://wol.jw.org/de/wol/d/r10/lp-x/202026403",
+          "meldung": "Seite ohne erwarteten Inhalt (2007 Zeichen: Titel='', Text=\"JavaScript is disabled In order to continue, we need to verify that you're not a robot. This requires JavaScript. Enable JavaScript and then reload the page.\")"
+        },
+        {
+          "zeit": "2026-11-16T12:45:34Z",
+          "schritt": "Seitenabruf, Option 'requests'",
+          "ziel": "https://wol.jw.org/de/wol/d/r10/lp-x/2026562",
+          "meldung": "Seite ohne erwarteten Inhalt (2007 Zeichen: Titel='', Text=\"JavaScript is disabled In order to continue, we need to verify that you're not a robot. This requires JavaScript. Enable JavaScript and then reload the page.\")"
+        }
+      ]
+    },
     {
       "zeit": "2026-11-16T12:42:57Z",
       "ok": true,
