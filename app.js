@@ -824,7 +824,7 @@ function renderList() {
     if (song.extra) { item.classList.add("extra-song"); button.classList.add("is-extra"); }
     if (state.songs[state.index] === song) button.classList.add("active");
     const number = document.createElement("strong");
-    number.textContent = song.id;
+    number.textContent = song.bes ? String(song.number).padStart(3, "0") : song.id;
     const title = document.createElement("span");
     title.textContent = `${state.favorites.has(song.id) ? "★ " : ""}${song.title}`;
     button.append(number, title);
@@ -836,7 +836,7 @@ function renderList() {
     } else if (srcTagsOn() && state.media) {
       const tags = document.createElement("span");
       tags.className = "src-tags";
-      if (!song.extra) tags.append(Object.assign(document.createElement("i"), { className: "t-k", textContent: "K", title: "Karaoke" }));
+      if (!song.extra && !song.bes) tags.append(Object.assign(document.createElement("i"), { className: "t-k", textContent: "K", title: "Karaoke" }));
       if (mediaKey("meeting", song.number)) tags.append(Object.assign(document.createElement("i"), { className: "t-i", textContent: "♪", title: "Instrumental" }));
       if (mediaKey("video", song.number)) tags.append(Object.assign(document.createElement("i"), { className: "t-v", textContent: "▶", title: "Video" }));
       if (mediaKey("sung", song.number)) tags.append(Object.assign(document.createElement("i"), { className: "t-z", textContent: "Z", title: "Zusammenkünfte" }));
@@ -1120,7 +1120,7 @@ async function toggleUnsynced() {
 }
 
 /* ---------- Fassungen: Karaoke / Instrumental / Video (Dateiverzeichnis aus dem Worker) ---------- */
-const mediaUrl = (key) => `${SYNC_BASE}/media/${key.split("/").map(encodeURIComponent).join("/")}`;
+const mediaUrl = (key) => `${/^bes-Lieder-/.test(key) ? (window.BES ? window.BES.base() : SYNC_BASE) : SYNC_BASE}/media/${key.split("/").map(encodeURIComponent).join("/")}`;
 /* Sprache der Musik: "en" (Standard, Ordner karaoke/ + meeting/) oder "de" (R2-Ordner musik_de/, im media-index unter "de") */
 const emptyMedia = () => ({ karaoke: { audio: {}, lrc: {} }, meeting: { audio: {}, video: {}, lrc: {}, sung: {}, sungLrc: {} } });
 const musikLang = () => (lsv("musikLang", "en") === "de" ? "de" : "en");
@@ -1169,8 +1169,9 @@ function wrapTitles(list) {
       enumerable: true, configurable: true,
       get() {
         const n = song.number;
-        if (musikLang() === "de") return (window.LIEDTITEL_DE || {})[n] || song._de || song._en || (window.LIEDTITEL_EN || {})[n] || `Lied ${n}`;
-        return song._en || (window.LIEDTITEL_EN || {})[n] || `Lied ${n}`;
+        const mp = (k) => (song.bes ? {} : (window[k] || {}));   /* Besondere Lieder: eigene Titel, nicht die Titelliste der Karaoke-Lieder */
+        if (musikLang() === "de") return mp("LIEDTITEL_DE")[n] || song._de || song._en || mp("LIEDTITEL_EN")[n] || `Lied ${n}`;
+        return song._en || mp("LIEDTITEL_EN")[n] || `Lied ${n}`;
       },
       set(v) { song._en = v; }
     });
@@ -1237,7 +1238,7 @@ function srcSet() {
   return new Set(SRC_TYPES.map((t) => t[0]));
 }
 function songHasSource(song, type) {
-  if (type === "karaoke") return !song.extra;
+  if (type === "karaoke") return !(song.extra || song.bes);
   if (!state.media) return false;
   return Boolean(mediaKey(type, song.number));
 }
@@ -1336,7 +1337,7 @@ function updateVersionBar() {
   bar.classList.toggle("only-ico", !song);
   if (!song) return;
   const n = song.number;
-  const avail = { karaoke: !song.extra, meeting: Boolean(mediaKey("meeting", n)), video: Boolean(mediaKey("video", n)), sung: Boolean(mediaKey("sung", n)) };
+  const avail = { karaoke: !(song.extra || song.bes), meeting: Boolean(mediaKey("meeting", n)), video: Boolean(mediaKey("video", n)), sung: Boolean(mediaKey("sung", n)) };
   bar.querySelectorAll(".seg-btn[data-ver]").forEach((btn) => {
     const v = btn.dataset.ver;
     btn.disabled = !avail[v];
@@ -1377,7 +1378,7 @@ async function pickSource(song, want) {
   }
   const kKey = mk("karaoke");
   if (kKey) return { version: "karaoke", url: mediaUrl(kKey) };
-  if (!song.extra) {
+  if (!song.extra && !song.bes) {
     const url = await resolveAudio(song);
     const sameOrigin = !/^https?:/i.test(url) || url.startsWith(`${SYNC_BASE}/`);
     if (de) state.langFallback = true;
@@ -1394,7 +1395,7 @@ async function pickSource(song, want) {
   if (meet) return { version: "meeting", url: mediaUrl(meet), fallback: true };
   if (sung) return { version: "sung", url: mediaUrl(sung), fallback: true };
   if (video) return { version: "video", url: mediaUrl(video), fallback: true };
-  return { version: "karaoke", url: song.extra ? "" : await resolveAudio(song) };
+  return { version: "karaoke", url: (song.extra || song.bes) ? "" : await resolveAudio(song) };
 }
 
 function chooseVersion(version) {
@@ -5390,6 +5391,7 @@ function showSetTab(tab) {
   document.querySelectorAll("#setTabs [data-settab]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.settab === tab)));
   if (tab === "design" && window.THEME) window.THEME.mountUi(document.getElementById("themeBox"));
   if (tab === "fehlend" && window.FEHLEND) window.FEHLEND.mount(document.getElementById("fehlendBox"));
+  if (tab === "bes" && window.BES) window.BES.mount(document.getElementById("besBox"));
   form.scrollTop = 0;
 }
 document.querySelectorAll("#setTabs [data-settab]").forEach((b) => b.addEventListener("click", () => showSetTab(b.dataset.settab)));

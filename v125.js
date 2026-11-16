@@ -528,7 +528,7 @@
   /* ---------- Reiter-Gruppen ---------- */
   const GRP = {
     daten: ["Sichern", [["abgleich", "Favoriten-Abgleich"], ["sichern", "Daten"], ["voreinst", "Voreinstellungen"]]],
-    sync: ["Synchronisieren", [["fehlend", "Fehlende Lieder"], ["syncstat", "Diagramme"], ["ludwt", "Wochenlieder LuD+WT"]]],
+    sync: ["Synchronisieren", [["fehlend", "Fehlende Lieder"], ["bes", "Besondere Lieder"], ["syncstat", "Diagramme"], ["ludwt", "Wochenlieder LuD+WT"]]],
     bewert: ["Anpassungen", [["bew", "Bewertungen"], ["kihist", "KI-Verlauf"], ["stat", "Diagramme"], ["zeit", "Zeiten EN⇄DE"]]]
   };
   const grpOf = (t) => Object.keys(GRP).find((g) => GRP[g][1].some((x) => x[0] === t)) || "";

@@ -182,6 +182,7 @@
       <div id="categoryList" class="cat-list" hidden></div>
       <div id="sourceFilter" class="source-filter" hidden></div>
 
+      <div id="libSwitch" class="lib-switch" role="group" aria-label="Liederbestand"></div>
       <div class="filters">
         <button id="tagsBtn" class="lang-mini tags-mini" type="button" aria-pressed="false" title="Kleine Kennzeichen (Icons) bei den Liedern: kurz / immer / aus"></button>
         <button id="favoritesToggle" class="chip" type="button" aria-pressed="false">alle Lieder</button>
@@ -291,6 +292,7 @@
         <button class="seg-btn" type="button" data-settab="abgleich" hidden>Favoriten-Abgleich</button>
         <button class="seg-btn" type="button" data-settab="sichern" hidden>Daten</button>
         <button class="seg-btn" type="button" data-settab="fehlend" hidden>Fehlende Lieder</button>
+        <button class="seg-btn" type="button" data-settab="bes" hidden>Besondere Lieder</button>
         <button class="seg-btn" type="button" data-settab="ludwt" hidden>Wochenlieder LuD+WT</button>
       </div>
       <div id="grpTabs" class="set-tabs sub-tabs" hidden></div>
@@ -425,6 +427,7 @@
         <button id="advLyrReset" type="button" class="chip">Farben vom Design verwenden</button>
       </div>
       <div id="fehlendBox" data-tab="fehlend" class="fehlend-box"></div>
+      <div id="besBox" data-tab="bes" class="fehlend-box bes-box"></div>
       <div id="syncStatBox" data-tab="syncstat" class="autoplay-box rt-wrap st-box"></div>
       <div id="zeitBox" data-tab="zeit" class="autoplay-box rt-wrap st-box"></div>
       <div id="statBox" data-tab="stat" class="autoplay-box rt-wrap st-box"></div>
@@ -642,6 +645,7 @@
   <video id="audio" preload="none" playsinline webkit-playsinline></video>
   <script src="ludwt.js"></script>
   <script src="fehlend.js"></script>
+  <script src="bes.js"></script>
   <div id="remoteModal" class="login-gate rm-gate" hidden><div id="rmBody" class="rm-card"></div></div>
   <div id="remotePanel" class="rc-panel" hidden></div>
   <button id="remoteBadge" class="rm-badge" type="button" data-st="ok" hidden><i class="rb-dot"></i><span class="rb-txt"></span></button>
