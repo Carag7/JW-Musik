@@ -836,7 +836,7 @@ function renderList() {
     } else if (srcTagsOn() && state.media) {
       const tags = document.createElement("span");
       tags.className = "src-tags";
-      if (!song.extra && !song.bes) tags.append(Object.assign(document.createElement("i"), { className: "t-k", textContent: "K", title: "Karaoke" }));
+      if ((!song.extra && !song.bes) || (song.bes && state.media && mediaKey("karaoke", song.number))) tags.append(Object.assign(document.createElement("i"), { className: "t-k", textContent: "K", title: "Karaoke" }));
       if (mediaKey("meeting", song.number)) tags.append(Object.assign(document.createElement("i"), { className: "t-i", textContent: "♪", title: "Instrumental" }));
       if (mediaKey("video", song.number)) tags.append(Object.assign(document.createElement("i"), { className: "t-v", textContent: "▶", title: "Video" }));
       if (mediaKey("sung", song.number)) tags.append(Object.assign(document.createElement("i"), { className: "t-z", textContent: "Z", title: "Zusammenkünfte" }));
@@ -1021,7 +1021,7 @@ async function fetchKaraokeLines(song, stale, forceLang) {
 
 /* Liedtext der Instrumental-Fassung (eigene Datei lrcm-<nr>) */
 async function fetchMeetingLines(song, stale, prefix = "lrcm") {
-  if (song.bes && window.BES && BES.fetchLrc && prefix === "lrcm") { const bl = await BES.fetchLrc(song, stale); if (bl.length || stale()) return bl; }
+  if (song.bes) return [];   /* Besondere Lieder „Nur Audio“: Titelbild statt Liedtext */
   try {
     const res = await fetch(`${SYNC_BASE}/sync/${prefix}-${song.id}`);
     if (stale()) return [];
@@ -1057,7 +1057,7 @@ function renderPlain(song, kind) {
   title.textContent = song.title;
   const hint = document.createElement("p");
   hint.className = "plain-hint";
-  hint.textContent = kind === "video" ? "Video" : kind === "sung" ? "Zusammenkünfte" : "Instrumental";
+  hint.textContent = kind === "video" ? "Video" : kind === "sung" ? "Zusammenkünfte" : (song.bes ? "Nur Audio" : "Instrumental");
   box.append(eyebrow, img, title, hint);
   el.lyrics.append(box);
 }
@@ -1240,7 +1240,7 @@ function srcSet() {
   return new Set(SRC_TYPES.map((t) => t[0]));
 }
 function songHasSource(song, type) {
-  if (type === "karaoke") return !(song.extra || song.bes);
+  if (type === "karaoke") return song.bes ? Boolean(state.media && mediaKey("karaoke", song.number)) : !song.extra;
   if (!state.media) return false;
   return Boolean(mediaKey(type, song.number));
 }
@@ -1257,7 +1257,8 @@ function updateSourceFilterUi() {
   const lab = document.createElement("span"); lab.className = "src-label"; lab.textContent = "Anzeigen";
   const chipRow = document.createElement("div"); chipRow.className = "src-chips";
   box.append(lab, chipRow);
-  SRC_TYPES.forEach(([id, name]) => {
+  SRC_TYPES.forEach(([id, name0]) => {
+    const name = state.lib === "bes" && id === "meeting" ? "Nur Audio" : name0;
     if (state.lib === "bes" && id === "sung") return;   /* Besondere Lieder: keine Zusammenkünfte */
     const b = document.createElement("button");
     b.type = "button"; b.className = `chip src-chip src-${id}`; b.textContent = name;
@@ -1340,11 +1341,12 @@ function updateVersionBar() {
   bar.classList.toggle("only-ico", !song);
   if (!song) return;
   const n = song.number;
-  const avail = { karaoke: !(song.extra || song.bes), meeting: Boolean(mediaKey("meeting", n)), video: Boolean(mediaKey("video", n)), sung: Boolean(mediaKey("sung", n)) };
+  const avail = { karaoke: song.bes ? Boolean(mediaKey("karaoke", n)) : !song.extra, meeting: Boolean(mediaKey("meeting", n)), video: Boolean(mediaKey("video", n)), sung: Boolean(mediaKey("sung", n)) };
   bar.querySelectorAll(".seg-btn[data-ver]").forEach((btn) => {
     const v = btn.dataset.ver;
     btn.disabled = !avail[v];
     btn.hidden = Boolean(song.bes && v === "sung");   /* Besondere Lieder: keine Zusammenkünfte-Fassung */
+    if (v === "meeting") btn.textContent = song.bes ? "Nur Audio" : "Instrumental";
     btn.setAttribute("aria-pressed", String(state.curVersion === v));
   });
   const view = document.getElementById("verView");
@@ -2953,7 +2955,7 @@ function bind() {
       const c = el.audio.error ? el.audio.error.code : 0;
       el.status.textContent = state.curVersion === "video"
         ? `Video lässt sich nicht abspielen (Fehler ${c}${c === 4 ? ": Datei nicht gefunden oder Format/Codec nicht unterstützt – bitte als MP4 mit H.264 + AAC ablegen" : ""}).`
-        : `${state.curVersion === "sung" ? "Zusammenkünfte-Datei" : "Instrumental-Datei"} lässt sich nicht abspielen (Fehler ${c}).`;
+        : `${state.curVersion === "sung" ? "Zusammenkünfte-Datei" : (song && song.bes ? "Audio-Datei" : "Instrumental-Datei")} lässt sich nicht abspielen (Fehler ${c}).`;
       if (song && song.bes) { try { const u = new URL(el.audio.currentSrc || el.audio.src); el.status.textContent += ` Quelle: ${u.host}${decodeURIComponent(u.pathname).slice(0, 60)}`; } catch { /* egal */ } }
       return;
     }

@@ -50,9 +50,9 @@
     for (const s of m.songs) {
       const n = Number(s.n); if (!n) continue;
       const f = s.files || {}, t = s.title || {};
-      if (f.en && f.en.mp3) media.karaoke.audio[n] = f.en.mp3;
+      if (f.en && f.en.mp3) { media.karaoke.audio[n] = f.en.mp3; media.meeting.audio[n] = f.en.mp3; }   /* MP3: Karaoke (mit Text) und „Nur Audio“ (Titelbild) */
       if (f.en && f.en.mp4) media.meeting.video[n] = f.en.mp4;
-      if (f.de && f.de.mp3) media.de.karaoke.audio[n] = f.de.mp3;
+      if (f.de && f.de.mp3) { media.de.karaoke.audio[n] = f.de.mp3; media.de.meeting.audio[n] = f.de.mp3; }
       if (f.de && f.de.mp4) media.de.meeting.video[n] = f.de.mp4;
       const lr = s.lrc || {};
       if (lr.en) media.karaoke.lrc[n] = lr.en;
@@ -89,6 +89,37 @@
       .then((r) => { if (r.ok) { song.lrcEdit = { ...(song.lrcEdit || {}), [lg]: key }; } return r; });
   }
 
+
+  /* ---------- Ähnliche Lieder (Besondere Lieder): aus Liedtext (LRC EN+DE) und Titel berechnet, gespeichert in localStorage ---------- */
+  let simP = null;
+  const STOP = new Set("der die das und ein eine ist sind wir ich du er sie es zu in im von mit auf für den dem des nicht auch wie wenn dass dir dich mir mich uns unser the and a of to in is are we i you he she it for with on that this be my your our his her they them as at by an or but not have has will".split(" "));
+  function simData() {
+    if (simP) return simP;
+    simP = (async () => {
+      const songs = state.songs.filter((s) => s.bes), med = state.media || {};
+      const keys = songs.map((s) => [med.karaoke && med.karaoke.lrc[s.number], med.de && med.de.karaoke && med.de.karaoke.lrc[s.number]]);
+      const sig = songs.map((s) => s.number).join(",") + "|" + keys.map((k) => (k[0] ? 1 : 0) + "" + (k[1] ? 1 : 0)).join("");
+      try { const c = JSON.parse(lsv("besSim", "null")); if (c && c.sig === sig) return c.s; } catch { /* neu berechnen */ }
+      const docs = new Array(songs.length).fill("");
+      let i = 0;
+      const get = async (key) => { if (!key) return ""; try { const r = await fetch(urlFor(key), { cache: "no-store" }); return r.ok ? (await r.text()).replace(/\[[^\]]*\]/g, " ") : ""; } catch { return ""; } };
+      await Promise.all(Array.from({ length: 6 }, async () => { while (i < songs.length) { const k = i++; const [a, b] = await Promise.all([get(keys[k][0]), get(keys[k][1])]); docs[k] = `${songs[k].title} ${songs[k]._de || ""} ${songs[k].title} ${a} ${b}`; } }));
+      const tok = docs.map((d) => d.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").split(/[^a-z]+/).filter((w) => w.length > 2 && !STOP.has(w)));
+      const df = new Map(); tok.forEach((t) => new Set(t).forEach((w) => df.set(w, (df.get(w) || 0) + 1)));
+      const N = songs.length;
+      const vec = tok.map((t) => { const tf = new Map(); t.forEach((w) => tf.set(w, (tf.get(w) || 0) + 1)); const v = new Map(); let nn = 0; tf.forEach((c, w) => { const x = (1 + Math.log(c)) * Math.log(1 + N / df.get(w)); v.set(w, x); nn += x * x; }); nn = Math.sqrt(nn) || 1; v.forEach((x, w) => v.set(w, x / nn)); return v; });
+      const out = {};
+      for (let a = 0; a < N; a++) {
+        const row = [];
+        for (let b = 0; b < N; b++) { if (a === b) continue; let d = 0; const [sm, lg] = vec[a].size < vec[b].size ? [vec[a], vec[b]] : [vec[b], vec[a]]; sm.forEach((x, w) => { const y = lg.get(w); if (y) d += x * y; }); const p = Math.round(Math.min(1, d * 1.6) * 100); if (p >= 10) row.push([songs[b].number, p]); }
+        row.sort((x, y) => y[1] - x[1]); out[String(songs[a].number)] = row.slice(0, 40);
+      }
+      try { lss("besSim", JSON.stringify({ sig, s: out })); } catch { /* zu groß: egal */ }
+      return out;
+    })().catch(() => { simP = null; return {}; });
+    return simP;
+  }
+
   /* ---------- Umschalten ---------- */
   const cur = () => (state.lib === "bes" ? "bes" : "main");
   async function switchLib(to, quiet) {
@@ -103,7 +134,7 @@
       if (!next) { location.reload(); return; }
       stash[cur()] = { songs: state.songs, media: state.media, index: state.index };
       try { el.audio.pause(); } catch { /* egal */ }
-      state.lib = to; lss("lib", to);
+      state.lib = to; lss("lib", to); simP = null; try { document.dispatchEvent(new Event("bes-lib")); } catch { /* egal */ }
       document.body.classList.toggle("lib-bes", to === "bes");
       state.songs = next.songs; state.media = next.media;
       state.index = typeof next.index === "number" ? next.index : -1;
@@ -231,6 +262,12 @@
     return P;
   }
   /* Auswertung des Abgleichs */
+  function lev(a, b) {
+    const m = a.length, n = b.length; if (!m) return n; if (!n) return m;
+    let prev = Array.from({ length: n + 1 }, (_, i) => i);
+    for (let i = 1; i <= m; i++) { const cur = [i]; for (let j = 1; j <= n; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); prev = cur; }
+    return prev[n];
+  }
   function model() {
     const hv = new Map();
     P.haveB.forEach((o) => hv.set(o.key, o.size)); P.haveO.forEach((o) => hv.set(o.key, o.size));
@@ -247,14 +284,32 @@
       tracks.set(it.track, t);
     });
     /* Liedtexte (LRC): Ordner bes-Lieder-en-LRC (Backblaze) und bes-Lieder-de-LRC (Oracle), bearbeitete in …-LRC-bearbeitet */
-    const lrcNo = (key) => { const b = key.split("/").pop().replace(/\.lrc$/i, ""); const mm = b.match(/(\d+)(?!.*\d)/); return mm ? Number(mm[1]) : 0; };
-    const lrcs = [];
-    hv.forEach((size, key) => { const mm = key.match(/^bes-Lieder-(en|de)-LRC(-bearbeitet)?\/[^/]+\.lrc$/i); if (mm) lrcs.push({ key, lang: mm[1].toLowerCase(), edit: Boolean(mm[2]), n: lrcNo(key) }); });
-    lrcs.forEach((x) => { if (!x.n) return; let t = tracks.get(x.n); if (!t) { t = { n: x.n, t: { en: "", de: "" }, img: "", doc: {}, lrc: {}, lrcEdit: {}, k: {} }; tracks.set(x.n, t); } (x.edit ? t.lrcEdit : t.lrc)[x.lang] = x.key; });
+    /* Zuordnung: Dateiname osg_E_003.lrc → Liednummer; sonst nach Liedtitel (Umlaute/Satzzeichen/Groß-Kleinschreibung egal) */
+    const norm = (s) => String(s || "").toLowerCase().replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "");
+    const byTitle = { en: new Map(), de: new Map() };
+    tracks.forEach((t) => { ["en", "de"].forEach((l) => { const k = norm(t.t[l]); if (k) byTitle[l].set(k, t.n); }); });
+    const lrcs = []; let unmatched = [];
+    hv.forEach((size, key) => {
+      const mm = key.match(/^bes-Lieder-(en|de)-LRC(-bearbeitet)?\/([^/]+)\.lrc$/i); if (!mm) return;
+      const lang = mm[1].toLowerCase(), base = mm[3];
+      let n = 0; const nm = base.match(/^osg_[EX]_(\d+)/i);
+      if (nm) n = Number(nm[1]);
+      else {
+        const k = norm(base); n = byTitle[lang].get(k) || byTitle[lang === "en" ? "de" : "en"].get(k) || 0;
+        if (!n) {   /* ähnlichster Titel (kleine Tippfehler/Sonderzeichen), nur wenn eindeutig */
+          let best = 99, cnt = 0, bn = 0;
+          byTitle[lang].forEach((num, tk) => { if (Math.abs(tk.length - k.length) > 3) return; const d = lev(k, tk); if (d < best) { best = d; bn = num; cnt = 1; } else if (d === best) cnt++; });
+          if (best <= Math.max(2, Math.round(k.length * 0.1)) && cnt === 1) n = bn;
+        }
+      }
+      if (!n) unmatched.push(key);
+      lrcs.push({ key, lang, edit: Boolean(mm[2]), n });
+    });
+    lrcs.forEach((x) => { if (!x.n) return; let t = tracks.get(x.n); if (!t) return; (x.edit ? t.lrcEdit : t.lrc)[x.lang] = x.key; });
     const known = new Set(P.items.map((i) => i.key));
     const extra = [...hv.entries()].filter(([k]) => !known.has(k) && !/^bes-songs/.test(k) && !/-LRC(-bearbeitet)?\//i.test(k) && (/^bes-Lieder-en-/.test(k) || oKeys.has(k))).map(([key, size]) => ({ key, size }));
     const legacy = P.haveB.filter((o) => /^bes-Lieder-de-(mp3|mp4)\//.test(o.key));
-    return { lrcCount: { en: lrcs.filter((x) => x.lang === "en" && !x.edit).length, de: lrcs.filter((x) => x.lang === "de" && !x.edit).length, edit: lrcs.filter((x) => x.edit).length }, tracks: [...tracks.values()].sort((a, b) => a.n - b.n), extra, legacy, oKeys, usedB: P.haveB.reduce((s, o) => s + o.size, 0), usedO: P.haveO.reduce((s, o) => s + o.size, 0) };
+    return { lrcUnmatched: unmatched, lrcCount: { en: lrcs.filter((x) => x.lang === "en" && !x.edit).length, de: lrcs.filter((x) => x.lang === "de" && !x.edit).length, edit: lrcs.filter((x) => x.edit).length }, tracks: [...tracks.values()].sort((a, b) => a.n - b.n), extra, legacy, oKeys, usedB: P.haveB.reduce((s, o) => s + o.size, 0), usedO: P.haveO.reduce((s, o) => s + o.size, 0) };
   }
   function buildManifest(m) {
     const songs = [];
@@ -335,6 +390,7 @@
       busy = false; await check();
     }
 
+    const norm0 = (x) => String(x || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
     function render() {
       const keepTop = box.closest("#codeForm") ? box.closest("#codeForm").scrollTop : 0;
       box.replaceChildren();
@@ -392,7 +448,7 @@
       const tl = h("button", "chip", "Titelliste speichern"); tl.type = "button"; tl.title = "Schreibt die Liste der vorhandenen Lieder, die der Player verwendet"; tl.onclick = async () => { if (!(await ensurePw())) return; try { const n = await postManifest(); say0(`Titelliste gespeichert (${n} Lieder).`); msg(`Titelliste gespeichert (${n} Lieder).`, "ok"); } catch (e) { say0("Titelliste: " + e.message); msg("Titelliste: " + e.message, "bad"); } }; acts.append(tl);
       const op = h("button", "chip", "Besondere Lieder öffnen"); op.type = "button"; op.onclick = async () => { await openBes(); }; acts.append(op);
       ban.append(acts);
-      ban.append(h("p", "fo-sub", `Liedtexte (LRC): Englisch ${m.lrcCount.en} · Deutsch ${m.lrcCount.de} · bearbeitet/KI ${m.lrcCount.edit} von ${m.tracks.length} Liedern`));
+      ban.append(h("p", "fo-sub", `Liedtexte (LRC): Englisch ${m.lrcCount.en} · Deutsch ${m.lrcCount.de} · bearbeitet/KI ${m.lrcCount.edit} von ${m.tracks.length} Liedern${m.lrcUnmatched.length ? ` · ${m.lrcUnmatched.length} Dateien keinem Lied zugeordnet` : ""}`));
       const tab = h("div", "fo-tab");
       ["Art", "Auf dem Server", "Auf jw.org / Dateien", "Neu zum Laden"].forEach((x, i) => tab.append(h("span", "fo-th" + (i ? " r" : ""), x)));
       stats.forEach((x) => {
@@ -435,17 +491,25 @@
         cb.onchange = () => { lss(`besT_${kid(s.l, s.f)}`, cb.checked ? "1" : "0"); refresh(); }; lab.append(cb);
         grid.append(lab, h("span", "fl-gn", s.name), h("span", "fl-gv", `${s.have}/${m.tracks.length}`), h("span", "fl-gv", String(s.pub)));
       });
+      [["en", "Text EN (LRC)"], ["de", "Text DE (LRC)"]].forEach(([l, name]) => {
+        const withMp3 = m.tracks.filter((t) => t.k[kid(l, "mp3")] && t.k[kid(l, "mp3")].have), linked = withMp3.filter((t) => t.lrc[l] || t.lrcEdit[l]).length;
+        const lab = h("label", "fl-cb"); const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = opt(`besL_${l}`, true); cb.setAttribute("aria-label", name + " anzeigen");
+        cb.onchange = () => { lss(`besL_${l}`, cb.checked ? "1" : "0"); refresh(); }; lab.append(cb);
+        grid.append(lab, h("span", "fl-gn", name), h("span", "fl-gv", `${linked}/${withMp3.length}`), h("span", "fl-gv", String(m.lrcCount[l])));
+      });
       box.append(grid);
       const ib = h("div", "fl-inc"); ib.append(h("small", "set-hint", "Beim Laden berücksichtigen:"));
       const rowI = h("div", "fl-modes");
       KINDS.forEach(([l, f, name]) => { const lab = h("label", "fl-mode"); const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = incK(l, f); cb.onchange = () => { lss(`besInc_${kid(l, f)}`, cb.checked ? "1" : "0"); render(); }; lab.append(cb, document.createTextNode(" " + name)); rowI.append(lab); });
       ib.append(rowI); box.append(ib);
       const modes = h("div", "fl-modes"); const mode0 = lsv("besMode", "missing");
-      [["missing", "Fehlende"], ["have", "Vorhandene"], ["both", "Beide"], ["nojw", "Nicht auf jw.org"], ["notext", "Ohne Text (LRC)"]].forEach(([v, label]) => {
+      [["missing", "Fehlende"], ["have", "Vorhandene"], ["both", "Beide"], ["nojw", "Nicht auf jw.org"], ["notext", "Ohne Text (LRC)"], ["withtext", "Mit Text (LRC)"], ["onlyen", "Nur Englisch da"], ["onlyde", "Nur Deutsch da"]].forEach(([v, label]) => {
         const lab = h("label", "fl-mode"); const rb = document.createElement("input"); rb.type = "radio"; rb.name = "besMode"; rb.value = v; rb.checked = mode0 === v;
         rb.onchange = () => { if (rb.checked) { lss("besMode", v); refresh(); } }; lab.append(rb, document.createTextNode(" " + label)); modes.append(lab);
       });
       box.append(h("small", "set-hint", "In der Liste zeigen:"), modes);
+      const qs = h("input", "fl-search"); qs.type = "search"; qs.placeholder = "Nummer oder Titel suchen …"; qs.value = lsv("besQ", ""); qs.style.cssText = "width:100%;margin:6px 0;padding:8px;box-sizing:border-box";
+      qs.oninput = () => { lss("besQ", qs.value); refresh(); }; box.append(qs);
       const dyn = h("div", "fl-dyn"); box.append(dyn);
       const pre = h("pre", "fehl-log"); pre.style.cssText = "max-height:22vh;overflow:auto;white-space:pre-wrap;font-size:12px"; pre.textContent = logLines.join("\n"); box.append(pre);
       refresh();
@@ -461,7 +525,10 @@
         m.tracks.forEach((t) => {
           const miss = shown.filter(([l, f]) => t.k[kid(l, f)] && !t.k[kid(l, f)].have), pres = shown.filter(([l, f]) => t.k[kid(l, f)] && t.k[kid(l, f)].have), nojw = shown.filter(([l, f]) => !t.k[kid(l, f)]);
           const noText = shown.some(([l, f]) => f === "mp3" && t.k[kid(l, "mp3")] && t.k[kid(l, "mp3")].have && !(t.lrc[l] || t.lrcEdit[l]));
-          const show = mode === "both" || (mode === "missing" && miss.length) || (mode === "have" && pres.length) || (mode === "nojw" && nojw.length) || (mode === "notext" && noText);
+          const q = norm0(lsv("besQ", "")); if (q && !norm0(`${t.n} ${t.t.de || ""} ${t.t.en || ""}`).includes(q)) return;
+          const hasT = (l) => t.lrc[l] || t.lrcEdit[l], anyT = hasT("en") || hasT("de");
+          const hv = (l) => t.k[kid(l, "mp3")] && t.k[kid(l, "mp3")].have || t.k[kid(l, "mp4")] && t.k[kid(l, "mp4")].have;
+          const show = (mode === "withtext" && anyT) || (mode === "onlyen" && hv("en") && !hv("de")) || (mode === "onlyde" && hv("de") && !hv("en")) || mode === "both" || (mode === "missing" && miss.length) || (mode === "have" && pres.length) || (mode === "nojw" && nojw.length) || (mode === "notext" && noText);
           const g = Math.floor(t.n / 100) * 100; if (!groups.has(g)) groups.set(g, { all: [], rows: [] });
           groups.get(g).all.push(t); if (show) groups.get(g).rows.push(t);
         });
@@ -485,7 +552,7 @@
               chips.append(pair);
             });
             [["en", "EN"], ["de", "DE"]].forEach(([l, ab]) => {
-              const k3 = t.k[kid(l, "mp3")]; if (!k3 || !k3.have || !shown.some(([sl, sf]) => sl === l && sf === "mp3")) return;
+              const k3 = t.k[kid(l, "mp3")]; if (!opt(`besL_${l}`, true) || !k3 || !k3.have || !shown.some(([sl, sf]) => sl === l && sf === "mp3")) return;
               const ed = t.lrcEdit[l], ok = t.lrc[l];
               const pair = h("span", `fl-pair ${ed || ok ? "has" : "no"}`);
               pair.append(h("span", ed || ok ? "fl-ok" : "fl-no", ed ? `✓ Text ${ab} (bearbeitet)` : ok ? `✓ Text ${ab}` : `Text ${ab} fehlt`)); chips.append(pair);
@@ -524,5 +591,5 @@
     const kinds = KINDS.map(([l, f, name]) => { let have = 0, pub = 0, ready = 0, bytes = 0; m.tracks.forEach((t) => { const k = t.k[kid(l, f)]; if (!k) return; pub++; if (k.have) have++; else { ready++; bytes += k.size || 0; } }); return { name, have, pub, ready, bytes, total: m.tracks.length }; });
     return { stand: P.stand, total: m.tracks.length, kinds, usedB: m.usedB, usedO: m.usedO, limB: LIMB, limO: LIMO, legacy: m.legacy.length, extra: m.extra.length };
   }
-  window.BES = { fetchLrc, putLrc, summary, openBes, base, oraBase, urlFor, mount, switchLib, build, loadManifest, current: cur };
+  window.BES = { simData, fetchLrc, putLrc, summary, openBes, base, oraBase, urlFor, mount, switchLib, build, loadManifest, current: cur };
 })();

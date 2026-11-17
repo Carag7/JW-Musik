@@ -10,11 +10,15 @@
   const thr = () => Math.max(10, Math.min(90, Number(lsv("simMin", "30")) || 30));
   const glassOn = () => { const w = $("lyricSearchWrap"); return !!(w && !w.hidden); };
   const cur = () => (typeof state !== "undefined" && state.songs[state.index]) || null;
+  let MAIN = null;
+  const isBes = () => typeof state !== "undefined" && state.lib === "bes" && window.BES && BES.simData;
   function load() {
-    if (DATA) return Promise.resolve(DATA);
-    if (!loading) loading = fetch("aehnlich.json").then((r) => r.json()).then((j) => (DATA = j.s || {})).catch(() => { DATA = {}; });
-    return loading;
+    if (isBes()) return BES.simData().then((d) => (DATA = d));
+    if (MAIN) { DATA = MAIN; return Promise.resolve(DATA); }
+    if (!loading) loading = fetch("aehnlich.json").then((r) => r.json()).then((j) => (DATA = MAIN = j.s || {})).catch(() => { DATA = MAIN = {}; });
+    return loading.then(() => (DATA = MAIN));
   }
+  document.addEventListener("bes-lib", () => { DATA = null; try { state.simOn = false; } catch { /* egal */ } setTimeout(load, 0); });
   /* Ähnlichkeit zu Lied n: Map Nummer → Prozent */
   function simOf(n) {
     const m = new Map(); const row = DATA && DATA[String(n)]; if (row) row.forEach(([k, p]) => m.set(Number(k), p)); return m;

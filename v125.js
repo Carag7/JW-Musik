@@ -534,11 +534,11 @@
     }
     grid.append(bc);
     /* 3) Speicher */
-    const sc = dashCard("Speicherplatz (alle drei)", "bes", "Einzelheiten →");
+    const sc = dashCard("Speicherplatz", "bes", "Einzelheiten →");
     const r2 = st ? ["en", "de"].reduce((a, lg) => a + (st[lg] ? st[lg].rows.reduce((x, r) => x + (r.bytes || 0), 0) : 0), 0) : 0;
     sc.append(dashBar("R2 (Karaoke, Cloudflare)", r2, 10e9));
-    if (bs) { sc.append(dashBar("Backblaze (Englisch)", bs.usedB, bs.limB), dashBar("Oracle (Deutsch)", bs.usedO, bs.limO, fgi)); }
-    else sc.append(h("small", "set-hint", "Backblaze und Oracle: erst nach dem Abgleich unter „Besondere Lieder“."));
+    sc.append(dashBar("Backblaze (Englisch)", bs ? bs.usedB : 0, bs ? bs.limB : 10e9), dashBar("Oracle (Deutsch)", bs ? bs.usedO : 0, bs ? bs.limO : 10 * 2 ** 30, fgi));
+    if (!bs) sc.append(h("small", "set-hint", "Backblaze und Oracle: Werte erscheinen nach dem Abgleich unter „Besondere Lieder“."));
     sc.append(h("small", "set-hint", "Alle drei mit 10 GB gerechnet (Oracle ggf. mehr)."));
     grid.append(sc);
     /* 4) Texte (LRC) */

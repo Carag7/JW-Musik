@@ -316,7 +316,9 @@
         const go = h("button", "sx-go", I[4] + " →"); go.type = "button"; go.addEventListener("click", () => { try { showSetTab(I[3]); } catch { /* egal */ } });
         card.append(h("b", "", I[0]), h("p", "", I[1]), h("small", "", I[2] + " "), go);
         const hd = mine.find((n) => n.id === "authBanner");   /* Banner bleibt ganz oben */
-        (hd || first).parentNode.insertBefore(card, hd ? hd.nextSibling : first);
+        const tabsEl = $("grpTabs") || $("setTabs");
+        if (tabsEl && tabsEl.parentNode && form.contains(tabsEl)) tabsEl.parentNode.insertBefore(card, tabsEl.nextSibling);   /* Menüs immer ganz oben */
+        else (hd || first).parentNode.insertBefore(card, hd ? hd.nextSibling : first);
         last.parentNode.insertBefore(make(tab), last.nextSibling);   /* Abmelden ganz unten */
       });
     }
